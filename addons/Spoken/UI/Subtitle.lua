@@ -234,6 +234,9 @@ function Subtitle:Build()
     -- Hung from the frame's top, so an eased height grows it downward as the subtitle does,
     -- rather than both ways from its middle.
     self.shadow:SetPoint("TOP", frame, "TOP", 0, 0)
+    -- The buttons hang from the background's foot, as the progress bar does, so they follow it as
+    -- it eases to a new page's size rather than jumping there with the frame.
+    self.controls:SetPoint("TOP", self.shadow, "BOTTOM", 0, -2)
 
     self.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     self.title:SetJustifyH("LEFT")
@@ -801,7 +804,6 @@ function Subtitle:BuildControls()
     local frame = self.frame
     local controls = CreateFrame("Frame", nil, frame)
     controls:SetSize(CONTROL_SIZE * 3 + CONTROL_GAP * 2, CONTROL_SIZE)
-    controls:SetPoint("TOP", frame, "BOTTOM", 0, -2)
     controls:SetFrameLevel(frame:GetFrameLevel() + 2)
     controls:SetAlpha(0)
     controls:Hide()
