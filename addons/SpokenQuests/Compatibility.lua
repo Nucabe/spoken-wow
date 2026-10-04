@@ -818,7 +818,7 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
                 playButton:SetPoint("RIGHT", report, "LEFT", -4, 0)
                 playButton.setPlayState = SetRoundPlaying
                 self.detailsPlayButton = playButton
-                -- Paused or resumed from the subtitle or the windows, the glyph follows.
+                -- Stopped or replayed from the subtitle or the windows, the glyph follows.
                 if Spoken.RegisterCallback then
                     Spoken:RegisterCallback("AUDIO_CHANGED", function()
                         QuestOverlayUI:SetPlayButtonState(playButton)
@@ -872,7 +872,7 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             playButton.questID = questID
             self:BindPlayButton(playButton, questID, self:GetQuestTitle(questID))
             playButton.soundData = QueuedLine(questID)
-            -- This quest's line speaking or paused mid-line: pause or resume it, as the subtitle's
+            -- This quest's line speaking or stopped: Stop or Replay it, as the subtitle's
             -- button does. Waiting behind another line: leave it queued. Otherwise: queue it.
             local bound = playButton:GetScript("OnClick")
             -- Named arguments, not varargs: this file also loads on 1.12, whose Lua 5.0 cannot
