@@ -251,10 +251,15 @@ end
 --- { name, key }, ... } }, ... } }, ... }, zones = { ... the zones on no continent } }.
 --- For tools outside the game (/spz tree saves it).
 function SpokenZones:LoreTree()
+	local cityIn = SpokenZones.CityIn or {}
 	local function Zone(mapID)
-		local zone = { name = ZoneName(mapID), mapID = mapID, areas = {} }
+		local zone = { name = ZoneName(mapID), mapID = mapID, areas = {}, zones = {} }
 		for _, key in ipairs(SubzoneKeys(mapID) or {}) do
 			table.insert(zone.areas, { name = SpokenZones.Subzones[mapID][key].name or key, key = key })
+		end
+		-- A city, listed inside the zone around it, with its own areas.
+		for _, city in ipairs(ZoneIDs()) do
+			if cityIn[city] == mapID then table.insert(zone.zones, Zone(city)) end
 		end
 		return zone
 	end
