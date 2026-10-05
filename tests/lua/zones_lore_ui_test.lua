@@ -292,5 +292,22 @@ Expect("the map's panel on the quest details' copy", Z:CreateLorePage(createFram
 ATLASES["spellbook-Page-Right-C60"], ATLASES["QuestDetailsBackgrounds"] = true, true
 ATLASES["spellbook-divider"] = true
 
+---------------------------------------------------------------- the tree for tools outside the game
+local tree = Z:LoreTree()
+local names = {}
+for _, continent in ipairs(tree.continents) do
+    local zones = {}
+    for _, zone in ipairs(continent.zones) do
+        local areas = {}
+        for _, area in ipairs(zone.areas) do table.insert(areas, area.name .. "=" .. area.key) end
+        table.insert(zones, zone.name .. "(" .. table.concat(areas, ",") .. ")")
+    end
+    table.insert(names, continent.name .. ":" .. table.concat(zones, ";"))
+end
+Expect("the tree is the list's: Azeroth, its continents, their zones and every area",
+    tree.name .. "|" .. table.concat(names, "|"),
+    "Azeroth|Eastern Kingdoms:Dun Morogh()|Kalimdor:Durotar(Sen'jin Village=sen'jin village,Valley of Trials=valley of trials)")
+Expect("...a map this client has not got left out", #tree.zones, 0)
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones lore window tests passed")

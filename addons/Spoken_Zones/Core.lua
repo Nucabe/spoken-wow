@@ -918,6 +918,21 @@ SlashCmdList["SPOKENZONES"] = function(msg)
 		if SpokenZones.ToggleLoreWindow then
 			SpokenZones:ToggleLoreWindow()
 		end
+	elseif cmd == "tree" then
+		-- For tools outside the game: Lore of Azeroth's whole tree, saved with the settings, so
+		-- the game writes it to WTF\...\SavedVariables\Spoken_Zones.lua at the next reload.
+		if SpokenZones.LoreTree then
+			local tree = SpokenZones:LoreTree()
+			SpokenZonesSettings.loreTree = tree
+			local zones, areas = #tree.zones, 0
+			for _, continent in ipairs(tree.continents) do
+				zones = zones + #continent.zones
+				for _, zone in ipairs(continent.zones) do areas = areas + #zone.areas end
+			end
+			for _, zone in ipairs(tree.zones) do areas = areas + #zone.areas end
+			SpokenZones:Print("Lore of Azeroth's tree saved: %d continents, %d zones, %d areas. Type /reload to write it to disk.",
+				#tree.continents, zones, areas)
+		end
 	elseif cmd == "minimap" then
 		if SpokenZones.ToggleMinimapButton then
 			local enabled = SpokenZones:ToggleMinimapButton()

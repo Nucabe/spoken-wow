@@ -246,6 +246,32 @@ local function BuildRowList()
 	return list
 end
 
+--- The whole tree as the list builds it, every place listed whatever has been found or searched:
+--- { name, mapID, continents = { { name, mapID, zones = { { name, mapID, areas = {
+--- { name, key }, ... } }, ... } }, ... }, zones = { ... the zones on no continent } }.
+--- For tools outside the game (/spz tree saves it).
+function SpokenZones:LoreTree()
+	local function Zone(mapID)
+		local zone = { name = ZoneName(mapID), mapID = mapID, areas = {} }
+		for _, key in ipairs(SubzoneKeys(mapID) or {}) do
+			table.insert(zone.areas, { name = SpokenZones.Subzones[mapID][key].name or key, key = key })
+		end
+		return zone
+	end
+	local tree = { name = ZoneName(WORLD), mapID = WORLD, continents = {}, zones = {} }
+	local listed = {}
+	for _, continent in ipairs(Continents()) do
+		listed[continent] = true
+		local entry = { name = ZoneName(continent), mapID = continent, zones = {} }
+		for _, mapID in ipairs(ZonesOf(continent)) do table.insert(entry.zones, Zone(mapID)) end
+		table.insert(tree.continents, entry)
+	end
+	for _, mapID in ipairs(ZoneIDs()) do
+		if not listed[ContinentOf(mapID) or 0] then table.insert(tree.zones, Zone(mapID)) end
+	end
+	return tree
+end
+
 --------------------------------------------------------------------------------
 -- The page
 --------------------------------------------------------------------------------
