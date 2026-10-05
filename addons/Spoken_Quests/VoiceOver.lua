@@ -691,6 +691,14 @@ function Addon:OnInitialize()
     end
 
     local slashInstalled, slashError = pcall(function()
+        _G.SLASH_SPOKENQUESTSGREET1 = "/spgreet"
+        _G.SlashCmdList.SPOKENQUESTSGREET = function(input)
+            local mode = strlower(strtrim(input or ""))
+            if mode == "on" then Addon.db.global.ReplayGreeting = true
+            elseif mode == "off" then Addon.db.global.ReplayGreeting = nil end
+            print(format("|cff88ccffSpoken|r: replaying NPC greetings: %s  (/spgreet on | off)",
+                Addon.db.global.ReplayGreeting and "on" or "off"))
+        end
         _G.SLASH_SPOKENQUESTSREAD1 = "/spqread"
         _G.SlashCmdList.SPOKENQUESTSREAD = function()
             self:ReadVisibleQuest("/spqread")
@@ -1124,6 +1132,75 @@ end
 --- in the frame the dialog opened, and the greeting is not heard at all. A dialog nothing
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
+-- To test: the NPC's own greeting, cut from the game as its window opens, is played again through
+-- Spoken's queue, so it comes before Spoken's line and fades out like any line when the player
+-- turns to another NPC. The recording is one of the NPC's own, picked by its model's voice set
+-- (Data/GreetingSounds.lua). /spgreet on | off; off until switched on.
+local REPLAY_SAME_NPC = 10
+local lastGreeting, greetingNPC, greetingAt = nil, nil, 0
+local probe
+
+--- One of this NPC's greeting recordings, by its model: file ID and seconds; nil and the model
+--- where it is not known.
+local function NPCGreeting(again)
+    probe = probe or CreateFrame("PlayerModel")
+    -- Shown while it loads: a model may load only once drawn, and it is hidden again once read.
+    probe:SetSize(1, 1)
+    probe:SetAlpha(0)
+    probe:Show()
+    if not again and not pcall(probe.SetUnit, probe, "npc") then probe:Hide() return nil end
+    local display = probe.GetDisplayInfo and probe:GetDisplayInfo()
+    if display == 0 then display = nil end
+    local set = display and _G.SpokenQuestsGreetingSet and _G.SpokenQuestsGreetingSet[display]
+    local files = set and _G.SpokenQuestsGreetingFiles and _G.SpokenQuestsGreetingFiles[set]
+    if not files or #files == 0 then return nil, nil, display end
+    local pick = files[math.random(#files)]
+    return pick[1], pick[2], display, set
+end
+
+function Addon:ReplayGreeting(attempt)
+    if not self.db.global.ReplayGreeting or not Player.source then return end
+    local npc = Utils:GetNPCGUID() or Utils:GetNPCName()
+    local now = GetTime()
+    if not attempt then
+        -- Once a visit: the quest window that follows a gossip window does not greet again.
+        if npc and npc == greetingNPC and now - greetingAt < REPLAY_SAME_NPC then return end
+        greetingNPC, greetingAt = npc, now
+        -- Another NPC's greeting still speaking fades out (Skip's fade) for this one.
+        if lastGreeting then
+            Player.source:Remove(lastGreeting)
+            lastGreeting = nil
+        end
+    end
+    local file, seconds, display, set = NPCGreeting(attempt ~= nil)
+    if not file then
+        -- The model may still be loading: asked again for half a second.
+        if not display and (attempt or 0) < 5 and C_Timer and C_Timer.After then
+            C_Timer.After(0.1, function() self:ReplayGreeting((attempt or 0) + 1) end)
+            return
+        end
+        if probe then probe:Hide() end
+        print(format("|cff88ccffSpoken|r: no greeting to replay (model %s not known)", tostring(display)))
+        return
+    end
+    probe:Hide()
+    local clip = {
+        key = format("npc-greeting-%d-%.2f", file, now),
+        path = file,
+        length = seconds,
+        priority = "low",
+        cutsGameDialogue = true,
+        present = { header = Utils:GetNPCName() or "", label = L.OPT_GREETING or "", portrait = { kind = "none" } },
+    }
+    if Player.source:Enqueue(clip) then
+        lastGreeting = clip
+        print(format("|cff88ccffSpoken|r: replaying the greeting, %.1fs (model %s, set %s, file %d)",
+            seconds, tostring(display), tostring(set), file))
+    else
+        print("|cff88ccffSpoken|r: the greeting was not queued")
+    end
+end
+
 function Addon:MuteGreetingAhead(event)
     if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
         or not Spoken.MuteGameDialogueAhead then
@@ -1166,6 +1243,7 @@ function Addon:MuteGreetingAhead(event)
         return
     end
     Spoken:MuteGameDialogueAhead(Player.source)
+    self:ReplayGreeting()
 end
 
 function Addon:QUEST_GREETING(event, manual)

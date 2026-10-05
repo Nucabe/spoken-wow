@@ -24,6 +24,7 @@
     <Include file="UI\DialogPlayButton.lua"/>
     <Include file="EasterEggs.lua"/>
     <Include file="DataModules.lua"/>
+    <Include file="Data\GreetingSounds.lua"/>
     <Include file="Player.lua"/>
     <Include file="VoiceOver.lua"/>
     <Include file="FollowupLines.lua"/>
