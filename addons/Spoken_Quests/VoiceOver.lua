@@ -691,6 +691,11 @@ function Addon:OnInitialize()
     end
 
     local slashInstalled, slashError = pcall(function()
+        local windows = CreateFrame("Frame")
+        for event in pairs(GREETING_WINDOWS) do pcall(windows.RegisterEvent, windows, event) end
+        windows:SetScript("OnEvent", function(_, event)
+            if Addon.db.global.ReplayGreeting then pcall(Addon.MuteGreetingAhead, Addon, event) end
+        end)
         _G.SLASH_SPOKENQUESTSGREET1 = "/spgreet"
         _G.SlashCmdList.SPOKENQUESTSGREET = function(input)
             local mode = strlower(strtrim(input or ""))
@@ -1137,6 +1142,9 @@ end
 -- turns to another NPC. The recording is one of the NPC's own, picked by its model's voice set
 -- (Data/GreetingSounds.lua). /spgreet on | off; off until switched on.
 local REPLAY_SAME_NPC = 10
+-- The other windows an NPC greets as they open: a vendor's, a trainer's, a banker's, a flight master's.
+GREETING_WINDOWS = { MERCHANT_SHOW = true, TRAINER_SHOW = true, BANKFRAME_OPENED = true, TAXIMAP_OPENED = true,
+    PET_STABLE_SHOW = true, AUCTION_HOUSE_SHOW = true, GUILDBANKFRAME_OPENED = true }
 local lastGreeting, greetingNPC, greetingAt = nil, nil, 0
 local probe
 
@@ -1204,6 +1212,13 @@ end
 function Addon:MuteGreetingAhead(event)
     if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
         or not Spoken.MuteGameDialogueAhead then
+        return
+    end
+    -- Replaying, every NPC's greeting goes through Spoken's queue, so the next NPC's window fades
+    -- it out rather than cutting it: any window an NPC greets as it opens is cut and replayed.
+    if self.db.global.ReplayGreeting and (event == "GOSSIP_SHOW" or event == "QUEST_GREETING" or GREETING_WINDOWS[event]) then
+        Spoken:MuteGameDialogueAhead(Player.source)
+        self:ReplayGreeting()
         return
     end
     if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
