@@ -1131,8 +1131,7 @@ function Addon:MuteGreetingAhead(event)
     end
     if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
         -- Silenced as the window opens: an NPC with quests to give or take, its greeting
-        -- included, and one whose gossip Spoken reads. A vendor's, a guard's or a trainer's own
-        -- greeting otherwise keeps its voice.
+        -- included.
         local available, active
         if event == "GOSSIP_SHOW" then
             available = GetNumGossipAvailableQuests and GetNumGossipAvailableQuests()
@@ -1141,17 +1140,10 @@ function Addon:MuteGreetingAhead(event)
             available = GetNumAvailableQuests and GetNumAvailableQuests()
             active = GetNumActiveQuests and GetNumActiveQuests()
         end
+        -- Only quest-givers: a trainer's or a guard's greeting keeps its voice, even where
+        -- Spoken reads their gossip.
         if (available or 0) + (active or 0) == 0 then
-            -- The page text is not to be trusted yet (see the deferred read), so this asks only
-            -- whether any pack voices this speaker at all.
-            local guid = Utils:GetNPCGUID()
-            local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
-            if not guid and not speaker.name then
-                return
-            end
-            if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
-                return
-            end
+            return
         end
     elseif QUEST_EVENTS[event] then
         -- The quest ID can still be the previous quest's this early; the worst that costs is
