@@ -29,7 +29,7 @@ only adding a row here.
 addon by Mrthinger and its later maintainers, and still carries structure from it —
 the sound queue and the data-module loader most visibly. The fork adapted the removed
 global addon-management APIs to `C_AddOns` and the gossip APIs to `C_GossipInfo`, was
-renamed `VoiceOverRedux`, and is `SpokenQuests` today. Its sound packs deliberately
+renamed `VoiceOverRedux`, then `SpokenQuests`, and is `Spoken_Quests` today. Its sound packs deliberately
 stay loadable by upstream's player, and upstream's packs stay loadable by this one.
 
 **Spoken**'s sound queue is a port of that same queue, generalised so that
@@ -44,7 +44,7 @@ None of this is the project's to license, and the MIT grant does not reach it.
   world database, which is itself a community reconstruction of that content. The
   extraction lives in `pipelines/quests/`; the exported reference tables under
   `pipelines/quests/assets/sql/exported/` come from the same place.
-- **Zone and subzone lore prose** in `addons/SpokenZones/Data/` is derived from
+- **Zone and subzone lore prose** in `addons/Spoken_Zones/Data/` is derived from
   [Warcraft Wiki](https://warcraft.wiki.gg), which publishes under
   **CC BY-SA 4.0**. Re-use of that text carries the same terms, including attribution
   and share-alike. `pipelines/zones/tools/scrape.mjs` is what fetches it and records
@@ -64,12 +64,12 @@ None of this is the project's to license, and the MIT grant does not reach it.
   Spoken Zones' lines. They are Blizzard's. Forever's own zones, which have no icon in the game
   (Zephras Isle, Darkspear Islands, Riverglades, Shen'dralas), have icons made for this project
   in the same style.
-- **Zone pictures** (`addons/SpokenZones/Textures/Pictures/*.blp`): screenshots of the game from
+- **Zone pictures** (`addons/Spoken_Zones/Textures/Pictures/*.blp`): screenshots of the game from
   each place's [Warcraft Wiki](https://warcraft.wiki.gg) page, cropped, tinted and edged by
   `pipelines/zones/tools/pictures/prepare.py`. The game in them is Blizzard's; each source file's
   wiki page gives its uploader and terms, listed per picture in that folder's `CREDITS.md`. The
-  edge masks (`Mask*.tga`) are made for this project.
-- **Lore page art** (`addons/SpokenZones/Textures/Art/*.tga`): the spellbook's parchment,
+  edge masks (`Mask*.blp`) are made for this project.
+- **Lore page art** (`addons/Spoken_Zones/Textures/Art/*.tga`): the spellbook's parchment,
   divider and backplate, and the quest log's details page and frame, cut from the game's UI
   files (Forever client) so the page looks the same on every client. They are Blizzard's.
 - **Subtitle background and progress line** (`addons/Spoken/Textures/SubtitleBand.tga`,
