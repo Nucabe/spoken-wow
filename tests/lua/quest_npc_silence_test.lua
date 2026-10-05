@@ -57,5 +57,12 @@ quests.available, quests.active = 0, 0
 Expect("a vendor, a guard or a trainer keeps its voice", Open("GOSSIP_SHOW"), "1")
 Close()
 
+-- Greeting first (/spgreet wait): the quest-giver's greeting plays; Spoken's line waits for it.
+VO.Addon.db.global.GreetingMode = "wait"
+quests.available = 1
+Expect("greeting first, a quest-giver keeps its voice as its window opens", Open("GOSSIP_SHOW"), "1")
+Close()
+VO.Addon.db.global.GreetingMode = nil
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quest NPC silence tests passed")

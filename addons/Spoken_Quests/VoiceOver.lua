@@ -691,6 +691,14 @@ function Addon:OnInitialize()
     end
 
     local slashInstalled, slashError = pcall(function()
+        _G.SLASH_SPOKENQUESTSGREET1 = "/spgreet"
+        _G.SlashCmdList.SPOKENQUESTSGREET = function(input)
+            local mode = strlower(strtrim(input or ""))
+            if mode == "silence" or mode == "wait" or mode == "measured" then
+                Addon.db.global.GreetingMode = mode
+            end
+            print(format("|cff88ccffSpoken|r: quest-giver greetings: %s  (/spgreet silence | wait | measured)", Addon.db.global.GreetingMode or "silence"))
+        end
         _G.SLASH_SPOKENQUESTSREAD1 = "/spqread"
         _G.SlashCmdList.SPOKENQUESTSREAD = function()
             self:ReadVisibleQuest("/spqread")
@@ -1124,6 +1132,55 @@ end
 --- in the frame the dialog opened, and the greeting is not heard at all. A dialog nothing
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
+-- To test, /spgreet: "silence" (the quest-giver is cut as its window opens), "wait" (its greeting
+-- plays, and Spoken's line waits a fixed 1.5s) or "measured" (the line waits as long as this
+-- NPC's longest greeting, from Data/GreetingLengths.lua by its model). Kept per account, in db.global.
+local GREETING_WAIT, GREETING_MARGIN = 1.5, 0.15
+local greetingUntil, greetingNPC, greetingAt = 0, nil, 0
+local greetingGate = false
+
+local function GreetingMode()
+    return Addon.db and Addon.db.global.GreetingMode or "silence"
+end
+
+local probe
+--- How long this NPC's greeting lasts, from its model's voice set, and the model; nil if unknown.
+local function MeasuredGreeting()
+    probe = probe or CreateFrame("PlayerModel")
+    probe:Hide()
+    local ok = pcall(probe.SetUnit, probe, "npc")
+    local display = ok and probe.GetDisplayInfo and probe:GetDisplayInfo()
+    local set = display and _G.SpokenQuestsGreetingSet and _G.SpokenQuestsGreetingSet[display]
+    local seconds = set and _G.SpokenQuestsGreetingSeconds and _G.SpokenQuestsGreetingSeconds[set]
+    return seconds, display
+end
+
+--- Let the NPC's greeting play, and hold Spoken's line until it has. Once per NPC per visit: the
+--- quest window that follows a gossip window does not greet again.
+function Addon:WaitForGreeting()
+    local npc = Utils:GetNPCGUID() or Utils:GetNPCName()
+    local now = GetTime()
+    if npc and npc == greetingNPC and now - greetingAt < 10 then return end
+    greetingNPC, greetingAt = npc, now
+    local seconds, display = GREETING_WAIT, nil
+    local how = "fixed"
+    if GreetingMode() == "measured" then
+        local measured
+        measured, display = MeasuredGreeting()
+        if measured then seconds, how = measured, "measured" else how = "fixed, model " .. tostring(display) .. " not known" end
+    end
+    greetingUntil = now + seconds + GREETING_MARGIN
+    if not greetingGate and Player.source and Player.source.AddGate then
+        greetingGate = true
+        Player.source:AddGate(function()
+            if GetTime() < greetingUntil then return "Waiting for the NPC's greeting." end
+        end)
+    end
+    if self.db.profile.DebugEnabled or _G.SpokenQuestsGreetingVerbose ~= false then
+        print(format("|cff88ccffSpoken|r: letting the greeting play, %.1fs (%s)", seconds, how))
+    end
+end
+
 function Addon:MuteGreetingAhead(event)
     if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
         or not Spoken.MuteGameDialogueAhead then
@@ -1156,6 +1213,12 @@ function Addon:MuteGreetingAhead(event)
             return
         end
     else
+        return
+    end
+    -- Greeting first: the NPC is heard, and Spoken's line waits for it; the line mutes the NPC
+    -- when it starts.
+    if GreetingMode() ~= "silence" then
+        self:WaitForGreeting()
         return
     end
     Spoken:MuteGameDialogueAhead(Player.source)
