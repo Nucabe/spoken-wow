@@ -205,13 +205,14 @@ end
 VO, env, Spoken = MuteBoot()
 stub.ShowGossip("Greetings, traveller.")
 Open(VO, "GOSSIP_SHOW")
-Expect("a voiced NPC's gossip opening mutes it before its line is queued", Spoken:GetQueueSize() == 0 and world.cvars.Sound_EnableDialog, "0")
+-- Only quest-givers are silenced: a voiced NPC with no quests keeps its own voice under the line.
+Expect("a voiced NPC with no quests keeps its voice as its gossip opens", world.cvars.Sound_EnableDialog, "1")
 stub.Advance(0.2)
 Expect("...the line is then read", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, GREETING_HASH)
 stub.Advance(0.4)
-Expect("...under the NPC's voice, still muted", world.cvars.Sound_EnableDialog, "0")
+Expect("...alongside the NPC's own voice", world.cvars.Sound_EnableDialog, "1")
 stub.Advance(2)
-Expect("...past the mute's own deadline too", world.cvars.Sound_EnableDialog, "0")
+Expect("...never muting it", world.cvars.Sound_EnableDialog, "1")
 Spoken:StopAll()
 Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
 

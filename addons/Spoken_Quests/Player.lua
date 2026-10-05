@@ -202,6 +202,13 @@ function Player:Prepare(soundData)
     soundData.key = soundData.fileName
     soundData.path = soundData.filePath
     soundData.priority = gossip and "low" or "normal"
+    -- Only quest-givers are silenced: the gossip of an NPC with no quests (a trainer, a guard)
+    -- plays alongside its own voice.
+    if gossip then
+        local available = GetNumGossipAvailableQuests and GetNumGossipAvailableQuests() or 0
+        local active = GetNumGossipActiveQuests and GetNumGossipActiveQuests() or 0
+        soundData.keepsGameDialogue = available + active == 0 or nil
+    end
     soundData.present = {
         header = soundData.name or "",
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
