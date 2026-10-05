@@ -1160,6 +1160,14 @@ local function NPCGreeting(again)
     local display = probe.GetDisplayInfo and probe:GetDisplayInfo()
     if display == 0 then display = nil end
     local set = display and _G.SpokenQuestsGreetingSet and _G.SpokenQuestsGreetingSet[display]
+    -- Where the client gives no model, its file: the voice most models of that body have.
+    if not set then
+        local fileID = probe.GetModelFileID and probe:GetModelFileID()
+        if fileID and fileID ~= 0 then
+            display = "file " .. fileID
+            set = _G.SpokenQuestsGreetingSetByFile and _G.SpokenQuestsGreetingSetByFile[fileID]
+        end
+    end
     local files = set and _G.SpokenQuestsGreetingFiles and _G.SpokenQuestsGreetingFiles[set]
     if not files or #files == 0 then return nil, nil, display end
     local pick = files[math.random(#files)]
