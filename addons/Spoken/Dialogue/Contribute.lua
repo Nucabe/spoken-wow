@@ -1,5 +1,5 @@
-if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
+local L = SpokenEnv.L
 
 -- What this addon sends when it has no line for what is on screen.
 --
@@ -496,7 +496,10 @@ local function BaseFields()
         -- Compatibility.lua for clients that moved it there), is the real mechanism to reuse
         -- rather than inventing a second one; "dev" is what a source checkout with no .toc
         -- metadata at all reads back as.
-        { "addon", format("SpokenQuests/%s", (GetAddOnMetadata and GetAddOnMetadata(AddonFolder, "Version")) or "dev") },
+        -- The quests addon's folder where it is loaded, Spoken's where only gossip is: all ship
+        -- at one version.
+        { "addon", format("SpokenQuests/%s", (GetAddOnMetadata
+            and GetAddOnMetadata(rawget(VoiceOver, "AddonFolder") or "Spoken", "Version")) or "dev") },
         { "build", format("%s/%s", (GetBuildInfo and select(1, GetBuildInfo())) or "?",
                                    (GetBuildInfo and select(2, GetBuildInfo())) or "?") },
         -- The client's, because the text is as the client shows it: a German client sends
@@ -737,8 +740,8 @@ function Contribute:ShowTooltip(owner, gossip)
         return
     end
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    GameTooltip:SetText(gossip and L.OPT_CONTRIBUTE_TIP_LINE or L.OPT_CONTRIBUTE_TIP_QUEST)
-    GameTooltip:AddLine(L.OPT_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
+    GameTooltip:SetText(gossip and L.DIALOGUE_CONTRIBUTE_TIP_LINE or L.DIALOGUE_CONTRIBUTE_TIP_QUEST)
+    GameTooltip:AddLine(L.DIALOGUE_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
     GameTooltip:Show()
 end
 

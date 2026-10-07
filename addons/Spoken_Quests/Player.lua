@@ -11,7 +11,6 @@ setfenv(1, VoiceOver)
 Player = { source = nil }
 
 local TEXTURES = format([[Interface\AddOns\%s\Textures\]], AddonFolder)
-local BOOK = TEXTURES .. "Book"
 
 local BULLETS = {
     [Enums.SoundEvent.QuestAccept]   = "quest-accept",
@@ -72,44 +71,7 @@ end
 -- Presentation
 --------------------------------------------------------------------------------
 
--- The creature to draw, or nil for the book. The book for Items, GameObjects, players,
--- a missing GUID, and 2.4.3, which cannot show an arbitrary creature -- what
--- ShouldShowBookFor used to decide inside the frame, decided here instead and handed
--- over as a fallback.
-local function CreatureFor(soundData)
-    if soundData.unitIsObjectOrItem or Version.IsLegacyBurningCrusade then
-        return nil
-    end
-    local guid = soundData.unitGUID
-    if guid and Utils.GetGUIDType and Utils.GetIDFromGUID then
-        return Utils:GetCreatureIDFromGUID(guid)
-    end
-    -- 1.12 has no GUIDs; the pooled model shows the "npc" unit and this is only what
-    -- tells one clip's portrait from the next.
-    if Version.IsLegacyVanilla then
-        return soundData.questID or soundData.name
-    end
-    return nil
-end
-
--- A line from something faceless shows the item that starts the quest, else a posted notice.
-local NOTICE = [[Interface\Icons\INV_Misc_Note_01]]
-local ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
-local function Faceless(soundData)
-    local icon, crop
-    if Spoken and Spoken.QuestItemIcon then icon, crop = Spoken:QuestItemIcon(soundData.questID) end
-    return { kind = "texture", texture = icon or NOTICE, texCoord = crop or ICON_CROP }
-end
-
-local function PortraitFor(soundData)
-    if soundData.unitIsObjectOrItem then return Faceless(soundData) end
-    return {
-        kind = "model",
-        creatureID = CreatureFor(soundData),
-        animation = 60,
-        fallback = { kind = "texture", texture = BOOK },
-    }
-end
+-- The speaker's portrait and the Report action are the dialogue core's (Present.lua).
 
 -- The Stop Gossip control, anchored to the header as it always was. The one place the
 -- domain-agnostic frame is asked to host something quest-shaped.
@@ -160,34 +122,7 @@ local STOP_GOSSIP = {
     end,
 }
 
-local REPORT = {
-    id = "report",
-    -- An icon in the corner rather than a word beside the line: the label never changed,
-    -- and the strip it used to sit in pushed the queue up to make room for it. The bug
-    -- icon postdates the three legacy clients, where the texture is missing and
-    -- the button would be a blank square; `text` is what they draw instead.
-    icon = [[Interface\HelpFrame\HelpIcon-Bug]],
-    label = L.OPT_REPORT_PROBLEM,
-    text = "R",
-    anchor = "topright",
-    tooltip = function(tooltip)
-        tooltip:SetText(L.OPT_REPORT_PROBLEM)
-        tooltip:AddLine(L.OPT_REPORT_LINE_TIP, 1, 0.8, 0.2, true)
-    end,
-    onClick = function(clip)
-        -- The line itself first: by the time Report is clicked the quest window may be shut.
-        local target = ReportButton:TargetForClip(clip) or ReportButton:CurrentTarget()
-        if target then
-            -- The language the clip was spoken in, which PrepareSound recorded: a fallback line
-            -- is an English take even under a German selection, and its report is about that.
-            ReportButton:ShowLink(target, clip.language)
-        else
-            StaticPopup_Show("VOICEOVER_ERROR", L.OPT_REPORT_NO_LINE)
-        end
-    end,
-}
-
-local ACTIONS = { REPORT, STOP_GOSSIP }
+local ACTIONS = { Present.REPORT, STOP_GOSSIP }
 
 --- Turn a prepared SoundData into a clip, in place.
 function Player:Prepare(soundData)
@@ -212,7 +147,7 @@ function Player:Prepare(soundData)
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
         bullet = BULLETS[event],
         tint = gossip and { 1, 1, 1 } or nil,
-        portrait = PortraitFor(soundData),
+        portrait = Present:Portrait(soundData),
         actions = ACTIONS,
     }
     return soundData
@@ -375,11 +310,8 @@ function Player:Setup()
         Debug:Record("playing", format("Playing %s", clip.path or clip.fileName or "voiceover"))
     end)
 
-    -- Switchable from the player's settings, named there by this addon. The zones addon
-    -- declares the same id, so one setting covers whichever is speaking.
-    if Spoken.RegisterOptionalAction then
-        Spoken:RegisterOptionalAction("report", L.OPT_REPORT)
-    end
+    -- The Report action and its dialogs, shared with the gossip module.
+    Present:Setup()
 
     Spoken:RegisterBullet("quest-accept",   TEXTURES .. "SoundQueueBulletAccept", 14)
     Spoken:RegisterBullet("quest-progress", TEXTURES .. "SoundQueueBulletProgress", 14)

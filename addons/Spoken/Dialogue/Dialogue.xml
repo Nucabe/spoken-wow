@@ -8,4 +8,7 @@
     <Include file="Compat.lua"/>
     <Include file="FuzzySearch.lua"/>
     <Include file="DataModules.lua"/>
+    <Include file="ReportButton.lua"/>
+    <Include file="Present.lua"/>
+    <Include file="PlayButton.lua"/>
 </Ui>

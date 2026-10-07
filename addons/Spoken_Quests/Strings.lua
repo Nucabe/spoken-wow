@@ -10,12 +10,12 @@ setfenv(1, VoiceOver)
 --
 --   Options.lua            General and sound-pack tabs of the options window
 --   UI/SettingsPanel.lua   the same settings on the interface-settings canvas
---   UI/DialogPlayButton.lua  Play/Stop button on quest and gossip windows
---   Compatibility.lua      Play/Stop button on the quest-log details panel
---   UI/ContributeButton.lua  Contribute button on quest and gossip windows
---   Contribute.lua         Contribute button tooltip
---   ReportButton.lua       the copy-link dialog for reporting a line
+--   UI/DialogPlayButton.lua  why the quest window did not read itself
+--   Compatibility.lua      Play/Stop, Contribute and Report on the quest-log details panel
 --   Player.lua             minimap menu entries and player settings link
+--
+-- What the gossip module shows too -- the windows' Listen and Contribute buttons, the Report
+-- action and its dialog -- is the dialogue core's, in Spoken's strings (DIALOGUE_*).
 --
 -- FORMAT ARGUMENTS ARE POSITIONAL (%1$s, %2$d), even where there is only one and
 -- the position is obvious. Word order is the thing a translator most often has to
@@ -163,19 +163,11 @@ L.OPT_DOWNLOAD = "Download"
 
 L.OPT_PLAY = "Play"
 -- The quest window's worded button, where a word has to say what it does.
-L.OPT_LISTEN = "Listen"
 L.OPT_PLAY_TIP = "Hear this quest read aloud."
 -- The window's Stop removes the line; the quest log's Stop (OPT_STOP_TIP) keeps it for Replay.
-L.OPT_DIALOG_STOP_TIP = "Stop reading"
-L.OPT_READ_TIP = "Read this aloud"
 L.OPT_GREETING = "Greeting"
 L.OPT_AUTOPLAY_OFF_TIP = "Read Automatically is turned off on the Quests page of the Spoken settings."
 L.OPT_CONTRIBUTE = "Contribute"
-L.OPT_REPORT = "Report"
-L.OPT_CONTRIBUTE_TIP_LINE = "Spoken Quests doesn't have this line"
-L.OPT_CONTRIBUTE_TIP_QUEST = "Spoken Quests doesn't have this quest"
-L.OPT_CONTRIBUTE_TIP_SHARE = "Contribute your data by sharing data from your client"
-L.OPT_REPORT_COPY = "Spoken Quests|n|nCopy this address and open it in your web browser."
 
 --------------------------------------------------------------------------------
 -- Minimap menu and player settings link
@@ -198,7 +190,5 @@ L.OPT_CANCEL = "Cancel"
 L.OPT_SECTION_EXTRAS = "Extras"
 
 L.OPT_SECTION_START_OVER = "Start Over"
-L.OPT_REPORT_LINE_TIP = "Get a link to report a wrong reading or a mispronounced name."
-L.OPT_REPORT_NO_LINE = "This client cannot tell which line that was, so there is no address to report."
 L.OPT_STOP_GOSSIP = "Stop Gossip"
 L.OPT_NEXT_GOSSIP = "Next Gossip"

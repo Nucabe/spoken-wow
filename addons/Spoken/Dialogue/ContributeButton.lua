@@ -1,5 +1,5 @@
-if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
+local L = SpokenEnv.L
 
 -- The Contribute button, on the Blizzard quest frame itself.
 --
@@ -128,7 +128,10 @@ function ContributeButton:Refresh()
     if not button then
         return
     end
-    if not Addon:IsPartOn() then
+    -- The module the window belongs to must be switched on: Quests for a quest, Gossip for what
+    -- an NPC says.
+    local questWindow = QuestPanelOnScreen()
+    if Spoken and Spoken.IsPartOn and not Spoken:IsPartOn(questWindow and "quests" or "gossip") then
         button:Hide()
         return
     end
@@ -139,7 +142,7 @@ function ContributeButton:Refresh()
     end
 
     local placed
-    if QuestPanelOnScreen() then
+    if questWindow then
         self.gossip = false
         placed = self:PositionAtCorner(_G.QuestFrame, CloseButtonOf(_G.QuestFrame, "QuestFrameCloseButton"))
     else
@@ -168,7 +171,7 @@ function ContributeButton:Setup()
     -- "Contribute", not "No voice -- contribute": the long form was the first thing a player
     -- said was wrong about this button, and it has to share a row with Blizzard's own controls.
     -- The books addon's button already says exactly this word, so the two now match.
-    button:SetText(L.OPT_CONTRIBUTE)
+    button:SetText(L.DIALOGUE_CONTRIBUTE)
     if button.SetFrameStrata then
         -- DIALOG rather than a verified match for QuestFrame's or GossipFrame's own strata --
         -- this file did not check what either actually is (neither Vanilla/QuestFrame.xml,

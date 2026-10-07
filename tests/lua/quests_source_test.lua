@@ -12,7 +12,8 @@ local QUESTS = here .. "/../../addons/Spoken_Quests/"
 local SPOKEN = here .. "/../../addons/Spoken/"
 local Expect, Failures = H.Expecter(print)
 
-local BOOK = [[Interface\AddOns\Spoken_Quests\Textures\Book]]
+-- The dialogue core's, shared with the gossip module (Present.lua).
+local BOOK = [[Interface\AddOns\Spoken\Textures\Book]]
 
 local lookup = {}
 for _, q in ipairs({ 101, 102, 103 }) do

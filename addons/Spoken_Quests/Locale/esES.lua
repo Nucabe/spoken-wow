@@ -98,22 +98,15 @@ L.OPT_PRINT_DIAG_TIP = "Muestra en el chat la versión del juego, la configuraci
 L.OPT_RESET_PROFILE = "Restablecer configuración de Misiones"
 L.OPT_RESET_PROFILE_TIP = "Devuelve todos los ajustes de esta página a su valor predeterminado, en el perfil en uso."
 L.OPT_PLAY = "Reproducir"
-L.OPT_DIALOG_STOP_TIP = "Dejar de leer"
-L.OPT_READ_TIP = "Leer esto en voz alta"
 L.OPT_GREETING = "Saludo"
 L.OPT_AUTOPLAY_OFF_TIP = "«Leer automáticamente» está desactivado en la página Misiones de la configuración de Spoken."
 L.OPT_CONTRIBUTE = "Contribuir"
-L.OPT_REPORT = "Informar"
-L.OPT_REPORT_COPY = "Spoken Quests|n|nCopia esta dirección y ábrela en tu navegador."
 L.OPT_MINIMAP_SETTINGS = "Configuración de Misiones"
 L.OPT_PACK_ALL = "Todas"
 L.OPT_PACK_ALLIANCE = "Alianza"
 L.OPT_PACK_HORDE = "Horda"
 L.OPT_PACK_SHARED = "Compartidas"
 L.OPT_PACK_GOSSIP = "Charlas"
-L.OPT_CONTRIBUTE_TIP_LINE = "Spoken Quests no tiene esta línea"
-L.OPT_CONTRIBUTE_TIP_QUEST = "Spoken Quests no tiene esta misión"
-L.OPT_CONTRIBUTE_TIP_SHARE = "Contribuye con tus datos compartiendo datos de tu cliente"
 
 -- Added in the settings, subtitles and Zone Lore release.
 
@@ -148,7 +141,6 @@ L.OPT_PACK_NOT_LOADED = "No cargado"
 L.OPT_DOWNLOAD = "Descargar"
 
 -- Quest window buttons
-L.OPT_LISTEN = "Escuchar"
 L.OPT_PLAY_TIP = "Escucha esta misión leída en voz alta."
 
 -- Fixing a problem
@@ -161,7 +153,5 @@ L.OPT_SECTION_START_OVER = "Empezar de cero"
 L.OPT_RESET_PROFILE_CONFIRM = "¿Restablecer todos los ajustes de Misiones del perfil en uso a su valor predeterminado?"
 L.OPT_RESET = "Restablecer"
 L.OPT_CANCEL = "Cancelar"
-L.OPT_REPORT_LINE_TIP = "Mala lectura, nombre mal pronunciado: esto te da un enlace para decirlo."
-L.OPT_REPORT_NO_LINE = "Este cliente no puede saber qué línea era, así que no hay ninguna dirección para informar."
 L.OPT_STOP_GOSSIP = "Detener la charla"
 L.OPT_NEXT_GOSSIP = "Siguiente charla"

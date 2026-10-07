@@ -1053,7 +1053,8 @@ end
 --- The dialogue core's files, in Dialogue/Dialogue.xml's order. Compat.lua is left out, as the
 --- quests addon's Compatibility.lua always was: its legacy script wrappers read the globals
 --- `this` and `event`, which this stub does not set. LoadQuestsOverlay loads both.
-local DIALOGUE_CORE = { "Environment", "Version", "Enums", "Utils", "Language", "Debug", "FuzzySearch", "DataModules" }
+local DIALOGUE_CORE = { "Environment", "Version", "Enums", "Utils", "Language", "Debug", "FuzzySearch", "DataModules",
+    "ReportButton", "Present", "PlayButton" }
 
 --- Load the Spoken player addon against this stub and return its private environment.
 --- Loads exactly what its addon.xml and then Contribute.xml list, in order (a Blizzard-client
@@ -1072,6 +1073,9 @@ function M.LoadSpoken(addonDirectory)
     for _, file in ipairs(DIALOGUE_CORE) do
         dofile(addonDirectory .. "Dialogue/" .. file .. ".lua")
     end
+    -- Its Contribute, listed by Contribute.xml as Spoken's own is. The button is loaded by the
+    -- tests that want it.
+    dofile(addonDirectory .. "Dialogue/Contribute.lua")
     local env = _G.SpokenEnv
     env.Addon:InitDB()
     -- The suites time the queue by each module's own gap; the player's pause between lines has
@@ -1208,8 +1212,7 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
-        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "ReportButton", "Player", "VoiceOver",
-        "Contribute" }) do
+        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "Player", "VoiceOver" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1232,8 +1235,7 @@ end
 --- returns is what this does.
 function M.LoadQuestsAlone(addonDirectory)
     local required = dofile(addonDirectory .. "PlayerRequired.lua")
-    for _, file in ipairs({ "Environment", "Strings", "EasterEggs", "ReportButton", "Player", "VoiceOver",
-        "Contribute" }) do
+    for _, file in ipairs({ "Environment", "Strings", "EasterEggs", "Player", "VoiceOver" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return required

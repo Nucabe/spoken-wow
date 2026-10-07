@@ -671,7 +671,9 @@ dofile(addons .. 'Spoken_Quests/Environment.lua')
 dofile(addons .. 'Spoken_Quests/Strings.lua')
 VoiceOver.Version=E.Version
 dofile(addons .. 'Spoken/Dialogue/Enums.lua')
-dofile(addons .. 'Spoken_Quests/Contribute.lua')
+dofile(addons .. 'Spoken/Dialogue/Contribute.lua')
+-- The speaker's portrait and the Report action Player.lua hands the player.
+dofile(addons .. 'Spoken/Dialogue/Present.lua')
 dofile(addons .. 'Spoken_Quests/Player.lua')
 local V=VoiceOver
 C_QuestLog={GetLogIndexForQuestID=function(id) return id==33 and 7 or nil end}
