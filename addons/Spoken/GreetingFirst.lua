@@ -6,14 +6,11 @@ setfenv(1, SpokenEnv)
 -- reads NPCs queues off that window (a source registered with `waitsForGreeting`: quests and
 -- gossip) wait until it is over.
 --
--- The client cannot say which sound is an NPC's voice. The way in is AstroOat's
--- (SpokenGreetingDelay, shared on Spoken's Discord): a sound played at no volume hands back a
--- handle number next to the greeting's, the handles around it are asked whether they are
--- playing, and one playing at exactly Master x Dialog volume is the voice. That needs the Dialog
--- slider at a level none of SFX, Music or Ambience is at, and below 100%: a sound on the Master
--- channel plays at Master x 1, as a voice does with Dialog at 100%. Where it is not, Spoken moves it 1%
--- (SetDialogApart), which cannot be heard. On a client without these calls, or for the one greeting
--- already playing as Dialog is moved, the line waits a fixed 1.5 seconds.
+-- The client cannot say which sound is an NPC's voice. A sound played at no volume hands back a
+-- handle number next to the greeting's, and of the handles around it, one playing at exactly
+-- Master x Dialog volume is the voice. That needs Dialog below 100% (a Master sound plays at
+-- Master x 1) and at a level none of SFX, Music or Ambience is at, so SetDialogApart moves it 1%.
+-- Without these calls, or for a greeting already playing as Dialog moves, the line waits 1.5s.
 GreetingFirst = {}
 
 local FALLBACK, END_GAP, POLL = 1.5, 0.05, 0.025
@@ -28,6 +25,7 @@ local WINDOWS = { "GossipFrame", "QuestFrame", "DUIQuestFrame", "ImmersionFrame"
 -- Where an NPC's window opens, and where it closes.
 local OPENS = { "GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE" }
 local CLOSES = { "GOSSIP_CLOSED", "QUEST_FINISHED" }
+local OTHER_CHANNELS = { "SFX", "Music", "Ambience" }
 
 local watch          -- the greeting being listened to, or nil
 local holdUntil = 0  -- the fixed wait, where there is nothing to listen with
@@ -51,6 +49,21 @@ local function Number(cvar)
     return tonumber(GetCVar(cvar))
 end
 
+--- Whether a Dialog level can't be told from other sounds: 100% is shared with every sound on the
+--- Master channel, and any other level with SFX, Music or Ambience at it.
+local function Shared(dialog)
+    if math.abs(dialog - 1) < 0.00001 then
+        return true
+    end
+    for _, channel in ipairs(OTHER_CHANNELS) do
+        local volume = Number("Sound_" .. channel .. "Volume")
+        if not volume or math.abs(volume - dialog) < 0.00001 then
+            return true
+        end
+    end
+    return false
+end
+
 -- The NPC whose window is open, and whether it is an object or an item, which say nothing. Asked
 -- of the dialogue core's Utils, which knows each client's way; the unit itself where it is absent.
 local function NPC()
@@ -72,14 +85,8 @@ local function VoiceVolume()
     if master == 0 or dialog == 0 or GetCVar("Sound_EnableAllSound") == "0" or GetCVar("Sound_EnableDialog") == "0" then
         return 0
     end
-    if math.abs(dialog - 1) < 0.00001 then
+    if Shared(dialog) then
         return nil
-    end
-    for _, channel in ipairs({ "SFX", "Music", "Ambience" }) do
-        local volume = Number("Sound_" .. channel .. "Volume")
-        if not volume or math.abs(volume - dialog) < 0.00001 then
-            return nil
-        end
     end
     return master * dialog
 end
@@ -90,22 +97,6 @@ end
 function GreetingFirst:SetDialogApart()
     local dialog = Number("Sound_DialogVolume")
     if not dialog or dialog <= 0 then
-        return false
-    end
-    local others = {}
-    for _, channel in ipairs({ "SFX", "Music", "Ambience" }) do
-        table.insert(others, Number("Sound_" .. channel .. "Volume"))
-    end
-    -- 100% is shared with every sound on the Master channel.
-    local function Shared(volume)
-        if math.abs(volume - 1) < 0.00001 then
-            return true
-        end
-        for _, other in ipairs(others) do
-            if math.abs(other - volume) < 0.00001 then
-                return true
-            end
-        end
         return false
     end
     if not Shared(dialog) then
@@ -146,6 +137,10 @@ local function Wait(seconds)
     Addon:ScheduleTimer(Retry, seconds)
 end
 
+local function Fallback(state, now)
+    return Wait(math.max(0, state.started + FALLBACK - now))
+end
+
 local function Done()
     watch = nil
     Retry()
@@ -156,21 +151,20 @@ local function Speaking(handle)
     return ok and playing == true
 end
 
-local Poll
-Poll = function(state)
+local function Poll(state)
     if watch ~= state then
         return
     end
     local now = GetTime()
     local expected = VoiceVolume()
     if not expected or now >= state.started + LONGEST then
-        return Wait(math.max(0, state.started + FALLBACK - now))
+        return Fallback(state, now)
     end
     if expected == 0 then
         return Done()
     end
     -- Spoken's own line, should another part's start meanwhile, is not the NPC.
-    local nowPlaying = Spoken:GetNowPlaying()
+    local nowPlaying = Spoken.GetNowPlaying and Spoken:GetNowPlaying()
     local own = nowPlaying and nowPlaying.handle
     local count = 0
     for handle in pairs(state.voices) do
@@ -188,24 +182,25 @@ Poll = function(state)
             local ok, volume = pcall(C_Sound.GetSoundScaledVolume, handle)
             if ok and type(volume) == "number" and math.abs(volume - expected) <= 0.000001 then
                 if count >= MOST_VOICES then
-                    return Wait(math.max(0, state.started + FALLBACK - now))
+                    return Fallback(state, now)
                 end
                 state.voices[handle] = true
                 count = count + 1
             end
         end
     end
-    if count > 0 then
-        state.heard = true
-    elseif not state.heard then
-        -- Silence and a voice not found look the same, so no voice found means the fixed wait.
-        if now >= state.started + DISCOVERY then
-            return Wait(math.max(0, state.started + FALLBACK - now))
+    if count == 0 then
+        -- A voice found and gone leaves lastEnd. Silence and a voice not found look the same, so
+        -- no voice found means the fixed wait.
+        if not state.lastEnd then
+            if now >= state.started + DISCOVERY then
+                return Fallback(state, now)
+            end
+        elseif now >= state.lastEnd + END_GAP then
+            return Done()
         end
-    elseif now >= state.lastEnd + END_GAP then
-        return Done()
     end
-    Addon:ScheduleTimer(function() Poll(state) end, POLL)
+    Addon:ScheduleTimer(Poll, POLL, state)
 end
 
 --- An NPC's window opened. The first window of a visit is where the NPC greets: Spoken's lines
@@ -237,12 +232,16 @@ function GreetingFirst:Open()
     }
     state.next = state.first
     watch = state
-    Addon:ScheduleTimer(function() Poll(state) end, POLL)
+    Addon:ScheduleTimer(Poll, POLL, state)
 end
 
 --- A window closed. Unless another opens at once (gossip turning into a quest), the visit is over
 --- and the NPC greets again next time.
 function GreetingFirst:Closed()
+    if not self:IsOn() then
+        visit = nil
+        return
+    end
     local before = opened
     Addon:ScheduleTimer(function()
         if opened ~= before then

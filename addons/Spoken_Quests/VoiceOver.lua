@@ -178,9 +178,26 @@ function Addon:InvokeQuestHandler(event, source, manual)
         Debug:Record("autoplay-off", format("Not reading %s: autoplay is off", event))
         return false
     end
+    -- Read while DialogueUI's window is still appearing, the voice would run ahead of the words
+    -- it marks, so autoplay waits for the window.
+    local bridge = not manual and rawget(VoiceOver, "DialogueUIBridge")
+    if bridge and bridge.Defer and bridge:Defer(event, function()
+        self:InvokeQuestHandler(event, source, manual)
+    end) then
+        Debug:Record("dialogueui-wait", format("Waiting for DialogueUI's window to read %s", event))
+        return true
+    end
 
     Debug:Record("quest-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
+    -- Where the lines this queues come from, for the debug log (Player:Enqueue keeps it on each).
+    Player.origin = Player:Origin(event, source, manual)
     local succeeded, errorMessage = pcall(handler, self, event, manual)
+    Player.origin = nil
+    -- The bridge keeps the page blank for this read's line; it shows the page at once if none came.
+    if bridge and bridge.Read then
+        local stage = Debug.runtime.stage
+        bridge:Read(event, succeeded and (stage == "queued" or stage == "queue-paused" or stage == "playing"))
+    end
     if not succeeded then
         Debug:Record("handler-error", format("%s failed: %s", event, tostring(errorMessage)))
         local errorHandler = geterrorhandler and geterrorhandler()
@@ -213,10 +230,13 @@ end
 
 --- The line the open dialog would read, resolved against the packs, or nil when no dialog
 --- is open or no pack has its line. Asked without reading anything. The second value is
---- the client event it stands for.
+--- the client event it stands for. A caller that already knows the event passes it: under
+--- DialogueUI the event is the only record of which panel is up, and DialogueUI hears it
+--- before this addon's recorder does.
+---@param event string?
 ---@return SoundData?, string?
-function Addon:GetVisibleLine()
-    local event = GetVisibleQuestEvent()
+function Addon:GetVisibleLine(event)
+    event = event or GetVisibleQuestEvent()
     local quest = event and QUEST_EVENTS[event]
     if not quest then
         return nil
@@ -269,12 +289,25 @@ local defaults = {
             VoiceLanguage = "auto",
             FallbackLanguage = "enUS",
         },
+        -- These do nothing without the DialogueUI addon.
+        DialogueUI = {
+            -- Typed out, lit, or both, by Spoken's Type Words Out and Highlight Words.
+            Captions = true,
+            AutoScroll = true,
+            -- Off by default: DialogueUI hides the rest of the interface on purpose, and its marked text
+            -- already shows the words.
+            ShowPlayer = false,
+            -- Shown whether or not DialogueUI's Text To Speech is on.
+            PlayButton = true,
+        },
         DebugEnabled = false,
     },
     char = {
         RecentQuestTitleToID = Version:IsBelowLegacyVersion(30300) and {},
     }
 }
+
+Addon.DialogueUIDefaults = defaults.profile.DialogueUI
 
 local currentQuestSoundData
 
@@ -318,6 +351,17 @@ function Addon:OnInitialize()
         Debug:Record("dialog-play-button-error", tostring(dialogPlayButtonError))
     end
 
+    -- Guarded: DialogueUI is someone else's addon, and a change there must not take narration
+    -- down with it.
+    local dialogueUIReady, dialogueUIError = pcall(function()
+        if DialogueUIBridge and DialogueUIBridge.Setup then
+            DialogueUIBridge:Setup()
+        end
+    end)
+    if not dialogueUIReady then
+        Debug:Record("dialogueui-error", tostring(dialogueUIError))
+    end
+
     -- The lines NPCs say after a quest. Guarded the same way: a failed hook here must not
     -- take quest narration down with it.
     local followupReady, followupError = pcall(function()
@@ -358,6 +402,7 @@ function Addon:OnInitialize()
     local function PollAutomaticQuest()
         local state = self.autoQuestState
         if DataModules:IsPending() then
+            Debug:Note("watcher", "pending", "quest watcher waits: the voice packs are still loading")
             return
         end
         if not self:IsAutoplayOn() then
@@ -365,6 +410,12 @@ function Addon:OnInitialize()
             -- dropped too, so turning autoplay back on does not replay a dialog long closed.
             questSnapshot = nil
             ResetCandidate(state)
+            -- Said once for each quest opened meanwhile, which is the question a player asks.
+            local open = GetQuestID and GetQuestID() or 0
+            if open and open ~= 0 then
+                Debug:Note("watcher", "off:" .. tostring(open),
+                    "quest %s open, not read: Read Automatically is off", tostring(open))
+            end
             return
         end
         local questCallSucceeded, questID = pcall(function()
@@ -817,22 +868,45 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
-    if not self:IsAutoplayOn() or DataModules:IsPending() or not Player.source
-        or not Spoken.MuteGameDialogueAhead then
+    if not Spoken.MuteGameDialogueAhead or not self:IsAutoplayOn() or DataModules:IsPending()
+        or not Player.source then
         return
     end
     if not QUEST_EVENTS[event] then
         return
     end
-    -- The quest ID can still be missing this early. Then the NPC is muted anyway: waiting for
-    -- the line let the first moment of its greeting through, and with no line coming the mute
-    -- lifts itself. Kept only where the quest is known and no pack holds it.
+    -- Silenced only where a pack reads the line; any other NPC keeps its greeting. A quest whose
+    -- ID is not known yet is muted too: its greeting starts now, and with no line the mute lifts.
+    -- Under Game Greeting First nothing is cut (Spoken's GreetingFirst.lua).
     local questID = QuestIDFor(event)
-    if questID and questID ~= 0
-        and not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
-        return
+    if not questID or questID == 0 or self:ExpectedLine(event) then
+        Spoken:MuteGameDialogueAhead(Player.source)
     end
-    Spoken:MuteGameDialogueAhead(Player.source)
+end
+
+--- The text autoplay will read for the quest window that just opened, or nil. Asked before the
+--- line is queued. `textIsCurrent` is the DialogueUI bridge's, and changes nothing for a quest.
+---@param event string
+---@param textIsCurrent boolean?
+---@return string?
+function Addon:ExpectedLine(event, textIsCurrent)
+    if not self:IsAutoplayOn() or DataModules:IsPending() or not Player.source then
+        return nil
+    end
+    local quest = QUEST_EVENTS[event]
+    if not quest then
+        return nil
+    end
+    -- The quest ID can still be the previous quest's this early; the worst that costs is one
+    -- greeting muted for nothing, or one cut off as it was before.
+    local questID = QuestIDFor(event)
+    if not questID or questID == 0 then
+        return nil
+    end
+    if not DataModules:PrepareSound({ event = quest.sound, questID = questID }) then
+        return nil
+    end
+    return quest.text() or ""
 end
 
 function Addon:QUEST_FINISHED()

@@ -475,18 +475,22 @@ function Addon:ShouldPlayGossip(guid, text, manual)
     local gossipSeenForNPC = self.db.char.hasSeenGossipForNPC[npcKey]
     local frequency = self.db.profile.Audio.GossipFrequency
 
+    -- Asked again for the same NPC while its window stays open; the log says it once.
     if frequency == Enums.GossipFrequency.OncePerQuestNPC then
         local numActiveQuests = GetNumGossipActiveQuests()
         local numAvailableQuests = GetNumGossipAvailableQuests()
         local npcHasQuests = (numActiveQuests > 0 or numAvailableQuests > 0)
         if npcHasQuests and gossipSeenForNPC then
+            Debug:Note("gossip", npcKey .. ":quest-npc", "greeting of %s not read: an NPC with quests, heard before (NPC Greetings: once per quest NPC)", npcKey)
             return
         end
     elseif frequency == Enums.GossipFrequency.OncePerNPC then
         if gossipSeenForNPC then
+            Debug:Note("gossip", npcKey .. ":once", "greeting of %s not read: heard before (NPC Greetings: once per NPC)", npcKey)
             return
         end
     elseif frequency == Enums.GossipFrequency.Never then
+        Debug:Note("gossip", "never", "greetings not read: NPC Greetings is set to never")
         return
     end
 

@@ -13,9 +13,11 @@
     <Include file="Locale\Names\Names.xml"/>
     <Include file="UI\Layout.lua"/>
     <Include file="Options.lua"/>
+    <Include file="Developer.lua"/>
     <Include file="UI\SettingsPanel.lua"/>
     <Include file="QuestOverlayUI.lua"/>
     <Include file="UI\DialogPlayButton.lua"/>
+    <Include file="UI\DialogueUIBridge.lua"/>
     <Include file="EasterEggs.lua"/>
     <Include file="Player.lua"/>
     <Include file="VoiceOver.lua"/>
