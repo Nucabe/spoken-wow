@@ -162,46 +162,9 @@ local function GetVisibleQuestEvent()
     return lastQuestEvent
 end
 
--- The Forever client's gamepad UI takes over every popup as it opens, inside the code that
--- opened it. Opened by an addon, that taints the gamepad's bindings: the next close is blocked,
--- and the "blocked from an action" dialog it raises hangs the client (#165). What this addon
--- would pop up unasked goes to chat there instead. pcall, because 1.12 raises on a CVar it has
--- never heard of.
-local function IsGamepadUI()
-    local ok, style = pcall(GetCVar, "InputDeviceInterfaceStyle")
-    return ok and style == "1"
-end
-
-local function Say(text)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffSpoken Quests:|r " .. text)
-end
-
+--- The dialogue core's, which loads the packs (DataModules:Start).
 function Addon:ShowMissingDataModulePopup()
-    if DataModules:HasRegisteredModules() then
-        return
-    end
-
-    local loadDetails = {}
-    for _, module in DataModules:GetPresentModules() do
-        local reason = DataModules:GetModuleLoadError(module.AddonName)
-        if reason then
-            table.insert(loadDetails, format("%s: %s", module.AddonName, reason))
-        end
-    end
-    local details = next(loadDetails) and ("|n|nDetected but not loaded:|n" .. table.concat(loadDetails, "|n")) or ""
-    local text = [[No usable sound packs were loaded.|n|nKeep a sound pack installed beside this addon - "Spoken Quests Audio", or the older "AI_VoiceOverData_Vanilla". Run "/spq diagnostics" for details.]] .. details
-    if IsGamepadUI() then
-        Say(text)
-        return
-    end
-    StaticPopupDialogs["VOICEOVER_NO_REGISTERED_DATA_MODULES"] =
-    {
-        text = "Spoken Quests|n|n" .. text,
-        button1 = OKAY,
-        timeout = 0,
-        whileDead = 1,
-    }
-    StaticPopup_Show("VOICEOVER_NO_REGISTERED_DATA_MODULES")
+    return DataModules:ShowMissingPopup()
 end
 
 --- Every read goes through here, automatic or not. `manual` is a player asking for this
@@ -413,45 +376,9 @@ function Addon:OnInitialize()
         Debug:Record("followup-error", tostring(followupError))
     end
 
-    -- Discover data packs now, but load their multi-megabyte generated Lua
-    -- tables after entering the world. Keeping LoadAddOn out of AceAddon's
-    -- shared initialization/login stack avoids Hardcore's stricter script
-    -- time budget being charged to AceAddon-3.0.
-    DataModules:EnumerateAddons(false)
-    self.dataModulesPending = not DataModules:HasRegisteredModules()
-    local function LoadDeferredDataModules()
-        if not self.dataModulesPending then
-            return
-        end
-        local succeeded, loadError = pcall(DataModules.LoadPresentModules, DataModules)
-        self.dataModulesPending = nil
-        if not succeeded then
-            self.dataModulesDeferredError = tostring(loadError)
-            Debug:Record("data-load-error", self.dataModulesDeferredError)
-        elseif DataModules:HasRegisteredModules() then
-            Debug:Record("data-ready", "Deferred sound packs finished loading")
-        end
-        self:ShowMissingDataModulePopup()
-    end
-    local function ScheduleDeferredDataLoad()
-        if C_Timer and C_Timer.After then
-            C_Timer.After(1, LoadDeferredDataModules)
-        else
-            self:ScheduleTimer(LoadDeferredDataModules, 1)
-        end
-    end
-    if self.dataModulesPending then
-        if IsLoggedIn and IsLoggedIn() then
-            ScheduleDeferredDataLoad()
-        else
-            self.dataLoaderFrame = CreateFrame("Frame")
-            self.dataLoaderFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-            self.dataLoaderFrame:SetScript("OnEvent", function(frame)
-                frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
-                ScheduleDeferredDataLoad()
-            end)
-        end
-    end
+    -- The packs are the dialogue core's to find and load, whichever module that reads NPCs
+    -- starts first (DataModules:Start). Its settings list them once they are found.
+    DataModules:Start()
     local optionsSucceeded, optionsError = pcall(Options.Initialize, Options)
     if not optionsSucceeded then
         self.optionsInitializationError = tostring(optionsError)
@@ -477,7 +404,7 @@ function Addon:OnInitialize()
 
     local function PollAutomaticQuest()
         local state = self.autoQuestState
-        if self.dataModulesPending then
+        if DataModules:IsPending() then
             return
         end
         if not self:IsAutoplayOn() then
@@ -1044,7 +971,7 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
-    if not self:IsAutoplayOn() or self.dataModulesPending or not Player.source
+    if not self:IsAutoplayOn() or DataModules:IsPending() or not Player.source
         or not Spoken.MuteGameDialogueAhead then
         return
     end

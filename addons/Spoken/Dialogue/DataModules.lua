@@ -297,12 +297,6 @@ function DataModules:EnumerateAddons(loadModules)
     end
 
     table.sort(self.presentModulesOrdered, SortModules)
-    local options = rawget(ENV, "Options")
-    if options then
-        for order, module in self:GetPresentModules() do
-            options:AddDataModule(module, order)
-        end
-    end
 
     -- A player with no pack at all is offered every one of them and picks; a player who has
     -- one is offered only updates to what they installed. Before the pack was split there was
@@ -310,17 +304,25 @@ function DataModules:EnumerateAddons(loadModules)
     -- are absent from any sensible install, and advertising those is nagging.
     local hasAnyPack = next(self.presentModules) ~= nil
 
+    self.offeredModules = {}
     for order, module in self:GetAvailableModules() do
         local min = module.RelevantAboveVersion
         local max = module.RelevantBelowVersion
         if (not min or Version.Interface >= min) and (not max or Version.Interface < max) then
             local present = self.presentModules[module.AddonName]
             local update = present and DataModules:IsOlderContent(present.ContentVersion, module.ContentVersion)
-            if options and ((not present and not hasAnyPack) or update) then
-                options:AddAvailableDataModule(module, order, update)
+            if (not present and not hasAnyPack) or update then
+                table.insert(self.offeredModules, { module = module, order = order, update = update })
             end
         end
     end
+end
+
+--- The packs to offer the player, as EnumerateAddons found them: each `{ module, order, update }`,
+--- `update` where an older one is installed. A module's settings list them as they are built,
+--- so it does not matter which module started the enumeration.
+function DataModules:GetOfferedModules()
+    return ipairs(self.offeredModules or {})
 end
 
 --- Whether an installed pack's version is older than the one this addon knows of. Older, not
@@ -779,5 +781,103 @@ function DataModules:AddPlayerGenderToFilename(fileName)
         return "f-" .. fileName
     else                          -- unknown or error
         return fileName
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Startup, for every module that reads NPCs
+--------------------------------------------------------------------------------
+
+-- Each module that reads NPCs (quests, gossip) calls Start as it initializes; the first does the
+-- work, so either finds the packs loaded with the other switched off or not installed.
+local started
+
+local function After(seconds, fn)
+    if C_Timer and C_Timer.After then
+        C_Timer.After(seconds, fn)
+    else
+        SpokenEnv.Addon:ScheduleTimer(fn, seconds)
+    end
+end
+
+-- The Forever client's gamepad UI takes over every popup as it opens, inside the code that
+-- opened it. Opened by an addon, that taints the gamepad's bindings: the next close is blocked,
+-- and the "blocked from an action" dialog it raises hangs the client (#165). What this would pop
+-- up unasked goes to chat there instead. pcall, because 1.12 raises on a CVar it has never heard of.
+local function IsGamepadUI()
+    local ok, style = pcall(GetCVar, "InputDeviceInterfaceStyle")
+    return ok and style == "1"
+end
+
+--- Say so when no pack loaded, with what was found and why it did not load.
+function DataModules:ShowMissingPopup()
+    if self:HasRegisteredModules() then
+        return
+    end
+
+    local loadDetails = {}
+    for _, module in self:GetPresentModules() do
+        local reason = self:GetModuleLoadError(module.AddonName)
+        if reason then
+            table.insert(loadDetails, format("%s: %s", module.AddonName, reason))
+        end
+    end
+    local details = next(loadDetails) and ("|n|nDetected but not loaded:|n" .. table.concat(loadDetails, "|n")) or ""
+    local text = [[No usable sound packs were loaded.|n|nKeep a sound pack installed beside this addon - "Spoken Quests Audio", or the older "AI_VoiceOverData_Vanilla". Run "/spq diagnostics" for details.]] .. details
+    if IsGamepadUI() then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffSpoken:|r " .. text)
+        return
+    end
+    StaticPopupDialogs["VOICEOVER_NO_REGISTERED_DATA_MODULES"] =
+    {
+        text = "Spoken|n|n" .. text,
+        button1 = OKAY,
+        timeout = 0,
+        whileDead = 1,
+    }
+    StaticPopup_Show("VOICEOVER_NO_REGISTERED_DATA_MODULES")
+end
+
+--- Whether the packs found at login are still to be loaded: nothing can be read until they are.
+function DataModules:IsPending()
+    return self.pending == true
+end
+
+--- Find the packs now, and load their multi-megabyte generated Lua tables a second after
+--- entering the world. Keeping LoadAddOn out of the addons' shared initialization/login stack
+--- avoids Hardcore's stricter script time budget being charged to it.
+function DataModules:Start()
+    if started then
+        return
+    end
+    started = true
+    self:EnumerateAddons(false)
+    self.pending = not self:HasRegisteredModules() or nil
+    if not self.pending then
+        return
+    end
+    local function Load()
+        if not self.pending then
+            return
+        end
+        local succeeded, loadError = pcall(self.LoadPresentModules, self)
+        self.pending = nil
+        if not succeeded then
+            self.loadError = tostring(loadError)
+            Debug:Record("data-load-error", self.loadError)
+        elseif self:HasRegisteredModules() then
+            Debug:Record("data-ready", "Deferred sound packs finished loading")
+        end
+        self:ShowMissingPopup()
+    end
+    if IsLoggedIn and IsLoggedIn() then
+        After(1, Load)
+    else
+        local frame = CreateFrame("Frame")
+        frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+        frame:SetScript("OnEvent", function()
+            frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
+            After(1, Load)
+        end)
     end
 end

@@ -467,10 +467,10 @@ function Options:PrintDiagnostics()
             if Addon.optionsInitializationError then
                 print("Options startup warning: " .. Addon.optionsInitializationError)
             end
-            if Addon.dataModulesPending then
+            if DataModules:IsPending() then
                 print("Data startup: loading is deferred until one second after entering the world")
-            elseif Addon.dataModulesDeferredError then
-                print("Data startup warning: " .. Addon.dataModulesDeferredError)
+            elseif DataModules.loadError then
+                print("Data startup warning: " .. DataModules.loadError)
             end
             if Options.initializationErrors then
                 for _, warning in ipairs(Options.initializationErrors) do
@@ -481,6 +481,13 @@ end
 
 function Options:Initialize()
     self.initializationErrors = {}
+    -- The packs the dialogue core found, whichever module started it.
+    for order, module in DataModules:GetPresentModules() do
+        pcall(self.AddDataModule, self, module, order)
+    end
+    for _, offered in DataModules:GetOfferedModules() do
+        pcall(self.AddAvailableDataModule, self, offered.module, offered.order, offered.update)
+    end
     local function RunOptionalStep(name, callback)
         local succeeded, result = pcall(callback)
         if succeeded then
