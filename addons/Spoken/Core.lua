@@ -48,6 +48,9 @@ Defaults = {
             -- clip is the one being talked over. Not on clients without the channel, where
             -- Compat.lua interrupts the bark a different way.
             AutoToggleDialog = (Version.IsLegacyVanilla or Version:IsRetailOrAboveLegacyVersion(60100)) or false,
+            -- On, an NPC's own greeting is heard and the lines read off its window wait for it
+            -- (GreetingFirst.lua); off, Silence NPC Voices cuts it where a pack has one.
+            GreetingFirst = false,
             -- The other channels turned down while a line is spoken (OtherSounds.lua), each to
             -- this share of the player's own volume, for the length of a line. Not on the legacy
             -- clients, where speech itself goes out on the music channel.

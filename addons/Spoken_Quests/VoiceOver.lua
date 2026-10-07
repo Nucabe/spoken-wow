@@ -328,9 +328,6 @@ local defaults = {
             -- live here. They describe how anything is played rather than what this addon
             -- reads, so they are Spoken's settings now.
             StopAudioOnDisengage = false,
-            -- On, the NPC's own greeting is heard and what Spoken reads waits for it
-            -- (GreetingFirst.lua); off, Silence NPC Voices cuts it where a pack has one.
-            GreetingFirst = false,
             -- Off, no quest dialog, greeting or gossip reads itself: nothing plays until
             -- the Play button on the window is pressed (UI/DialogPlayButton.lua) or
             -- /spq read is typed. GossipFrequency then has nothing to decide.
@@ -373,7 +370,6 @@ function Addon:OnInitialize()
     }
 
     Player:Setup()
-    GreetingFirst:Setup()
     -- The copy-link popup behind the Report button. Guarded because a failure to build a
     -- dialog must not stop playback initializing.
     local reportButtonReady, reportButtonError = pcall(ReportButton.Initialize, ReportButton)
@@ -1053,11 +1049,6 @@ function Addon:MuteGreetingAhead(event)
         return
     end
     if not (event == "GOSSIP_SHOW" or event == "QUEST_GREETING" or QUEST_EVENTS[event]) then
-        return
-    end
-    -- Game Greeting First: nothing is cut, and the line waits for the greeting instead.
-    if GreetingFirst:IsOn() then
-        GreetingFirst:Open()
         return
     end
     if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then

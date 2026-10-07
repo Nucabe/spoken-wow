@@ -1063,7 +1063,7 @@ function M.LoadSpoken(addonDirectory)
         "UI/MinimalPlayer", "UI/MinimapButton",
         -- Real LibDeflate, not a hand-faked stub library: Contribute:Encode's round trip through
         -- actual compression is the point of testing it at all.
-        "UI/Options", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
+        "UI/Options", "UI/Welcome", "GreetingFirst", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     -- The dialogue core the quests module runs in (Dialogue/Dialogue.xml).
@@ -1206,8 +1206,8 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
-        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "ReportButton", "Player", "GreetingFirst",
-        "VoiceOver", "Contribute" }) do
+        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "ReportButton", "Player", "VoiceOver",
+        "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1229,8 +1229,8 @@ end
 --- returns is what this does.
 function M.LoadQuestsAlone(addonDirectory)
     local required = dofile(addonDirectory .. "PlayerRequired.lua")
-    for _, file in ipairs({ "Environment", "Strings", "EasterEggs", "ReportButton", "Player", "GreetingFirst",
-        "VoiceOver", "Contribute" }) do
+    for _, file in ipairs({ "Environment", "Strings", "EasterEggs", "ReportButton", "Player", "VoiceOver",
+        "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return required

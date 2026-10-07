@@ -204,10 +204,9 @@ function Player:Prepare(soundData)
     soundData.path = soundData.filePath
     soundData.priority = gossip and "low" or "normal"
     -- Read while the NPC's window is open: its voice is cut as the line starts, not faded, so
-    -- none of its greeting is heard under the line.
-    -- With Game Greeting First the NPC has had its say, so it is faded rather than cut, should the
-    -- wait for its greeting have been too short.
-    soundData.cutsGameDialogue = not (GreetingFirst and GreetingFirst:IsOn())
+    -- none of its greeting is heard under the line (faded instead under Game Greeting First,
+    -- SoundQueue.lua).
+    soundData.cutsGameDialogue = true
     soundData.present = {
         header = soundData.name or "",
         label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
@@ -331,6 +330,9 @@ function Player:Setup()
         interClipGap = 0.55,
         -- Play-and-stop the file before admitting it, as the queue always did here.
         testBeforeQueue = true,
+        -- Read off an NPC's window: under Game Greeting First its lines wait for the NPC's own
+        -- greeting (Spoken's GreetingFirst.lua).
+        waitsForGreeting = true,
         -- Its settings follow the profile chosen in Spoken's own settings.
         profiles = function() return Addon.db end,
         -- What Spoken's settings show on this part's card: which voice packs are installed.

@@ -1,10 +1,10 @@
-if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
-setfenv(1, VoiceOver)
+setfenv(1, SpokenEnv)
 
 -- Game Greeting First (Audio.GreetingFirst, off by default). Off, Silence NPC Voices cuts the
--- NPC's own greeting as its window opens where a pack reads one (Addon:MuteGreetingAhead). On,
--- nothing is cut as the window opens: the NPC says its greeting, and what Spoken reads off that
--- window, the pack's greeting or the quest, waits until it is over.
+-- NPC's own greeting as its window opens where a pack reads one (Spoken:MuteGameDialogueAhead).
+-- On, nothing is cut as the window opens: the NPC says its greeting, and the lines a source that
+-- reads NPCs queues off that window (a source registered with `waitsForGreeting`: quests and
+-- gossip) wait until it is over.
 --
 -- The client cannot say which sound is an NPC's voice. The way in is AstroOat's
 -- (SpokenGreetingDelay, shared on Spoken's Discord): a sound played at no volume hands back a
@@ -25,6 +25,9 @@ local RADIUS, BUDGET, MOST_VOICES = 128, 64, 32
 -- A checkbox click, played at no volume and stopped at once.
 local MARKER_KIT = 856
 local WINDOWS = { "GossipFrame", "QuestFrame", "DUIQuestFrame", "ImmersionFrame" }
+-- Where an NPC's window opens, and where it closes.
+local OPENS = { "GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE" }
+local CLOSES = { "GOSSIP_CLOSED", "QUEST_FINISHED" }
 
 local watch          -- the greeting being listened to, or nil
 local holdUntil = 0  -- the fixed wait, where there is nothing to listen with
@@ -41,13 +44,22 @@ end
 
 local function Retry()
     -- Held lines are otherwise retried once a second.
-    if Player.source and Player.source.Retry then
-        Player.source:Retry()
-    end
+    SoundQueue:Advance()
 end
 
 local function Number(cvar)
     return tonumber(GetCVar(cvar))
+end
+
+-- The NPC whose window is open, and whether it is an object or an item, which say nothing. Asked
+-- of the dialogue core's Utils, which knows each client's way; the unit itself where it is absent.
+local function NPC()
+    local core = rawget(_G, "VoiceOver")
+    local utils = core and rawget(core, "SpokenDialogue") and core.Utils
+    if utils then
+        return utils:GetNPCGUID() or utils:GetNPCName(), utils:IsNPCObjectOrItem()
+    end
+    return (UnitGUID and UnitGUID("npc")) or UnitName("npc"), false
 end
 
 --- The volume an NPC's voice plays at: nil where it cannot be told from other sounds, 0 where
@@ -158,7 +170,7 @@ Poll = function(state)
         return Done()
     end
     -- Spoken's own line, should another part's start meanwhile, is not the NPC.
-    local nowPlaying = Spoken.GetNowPlaying and Spoken:GetNowPlaying()
+    local nowPlaying = Spoken:GetNowPlaying()
     local own = nowPlaying and nowPlaying.handle
     local count = 0
     for handle in pairs(state.voices) do
@@ -200,14 +212,14 @@ end
 --- wait for that greeting. The windows after it, a quest picked from the gossip, do not.
 function GreetingFirst:Open()
     opened = opened + 1
-    local npc = Utils:GetNPCGUID() or Utils:GetNPCName()
+    local npc, silent = NPC()
     if visit and visit == npc then
         return
     end
     visit = npc
     -- An object or an item says nothing; and while Spoken speaks the NPC is silenced anyway, or
     -- talks over a line the new one queues behind.
-    if Utils:IsNPCObjectOrItem() or Spoken:IsPlaying() then
+    if silent or Spoken:IsPlaying() then
         return
     end
     self:SetDialogApart()
@@ -246,22 +258,36 @@ function GreetingFirst:Closed()
     end, 0.1)
 end
 
-function GreetingFirst:Setup()
-    if self.ready or not Player.source then
-        return
+-- Only the lines of a source that reads NPCs wait; a book or a zone's story does not.
+SoundQueue:AddGate(function(clip)
+    if clip.source and clip.source.waitsForGreeting and GreetingFirst:IsWaiting() then
+        return L.QUEUE_HELD_GREETING
     end
-    self.ready = true
-    Player.source:AddGate(function()
-        if GreetingFirst:IsWaiting() then
-            return L.QUEUE_HELD_GREETING
-        end
-    end)
-    local frame = CreateFrame("Frame")
-    for _, event in ipairs({ "GOSSIP_CLOSED", "QUEST_FINISHED" }) do
-        pcall(frame.RegisterEvent, frame, event)
-    end
-    frame:SetScript("OnEvent", function() GreetingFirst:Closed() end)
-    if self:IsOn() then
-        self:SetDialogApart()
-    end
+end)
+
+local events = CreateFrame("Frame")
+for _, name in ipairs(OPENS) do
+    pcall(events.RegisterEvent, events, name)
 end
+for _, name in ipairs(CLOSES) do
+    pcall(events.RegisterEvent, events, name)
+end
+events:RegisterEvent("PLAYER_ENTERING_WORLD")
+local closes = {}
+for _, name in ipairs(CLOSES) do
+    closes[name] = true
+end
+events:SetScript("OnEvent", function(_, ev)
+    ev = ev or event
+    if ev == "PLAYER_ENTERING_WORLD" then
+        -- Apart before the first greeting: it starts before Spoken hears of the window.
+        events:UnregisterEvent("PLAYER_ENTERING_WORLD")
+        if GreetingFirst:IsOn() then
+            GreetingFirst:SetDialogApart()
+        end
+    elseif closes[ev] then
+        GreetingFirst:Closed()
+    elseif GreetingFirst:IsOn() then
+        GreetingFirst:Open()
+    end
+end)

@@ -25,6 +25,7 @@
     <Include file="UI\MinimapButton.lua"/>
     <Include file="UI\Options.lua"/>
     <Include file="UI\Welcome.lua"/>
+    <Include file="GreetingFirst.lua"/>
     <Include file="API.lua"/>
 
     <Include file="Compat.lua"/>
