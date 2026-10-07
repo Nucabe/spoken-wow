@@ -45,7 +45,8 @@ local PARTS = {
     { key = "quests", label = L.OPT_PART_QUESTS, text = L.OPT_PART_QUESTS_TEXT, tip = L.OPT_PART_QUESTS_TIP,
         icon = [[Interface\Icons\INV_Scroll_03]], order = 1 },
     { key = "gossip", label = L.OPT_PART_GOSSIP, text = L.OPT_PART_GOSSIP_TEXT, tip = L.OPT_PART_GOSSIP_TIP,
-        icon = [[Interface\Icons\Ability_Warrior_BattleShout]], order = 2 },
+        -- The game's own, from the gossip window: not a bordered item icon, so kept whole.
+        icon = [[Interface\GossipFrame\GossipGossipIcon]], whole = true, order = 2 },
     { key = "books", label = L.OPT_PART_BOOKS, text = L.OPT_PART_BOOKS_TEXT, tip = L.OPT_PART_BOOKS_TIP,
         icon = [[Interface\Icons\INV_Misc_Book_09]], order = 3 },
     { key = "zones", label = L.OPT_PART_ZONES, text = L.OPT_PART_ZONES_TEXT, tip = L.OPT_PART_ZONES_TIP,
@@ -188,6 +189,16 @@ local pendingPages = {}
 
 -- The same parts and ways of showing lines, drawn the same way, in the welcome window.
 Options.PARTS, Options.SKETCHES = PARTS, SKETCHES
+
+--- The cards trim the border the game's item icons have; a part whose icon has none (`whole`)
+--- keeps all of it. `built` is the cards as Layout:Cards made them, in PARTS' order.
+function Options:WholeIcons(built)
+    for index, part in ipairs(PARTS) do
+        local card = built and built[index]
+        if part.whole and card and card.icon then card.icon:SetTexCoord(0, 1, 0, 1) end
+    end
+    return built
+end
 Options.STYLE_LABELS, Options.STYLE_TEXTS, Options.STYLE_TIPS = STYLE_LABELS, STYLE_TEXTS, STYLE_TIPS
 
 --- The ways of showing lines this client can offer, in the order they are listed: the narrator
@@ -285,7 +296,7 @@ local function Build(canvas)
             Requires(row, function() return Sources:Get(key) ~= nil end, L.REASON_NOT_INSTALLED)
         end
     end
-    if canvas then layout:Cards(cards) end
+    if canvas then Options:WholeIcons(layout:Cards(cards)) end
     -- An addon outside the three that speaks through the player still gets its switch.
     for key, source in Sources:Iterate() do
         if not known[key] then

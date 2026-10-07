@@ -11,7 +11,8 @@ SettingsPanel = {}
 local INDENT = 25
 -- Where a problem that is not about one line is reported: the site the addons share.
 local REPORT_URL = "https://spoken.rusty.one"
-local ICON = [[Interface\Icons\Ability_Warrior_BattleShout]]
+-- The game's own, from the gossip window.
+local ICON = [[Interface\GossipFrame\GossipGossipIcon]]
 local panel, category
 
 -- The enum is stored as a number and read as a name. Ordered, because a cycle button
