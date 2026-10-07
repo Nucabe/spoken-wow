@@ -53,7 +53,7 @@ end
 local lastQuestEvent
 
 -- Defined with the handlers below, and asked by functions above them.
-local ResolveQuestID, NoteGossipPage
+local ResolveQuestID
 
 -- The quest globals as they stood when the client fired a quest event. An addon that
 -- accepts or turns in the quest from its own handler - Leatrix Plus, and the auto-turn-in
@@ -141,8 +141,6 @@ local function GetVisibleQuestEvent()
         return "QUEST_PROGRESS"
     elseif IsFrameVisible(QuestFrameDetailPanel) then
         return "QUEST_DETAIL"
-    elseif IsFrameVisible(QuestFrameGreetingPanel) then
-        return "QUEST_GREETING"
     end
 
     local questID = GetQuestID and GetQuestID()
@@ -169,7 +167,7 @@ end
 
 --- Every read goes through here, automatic or not. `manual` is a player asking for this
 --- line - the Play button, /spq read - rather than the client reporting a dialog, so it reads
---- whatever autoplay and the greeting frequency say.
+--- whatever autoplay says.
 function Addon:InvokeQuestHandler(event, source, manual)
     local handler = self[event]
     if not handler then
@@ -213,52 +211,22 @@ function Addon:SetAutoplay(on)
     end
 end
 
---- The quest panels and the gossip frame, in the priority GetVisibleQuestEvent gives them.
---- Gossip is last because it is the one a quest dialog replaces.
-local function GetVisibleDialogueEvent()
-    local event = GetVisibleQuestEvent()
-    if not event and IsFrameVisible(GossipFrame) then
-        event = "GOSSIP_SHOW"
-    end
-    return event
-end
-
-local SPEECH_EVENTS = {
-    QUEST_GREETING = { sound = Enums.SoundEvent.QuestGreeting, text = function() return GetGreetingText() end },
-    GOSSIP_SHOW = { sound = Enums.SoundEvent.Gossip, text = function() return GetGossipText() end },
-}
-
 --- The line the open dialog would read, resolved against the packs, or nil when no dialog
 --- is open or no pack has its line. Asked without reading anything. The second value is
 --- the client event it stands for.
 ---@return SoundData?, string?
 function Addon:GetVisibleLine()
-    local event = GetVisibleDialogueEvent()
+    local event = GetVisibleQuestEvent()
     local quest = event and QUEST_EVENTS[event]
-    local speech = event and SPEECH_EVENTS[event]
-    local probe
-    if quest then
-        local questID = ResolveQuestID(quest.source, QuestIDFor(event),
-            GetTitleText and GetTitleText() or "", Utils:GetNPCName() or "", quest.text(), true)
-        if not questID then
-            return nil
-        end
-        probe = { event = quest.sound, questID = questID }
-    elseif speech then
-        local guid, name = Utils:GetNPCGUID(), Utils:GetNPCName()
-        if not guid and not name then
-            return nil
-        end
-        probe = {
-            event = speech.sound,
-            name = name,
-            text = speech.text() or "",
-            unitGUID = guid,
-            unitIsObjectOrItem = Utils:IsNPCObjectOrItem(),
-        }
-    else
+    if not quest then
         return nil
     end
+    local questID = ResolveQuestID(quest.source, QuestIDFor(event),
+        GetTitleText and GetTitleText() or "", Utils:GetNPCName() or "", quest.text(), true)
+    if not questID then
+        return nil
+    end
+    local probe = { event = quest.sound, questID = questID }
     if not DataModules:PrepareSound(probe) then
         return nil
     end
@@ -267,9 +235,9 @@ end
 
 --- Read the dialog on screen because the player asked to.
 function Addon:ReadVisibleQuest(source)
-    local event = GetVisibleDialogueEvent()
+    local event = GetVisibleQuestEvent()
     if not event then
-        Debug:Record("visible-panel-missing", "GetQuestID returned 0 and no Blizzard quest or gossip panel is visible")
+        Debug:Record("visible-panel-missing", "GetQuestID returned 0 and no Blizzard quest panel is visible")
         return false
     end
     return self:InvokeQuestHandler(event, source or "visible quest reader", true)
@@ -281,21 +249,16 @@ local defaults = {
         -- The frame, the minimap button, the sound channel's legacy music-channel
         -- workaround and the paused flag are the Spoken player's settings now.
         Audio = {
-            -- Once per NPC rather than once per quest NPC, which upstream defaulted to:
-            -- that setting only silences a repeat where the NPC has a quest, so every
-            -- innkeeper, vendor and flight master said the same line on every visit --
-            -- the greeting a player hears most often is exactly the one it did not
-            -- remember. A profile that stored a choice of its own keeps it.
-            GossipFrequency = Enums.GossipFrequency.OncePerNPC,
+            -- What NPCs say and how often is the gossip module's now; it took this addon's
+            -- settings for it over on its first login (Spoken_Gossip's TakeOverFromQuests).
             -- The sound channel and the muting of the client's own NPC dialogue used to
             -- live here. They describe how anything is played rather than what this addon
             -- reads, so they are Spoken's settings now.
             StopAudioOnDisengage = false,
-            -- Off, no quest dialog, greeting or gossip reads itself: nothing plays until
+            -- Off, no quest dialog reads itself: nothing plays until
             -- the Play button on the window is pressed (UI/DialogPlayButton.lua) or
-            -- /spq read is typed. GossipFrequency then has nothing to decide.
+            -- /spq read is typed.
             Autoplay = true,
-            OGThrall = false,
             -- What NPCs say in chat after this player accepts or turns in a quest
             -- (Followup.lua). Autoplay off silences these too: they read themselves.
             FollowupLines = true,
@@ -309,15 +272,11 @@ local defaults = {
         DebugEnabled = false,
     },
     char = {
-        hasSeenGossipForNPC = {},
         RecentQuestTitleToID = Version:IsBelowLegacyVersion(30300) and {},
     }
 }
 
-local lastGossipOptions
-local selectedGossipOption
 local currentQuestSoundData
-local currentGossipSoundData
 
 function Addon:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("SpokenQuestsSettings", defaults)
@@ -554,11 +513,9 @@ function Addon:OnInitialize()
     -- On a legacy client the race does not exist, the watcher does not run, and these
     -- events are the only route to quest audio - they are also what sets the text
     -- Compatibility.lua's GetQuestID substitute reads, so nothing resolves until one fires.
+    -- Greetings and gossip are the gossip module's (Spoken_Gossip), with their own events.
     local directEvents = {
-        "QUEST_GREETING",
         "QUEST_FINISHED",
-        "GOSSIP_SHOW",
-        "GOSSIP_CLOSED",
     }
     if Version.IsAnyLegacy then
         table.insert(directEvents, "QUEST_DETAIL")
@@ -595,11 +552,6 @@ function Addon:OnInitialize()
             return
         end
 
-        if event == "GOSSIP_SHOW" then
-            -- Whether or not autoplay reads this page, the next one's label depends on it.
-            NoteGossipPage()
-        end
-
         dispatching[event] = true
         local succeeded = self:InvokeQuestHandler(event, source, false)
         dispatching[event] = nil
@@ -621,31 +573,8 @@ function Addon:OnInitialize()
         return DispatchDirectEvent(event, source or "manual dispatch")
     end
 
-    -- Greeting globals can have the same synchronous-event race. Coalesce the
-    -- event/frame signals and read them on a later frame after Blizzard has
-    -- populated the new NPC and text.
-    local deferredSpeechEvents = {
-        QUEST_GREETING = true,
-        GOSSIP_SHOW = true,
-    }
-    local deferredEventGeneration = {}
     local function SignalDirectEvent(event, source)
-        if event == "QUEST_FINISHED" then
-            deferredEventGeneration.QUEST_GREETING = (deferredEventGeneration.QUEST_GREETING or 0) + 1
-        elseif event == "GOSSIP_CLOSED" then
-            deferredEventGeneration.GOSSIP_SHOW = (deferredEventGeneration.GOSSIP_SHOW or 0) + 1
-        end
-        if not deferredSpeechEvents[event] then
-            DispatchDirectEvent(event, source)
-            return
-        end
-        local generation = (deferredEventGeneration[event] or 0) + 1
-        deferredEventGeneration[event] = generation
-        self:ScheduleTimer(function()
-            if deferredEventGeneration[event] == generation then
-                DispatchDirectEvent(event, source .. " (deferred)")
-            end
-        end, 0.1)
+        DispatchDirectEvent(event, source)
     end
 
     self.directEventFrame = CreateFrame("Frame")
@@ -658,30 +587,8 @@ function Addon:OnInitialize()
         end
     end
     self.directEventFrame:SetScript("OnEvent", function(frame, event)
-        -- Before the deferral: the greeting is already playing.
-        if deferredSpeechEvents[event] then
-            pcall(self.MuteGreetingAhead, self, event)
-        end
         SignalDirectEvent(event, "direct frame")
     end)
-
-    -- Keep UI fallbacks only for NPC greetings. Quest narration is exclusively
-    -- handled by the stabilized watcher.
-    local panelEvents = {
-        { frame = QuestFrameGreetingPanel, event = "QUEST_GREETING" },
-        { frame = GossipFrame, event = "GOSSIP_SHOW" },
-    }
-    for _, binding in ipairs(panelEvents) do
-        if binding.frame and binding.frame.HookScript then
-            local event = binding.event
-            local hooked, hookError = pcall(binding.frame.HookScript, binding.frame, "OnShow", function()
-                    SignalDirectEvent(event, "panel OnShow")
-                end)
-            if not hooked then
-                table.insert(self.eventBridgeErrors, format("Panel %s: %s", event, tostring(hookError)))
-            end
-        end
-    end
 
     -- Hook the exact Blizzard dispatcher that updates the visible quest
     -- panels. This runs after Blizzard has populated GetQuestID/GetTitleText.
@@ -705,7 +612,7 @@ function Addon:OnInitialize()
         Debug:Record("event-bridge-partial", format("Quest watcher is active; %d optional bridge component(s) failed",
             getn(self.eventBridgeErrors)))
     else
-        Debug:Record("event-bridge-ready", "Stabilized quest watcher and deferred greeting bridge are registered")
+        Debug:Record("event-bridge-ready", "Stabilized quest watcher is registered")
     end
 
     -- The folders of the players that registered this session, stopped at the top of this
@@ -762,27 +669,6 @@ function Addon:OnInitialize()
             QuestOverlayUI:Update()
         end)
     end
-
-    if C_GossipInfo and C_GossipInfo.SelectOption then
-        hooksecurefunc(C_GossipInfo, "SelectOption", function(optionID)
-            if lastGossipOptions then
-                for _, info in ipairs(lastGossipOptions) do
-                    if info.gossipOptionID == optionID then
-                        selectedGossipOption = info.name
-                        break
-                    end
-                end
-                lastGossipOptions = nil
-            end
-        end)
-    elseif SelectGossipOption then
-        hooksecurefunc("SelectGossipOption", function(index)
-            if lastGossipOptions then
-                selectedGossipOption = lastGossipOptions[1 + (index - 1) * 2]
-                lastGossipOptions = nil
-            end
-        end)
-    end
 end
 
 function Addon:RefreshConfig()
@@ -795,11 +681,6 @@ function Addon:ADDON_LOADED(event, addon)
     if hook then
         hook()
     end
-end
-
-local function GossipSoundDataAdded(soundData)
-    -- Save current gossip sound data for dialog/frame sync option
-    currentGossipSoundData = soundData
 end
 
 local function QuestSoundDataAdded(soundData)
@@ -929,37 +810,8 @@ function Addon:QUEST_COMPLETE()
     Player:Enqueue(soundData)
 end
 
-function Addon:ShouldPlayGossip(guid, text, manual)
-    local npcKey = guid or "unknown"
-
-    -- Asked for by name, so having heard it before does not stand in the way.
-    if manual then
-        return true, npcKey
-    end
-
-    local gossipSeenForNPC = self.db.char.hasSeenGossipForNPC[npcKey]
-
-    if self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.OncePerQuestNPC then
-        local numActiveQuests = GetNumGossipActiveQuests()
-        local numAvailableQuests = GetNumGossipAvailableQuests()
-        local npcHasQuests = (numActiveQuests > 0 or numAvailableQuests > 0)
-        if npcHasQuests and gossipSeenForNPC then
-            return
-        end
-    elseif self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.OncePerNPC then
-        if gossipSeenForNPC then
-            return
-        end
-    elseif self.db.profile.Audio.GossipFrequency == Enums.GossipFrequency.Never then
-        return
-    end
-
-    return true, npcKey
-end
-
 --- An NPC's own greeting starts the moment its dialog opens, and the line that replaces it
---- is read off the dialog a moment later -- 0.1s for gossip, 0.4s of stable globals for a
---- quest. The player muting the game's dialogue only once that line started is what cut the
+--- is read off the dialog a moment later, once its globals have held still for 0.4s. The player muting the game's dialogue only once that line started is what cut the
 --- greeting off mid-word, so for a dialog that is going to be read the mute is taken here,
 --- in the frame the dialog opened, and the greeting is not heard at all. A dialog nothing
 --- will be read for keeps its greeting: that is what the lookups below are for.
@@ -969,124 +821,18 @@ function Addon:MuteGreetingAhead(event)
         or not Spoken.MuteGameDialogueAhead then
         return
     end
-    if not (event == "GOSSIP_SHOW" or event == "QUEST_GREETING" or QUEST_EVENTS[event]) then
+    if not QUEST_EVENTS[event] then
         return
     end
-    if event == "GOSSIP_SHOW" or event == "QUEST_GREETING" then
-        -- Silenced only where a pack reads its greeting, so the pack's replaces the game's. Any
-        -- other NPC, quest-givers included, keeps its own.
-        -- The page text is not to be trusted yet (see the deferred read), so this asks only
-        -- whether any pack voices this speaker at all.
-        local guid = Utils:GetNPCGUID()
-        local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
-        if not guid and not speaker.name then
-            return
-        end
-        if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
-            return
-        end
-    elseif QUEST_EVENTS[event] then
-        -- The quest ID can still be missing this early. Then the NPC is muted anyway: waiting for
-        -- the line let the first moment of its greeting through, and with no line coming the mute
-        -- lifts itself. Kept only where the quest is known and no pack holds it.
-        local questID = QuestIDFor(event)
-        if questID and questID ~= 0
-            and not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
-            return
-        end
-    else
+    -- The quest ID can still be missing this early. Then the NPC is muted anyway: waiting for
+    -- the line let the first moment of its greeting through, and with no line coming the mute
+    -- lifts itself. Kept only where the quest is known and no pack holds it.
+    local questID = QuestIDFor(event)
+    if questID and questID ~= 0
+        and not DataModules:PrepareSound({ event = QUEST_EVENTS[event].sound, questID = questID }) then
         return
     end
     Spoken:MuteGameDialogueAhead(Player.source)
-end
-
-function Addon:QUEST_GREETING(event, manual)
-    local guid = Utils:GetNPCGUID()
-    local targetName = Utils:GetNPCName()
-    local greetingText = GetGreetingText()
-
-    -- Can happen if the player interacted with an NPC while having main menu or options opened
-    if not guid and not targetName then
-        return
-    end
-
-    local play, npcKey = self:ShouldPlayGossip(guid, greetingText, manual)
-    if not play then
-        return
-    end
-
-    -- Play the gossip sound
-    ---@type SoundData
-    local soundData = {
-        event = Enums.SoundEvent.QuestGreeting,
-        name = targetName,
-        text = greetingText,
-        unitGUID = guid,
-        unitIsObjectOrItem = Utils:IsNPCObjectOrItem(),
-        addedCallback = GossipSoundDataAdded,
-        startCallback = function()
-            self.db.char.hasSeenGossipForNPC[npcKey] = true
-        end
-    }
-    Player:Enqueue(soundData)
-end
-
--- The option the player picked to reach the gossip on screen, as its clip's label. Kept past
--- the show that consumed selectedGossipOption, for a Play pressed on that same gossip later.
-local shownGossipTitle
--- Which page that was. The direct event and the frame's OnShow can both deliver one page,
--- and the second must not overwrite the label the first took.
-local shownGossipKey
-
---- A fresh gossip page: note which option led here and what the page offers next, whether or
---- not it is read. With autoplay off it is not, and the next page's label would otherwise be
---- looked up in this page's predecessor's options.
-function NoteGossipPage()
-    local pageKey = tostring(Utils:GetNPCGUID() or Utils:GetNPCName()) .. ":" .. tostring(GetGossipText())
-    if not selectedGossipOption and pageKey == shownGossipKey then
-        return
-    end
-    shownGossipKey = pageKey
-    shownGossipTitle = selectedGossipOption and format([["%s"]], selectedGossipOption)
-    selectedGossipOption = nil
-    lastGossipOptions = nil
-    if C_GossipInfo and C_GossipInfo.GetOptions then
-        lastGossipOptions = C_GossipInfo.GetOptions()
-    elseif GetGossipOptions then
-        lastGossipOptions = { GetGossipOptions() }
-    end
-end
-
-function Addon:GOSSIP_SHOW(event, manual)
-    local guid = Utils:GetNPCGUID()
-    local targetName = Utils:GetNPCName()
-    local gossipText = GetGossipText()
-
-    -- Can happen if the player interacted with an NPC while having main menu or options opened
-    if not guid and not targetName then
-        return
-    end
-
-    local play, npcKey = self:ShouldPlayGossip(guid, gossipText, manual)
-    if not play then
-        return
-    end
-
-    -- Play the gossip sound
-    ---@type SoundData
-    local soundData = {
-        event = Enums.SoundEvent.Gossip,
-        name = targetName,
-        title = shownGossipTitle,
-        text = gossipText,
-        unitGUID = guid,
-        unitIsObjectOrItem = Utils:IsNPCObjectOrItem(),
-        addedCallback = GossipSoundDataAdded,
-        startCallback = function()
-            self.db.char.hasSeenGossipForNPC[npcKey] = true
-        end
-    }
-    Player:Enqueue(soundData)
 end
 
 function Addon:QUEST_FINISHED()
@@ -1094,15 +840,4 @@ function Addon:QUEST_FINISHED()
         Player:Remove(currentQuestSoundData)
     end
     currentQuestSoundData = nil
-end
-
-function Addon:GOSSIP_CLOSED()
-    if Addon.db.profile.Audio.StopAudioOnDisengage and currentGossipSoundData then
-        Player:Remove(currentGossipSoundData)
-    end
-    currentGossipSoundData = nil
-
-    selectedGossipOption = nil
-    shownGossipTitle = nil
-    shownGossipKey = nil
 end

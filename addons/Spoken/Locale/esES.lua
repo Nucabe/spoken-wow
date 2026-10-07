@@ -181,8 +181,11 @@ L.LINK_COFFEE_TIP = "Apoya Spoken: con ello se pagan las voces y la nueva grabac
 -- Modules
 L.OPT_PARTS_TITLE = "Módulos"
 L.OPT_PART_QUESTS = "Misiones"
-L.OPT_PART_QUESTS_TEXT = "El texto de las misiones y lo que dicen los PNJ cuando hablas con ellos."
-L.OPT_PART_QUESTS_TIP = "Lee el texto de las misiones y lo que dicen los PNJ cuando hablas con ellos. Su configuración propia está en la página Misiones."
+L.OPT_PART_GOSSIP = "Charlas"
+L.OPT_PART_QUESTS_TEXT = "El texto de cada ventana de misión que abres."
+L.OPT_PART_GOSSIP_TEXT = "Lo que dicen los PNJ cuando hablas con ellos."
+L.OPT_PART_QUESTS_TIP = "Lee el texto de cada ventana de misión que abres. Su configuración propia está en la página Misiones."
+L.OPT_PART_GOSSIP_TIP = "Lee lo que dicen los PNJ cuando hablas con ellos. Su configuración propia está en la página Charlas."
 L.OPT_PART_ZONES = "Zonas"
 L.OPT_PART_ZONES_TEXT = "La historia de cada zona y área que descubres."
 L.OPT_PART_ZONES_TIP = "Lee la historia de cada zona y área cuando la descubres. Su configuración propia está en la página Zonas."

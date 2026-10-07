@@ -51,6 +51,9 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@[ -n "$(LUA)" ] || { echo "No luajit found: brew install luajit"; exit 1; }
 	@$(LUA) tests/lua/quest_dispatch_test.lua
 	@$(LUA) tests/lua/quest_autoplay_test.lua
+	@$(LUA) tests/lua/gossip_frequency_test.lua
+	@$(LUA) tests/lua/gossip_takeover_test.lua
+	@$(LUA) tests/lua/gossip_options_test.lua
 	@$(LUA) tests/lua/quest_overlay_test.lua
 	@$(LUA) tests/lua/quest_followup_test.lua
 	@$(LUA) tests/lua/easter_egg_test.lua

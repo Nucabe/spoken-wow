@@ -11,13 +11,13 @@ setfenv(1, VoiceOver)
 Player = { source = nil }
 
 local TEXTURES = format([[Interface\AddOns\%s\Textures\]], AddonFolder)
+-- The English pack of what NPCs say, which is the gossip module's (Spoken_Gossip).
+local GOSSIP_PACK = "SpokenQuestsAudioGossip"
 
 local BULLETS = {
     [Enums.SoundEvent.QuestAccept]   = "quest-accept",
     [Enums.SoundEvent.QuestProgress] = "quest-progress",
     [Enums.SoundEvent.QuestComplete] = "quest-complete",
-    [Enums.SoundEvent.QuestGreeting] = "gossip",
-    [Enums.SoundEvent.Gossip]        = "gossip",
     [Enums.SoundEvent.QuestFollowup] = "quest-complete",
 }
 
@@ -57,77 +57,17 @@ function Player:Current()
     return nil
 end
 
-local function GossipClips()
-    local list = {}
-    for _, clip in ipairs(Player:Queued()) do
-        if Enums.SoundEvent:IsGossipEvent(clip.event) then
-            table.insert(list, clip)
-        end
-    end
-    return list
-end
-
 --------------------------------------------------------------------------------
 -- Presentation
 --------------------------------------------------------------------------------
 
 -- The speaker's portrait and the Report action are the dialogue core's (Present.lua).
 
--- The Stop Gossip control, anchored to the header as it always was. The one place the
--- domain-agnostic frame is asked to host something quest-shaped.
-local STOP_GOSSIP = {
-    id = "stopGossip",
-    anchor = "header",
-    visible = function() return getn(GossipClips()) > 0 end,
-    create = function(parent)
-        local button = CreateFrame("Button", nil, parent)
-        button:SetSize(32, 32)
-        function button:SetGossipCount(gossipCount)
-            local texture = gossipCount > 1 and (TEXTURES .. "StopGossipMore") or (TEXTURES .. "StopGossip")
-            self:SetShown(gossipCount > 0)
-            self:SetHighlightTexture(texture, "ADD")
-            self:SetNormalTexture(texture)
-            self:SetPushedTexture(texture)
-            self.tooltip = gossipCount > 1 and L.OPT_NEXT_GOSSIP or L.OPT_STOP_GOSSIP
-            if GameTooltip:GetOwner() == self then
-                GameTooltip:SetText(self.tooltip)
-                GameTooltip:Show()
-            end
-        end
-        button:SetGossipCount(0)
-        button:GetHighlightTexture():SetAlpha(0.5)
-        button:GetPushedTexture():SetAlpha(0.5)
-        button:HookScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_NONE")
-            GameTooltip:SetPoint("LEFT", self, "RIGHT")
-            GameTooltip:SetText(self.tooltip)
-            GameTooltip:Show()
-        end)
-        button:HookScript("OnLeave", GameTooltip_Hide)
-        button:HookScript("OnClick", function()
-            PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
-            local head = Player:Current()
-            if head and Enums.SoundEvent:IsGossipEvent(head.event) then
-                Player:Remove(head)
-            else
-                for _, clip in ipairs(GossipClips()) do
-                    Player:Remove(clip)
-                end
-            end
-        end)
-        return button
-    end,
-    onClipChanged = function(clip, button)
-        button:SetGossipCount(getn(GossipClips()))
-    end,
-}
-
-local ACTIONS = { Present.REPORT, STOP_GOSSIP }
+local ACTIONS = { Present.REPORT }
 
 --- Turn a prepared SoundData into a clip, in place.
 function Player:Prepare(soundData)
     local event = soundData.event
-    local gossip = Enums.SoundEvent:IsGossipEvent(event)
     -- Log replay clips have no dialog snapshot. Resolve only their acceptance text;
     -- the log's description must never stand in for a reward or progress speech.
     if event == Enums.SoundEvent.QuestAccept and (not soundData.text or soundData.text == "")
@@ -137,16 +77,16 @@ function Player:Prepare(soundData)
     end
     soundData.key = soundData.fileName
     soundData.path = soundData.filePath
-    soundData.priority = gossip and "low" or "normal"
+    -- Ahead of gossip, which the gossip module queues at "low": a greeting yields to the quest.
+    soundData.priority = "normal"
     -- Read while the NPC's window is open: its voice is cut as the line starts, not faded, so
     -- none of its greeting is heard under the line (faded instead under Game Greeting First,
     -- SoundQueue.lua).
     soundData.cutsGameDialogue = true
     soundData.present = {
         header = soundData.name or "",
-        label = soundData.title or (event == Enums.SoundEvent.QuestGreeting and L.OPT_GREETING or (gossip and L.OPT_PACK_GOSSIP or "")),
+        label = soundData.title or "",
         bullet = BULLETS[event],
-        tint = gossip and { 1, 1, 1 } or nil,
         portrait = Present:Portrait(soundData),
         actions = ACTIONS,
     }
@@ -270,10 +210,13 @@ function Player:Setup()
         waitsForGreeting = true,
         -- Its settings follow the profile chosen in Spoken's own settings.
         profiles = function() return Addon.db end,
-        -- What Spoken's settings show on this part's card: which voice packs are installed.
+        -- What Spoken's settings show on this part's card: which voice packs are installed. Not
+        -- the Gossip pack, which holds no quest: it is on the gossip module's card.
         packs = function()
             local names = {}
-            for _, module in DataModules:GetPresentModules() do table.insert(names, module.Title) end
+            for _, module in DataModules:GetPresentModules() do
+                if module.AddonName ~= GOSSIP_PACK then table.insert(names, module.Title) end
+            end
             return names
         end,
         -- The voices come in parts -- Alliance, Horde and the rest, or All of them in one -- so
@@ -282,12 +225,14 @@ function Player:Setup()
         packCount = function()
             local total, have, all = 0, 0, false
             for _, module in DataModules:GetAvailableModules() do
-                if module.AddonName ~= "SpokenQuestsAudioAll" then total = total + 1 end
+                if module.AddonName ~= "SpokenQuestsAudioAll" and module.AddonName ~= GOSSIP_PACK then
+                    total = total + 1
+                end
             end
             for _, module in DataModules:GetPresentModules() do
                 if module.AddonName == "SpokenQuestsAudioAll" then
                     all = true
-                else
+                elseif module.AddonName ~= GOSSIP_PACK then
                     have = have + 1
                 end
             end
@@ -316,7 +261,6 @@ function Player:Setup()
     Spoken:RegisterBullet("quest-accept",   TEXTURES .. "SoundQueueBulletAccept", 14)
     Spoken:RegisterBullet("quest-progress", TEXTURES .. "SoundQueueBulletProgress", 14)
     Spoken:RegisterBullet("quest-complete", TEXTURES .. "SoundQueueBulletComplete", 14)
-    Spoken:RegisterBullet("gossip",         TEXTURES .. "SoundQueueBulletGossip", 14)
 
     -- Switched off or on in Spoken's settings: the buttons on the log and the dialog follow.
     if Spoken.RegisterCallback then

@@ -1014,7 +1014,8 @@ libs["AceDB-3.0"] = {
         local charKey = next(sv.char) or "Tester - Realm"
         sv.char[charKey] = Merge(defaults.char, sv.char[charKey])
         sv.global = sv.global or {}
-        local db = { profile = sv.profiles.Default, char = sv.char[charKey], global = sv.global, sv = sv }
+        local db = { profile = sv.profiles.Default, char = sv.char[charKey], global = sv.global, sv = sv,
+            keys = { char = charKey } }
         db.RegisterCallback = function() end
         function db:Shutdown()
             StripDefaults(self.profile, defaults.profile)
@@ -1212,10 +1213,31 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
-        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "Player", "VoiceOver" }) do
+        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "Player", "VoiceOver" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
+end
+
+--- Load the gossip addon against this stub and return its private environment and Spoken's.
+--- On a Spoken player of its own, or, with `onTop`, on the one a LoadQuests already booted, as
+--- the client loads both. Its options window is stubbed as LoadQuests stubs the quests addon's:
+--- AceConfig decides nothing about which line is read.
+function M.LoadGossip(addonDirectory, spokenDirectory, onTop)
+    local env = onTop and _G.SpokenEnv or M.LoadSpoken(spokenDirectory)
+    if not onTop then env.Addon:Enable() end
+
+    dofile(addonDirectory .. "PlayerRequired.lua")
+    dofile(addonDirectory .. "Environment.lua")
+    local G = _G.SpokenGossipEnv
+    for _, module in ipairs({ "Options", "SettingsPanel" }) do
+        G[module] = setmetatable({}, { __index = function() return function() end end })
+    end
+    for _, file in ipairs({ "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
+        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "Player", "Gossip", "UI/PlayButton" }) do
+        dofile(addonDirectory .. file .. ".lua")
+    end
+    return G, env
 end
 
 --- The quests addon with its real quest log overlay and its compatibility branches, which
@@ -1235,7 +1257,7 @@ end
 --- returns is what this does.
 function M.LoadQuestsAlone(addonDirectory)
     local required = dofile(addonDirectory .. "PlayerRequired.lua")
-    for _, file in ipairs({ "Environment", "Strings", "EasterEggs", "Player", "VoiceOver" }) do
+    for _, file in ipairs({ "Environment", "Strings", "Player", "VoiceOver" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return required
@@ -1247,6 +1269,13 @@ function M.LoadQuestsPanel(addonDirectory, VO)
     dofile(addonDirectory .. "UI/Layout.lua")
     dofile(addonDirectory .. "UI/SettingsPanel.lua")
     return VO.SettingsPanel
+end
+
+--- The gossip addon's settings page, on top of an addon already loaded by LoadGossip.
+function M.LoadGossipPanel(addonDirectory, G)
+    dofile(addonDirectory .. "UI/Layout.lua")
+    dofile(addonDirectory .. "UI/SettingsPanel.lua")
+    return G.SettingsPanel
 end
 
 --- Kept for one release: the pre-cutover loader name.
