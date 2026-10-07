@@ -1050,7 +1050,9 @@ function M.Logout()
     M.FireEvent("PLAYER_LOGOUT")
 end
 
---- The dialogue core's files, in Dialogue/Dialogue.xml's order.
+--- The dialogue core's files, in Dialogue/Dialogue.xml's order. Compat.lua is left out, as the
+--- quests addon's Compatibility.lua always was: its legacy script wrappers read the globals
+--- `this` and `event`, which this stub does not set. LoadQuestsOverlay loads both.
 local DIALOGUE_CORE = { "Environment", "Version", "Enums", "Utils", "Language", "Debug", "FuzzySearch", "DataModules" }
 
 --- Load the Spoken player addon against this stub and return its private environment.
@@ -1219,6 +1221,7 @@ end
 function M.LoadQuestsOverlay(addonDirectory, spokenDirectory)
     local VO, env = M.LoadQuests(addonDirectory, spokenDirectory)
     dofile(addonDirectory .. "QuestOverlayUI.lua")
+    dofile((spokenDirectory or addonDirectory .. "../Spoken/") .. "Dialogue/Compat.lua")
     dofile(addonDirectory .. "Compatibility.lua")
     return VO, env
 end

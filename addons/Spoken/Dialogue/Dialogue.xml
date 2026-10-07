@@ -5,6 +5,7 @@
     <Include file="Utils.lua"/>
     <Include file="Language.lua"/>
     <Include file="Debug.lua"/>
+    <Include file="Compat.lua"/>
     <Include file="FuzzySearch.lua"/>
     <Include file="DataModules.lua"/>
 </Ui>
