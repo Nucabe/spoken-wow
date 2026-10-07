@@ -188,7 +188,7 @@ package-all: ## Build every addon zip: Spoken with its modules, then quests and 
 
 # Spoken's download: Spoken and its three modules in one zip, each module built by its own
 # packager. No sound packs; scripts/spoken/package.sh says why.
-package-spoken: ## Zip Spoken with its modules, Quests, Books and Zones, without the sound packs
+package-spoken: ## Zip Spoken with its modules, Quests, Gossip, Books and Zones, without the sound packs
 	@./scripts/spoken/package.sh
 
 # The last release of each retired project, spoken-quests, spoken-zones and spoken-books: a
