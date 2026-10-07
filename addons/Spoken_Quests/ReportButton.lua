@@ -1,3 +1,4 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 --- The Report button and the copy box behind it.

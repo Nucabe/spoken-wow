@@ -1,5 +1,10 @@
 setfenv(1, VoiceOver)
 
+-- This file is the dialogue core's (Environment.lua). Addon, Options, L and EasterEggs belong to
+-- the quests module and exist only when it loaded, so they are read raw: a global of the same
+-- name from some other addon is not theirs.
+local ENV = getfenv(1)
+
 local CURRENT_MODULE_VERSION = 1
 
 -- A pack declares itself with a TOC key rather than a name, which is why a pack published
@@ -221,7 +226,8 @@ local PACK_LABELS = {
 ---@param module DataModuleMetadata
 function DataModules:GetPackLabel(module)
     local key = module and PACK_LABELS[module.AddonName]
-    local label = key and L[key]
+    local strings = rawget(ENV, "L")
+    local label = key and strings and strings[key]
     if label then
         return label
     end
@@ -291,8 +297,11 @@ function DataModules:EnumerateAddons(loadModules)
     end
 
     table.sort(self.presentModulesOrdered, SortModules)
-    for order, module in self:GetPresentModules() do
-        Options:AddDataModule(module, order)
+    local options = rawget(ENV, "Options")
+    if options then
+        for order, module in self:GetPresentModules() do
+            options:AddDataModule(module, order)
+        end
     end
 
     -- A player with no pack at all is offered every one of them and picks; a player who has
@@ -307,8 +316,8 @@ function DataModules:EnumerateAddons(loadModules)
         if (not min or Version.Interface >= min) and (not max or Version.Interface < max) then
             local present = self.presentModules[module.AddonName]
             local update = present and DataModules:IsOlderContent(present.ContentVersion, module.ContentVersion)
-            if (not present and not hasAnyPack) or update then
-                Options:AddAvailableDataModule(module, order, update)
+            if options and ((not present and not hasAnyPack) or update) then
+                options:AddAvailableDataModule(module, order, update)
             end
         end
     end
@@ -709,7 +718,8 @@ function DataModules:PrepareSound(soundData)
     end
 
     -- No pack holds the line - but an easter egg for it ships with the player itself.
-    return EasterEggs:Apply(soundData)
+    local eggs = rawget(ENV, "EasterEggs")
+    return eggs and eggs:Apply(soundData) or false
 end
 
 --- Find the pack holding `soundData.fileName` and fill in the path, length and language.
@@ -750,7 +760,8 @@ function DataModules:ResolveSoundFile(soundData)
                     soundData.length = length
                     soundData.module = module
                     soundData.language = language
-                    EasterEggs:Apply(soundData)
+                    local eggs = rawget(ENV, "EasterEggs")
+                    if eggs then eggs:Apply(soundData) end
                     return true
                 end
             end

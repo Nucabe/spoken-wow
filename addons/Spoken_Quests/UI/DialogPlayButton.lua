@@ -1,3 +1,4 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 -- The Listen/Stop button on the Blizzard quest and gossip frames, for a player who turned

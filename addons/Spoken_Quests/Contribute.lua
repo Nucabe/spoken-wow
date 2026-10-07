@@ -1,3 +1,4 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 -- What this addon sends when it has no line for what is on screen.

@@ -1,4 +1,8 @@
 setfenv(1, VoiceOver)
+
+-- The quests module's, when it loaded: read raw, as a global of that name from some other addon
+-- is not it.
+local ENV = getfenv(1)
 Debug = {}
 
 Debug.runtime = {
@@ -18,7 +22,8 @@ function Debug:GetRuntimeStatus()
 end
 
 function Debug:Print(msg, header)
-    if Addon and Addon.db and Addon.db.profile.DebugEnabled then
+    local addon = rawget(ENV, "Addon")
+    if addon and addon.db and addon.db.profile.DebugEnabled then
         if header then
             print(Utils:ColorizeText("Spoken Quests", NORMAL_FONT_COLOR_CODE) ..
                 Utils:ColorizeText(" (" .. header .. ")", GRAY_FONT_COLOR_CODE) ..

@@ -1,5 +1,9 @@
 setfenv(1, VoiceOver)
 
+-- The quests module's, when it loaded: read raw, as a global of that name from some other addon
+-- is not it.
+local ENV = getfenv(1)
+
 -- SpokenQuests -- the language axis of the sound packs.
 --
 -- A pack declares the language it was recorded in; the player says which language it
@@ -133,7 +137,8 @@ end
 function Language:GetVoiceLanguage()
     -- The one choice on Spoken's page for every module, once made; this addon's own until then.
     local shared = Spoken and Spoken.GetLanguageChoice and Spoken:GetLanguageChoice()
-    local stored = shared or (Addon and Addon.db and Addon.db.profile.Audio.VoiceLanguage)
+    local addon = rawget(ENV, "Addon")
+    local stored = shared or (addon and addon.db and addon.db.profile.Audio.VoiceLanguage)
     if stored == nil or stored == self.AUTO or not byCode[stored] then
         return self:GetClientLanguage()
     end
@@ -150,7 +155,8 @@ function Language:GetFallbackLanguage()
         local _
         _, shared = Spoken:GetLanguageChoice()
     end
-    local stored = shared or (Addon and Addon.db and Addon.db.profile.Audio.FallbackLanguage)
+    local addon = rawget(ENV, "Addon")
+    local stored = shared or (addon and addon.db and addon.db.profile.Audio.FallbackLanguage)
     if stored == nil then
         return self.BASE
     end

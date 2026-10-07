@@ -1,3 +1,4 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 -- Patch 11.0.2 removed the legacy global AddOn-management API. Current

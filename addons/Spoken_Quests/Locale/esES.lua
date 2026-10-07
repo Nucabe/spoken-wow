@@ -5,6 +5,7 @@
 -- Positional format arguments (%1$s) stay positional when Spanish needs a
 -- different word order.
 
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 if GetLocale() ~= "esES" and GetLocale() ~= "esMX" then

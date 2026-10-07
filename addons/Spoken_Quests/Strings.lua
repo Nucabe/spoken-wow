@@ -1,3 +1,4 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 -- Interface strings for the Spoken Quests options and quest-window buttons, and the

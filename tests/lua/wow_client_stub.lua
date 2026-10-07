@@ -1050,6 +1050,9 @@ function M.Logout()
     M.FireEvent("PLAYER_LOGOUT")
 end
 
+--- The dialogue core's files, in Dialogue/Dialogue.xml's order.
+local DIALOGUE_CORE = { "Environment", "Version", "Enums", "Utils", "Language", "Debug", "FuzzySearch", "DataModules" }
+
 --- Load the Spoken player addon against this stub and return its private environment.
 --- Loads exactly what its addon.xml and then Contribute.xml list, in order (a Blizzard-client
 --- .toc's order), then initialises the saved variables the way ADDON_LOADED would.
@@ -1062,6 +1065,10 @@ function M.LoadSpoken(addonDirectory)
         -- actual compression is the point of testing it at all.
         "UI/Options", "UI/Welcome", "API", "Libs/LibDeflate/LibDeflate", "Compat", "UI/ContributeBox", "Contribute", "Gather" }) do
         dofile(addonDirectory .. file .. ".lua")
+    end
+    -- The dialogue core the quests module runs in (Dialogue/Dialogue.xml).
+    for _, file in ipairs(DIALOGUE_CORE) do
+        dofile(addonDirectory .. "Dialogue/" .. file .. ".lua")
     end
     local env = _G.SpokenEnv
     env.Addon:InitDB()
@@ -1192,14 +1199,15 @@ function M.LoadQuests(addonDirectory, spokenDirectory)
     local env = M.LoadSpoken(spokenDirectory)
     env.Addon:Enable()
 
+    dofile(addonDirectory .. "PlayerRequired.lua")
     dofile(addonDirectory .. "Environment.lua")
     local VO = _G.VoiceOver
     for _, module in ipairs({ "QuestOverlayUI", "Options" }) do
         VO[module] = setmetatable({}, { __index = function() return function() end end })
     end
-    for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "Locale/deDE", "Locale/esES",
-        "Locale/frFR", "Locale/ptBR", "Locale/ruRU", "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "FuzzySearch",
-        "EasterEggs", "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
+    for _, file in ipairs({ "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
+        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "ReportButton", "Player", "GreetingFirst",
+        "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return VO, env
@@ -1216,18 +1224,16 @@ function M.LoadQuestsOverlay(addonDirectory, spokenDirectory)
 end
 
 --- The quests addon with no player at all: what a hand-install without the optional
---- dependency loads. LoadQuests boots the player first; this deliberately does not.
+--- dependency loads. LoadQuests boots the player first; this deliberately does not. Every
+--- file but PlayerRequired.lua returns at once without Spoken's dialogue core; what that file
+--- returns is what this does.
 function M.LoadQuestsAlone(addonDirectory)
-    dofile(addonDirectory .. "Environment.lua")
-    local VO = _G.VoiceOver
-    for _, module in ipairs({ "QuestOverlayUI", "Options" }) do
-        VO[module] = setmetatable({}, { __index = function() return function() end end })
-    end
-    for _, file in ipairs({ "Version", "Enums", "Utils", "Language", "Debug", "Strings", "FuzzySearch", "EasterEggs",
-        "DataModules", "ReportButton", "Player", "GreetingFirst", "VoiceOver", "Contribute" }) do
+    local required = dofile(addonDirectory .. "PlayerRequired.lua")
+    for _, file in ipairs({ "Environment", "Strings", "EasterEggs", "ReportButton", "Player", "GreetingFirst",
+        "VoiceOver", "Contribute" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
-    return VO
+    return required
 end
 
 --- The quests addon's settings panel, which the dispatch tests have no use for: its two

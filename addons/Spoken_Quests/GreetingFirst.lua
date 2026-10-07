@@ -1,3 +1,4 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
 
 -- Game Greeting First (Audio.GreetingFirst, off by default). Off, Silence NPC Voices cuts the
