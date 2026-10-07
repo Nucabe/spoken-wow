@@ -121,7 +121,7 @@ function Welcome:Build()
             status = function() return Options:PartVoice(key) end,
             hint = function(on) return on and L.OPT_PART_CLICK_OFF or L.OPT_PART_CLICK_ON end })
     end
-    self.cards = Options:WholeIcons(layout:Cards(cards))
+    self.cards = layout:Cards(cards)
 
     -- How lines appear: the same sketches as General. Choosing subtitles shows one, so it can
     -- be seen and dragged into place now.
