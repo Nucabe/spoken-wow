@@ -158,7 +158,9 @@ function ContributeButton:ReportFromDialogueUI()
     if not target then
         return
     end
-    local ok, line = pcall(Addon.GetVisibleLine, Addon, Utils:DialogueUIPage())
+    -- Asked of the module whose page it is, quests or gossip, through the bridge.
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    local ok, line = pcall(function() return bridge and bridge.LineFor and bridge:LineFor(Utils:DialogueUIPage()) end)
     ReportButton:ShowLink(target, ok and line and line.language or nil)
 end
 

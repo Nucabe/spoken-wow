@@ -159,6 +159,9 @@ function Player:EnqueuePrepared(soundData)
     end
 
     self:Prepare(soundData)
+    if self.playNow then
+        return self:PlayPreparedNow(soundData)
+    end
     local added, reason = self.source:Enqueue(soundData)
     if not added then
         if reason == "duplicate" then
@@ -178,6 +181,48 @@ function Player:EnqueuePrepared(soundData)
         Debug:Record("queue-paused", "The voiceover is queued, but playback is stopped")
     end
     return true
+end
+
+--- Plays a line asked for by a Play button at once, ahead of the queue, and skips what was
+--- speaking rather than replaying it, as the quests module's does. Callers set `Player.playNow`
+--- around the read (DialogueUI.lua).
+---@param soundData SoundData
+---@return boolean playing
+function Player:PlayPreparedNow(soundData)
+    local interrupted = Spoken.GetCurrent and Spoken:GetCurrent()
+    if interrupted and interrupted.key == soundData.key then
+        interrupted = nil
+    end
+    -- The player's PlayNow queues behind a line already speaking, so that line stops first.
+    local stopped = interrupted ~= nil and Spoken.Pause ~= nil and not Spoken:IsPaused() and Spoken:Pause()
+    local playing, reason = self.source:PlayNow(soundData)
+    if not playing then
+        Debug:Record("sound-disabled", reason or "refused")
+        if stopped and Spoken.Resume then
+            Spoken:Resume()
+        end
+        return false
+    end
+    if interrupted then
+        for _, clip in ipairs(Spoken:GetQueue()) do
+            if clip == interrupted then
+                Debug:Record("skipped", format("Skipped %s for the line asked for", tostring(interrupted.key)))
+                self.source:Remove(interrupted)
+                break
+            end
+        end
+    end
+    return true
+end
+
+--- The queued clip reading a window's line, or nil. Matched by file rather than by the
+--- SoundData the handler built.
+function Player:QueuedClipFor(line)
+    for _, clip in ipairs(self:Queued()) do
+        if clip.fileName == line.fileName then
+            return clip
+        end
+    end
 end
 
 function Player:Remove(soundData)

@@ -87,10 +87,12 @@ end
 
 --- The line the open window would read, resolved against the packs, or nil when no window is
 --- open or no pack has its line. Asked without reading anything. The second value is the
---- client event it stands for.
+--- client event it stands for. A caller that already knows the event passes it: under
+--- DialogueUI the game's windows never show, and the event is all there is to go by.
+---@param event string?
 ---@return SoundData?, string?
-function Addon:GetVisibleLine()
-    local event = GetVisibleSpeechEvent()
+function Addon:GetVisibleLine(event)
+    event = event or GetVisibleSpeechEvent()
     local speech = event and SPEECH_EVENTS[event]
     if not speech then
         return nil
@@ -121,8 +123,22 @@ function Addon:InvokeHandler(event, source, manual)
         Debug:Record("handler-missing", format("No handler exists for %s", tostring(event)))
         return false
     end
+    -- Read while DialogueUI's window is still appearing, the voice would run ahead of the words
+    -- it marks, so a greeting waits for the window (the quests module's DialogueUIBridge.lua).
+    local bridge = not manual and SPEECH_EVENTS[event] and rawget(Core, "DialogueUIBridge")
+    if bridge and bridge.Defer and bridge:Defer(event, function()
+        self:InvokeHandler(event, source, manual)
+    end) then
+        Debug:Record("dialogueui-wait", format("Waiting for DialogueUI's window to read %s", event))
+        return true
+    end
     Debug:Record("gossip-dispatch", format("Dispatching %s through %s", event, source or "manual reader"))
     local succeeded, errorMessage = pcall(handler, self, event, manual)
+    -- The bridge keeps the page blank for this read's line; it shows the page at once if none came.
+    if bridge and bridge.Read then
+        local stage = Debug.runtime.stage
+        bridge:Read(event, succeeded and (stage == "queued" or stage == "queue-paused" or stage == "playing"))
+    end
     if not succeeded then
         Debug:Record("handler-error", format("%s failed: %s", event, tostring(errorMessage)))
         local errorHandler = geterrorhandler and geterrorhandler()
@@ -522,6 +538,33 @@ function Addon:MuteGreetingAhead(event)
         return
     end
     Spoken:MuteGameDialogueAhead(Player.source)
+end
+
+--- The words a greeting or gossip will be read in for the window that just opened, or nil.
+--- Asked before the line is queued (DialogueUI's bridge keeps them blank until it starts);
+--- `textIsCurrent` when the page is drawn, to check its own line, not just the speaker.
+---@param event string
+---@param textIsCurrent boolean?
+---@return string?
+function Addon:ExpectedLine(event, textIsCurrent)
+    local speech = SPEECH_EVENTS[event]
+    if not speech or DataModules:IsPending() or not Player.source then
+        return nil
+    end
+    -- The page text is not to be trusted yet (see the deferred read), so this asks only whether
+    -- any pack voices this speaker at all.
+    local guid = Utils:GetNPCGUID()
+    local speaker = { unitGUID = guid, name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem() }
+    if not guid and not speaker.name then
+        return nil
+    end
+    if not self:ShouldPlayGossip(guid, nil, false) or not DataModules:HasGossipFor(speaker) then
+        return nil
+    end
+    if textIsCurrent and not self:GetVisibleLine(event) then
+        return nil
+    end
+    return speech.text() or ""
 end
 
 local function GossipSoundDataAdded(soundData)

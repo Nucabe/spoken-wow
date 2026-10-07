@@ -1264,7 +1264,7 @@ function M.LoadGossip(addonDirectory, spokenDirectory, onTop)
         G[module] = setmetatable({}, { __index = function() return function() end end })
     end
     for _, file in ipairs({ "Strings", "Locale/deDE", "Locale/esES", "Locale/frFR", "Locale/ptBR", "Locale/ruRU",
-        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "Player", "Gossip", "UI/PlayButton" }) do
+        "Locale/koKR", "Locale/zhCN", "Locale/zhTW", "EasterEggs", "Player", "Gossip", "DialogueUI", "UI/PlayButton" }) do
         dofile(addonDirectory .. file .. ".lua")
     end
     return G, env
