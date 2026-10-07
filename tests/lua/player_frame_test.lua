@@ -352,8 +352,8 @@ for _, child in ipairs(host.children) do
     end
 end
 Expect("there are labelled controls to line up", captioned > 1, true)
-local distinctColumns = 0
-for _ in pairs(columns) do distinctColumns = distinctColumns + 1 end
+local distinctColumns, columnsSeen = 0, nil
+for key in pairs(columns) do distinctColumns = distinctColumns + 1; columnsSeen = tonumber(key) end
 Expect("...and every one of them ends at the same edge, inside the box too", distinctColumns, 1)
 
 -- From where each section ends -- the bottom of its box, or of its cards where it has no box --
@@ -379,6 +379,20 @@ for _, item in ipairs(_G.SpokenOptionsPanel.layout.items) do
 end
 Expect("every heading the same distance below the section or box above", Distinct(headingGaps), 1)
 Expect("the narrator style's settings are a group of their own, in a box", groups, 1)
+-- The Preview button by the styles' title ends where the lists do, as Defaults ends where the page's
+-- header does.
+do
+    local layout = _G.SpokenOptionsPanel.layout
+    local list, preview
+    for _, item in ipairs(layout.items) do
+        for _, row in ipairs(item.rows or { item }) do
+            if row.control and row.control.layoutRows and not list then list = row.control end
+        end
+        if item.kind == "section" and item.button then preview = item.button end
+    end
+    Expect("the Preview button by the styles' title ends where the lists do",
+        preview ~= nil and list ~= nil and preview.anchor.x, list and list.anchor.x + list.width)
+end
 -- The box as wide as the module cards above it, and what is inside it in by the same padding on
 -- every side: to the rows' sides, to the first section's title (16 down its band), under the last.
 do
