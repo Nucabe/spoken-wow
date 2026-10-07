@@ -65,18 +65,14 @@ local MAX_WIDTH = 2000
 local RIGHT_MARGIN = 10       -- room for the scroll bar
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
 local BOX_MARGIN = 0          -- the rows' own edges: frames a page draws itself line up with them
--- Every list on a page spans the same: from where a section's title starts to BOX_RIGHT short of
--- the rows' right edge. A layout can set its own (`boxLeft`, `boxRight`): the welcome window's
--- lists span its width.
+-- Every box on a page -- a list -- spans the same: from where a section's title starts to
+-- BOX_RIGHT short of the rows' right edge. A layout can set its own (`boxLeft`, `boxRight`): the
+-- welcome window's lists span its width.
 local BOX_LEFT = SECTION_TITLE_X
 local BOX_RIGHT = 14
--- Inside a group's box: the box spans the cards' width, and what is in it moves in from its sides
--- by GROUP_PAD. A section's title sits SECTION_TITLE_X further in, so the box keeps that much
--- above its first title and under its last row too: the titles are as far from its top and
--- bottom as from its left.
-local GROUP_PAD = 16
-local GROUP_PAD_Y = GROUP_PAD + SECTION_TITLE_X
-local GROUP_LINE = { 1, 1, 1, 0.22 }  -- the box's line where the client has no backdrops
+local DIVIDER_GAP = 16        -- either side of a divider between a group's sections
+local DIVIDER_COLOR = { 0.55, 0.40, 0.24 }  -- ...a thin line in the bronze of the lists' frame,
+local DIVIDER_ALPHA = 0.5     -- ...faint
 local GOLD = { 1, 0.82, 0 }      -- NORMAL_FONT_COLOR: a setting's name
 local WHITE = { 1, 1, 1 }        -- HIGHLIGHT_FONT_COLOR: a page's and a section's title
 local GREY = { 0.5, 0.5, 0.5 }   -- GameFontDisable: a setting greyed out
@@ -458,42 +454,21 @@ function Layout:Reflow()
             item.shown = any
             if not any then
                 item.heading:Hide()
-                item.box:Hide()
             else
+                -- Its title as a section's, its first section's rows under it.
                 if started then y = y - ROW_GAP end
                 item.heading:Show()
                 Put(item.heading, self.parent, self.left + SECTION_TITLE_X, y - SECTION_TITLE_Y)
                 item.heading.layoutY = y
-                y = y - SECTION_HEIGHT
+                y = y - SECTION_HEIGHT - ROW_GAP
                 item.top = y
-                -- The padding reaches the first section's title, not the top of its band: the title
-                -- sits SECTION_TITLE_Y down the band.
-                local first
-                for _, section in ipairs(item.sections) do
-                    for _, row in ipairs(section.rows) do
-                        if not first and Visible(row) then first = section end
-                    end
-                end
-                y = y - GROUP_PAD_Y + ((first and first.text) and SECTION_TITLE_Y or 0)
-                -- Everything inside, in from the box's sides by its padding, until the group ends.
-                item.baseLeft = self.left
-                self.left, self.inset = self.left + GROUP_PAD, GROUP_PAD
-                -- Its first section starts at the padding, with no gap of its own.
+                -- Its first section follows its title, with no divider of its own.
                 started = false
             end
         elseif item.kind == "groupEnd" then
             local group = item.group
             if group.shown then
-                self.left, self.inset = group.baseLeft or self.left, nil
-                y = y - GROUP_PAD_Y
                 group.bottom = y
-                -- The cards' width: from the rows' left edge across the page's width.
-                group.left, group.right = self.left - BOX_MARGIN, self.left + self:Width() + BOX_MARGIN
-                local box = group.box
-                Put(box, self.parent, group.left, group.top)
-                box:SetWidth(group.right - group.left)
-                box:SetHeight(group.top - group.bottom)
-                box:Show()
                 started = true
             end
         else
@@ -511,8 +486,23 @@ function Layout:Reflow()
                 for _, row in ipairs(item.rows) do ShowRegions(row, false); row.shown = false end
             else
                 -- Each a list element, 9 from the one before: the section's title in its own 45,
-                -- and its rows under it.
-                if started then y = y - ROW_GAP end
+                -- and its rows under it. In a group, a divider where its title would be, from
+                -- where its rows' labels start to where the boxes end, DIVIDER_GAP from the rows
+                -- either side.
+                local divider = item.divider
+                if started and divider then
+                    y = y - DIVIDER_GAP
+                    local _, right = self:BoxSpan()
+                    local left = self.left + LABEL_X
+                    Put(divider, self.parent, left, y)
+                    divider:SetWidth(right - left)
+                    divider:Show()
+                    y = y - divider:GetHeight() - DIVIDER_GAP
+                elseif started then
+                    y = y - ROW_GAP
+                elseif divider then
+                    divider:Hide()
+                end
                 item.place(y)
                 local rowsTop = y - item.band - (item.band > 0 and ROW_GAP or 0)
                 local bottom = PlaceRows(self, item.rows, rowsTop)
@@ -607,6 +597,17 @@ end
 -- The welcome window draws its footer's divider with the header's.
 Layout.Rule = Rule
 
+-- A divider between a group's sections: one thin line in one colour. The header's divider is
+-- for under a title.
+local function Divider(parent)
+    local line = Flat(parent, "ARTWORK", 1, 1, 1, 1)
+    line:SetVertexColor(DIVIDER_COLOR[1], DIVIDER_COLOR[2], DIVIDER_COLOR[3])
+    line:SetAlpha(DIVIDER_ALPHA)
+    line:SetHeight(1)
+    line.layoutColor = DIVIDER_COLOR
+    return line
+end
+
 --- A new section: its title in the game's section header -- GameFontHighlightLarge, white, 7 in
 --- and 16 down in a 45-tall element -- and its rows under it, as the game's settings lay a page
 --- out. `plain` is a section of cards, laid out the same way.
@@ -615,7 +616,9 @@ function Layout:Section(text, plain)
     self.section = text
     local parent, left = self.parent, self.left
     local fs
-    if text then
+    -- Inside a group a section has no title: a divider stands where it would, and its name is
+    -- still what search says its rows are under.
+    if text and not self.group then
         fs = parent:CreateFontString(nil, "ARTWORK", Font("GameFontHighlightLarge", "GameFontNormalLarge"))
         fs:SetJustifyH("LEFT")
         fs:SetJustifyV("TOP")
@@ -625,11 +628,10 @@ function Layout:Section(text, plain)
     end
     local layout = self
     local section = { kind = "section", text = text, rows = {}, heading = fs,
-        band = text and SECTION_HEIGHT or 0, plain = plain }
+        band = fs and SECTION_HEIGHT or 0, plain = plain, divider = self.group and Divider(parent) or nil }
     section.place = function(top)
         if fs then
             fs:Show()
-            -- The layout's left edge as it is now: a group's box moves it in.
             local here = layout.left
             if layout.centred then
                 -- Across the rows' middle, in a window that centres its titles (the welcome).
@@ -649,6 +651,7 @@ function Layout:Section(text, plain)
     end
     section.hide = function()
         if fs then fs:Hide() end
+        if section.divider then section.divider:Hide() end
     end
     table.insert(self.items, section)
     if self.group then table.insert(self.group.sections, section) end
@@ -671,11 +674,9 @@ function Layout:Section(text, plain)
     return fs
 end
 
---- A titled box around the sections that follow, up to EndGroup: settings that belong together,
---- a narrator style's, set apart from the rest of the page. The title sits above the box as a
---- section's does; the box is the game's tooltip border and background, as the module cards are
---- drawn, as wide as they are, with those sections GROUP_PAD inside it on every side; it goes with
---- them when none is showing.
+--- A title over the sections that follow, up to EndGroup: settings that belong together, a
+--- narrator style's. The title is a section's; the sections under it have none of their own, a
+--- divider between each where its title would be. It goes with them when none is showing.
 function Layout:Group(title)
     self:Columns(nil)
     local parent = self.parent
@@ -685,47 +686,15 @@ function Layout:Group(title)
     fs:SetTextColor(WHITE[1], WHITE[2], WHITE[3])
     fs:SetText(title)
     fs.layoutHeading, fs.layoutHeight = true, SECTION_HEIGHT
-    local template = BackdropTemplateMixin and "BackdropTemplate" or nil
-    local box = CreateFrame("Frame", nil, parent, template)
-    local edges = {}
-    if box.SetBackdrop then
-        -- The cards' border and background (Card, below), in the grey of a card not chosen.
-        box:SetBackdrop({ bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
-            edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], tile = true, tileSize = 16, edgeSize = 14,
-            insets = { left = 4, right = 4, top = 4, bottom = 4 } })
-        box:SetBackdropColor(0.06, 0.06, 0.06, 0.6)
-        box:SetBackdropBorderColor(0.45, 0.45, 0.45, 1)
-    end
-    -- Under the page, not over it: the rows' labels are the page's own, and a frame of its own
-    -- above the page drew its background over them.
-    local level = parent.GetFrameLevel and parent:GetFrameLevel() or 0
-    if level < 1 and parent.SetFrameLevel then
-        parent:SetFrameLevel(1)
-        level = 1
-    end
-    if box.SetFrameLevel then box:SetFrameLevel(math.max(0, level - 1)) end
-    for _, side in ipairs(box.SetBackdrop and {} or { "top", "bottom", "left", "right" }) do
-        local line = Flat(box, "BORDER", GROUP_LINE[1], GROUP_LINE[2], GROUP_LINE[3], GROUP_LINE[4])
-        if side == "top" or side == "bottom" then
-            line:SetHeight(1)
-            line:SetPoint(side == "top" and "TOPLEFT" or "BOTTOMLEFT", box, side == "top" and "TOPLEFT" or "BOTTOMLEFT", 0, 0)
-            line:SetPoint(side == "top" and "TOPRIGHT" or "BOTTOMRIGHT", box, side == "top" and "TOPRIGHT" or "BOTTOMRIGHT", 0, 0)
-        else
-            line:SetWidth(1)
-            line:SetPoint(side == "left" and "TOPLEFT" or "TOPRIGHT", box, side == "left" and "TOPLEFT" or "TOPRIGHT", 0, 0)
-            line:SetPoint(side == "left" and "BOTTOMLEFT" or "BOTTOMRIGHT", box, side == "left" and "BOTTOMLEFT" or "BOTTOMRIGHT", 0, 0)
-        end
-        edges[side] = line
-    end
-    box:Hide()
-    local group = { kind = "group", text = title, heading = fs, box = box, edges = edges, sections = {} }
+    fs:Hide()
+    local group = { kind = "group", text = title, heading = fs, sections = {} }
     table.insert(self.items, group)
     self.group, self.current = group, nil
     self.dirty = true
     return fs
 end
 
---- The end of the box Group opened.
+--- The end of the sections Group opened.
 function Layout:EndGroup()
     self:Columns(nil)
     if self.group then

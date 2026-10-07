@@ -350,6 +350,38 @@ Expect("the modules' list narrows with the page", rows[1].parent.width, layout:W
 Expect("two buttons too wide for the box share it instead of running out", Inside(send) and Inside(clear), true)
 Expect("...still side by side", send.anchor.y == clear.anchor.y, true)
 
+---------------------------------------------------------------- a group
+do
+    local open = CreateFrame("Frame")
+    open.children = {}
+    function open:GetWidth() return 640 end
+    local grouped = Layout.New(open, 25, -16)
+    grouped:Group("Settings")
+    grouped:Section("Display")
+    grouped:Checkbox("Show Words", "tip", function() return true end, function() end)
+    grouped:Section("Window")
+    grouped:Checkbox("Lock Position", "tip", function() return true end, function() end)
+    grouped:EndGroup()
+    grouped:Refresh()
+    local group, display, window = grouped.items[1], grouped.items[2], grouped.items[3]
+    Expect("a group has a title, as a section has, and no box", group.heading.text .. " " .. tostring(group.box),
+        "Settings nil")
+    Expect("its sections have no titles of their own", tostring(display.heading) .. " " .. tostring(window.heading),
+        "nil nil")
+    Expect("...their names still what search files their rows under", grouped.entries[1].section, "Display")
+    Expect("a divider between them, where the second's title would be, none above the first",
+        tostring(display.divider.shown) .. " " .. tostring(window.divider.shown ~= false), "false true")
+    Expect("...one thin, faint bronze line, not the header's divider",
+        tostring(window.divider.layoutAtlas) .. " " .. window.divider.height .. " "
+        .. table.concat(window.divider.layoutColor, ",") .. " " .. window.divider.alpha, "nil 1 0.55,0.4,0.24 0.5")
+    Expect("...from where the rows' labels start to where the boxes end",
+        (window.divider.anchor.x - grouped.left) .. " " .. (window.divider.anchor.x + window.divider.width),
+        "37 " .. (grouped.left + grouped:Width() - 14))
+    Expect("...16 under the rows above it, and the rows under it 16 under it",
+        (display.bottom - window.divider.anchor.y) .. " " .. (window.divider.anchor.y - window.divider.height - window.top),
+        "16 16")
+end
+
 ---------------------------------------------------------------- sections have no divider
 do
     -- The game's section headers are a title alone; the divider is the page header's.
