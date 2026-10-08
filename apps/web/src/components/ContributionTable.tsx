@@ -47,6 +47,7 @@ import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib
 import {
   bucketOf,
   contributionsHref,
+  namesSpeaker,
   QUEST_STAGES,
   nextSort,
   type Bucket,
@@ -543,7 +544,7 @@ export default function ContributionTable({
           localeHref(lang, contributionsHref(filters, { status: next }))
         }
       />
-      {status === "new" && (source === "quests" || source === "gossip") ? (
+      {status === "new" && namesSpeaker(source) ? (
         <BucketTabs
           active={bucket}
           counts={bucketCounts}
@@ -562,7 +563,7 @@ export default function ContributionTable({
           className="h-8 min-w-0 basis-64"
           onChange={(event) => setQuery(event.target.value)}
         />
-        {source === "quests" || source === "gossip" ? (
+        {namesSpeaker(source) ? (
           <FilterChip
             label="search in"
             value={searchIn === "any" ? undefined : searchIn}
@@ -790,7 +791,6 @@ const ContributionTableRow = memo(function ContributionTableRow({
   /** The row's status, with this session's own changes over the server's. */
   current: ContributionStatus;
   npc: NpcSummary | null;
-  /** Whether accept would take the row as its speaker stands. */
   /** Where the row stands now: an answer saved here may have moved it. Only ready rows offer Accept. */
   bucket: Bucket;
   /** On the New tab, the row now belongs to the other half. */

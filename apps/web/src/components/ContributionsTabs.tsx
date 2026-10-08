@@ -1,15 +1,15 @@
-import type { Section as ContributionSection } from "@/lib/contributions/query";
+import { SECTIONS, type Section as ContributionSection } from "@/lib/contributions/query";
 import { localeHref, type Lang } from "@/lib/lang";
 
 import { LinkTabs } from "@/components/StatusTabs";
 
-const SECTIONS = [
-  { key: "quests", label: "Quests", href: "/contributions/quests" },
-  { key: "gossip", label: "Gossip", href: "/contributions/gossip" },
-  { key: "books", label: "Books", href: "/contributions/books" },
-  { key: "zones", label: "Zones", href: "/contributions/zones" },
-  { key: "npcs", label: "NPCs", href: "/contributions/npcs" },
-] as const;
+const SECTION_LABELS: Record<Section, string> = {
+  quests: "Quests",
+  gossip: "Gossip",
+  books: "Books",
+  zones: "Zones",
+  npcs: "NPCs",
+};
 
 const QUEST_VIEWS = [
   { key: "contributions", label: "Contributions", href: "/contributions/quests" },
@@ -35,7 +35,11 @@ export default function ContributionsTabs({
   view?: View;
   showNpcs: boolean;
 }) {
-  const sections = SECTIONS.filter((tab) => tab.key !== "npcs" || showNpcs);
+  const sections = [...SECTIONS, ...(showNpcs ? (["npcs"] as const) : [])].map((key) => ({
+    key,
+    label: SECTION_LABELS[key],
+    href: `/contributions/${key}`,
+  }));
   return (
     <>
       <LinkTabs label="Contributions" tabs={localised(lang, sections)} active={section} />

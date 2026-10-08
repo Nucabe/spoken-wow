@@ -61,6 +61,16 @@ export function isSection(value: unknown): value is Section {
   return SECTIONS.includes(value as Section);
 }
 
+/** The envelope source a section's rows are filed under. */
+export function sourceOfSection(section: Section): EnvelopeSource {
+  return section === "gossip" ? "quests" : section;
+}
+
+/** Whether a section's rows name a speaker, so they split into buckets and search by NPC. */
+export function namesSpeaker(section: Section): boolean {
+  return sourceOfSection(section) === "quests";
+}
+
 /** The section a row is listed under. */
 export function sectionOf(row: { source: EnvelopeSource }, quest: QuestSummary | null): Section {
   return quest === "gossip" ? "gossip" : row.source;

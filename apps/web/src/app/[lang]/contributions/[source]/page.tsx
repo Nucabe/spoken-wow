@@ -18,7 +18,9 @@ import {
   bucketOf,
   isBucket,
   isSection,
+  namesSpeaker,
   sectionOf,
+  sourceOfSection,
   matchesSearch,
   isStageFilter,
   matchesStage,
@@ -257,7 +259,7 @@ export default async function Page({
   const status: ContributionStatus = isStatus(rawStatus) ? rawStatus : "new";
   // Only quests' New tab is split: books and zones name no speaker, an accepted row was ready
   // by definition, and a rejected one's speaker no longer matters.
-  const bucket: Bucket = (source === "quests" || source === "gossip") && isBucket(rawBucket) ? rawBucket : "ready";
+  const bucket: Bucket = namesSpeaker(source) && isBucket(rawBucket) ? rawBucket : "ready";
 
   // Which game the text came from, read off `build` (lib/contributions/client.ts). Defaults to
   // the Forever beta, the client nearly all of this queue comes from; "all" has to be asked for.
@@ -268,7 +270,7 @@ export default async function Page({
 
   // Books and zones name no NPC or quest, so their search is always over the text.
   const q = typeof rawQ === "string" ? rawQ.trim() : "";
-  const searchIn = (source === "quests" || source === "gossip") && isSearchIn(rawFilter) ? rawFilter : "any";
+  const searchIn = namesSpeaker(source) && isSearchIn(rawFilter) ? rawFilter : "any";
 
   // Whichever column header was last clicked; most sent first until one is.
   const sort: ContributionSort = sortOf(rawSort, rawDir);
@@ -276,7 +278,7 @@ export default async function Page({
   // Lines the corpus already has are not this queue's: a different text is a correction, on
   // its own tab, and the same text is nothing to triage at all (known.ts's tabOf).
   // Gossip is the quests rows tied to no quest, so the two sections read one source and split it.
-  const listed = (await listContributions(status, lang, sort, source === "gossip" ? "quests" : source)).filter(
+  const listed = (await listContributions(status, lang, sort, sourceOfSection(source))).filter(
     (row) => sectionOf(row, questFor(row)) === source,
   );
   const states = await lineStates(listed);
