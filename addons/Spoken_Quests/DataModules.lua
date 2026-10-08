@@ -67,6 +67,8 @@ local LOAD_ALL_MODULES = true
 ---@field ObjectNameLookupByObjectID table<number, string> Maps GameObject ID to GameObject name
 ---@field ItemNameLookupByItemID table<number, string> Maps Item ID to Item name
 ---@field SoundLengthLookupByFileName table<string, number> Maps sound filenames to their duration in seconds
+---@field QuestFileLookupByNPCID? table<string, table<number, string>> Maps a quest line's filename and its giver's Creature ID to the line in that giver's own voice, where it differs
+---@field QuestFileLookupByObjectID? table<string, table<number, string>> Maps a quest line's filename and its giver's GameObject ID to the line in that giver's own voice, where it differs
 
 ---@class AvailableDataModule
 ---@field AddonName string Addon name
@@ -700,6 +702,31 @@ setmetatable(getFileNameForEvent,
         end
     })
 
+--- The file a quest line is in, in the voice of the NPC or object giving it, where that is
+--- not the line's own: one quest given by NPCs of different voices is a file per voice.
+---@param soundData SoundData
+---@param fileName string The quest line's own file, as getFileNameForEvent names it
+---@return string|nil
+function DataModules:GetQuestFileForGiver(soundData, fileName)
+    if not Enums.SoundEvent:IsQuestEvent(soundData.event) or not soundData.unitGUID then
+        return
+    end
+    local type = Utils:GetGUIDType(soundData.unitGUID)
+    local name = Enums.GUID:IsCreature(type) and "QuestFileLookupByNPCID"
+        or type == Enums.GUID.GameObject and "QuestFileLookupByObjectID"
+        or nil
+    if not name then
+        return
+    end
+    local id = Utils:GetIDFromGUID(soundData.unitGUID)
+    for _, module in self:GetModules() do
+        local byGiver = module[name] and module[name][fileName]
+        if byGiver and byGiver[id] then
+            return byGiver[id]
+        end
+    end
+end
+
 ---@param soundData SoundData
 ---@return boolean found Whether the sound is found and can be played
 --- Whether a pack has the line, filling in its file, length and pack if so. When not, the second
@@ -717,6 +744,18 @@ function DataModules:PrepareSound(soundData)
 
     if soundData.fileName == nil then
         return false, "no file name for it (no quest ID, or a greeting no pack's text matches)"
+    end
+
+    -- A quest given by NPCs of different voices is a file per voice: this giver's own first,
+    -- then the line's, so a voice no installed pack has yet still plays the line.
+    local own = self:GetQuestFileForGiver(soundData, soundData.fileName)
+    if own then
+        local line = soundData.fileName
+        soundData.fileName = own
+        if self:ResolveSoundFile(soundData) then
+            return true
+        end
+        soundData.fileName = line
     end
 
     if self:ResolveSoundFile(soundData) then

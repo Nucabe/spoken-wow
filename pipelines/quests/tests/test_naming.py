@@ -9,7 +9,10 @@ from tts_cli.naming import (
     gossip_stem_rank,
     line_id_for_row,
     localized_gossip_stem,
+    split_voice,
     subfolder_from_line_id,
+    variant_file_name,
+    variant_line_id,
 )
 
 QUEST = {"quest": "5", "source": "accept",
@@ -115,3 +118,33 @@ def test_gossip_stem_rank():
     assert gossip_stem_rank("b6029-orc-female-standard") == 0
     assert gossip_stem_rank("bad0c0ffee" + "0" * 22) == 1
     assert gossip_stem_rank("deDE-" + "0" * 32) == 2
+
+
+# The same vectors as apps/web/src/lib/contributions/naming.test.ts, which mirrors these.
+VOICED = [
+    ("q:109:accept", "109-accept", "human-male-standard",
+     "q:109:accept~human-male-standard", "109-accept-human-male-standard"),
+    ("q:109:complete:f", "f-109-complete", "dwarf-female-standard",
+     "q:109:complete:f~dwarf-female-standard", "f-109-complete-dwarf-female-standard"),
+    ("g:abc123:m", "m-abc123", "human-male-warrior",
+     "g:abc123:m~human-male-warrior", "m-abc123-human-male-warrior"),
+    ("f:4377:dwarf-male-standard", "4377-dwarf-male-standard", "dwarf-male-grim",
+     "f:4377:dwarf-male-standard~dwarf-male-grim", "4377-dwarf-male-standard-dwarf-male-grim"),
+]
+
+
+@pytest.mark.parametrize("line_id,file_name,voice,variant_id,variant_file", VOICED)
+def test_a_line_in_another_voice_is_named_after_it(line_id, file_name, voice, variant_id,
+                                                   variant_file):
+    assert variant_line_id(line_id, voice) == variant_id
+    assert variant_file_name(file_name, voice) == variant_file
+    assert filename_from_line_id(variant_id) == variant_file
+    assert split_voice(variant_id) == (line_id, voice)
+    assert split_voice(line_id) == (line_id, None)
+    assert subfolder_from_line_id(variant_id) == subfolder_from_line_id(line_id)
+
+
+def test_the_lookup_stems_of_a_voice_carry_it_without_the_player_gender():
+    assert gossip_hash_from_line_id("g:abc123:m~human-male-warrior") == "abc123-human-male-warrior"
+    assert followup_stem_from_line_id("f:4377:dwarf-male-standard~dwarf-male-grim") == \
+        "4377-dwarf-male-standard-dwarf-male-grim"

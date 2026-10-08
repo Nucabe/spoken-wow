@@ -19,7 +19,7 @@ file: leaving it out of a pack would strand the line that still needs it.
 import json
 import os
 
-from tts_cli.naming import subfolder_from_line_id
+from tts_cli.naming import split_voice, subfolder_from_line_id
 
 DEFAULT_IGNORED_PATH = "corpus/ignored.json"
 
@@ -45,7 +45,8 @@ def ignored_files(corpus: dict, ignored: dict) -> list:
     owners = {}
     for line in corpus["lines"]:
         rel = f'{subfolder_from_line_id(line["lineId"])}/{line["fileName"]}.mp3'
-        owners.setdefault(rel, []).append(line["lineId"])
+        # A line in another voice is ignored with the line it is a voice of.
+        owners.setdefault(rel, []).append(split_voice(line["lineId"])[0])
 
     return sorted(rel for rel, line_ids in owners.items()
                   if all(line_id in ignored for line_id in line_ids))

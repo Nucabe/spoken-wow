@@ -31,14 +31,17 @@ afterEach(async () => {
 afterAll(closeDb);
 
 /** An English line spoken by `speakers`, each written with the voice the extract gave it. */
-async function line(speakers: { npcId: number; race: string; gender: string; flavor: string | null }[]) {
+async function line(
+  speakers: { npcId: number; race: string; gender: string; flavor: string | null }[],
+  source: "accept" | "gossip" = "accept",
+) {
   await db().query(
     `insert into "quest_line"
        ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "questId",
         "questTitle", "fileName", "text", "originalText", "generatable")
-     values ($1, 0, 'enUS', 1, true, 'extracted', 'accept', $2, 'A Test Quest', $3,
+     values ($1, 0, 'enUS', 1, true, 'extracted', $4, $2, 'A Test Quest', $3,
              'Bring me six wolf pelts.', 'Bring me six wolf pelts.', true)`,
-    [lineId, questId, `${questId}-accept`],
+    [lineId, source === "accept" ? questId : null, `${questId}-accept`, source],
   );
   for (const [index, speaker] of speakers.entries()) {
     await db().query(
@@ -63,52 +66,88 @@ async function npc(npcId: number, values: { race: string | null; gender: string 
   );
 }
 
-async function voices(): Promise<string[]> {
-  return (await corpus()).lines.filter((candidate) => candidate.lineId === lineId).map((l) => l.voice);
+/** Each of this line's rows as `lineId fileName voice`, plain or in another voice, by NPC. */
+async function spoken(): Promise<string[]> {
+  return (await corpus()).lines
+    .filter((candidate) => candidate.lineId === lineId || candidate.lineId.startsWith(`${lineId}~`))
+    .sort((a, b) => a.npcId - b.npcId)
+    .map((l) => `${l.lineId} ${l.fileName} ${l.voice}${l.generatable ? "" : ` (${l.skipReason})`}`);
 }
 
-describe("a line's voice", WHOLE_CORPUS, () => {
-  it("is its NPC's, whatever the speaker row was written with", async () => {
+describe("a quest moment's voice", WHOLE_CORPUS, () => {
+  it("keeps the file it was made in for an NPC whose voice is the one it was written with", async () => {
+    await line([{ npcId: npcIds[0], race: "tauren", gender: "male", flavor: "warrior" }]);
+    await npc(npcIds[0], { race: "tauren", gender: "male", flavor: "warrior", provenance: "corpus" });
+
+    expect(await spoken()).toEqual([`${lineId} ${questId}-accept tauren-male-warrior`]);
+  });
+
+  it("is a line of its own for an NPC whose voice is another, named after the voice", async () => {
     await line([{ npcId: npcIds[0], race: "tauren", gender: "male", flavor: "warrior" }]);
     await npc(npcIds[0], { race: "tauren", gender: "male", flavor: "elder", provenance: "moderator" });
 
-    expect(await voices()).toEqual(["tauren-male-elder"]);
+    expect(await spoken()).toEqual([
+      `${lineId}~tauren-male-elder ${questId}-accept-tauren-male-elder tauren-male-elder`,
+    ]);
   });
 
-  it("has no flavor while its NPC has none, and no voice the roster has", async () => {
+  it("cannot be voiced while its NPC has no flavor", async () => {
     await line([{ npcId: npcIds[0], race: "tauren", gender: "male", flavor: "warrior" }]);
     await npc(npcIds[0], { race: "tauren", gender: "male", flavor: null, provenance: "corpus" });
 
-    expect(await voices()).toEqual(["tauren-male"]);
+    expect(await spoken()).toEqual([
+      `${lineId}~tauren-male ${questId}-accept-tauren-male tauren-male (no-voice)`,
+    ]);
   });
 
-  it("is one voice for every speaker, in the flavor most of their NPCs have", async () => {
-    await line(npcIds.map((npcId) => ({ npcId, race: "human", gender: "male", flavor: "standard" })));
+  it("is spoken by NPCs sharing it in each of their own voices, one file per voice", async () => {
+    await line(npcIds.map((npcId) => ({ npcId, race: "human", gender: "male", flavor: "official" })));
     await npc(npcIds[0], { race: "human", gender: "male", flavor: "warrior", provenance: "corpus" });
     await npc(npcIds[1], { race: "human", gender: "male", flavor: "official", provenance: "corpus" });
-    await npc(npcIds[2], { race: "human", gender: "male", flavor: "official", provenance: "corpus" });
+    await npc(npcIds[2], { race: "human", gender: "male", flavor: "warrior", provenance: "corpus" });
 
-    expect(await voices()).toEqual(["human-male-official", "human-male-official", "human-male-official"]);
+    expect(await spoken()).toEqual([
+      `${lineId}~human-male-warrior ${questId}-accept-human-male-warrior human-male-warrior`,
+      `${lineId} ${questId}-accept human-male-official`,
+      `${lineId}~human-male-warrior ${questId}-accept-human-male-warrior human-male-warrior`,
+    ]);
   });
 
   it("keeps the speaker's own voice when nothing is known about its NPC", async () => {
     await line([{ npcId: npcIds[0], race: "orc", gender: "female", flavor: "standard" }]);
     await npc(npcIds[0], { race: null, gender: null, flavor: null, provenance: "none" });
 
-    expect(await voices()).toEqual(["orc-female-standard"]);
+    expect(await spoken()).toEqual([`${lineId} ${questId}-accept orc-female-standard`]);
+  });
+});
+
+describe("a greeting's voice", WHOLE_CORPUS, () => {
+  it("is one for every speaker, in the flavor most of their NPCs have", async () => {
+    await line(npcIds.map((npcId) => ({ npcId, race: "human", gender: "male", flavor: "standard" })), "gossip");
+    await npc(npcIds[0], { race: "human", gender: "male", flavor: "warrior", provenance: "corpus" });
+    await npc(npcIds[1], { race: "human", gender: "male", flavor: "official", provenance: "corpus" });
+    await npc(npcIds[2], { race: "human", gender: "male", flavor: "official", provenance: "corpus" });
+
+    expect((await spoken()).map((row) => row.split(" ").at(-1))).toEqual([
+      "human-male-official",
+      "human-male-official",
+      "human-male-official",
+    ]);
   });
 });
 
 describe("the catalogue", WHOLE_CORPUS, () => {
-  it("moves when an NPC's answer changes, so every line it speaks is voiced anew", async () => {
+  it("moves when an NPC's answer changes, so the NPC speaks its new voice's line", async () => {
     await line([{ npcId: npcIds[0], race: "tauren", gender: "male", flavor: "warrior" }]);
     await npc(npcIds[0], { race: "tauren", gender: "male", flavor: "warrior", provenance: "moderator" });
-    expect(await voices()).toEqual(["tauren-male-warrior"]);
+    expect(await spoken()).toEqual([`${lineId} ${questId}-accept tauren-male-warrior`]);
 
     await db().query(
       `update "npc" set "flavor" = 'elder', "updatedAt" = now() where "npcKind" = 'creature' and "npcId" = $1`,
       [npcIds[0]],
     );
-    expect(await voices()).toEqual(["tauren-male-elder"]);
+    expect(await spoken()).toEqual([
+      `${lineId}~tauren-male-elder ${questId}-accept-tauren-male-elder tauren-male-elder`,
+    ]);
   });
 });

@@ -24,8 +24,9 @@ from tts_cli.naming import filename_for_row, line_id_for_row
 #: 3: a row a player contributed carries its "contributionId". The extract has none to mark,
 #: but the number says the file's unmarked rows are all the dump's -- which is what lets
 #: corpus_db's import let them overtake a contribution (see CONTRIBUTIONS_MARKED there).
-#: 4: "npcs", each NPC once with its own race, gender and flavor, which the site voices every
-#: line the NPC speaks in (the npc table, migration 0070).
+#: 4: "npcs", each NPC once with its own race, gender and flavor and whose answer that is
+#: (`provenance`), which every line the NPC speaks is voiced in (the npc table, migration 0070).
+#: The extract's are `corpus`; an export carries every answer the site has.
 SCHEMA_VERSION = 4
 DEFAULT_CORPUS_PATH = "corpus/corpus.json.gz"
 INVALID_CHARS = "$<>"
@@ -120,6 +121,7 @@ def npcs_of(df) -> list:
             "race": row["race"],
             "gender": row["gender"],
             "flavor": row["npc_flavor"],
+            "provenance": "corpus",
         })
     return [npcs[key] for key in sorted(npcs)]
 

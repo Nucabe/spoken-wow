@@ -179,7 +179,10 @@ elif args.mode == "build":
         if not locale_text:
             print(f"warning: no {lang} gossip lines with client text; on a {lang} client "
                   "gossip will be matched against the English text")
-    corpus = load_corpus(args.corpus)
+    from tts_cli.store import stored_files
+    from tts_cli.voice_files import stored_stems, with_voice_files
+    # Each NPC in its own voice's file, wherever the store has that file's audio.
+    corpus = with_voice_files(load_corpus(args.corpus), stored_stems(stored_files(args.store)))
     # None for the whole store rather than the 'all' stem set, so a store file the corpus
     # cannot address still ships in the complete pack the way it always has.
     include = None if args.pack == "all" else \

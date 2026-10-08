@@ -16,7 +16,7 @@ from tqdm import tqdm
 from tts_cli.ignores import ignored_files
 from tts_cli.length_table import write_sound_length_table_lua
 from tts_cli.naming import (FOLLOWUP, followup_stem_from_line_id, gossip_hash_from_line_id,
-                            subfolder_from_line_id)
+                            split_voice, subfolder_from_line_id, variant_file_name)
 from tts_cli.store import SUBFOLDERS, audio_extension, stored_files
 from tts_cli.utils import (get_first_n_words, get_last_n_words,
                            replace_dollar_bs_with_space)
@@ -164,9 +164,14 @@ def build_tables(corpus: dict, ignored=()) -> dict:
     names = {"creature": {}, "gameobject": {}, "item": {}}
     quest_ids = {}
     followup = {}
+    # A quest moment's file in the voice an NPC speaks it in, where that is not the moment's
+    # own (tts_cli/voice_files.py): keyed by the moment's file and the giver, since the addon
+    # names a quest's file from its id and event and knows who is giving it.
+    quest_files = {"creature": {}, "gameobject": {}}
 
     for line in corpus["lines"]:
-        if line["lineId"] in ignored:
+        base_id, voice = split_voice(line["lineId"])
+        if base_id in ignored:
             continue
 
         kind = line["npcType"]
@@ -199,6 +204,10 @@ def build_tables(corpus: dict, ignored=()) -> dict:
         if line["source"] == "accept" and kind in questlog:
             questlog[kind][line["questId"]] = line["npcId"]
 
+        if voice and kind in quest_files:
+            stem = f'{line["questId"]}-{line["source"]}'
+            quest_files[kind].setdefault(stem, {})[line["npcId"]] = variant_file_name(stem, voice)
+
         quest_ids.setdefault(line["source"], {}) \
                  .setdefault(escape_lua_string(line["questTitle"]), {}) \
                  .setdefault(escape_lua_string(line["npcName"]), {}) \
@@ -218,6 +227,8 @@ def build_tables(corpus: dict, ignored=()) -> dict:
         "object_name_lookups": ("ObjectNameLookupByObjectID", names["gameobject"]),
         "item_name_lookups": ("ItemNameLookupByItemID", names["item"]),
         "followup_lookups": ("FollowupLookup", followup),
+        "npc_quest_file_lookups": ("QuestFileLookupByNPCID", quest_files["creature"]),
+        "object_quest_file_lookups": ("QuestFileLookupByObjectID", quest_files["gameobject"]),
     }
 
 

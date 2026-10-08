@@ -186,9 +186,10 @@ def test_lists_each_npc_once_with_its_own_flavor_in_kind_then_id_order():
     rows[4]["npc_flavor"] = None  # the poster: narrators have none
     corpus = build_corpus(pd.DataFrame(rows), SPAWNS)
     assert corpus["npcs"] == [
-        {"npcType": "creature", "npcId": 68, "race": "human", "gender": "male", "flavor": None},
+        {"npcType": "creature", "npcId": 68, "race": "human", "gender": "male", "flavor": None,
+         "provenance": "corpus"},
         {"npcType": "creature", "npcId": 288, "race": "human", "gender": "male",
-         "flavor": "standard"},
+         "flavor": "standard", "provenance": "corpus"},
         {"npcType": "gameobject", "npcId": 68, "race": "narrator", "gender": "male",
-         "flavor": None},
+         "flavor": None, "provenance": "corpus"},
     ]
