@@ -15,11 +15,11 @@ import { isStatus, type ContributionStatus } from "@/lib/contributions/contribut
 import { linesInExplorer } from "@/lib/contributions/accept";
 import {
   isSearchIn,
-  isSpeakerSentinel,
+  bucketOf,
+  isBucket,
   isSourceFilter,
   isStageFilter,
   matchesSearch,
-  matchesSpeaker,
   matchesSource,
   matchesStage,
   pageOf,
@@ -29,7 +29,7 @@ import {
   type ClientFilter,
   type ContributionSort,
   type SourceFilter,
-  type SpeakerFilter,
+  type Bucket,
   type StageFilter,
 } from "@/lib/contributions/query";
 import { listContributions, observationMeta, type Contribution } from "@/lib/contributions/store";
@@ -44,7 +44,7 @@ import {
 } from "@/lib/contributions/triage";
 import { facets } from "@/lib/facets";
 import { observedFrom, resolveNpc } from "@/lib/npc/resolve";
-import { isProvenance, getResolutions, getResolutionsById, resolutionKey, type NpcKind } from "@/lib/npc/store";
+import { getResolutions, getResolutionsById, resolutionKey, type NpcKind } from "@/lib/npc/store";
 import { BASE_LANG, isClientLang, langName } from "@/lib/lang";
 import { can } from "@/lib/permissions";
 import { lineByPath } from "@/lib/zones/catalogue";
@@ -195,7 +195,7 @@ export default async function Page({
   params: Promise<{ lang: string }>;
   searchParams: Promise<{
     status?: string;
-    provenance?: string;
+    bucket?: string;
     client?: string;
     source?: string;
     stage?: string;
@@ -234,7 +234,7 @@ export default async function Page({
 
   const {
     status: rawStatus,
-    provenance: rawProvenance,
+    bucket: rawBucket,
     client: rawClient,
     source: rawSource,
     stage: rawStage,
@@ -245,21 +245,9 @@ export default async function Page({
     filter: rawFilter,
   } = await searchParams;
   const status: ContributionStatus = isStatus(rawStatus) ? rawStatus : "new";
-  // Defaults to "all", not a narrowing anyone needs applied before they ask for it. There used
-  // to be a second dimension here (a "confirmed" param) alongside this one, spelled as its own
-  // Confirmed/Unconfirmed pills: gone, replaced by the NEEDS_DECISION sentinel folded into this
-  // same param. `confirmed` itself really is a strict function of provenance -- resolveNpc and
-  // the override route are the only two places that ever write it, and both only ever pair
-  // confirmed:true with "corpus"/"display"/"moderator" and confirmed:false with "client"/"none"
-  // (npc_resolution_confirmed_provenance_check, migrations 0031 and 0055, enforces the confirmed
-  // half at the schema level) -- but that derivation answers a different question than the one the old
-  // "Unconfirmed" pill asked. "Unconfirmed" was the union `provenance in ('client', 'none')`,
-  // the view this whole queue exists to serve (finding the NPCs nobody has settled yet), and no
-  // single provenance value can express a union of two -- so it was never a renamed duplicate of
-  // an existing option the way "Confirmed" (a union nobody triages) was safe to just drop.
-  // See lib/contributions/query.ts's own NEEDS_DECISION docstring for the rest of this.
-  const provenance: SpeakerFilter =
-    isSpeakerSentinel(rawProvenance) || isProvenance(rawProvenance) ? rawProvenance : "all";
+  // Only the New tab is split: an accepted row was ready by definition, and a rejected one's
+  // speaker no longer matters.
+  const bucket: Bucket = isBucket(rawBucket) ? rawBucket : "ready";
 
   // Which game the text came from, read off `build` (lib/contributions/client.ts). Defaults to
   // the Forever beta, the client nearly all of this queue comes from; "all" has to be asked for.
@@ -282,18 +270,20 @@ export default async function Page({
   const listed = await listContributions(status, lang, sort);
   const states = await lineStates(listed);
   const contributions = listed.filter((row, index) => tabOf(row.status, states[index]) === "contributions");
-  // Every row's NPC, not just this page's: the Speaker filter reads it, and it is one query
-  // for the lot (npcFor's own docstring).
+  // Every row's NPC, not just this page's: the buckets read it, and it is one query for the lot.
   const npcs = await npcFor(contributions);
 
-  // matchesSpeaker handles a plain provenance and both sentinels; a row with no npc at all
-  // survives a narrowed view only as MISSING, and only when it is a quests row.
-  const matching = contributions
-    .filter((row) => matchesSpeaker(npcs[row.id]?.provenance, provenance, row.source))
+  const filtered = contributions
     .filter((row) => client === "all" || clientOf(row.build).family === client)
     .filter((row) => matchesSource(sectionOf(row, questFor(row)), source))
     .filter((row) => matchesStage(questFor(row), stage))
     .filter((row) => matchesSearch({ text: row.text, npc: npcs[row.id], quest: questFor(row) }, q, searchIn));
+
+  // Counted over the other filters, so each tab says what it holds in the view as narrowed.
+  const buckets = new Map(filtered.map((row) => [row.id, bucketOf(row.source, npcs[row.id] ?? null)]));
+  const bucketCounts: Record<Bucket, number> = { ready: 0, blocked: 0 };
+  for (const value of buckets.values()) bucketCounts[value]++;
+  const matching = status === "new" ? filtered.filter((row) => buckets.get(row.id) === bucket) : filtered;
 
   // A page of rows, not the whole queue: every row rendered is a row the browser has to build
   // and React has to diff, and a queue of hundreds made both the load and every click slow.
@@ -358,7 +348,8 @@ export default async function Page({
           page={page}
           pages={pages}
           status={status}
-          provenance={provenance}
+          bucket={bucket}
+          bucketCounts={bucketCounts}
           client={client}
           source={source}
           stage={stage}

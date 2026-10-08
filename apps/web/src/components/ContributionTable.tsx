@@ -31,7 +31,7 @@ import SpeakerCell, { ProvenanceBadge, type SpeakerAnswer } from "@/components/S
 import { ACCEPT_TONE, LiteButton, LiteCheckbox, REJECT_TONE } from "@/components/LiteControls";
 import { Refreshing } from "@/components/Loading";
 import SendersButton from "@/components/SendersButton";
-import StatusTabs from "@/components/StatusTabs";
+import StatusTabs, { BucketTabs } from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
 import { useSearchBox } from "@/components/useSearchBox";
 import { Badge } from "@/components/ui/badge";
@@ -46,19 +46,18 @@ import {
 import type { ClientSummary } from "@/lib/contributions/client";
 import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib/contributions/speaker";
 import {
+  bucketOf,
   contributionsHref,
-  MISSING,
-  NEEDS_DECISION,
   QUEST_STAGES,
   nextSort,
   sectionOf,
+  type Bucket,
   type ClientFilter,
   type ContributionSort,
   type FilterChange,
   type QuestStage,
   type SortColumn,
   type SourceFilter,
-  type SpeakerFilter,
   type StageFilter,
 } from "@/lib/contributions/query";
 import type { Contribution } from "@/lib/contributions/store";
@@ -66,9 +65,9 @@ import type { Contribution } from "@/lib/contributions/store";
 // type` erases the whole thing at compile time, so none of that follows the type in here. The
 // same split existing.ts's `existing` prop already draws.
 import type { BookMatch, BookSummary, NpcConflictOption, NpcSummary, QuestSummary } from "@/lib/contributions/triage";
-// From npc.ts, not npc/store.ts: store.ts imports @/lib/db, and pulling NPC_KINDS/PROVENANCES
+// From npc.ts, not npc/store.ts: store.ts imports @/lib/db, and pulling NPC_KINDS
 // (values, not just types) out of it would drag Postgres's own node built-ins into this bundle.
-import { NPC_KINDS, PROVENANCES, type NpcKind, type Provenance } from "@/lib/npc/npc";
+import { NPC_KINDS, type NpcKind } from "@/lib/npc/npc";
 import type { NpcResolution } from "@/lib/npc/store";
 import type { Filter } from "@/lib/search";
 import { cn } from "@/lib/utils";
@@ -137,26 +136,6 @@ const STATUS_LABELS: Record<ContributionStatus, string> = {
 };
 
 
-const PROVENANCE_LABELS: Record<Provenance, string> = {
-  corpus: "Corpus",
-  display: "Game data",
-  client: "Guessed",
-  moderator: "Moderated",
-  none: "Unknown",
-};
-
-
-// The Speaker dropdown's options: NEEDS_DECISION first -- it's the view this queue exists for,
-// "everything nobody has settled yet" -- then PROVENANCES's own four, then MISSING: a quest row
-// that names no NPC at all, which the NPC column's own form fills in. "Confirmed"
-// (the union nobody triages: settled rows) is deliberately not here; see NEEDS_DECISION's own
-// docstring in lib/contributions/query.ts for why that one dropped out while this one didn't.
-const SPEAKER_CHIP_OPTIONS: ChipOption[] = [
-  { value: NEEDS_DECISION, label: "Needs a decision" },
-  ...PROVENANCES.map((option) => ({ value: option, label: PROVENANCE_LABELS[option] })),
-  { value: MISSING, label: "Missing" },
-];
-
 /**
  * A column header that orders the queue: a click sorts on it, a second click flips it. The
  * column in force shows its direction; the others show a faint both-ways arrow, so which
@@ -212,7 +191,8 @@ export default function ContributionTable({
   page,
   pages,
   status,
-  provenance,
+  bucket,
+  bucketCounts,
   client,
   source,
   stage,
@@ -231,7 +211,9 @@ export default function ContributionTable({
   page: number;
   pages: number;
   status: ContributionStatus;
-  provenance: SpeakerFilter;
+  /** Which half of the New tab is shown; the other tabs are not split. */
+  bucket: Bucket;
+  bucketCounts: Record<Bucket, number>;
   client: ClientFilter;
   source: SourceFilter;
   stage: StageFilter;
@@ -508,6 +490,18 @@ export default function ContributionTable({
 
   const rows = initial.filter((row) => (resolved[row.id] ?? row.status) === status);
 
+  /** The row's NPC with this session's answers over the server's. */
+  const npcOf = (row: ContributionRow): NpcSummary | null => {
+    const override =
+      (row.npc?.npcKind ? npcOverrides[overrideKey(row.npc.npcKind, row.npc.npcId)] : undefined) ??
+      npcOverrides[contributionKey(row.id)];
+    // An override is the shared resolution, named in English; the row keeps the name its own
+    // envelope gave, in its own locale.
+    return override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
+  };
+  /** Where the row stands now, which an answer saved here may have moved. */
+  const bucketNow = (row: ContributionRow): Bucket => bucketOf(row.source, npcOf(row));
+
   // Only rows still on screen count: a selected row a bulk reject just moved out of this view
   // must not be accepted by the next click on a button that no longer shows it.
   const selectedRows = rows.filter((row) => selected.has(row.id));
@@ -518,7 +512,11 @@ export default function ContributionTable({
   const shownToAccept = matching
     .filter((row) => (resolved[row.id] ?? row.status) !== "accepted")
     .map((row) => row.id);
-  const selectedToAccept = changeable(selectedRows, "accepted");
+  // A row with no speaker would only come back refused.
+  const selectedToAccept = changeable(
+    selectedRows.filter((row) => bucketNow(row) === "ready"),
+    "accepted",
+  );
   const selectedToReject = changeable(selectedRows, "rejected");
   const allTicked = rows.length > 0 && selectedRows.length === rows.length;
 
@@ -540,7 +538,7 @@ export default function ContributionTable({
    * ReportTable.tsx's own `go`; the mapping itself is contributionsHref, pulled out to
    * lib/contributions/query.ts so it can be tested without rendering FilterChip or this table.
    */
-  const filters = { status, provenance, client, source, stage, sort, q, searchIn };
+  const filters = { status, bucket, client, source, stage, sort, q, searchIn };
   function go(next: FilterChange, toPage = 1) {
     push(localeHref(lang, contributionsHref(filters, next, toPage)));
   }
@@ -556,6 +554,15 @@ export default function ContributionTable({
           localeHref(lang, contributionsHref(filters, { status: next }))
         }
       />
+      {status === "new" ? (
+        <BucketTabs
+          active={bucket}
+          counts={bucketCounts}
+          onGo={push}
+          hrefFor={(next) => localeHref(lang, contributionsHref(filters, { bucket: next }))}
+          className="-mt-1"
+        />
+      ) : null}
       <nav className="mb-4 flex flex-wrap items-center gap-2">
         <Input
           type="search"
@@ -570,12 +577,6 @@ export default function ContributionTable({
           value={searchIn === "any" ? undefined : searchIn}
           options={SEARCH_IN_OPTIONS}
           onChange={(next) => go({ searchIn: (next ?? "any") as Filter })}
-        />
-        <FilterChip
-          label="speaker"
-          value={provenance === "all" ? undefined : provenance}
-          options={SPEAKER_CHIP_OPTIONS}
-          onChange={(next) => go({ provenance: next as SpeakerFilter | undefined })}
         />
         <FilterChip
           label="client"
@@ -627,7 +628,8 @@ export default function ContributionTable({
                     Cancel
                   </Button>
                 </>
-              ) : (
+              ) : status === "new" && bucket === "ready" ? (
+                // Only where every row has a speaker: elsewhere it is a run of refusals.
                 <Button
                   size="sm"
                   variant="outline"
@@ -637,7 +639,7 @@ export default function ContributionTable({
                 >
                   Accept all matching ({shownToAccept.length})
                 </Button>
-              )}
+              ) : null}
               {selectedRows.length > 0 ? (
                 <>
                   <span className="text-muted-foreground ml-2">{selectedRows.length} selected</span>
@@ -707,12 +709,8 @@ export default function ContributionTable({
 
           <tbody>
             {rows.map((row) => {
-              const override =
-                (row.npc?.npcKind ? npcOverrides[overrideKey(row.npc.npcKind, row.npc.npcId)] : undefined) ??
-                npcOverrides[contributionKey(row.id)];
-              // An override is the shared resolution, named in English; the row keeps the name
-              // its own envelope gave, in its own locale (npcSummaryFrom's docstring).
-              const npc = override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
+              const npc = npcOf(row);
+              const now = bucketOf(row.source, npc);
               const book =
                 row.book && row.id in bookOverrides ? { ...row.book, match: bookOverrides[row.id] } : row.book;
               return (
@@ -722,6 +720,8 @@ export default function ContributionTable({
                   book={book}
                   current={resolved[row.id] ?? row.status}
                   npc={npc}
+                  acceptable={now === "ready"}
+                  movedTo={status === "new" && now !== bucket ? now : null}
                   found={existing[row.id]}
                   selected={selected.has(row.id)}
                   busy={busy === row.id}
@@ -772,6 +772,8 @@ const ContributionTableRow = memo(function ContributionTableRow({
   book,
   current,
   npc,
+  acceptable,
+  movedTo,
   found,
   selected,
   busy,
@@ -795,6 +797,10 @@ const ContributionTableRow = memo(function ContributionTableRow({
   /** The row's status, with this session's own changes over the server's. */
   current: ContributionStatus;
   npc: NpcSummary | null;
+  /** Whether accept would take the row as its speaker stands (query.ts's bucketOf). */
+  acceptable: boolean;
+  /** The New tab's other half, when an answer saved here moved the row into it. */
+  movedTo: Bucket | null;
   /** The corpus text the row's key already resolves to, if any. */
   found: string | undefined;
   selected: boolean;
@@ -1008,7 +1014,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
 
         <td>
           <div className="flex items-center justify-end gap-1">
-            {current !== "accepted" ? (
+            {current !== "accepted" && acceptable ? (
               <LiteButton
                 variant="accept"
                 disabled={busy || locked}
@@ -1049,6 +1055,11 @@ const ContributionTableRow = memo(function ContributionTableRow({
               </LiteButton>
             ) : null}
           </div>
+          {movedTo ? (
+            <p className="text-muted-foreground mt-1 text-right text-xs">
+              {movedTo === "ready" ? "Ready now" : "Needs a speaker now"}
+            </p>
+          ) : null}
           {refusal ? (
             // Plain words, straight from resolveContribution's own refusal message --
             // silence here used to be the whole failure mode ("Degrade per row on a

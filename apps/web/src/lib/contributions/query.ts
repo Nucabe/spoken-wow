@@ -1,6 +1,6 @@
 /**
- * The query string /contributions's filter dropdowns write to, and the Speaker dropdown's
- * one sentinel value.
+ * The query string /contributions's tabs and filter dropdowns write to, and the rule that sorts
+ * new rows into ready and blocked.
  *
  * A free function, not inlined in ContributionTable's click handler, so the mapping -- combine
  * whichever dimension just changed with the other as it stands, the same rule ReportTable's own
@@ -11,43 +11,31 @@
 import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
 import { isEnvelopeSource, type EnvelopeSource } from "./envelope";
-import type { Provenance } from "../npc/npc";
+import { isVoice } from "../voices/voices";
 import type { Filter } from "../search";
 import type { QuestSummary } from "./triage";
 
 /**
- * "Everything a moderator still owes a decision" -- not a fifth provenance, a sentinel over the
- * four real ones. `client` (a guess nobody has looked at) and `none` (nothing known at all) are
- * exactly the two provenances `confirmed` can never be true for, which is the whole reason this
- * queue exists: the brief's own words for it are "tweak unconfirmed NPCs later".
- *
- * A single-select Speaker dropdown of the four provenances alone cannot express that union --
- * picking "Client guess" or "No race" narrows to one of the two, never both in one click -- so
- * dropping the old Confirmed/Unconfirmed axis entirely (both of which were themselves unions of
- * two provenances, not renamed single ones) would have quietly removed a real view rather than
- * a duplicate one. This sentinel restores the "unconfirmed" half of that view without bringing
- * back a second dropdown or the "confirmed" half: nobody triages the settled rows, so there is
- * no queue that ever wants "corpus or moderator" as one filter.
- *
- * Kept off `isProvenance`'s own union on purpose: a value it doesn't recognise must fall back to
- * "all" (page.tsx's own parsing already does this for any unrecognised string), not silently
- * mean "needs a decision" -- the two are handled by two separate checks in matchesSpeaker so a
- * typo in the query string can never masquerade as this filter.
+ * Whether a row of the New tab can be accepted as it stands. A quests row needs a speaker whose
+ * race and gender are on file, whoever set them, in a voice the roster has: what accept.ts's
+ * speakerFor refuses without. Everything else can be accepted as far as its speaker goes.
  */
-export const NEEDS_DECISION = "needs-decision" as const;
+export const BUCKETS = ["ready", "blocked"] as const;
 
-/**
- * "A quest row whose envelope never named an NPC at all" -- the one speaker state with no
- * provenance, because there is no npc_resolution row to have one. What the manual NPC form in
- * the triage table exists for. Zones and books never name an NPC, so they are never missing one.
- */
-export const MISSING = "missing" as const;
+export type Bucket = (typeof BUCKETS)[number];
 
-export type SpeakerFilter = Provenance | "all" | typeof NEEDS_DECISION | typeof MISSING;
+export function isBucket(value: unknown): value is Bucket {
+  return BUCKETS.includes(value as Bucket);
+}
 
-/** The Speaker dropdown's two sentinels, for page.tsx's parsing of the query string. */
-export function isSpeakerSentinel(value: unknown): value is typeof NEEDS_DECISION | typeof MISSING {
-  return value === NEEDS_DECISION || value === MISSING;
+export function bucketOf(
+  source: EnvelopeSource,
+  npc: { race: string | null; gender: string | null; flavor: string | null; conflict: readonly unknown[] } | null,
+): Bucket {
+  if (source !== "quests") return "ready";
+  if (!npc || npc.conflict.length > 0 || !npc.race || !npc.gender) return "blocked";
+  const voice = npc.flavor ? `${npc.race}-${npc.gender}-${npc.flavor}` : `${npc.race}-${npc.gender}`;
+  return isVoice(voice) ? "ready" : "blocked";
 }
 
 export type ClientFilter = ClientFamily | "all";
@@ -91,8 +79,7 @@ export function isStageFilter(value: unknown): value is StageFilter {
 
 /**
  * Whether one row's Quest column satisfies the Stage dropdown. Any narrowed view drops every
- * row with no quest concept at all (zones, books), the same way a Speaker filter drops rows
- * with no NPC.
+ * row with no quest concept at all (zones, books).
  */
 export function matchesStage(quest: QuestSummary | null, filter: StageFilter): boolean {
   if (filter === "all") return true;
@@ -152,7 +139,7 @@ export function sortOf(column: unknown, direction: unknown): ContributionSort {
 
 export type ContributionFilters = {
   status: ContributionStatus;
-  provenance: SpeakerFilter;
+  bucket: Bucket;
   client: ClientFilter;
   source: SourceFilter;
   stage: StageFilter;
@@ -165,7 +152,7 @@ export type ContributionFilters = {
 
 export type FilterChange = {
   status?: ContributionStatus;
-  provenance?: SpeakerFilter;
+  bucket?: Bucket;
   client?: ClientFilter;
   source?: SourceFilter;
   stage?: StageFilter;
@@ -180,7 +167,8 @@ export type FilterChange = {
  * A key present in `next` always wins, even set to `undefined` -- FilterChip's own way of
  * saying "reset to any", which this maps back to "all". A key simply absent from `next` (the
  * dimensions that did not change) is the only case that falls back to `current`. `sort` and
- * `status` have no "all": unset, they go back to DEFAULT_SORT and the new rows' tab.
+ * `status` and `bucket` have no "all": unset, they go back to DEFAULT_SORT, the new rows' tab
+ * and the ready rows.
  */
 export function nextContributionFilters(
   current: ContributionFilters,
@@ -188,7 +176,7 @@ export function nextContributionFilters(
 ): ContributionFilters {
   return {
     status: "status" in next ? (next.status ?? "new") : current.status,
-    provenance: "provenance" in next ? (next.provenance ?? "all") : current.provenance,
+    bucket: "bucket" in next ? (next.bucket ?? "ready") : current.bucket,
     client: "client" in next ? (next.client ?? "all") : current.client,
     source: "source" in next ? (next.source ?? "all") : current.source,
     stage: "stage" in next ? (next.stage ?? "all") : current.stage,
@@ -218,11 +206,11 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
   const filters = nextContributionFilters(current, next);
   const params = new URLSearchParams({
     status: filters.status,
-    provenance: filters.provenance,
     client: filters.client,
     source: filters.source,
     stage: filters.stage,
   });
+  if (filters.bucket !== "ready") params.set("bucket", filters.bucket);
   if (filters.q?.trim()) params.set("q", filters.q.trim());
   if (filters.searchIn && filters.searchIn !== "any") params.set("filter", filters.searchIn);
   if (filters.sort.column !== DEFAULT_SORT.column || filters.sort.direction !== DEFAULT_SORT.direction) {
@@ -231,22 +219,6 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
   }
   if (page > 1) params.set("page", String(page));
   return `/contributions?${params}`;
-}
-
-/**
- * Whether one row's NPC provenance satisfies a Speaker dropdown selection -- the server-side
- * half of the filter, called from page.tsx's own row projection, not just the UI's idea of what
- * is selected.
- *
- * `undefined` (a row with no npc at all) matches MISSING when it is a quests row, and no other
- * real filter.
- */
-export function matchesSpeaker(provenance: Provenance | undefined, filter: SpeakerFilter, source: EnvelopeSource): boolean {
-  if (filter === "all") return true;
-  if (filter === MISSING) return provenance === undefined && source === "quests";
-  if (provenance === undefined) return false;
-  if (filter === NEEDS_DECISION) return provenance === "client" || provenance === "none";
-  return provenance === filter;
 }
 
 export function isSearchIn(value: unknown): value is Filter {
