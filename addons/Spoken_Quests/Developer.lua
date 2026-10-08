@@ -1,71 +1,15 @@
+if not (VoiceOver and VoiceOver.SpokenDialogue) then return end
 setfenv(1, VoiceOver)
-Debug = {}
 
-Debug.runtime = {
-    stage = "addon-loaded",
-    message = "Waiting for a quest or gossip event",
-}
-
-function Debug:Record(stage, message)
-    self.runtime.stage = stage
-    self.runtime.message = message
-    self.runtime.time = GetTime and GetTime() or 0
-    self:Print(message, stage)
-end
-
-function Debug:GetRuntimeStatus()
-    return self.runtime.stage, self.runtime.message, self.runtime.time
-end
-
-function Debug:Print(msg, header)
-    if Addon and Addon.db and Addon.db.profile.DebugEnabled then
-        if header then
-            print(Utils:ColorizeText("Spoken Quests", NORMAL_FONT_COLOR_CODE) ..
-                Utils:ColorizeText(" (" .. header .. ")", GRAY_FONT_COLOR_CODE) ..
-                " - " .. msg)
-        else
-            print(Utils:ColorizeText("Spoken Quests", NORMAL_FONT_COLOR_CODE) ..
-                " - " .. msg)
-        end
-    end
-end
-
---------------------------------------------------------------------------------
--- Spoken's debug log (the Spoken_Developer module, where it is installed)
---------------------------------------------------------------------------------
---
--- Every stage recorded above also goes to the log, as `quests <stage>: <message>`: the stages are
--- what /spq diagnostics calls the last runtime stage, and in the log they read as the whole story
--- of a quest window, from the event to the line queued or the reason it was not. Note covers the
--- decisions that record no stage. Nothing happens without the module, or while its log is off.
+-- The quests module's part of Spoken's developer tools (the Spoken_Developer module, where it is
+-- installed): Mock Missing Voice Over on its Developer page, and what /spq diagnostics says, in
+-- the log and its copies. The log itself, which the gossip module writes to as well, is the
+-- dialogue core's (Spoken/Dialogue/Debug.lua).
 --
 -- Parsed by the 1.12 client too, so Lua 5.0 syntax: no `#`, no `...`, no string methods.
 
 local function Log(message, a, b, c, d)
     if Spoken and Spoken.Log then Spoken:Log("quests", message, a, b, c, d) end
-end
-
--- The stages that name a quest window, the last of which the diagnostics repeat.
-local WINDOW_STAGES = { ["quest-detail"] = true, ["quest-progress"] = true, ["quest-complete"] = true }
-
-local recordStage = Debug.Record
-function Debug:Record(stage, message)
-    recordStage(self, stage, message)
-    if WINDOW_STAGES[stage] then
-        self.lastWindow = { message = message, time = GetTime and GetTime() or 0 }
-    end
-    Log("%s: %s", tostring(stage), tostring(message))
-end
-
--- What each topic last said, so a decision asked about ten times a second (the quest watcher, a
--- window polling for its Play button) is written once, and again only when the answer changes.
-local lastNoted = {}
-
---- One line in the log about `topic`, unless the last one about it had the same `key`.
-function Debug:Note(topic, key, message, a, b, c)
-    if lastNoted[topic] == key then return end
-    lastNoted[topic] = key
-    Log(message, a, b, c)
 end
 
 --------------------------------------------------------------------------------
@@ -154,10 +98,14 @@ end
 --- What an agent needs besides: the settings that decide whether a line plays, the window open
 --- and what it would read, how long ago the last stage was.
 local function ContextLines(lines)
-    local audio = Addon.db and Addon.db.profile.Audio or {}
+    -- NPC Greetings is the gossip module's, where it is installed.
+    local gossipEnv = rawget(_G, "SpokenGossipEnv")
+    local gossip = gossipEnv and rawget(gossipEnv, "Addon")
+    local gossipDB = gossip and gossip.db
+    local greetings = gossipDB and gossipDB.profile.Audio.GossipFrequency
     table.insert(lines, format("read automatically %s, NPC greetings %s, mock missing voice-over %s",
         Addon:IsAutoplayOn() and "on" or "off",
-        tostring(Enums.GossipFrequency:GetName(audio.GossipFrequency)),
+        greetings and tostring(Enums.GossipFrequency:GetName(greetings)) or "(no gossip module)",
         Debug:IsMockingMissingVoice() and "ON" or "off"))
     local questID = Safe(function() return GetQuestID and GetQuestID() end)
     local title = Safe(function() return GetTitleText and GetTitleText() end)
@@ -165,9 +113,9 @@ local function ContextLines(lines)
     local guid = Safe(function() return Utils:GetNPCGUID() end)
     table.insert(lines, format("now: quest ID %s, title %q, NPC %q, GUID %s", tostring(questID), tostring(title or ""),
         tostring(npc or ""), tostring(guid)))
-    local heard = guid and Addon.db and Addon.db.char.hasSeenGossipForNPC
-        and Addon.db.char.hasSeenGossipForNPC[guid]
-    if guid then
+    local heard = guid and gossipDB and gossipDB.char.hasSeenGossipForNPC
+        and gossipDB.char.hasSeenGossipForNPC[guid]
+    if guid and gossipDB then
         table.insert(lines, "this NPC's greeting heard before: " .. (heard and "yes" or "no"))
     end
     local found, probe, event = pcall(function() return Addon:GetVisibleLine() end)

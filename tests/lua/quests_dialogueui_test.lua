@@ -8,6 +8,7 @@ local print = stub.print
 local world = stub.world
 local QUESTS = here .. "/../../addons/Spoken_Quests/"
 local SPOKEN = here .. "/../../addons/Spoken/"
+local GOSSIP = here .. "/../../addons/Spoken_Gossip/"
 local Expect, Failures = H.Expecter(print)
 
 local GOLD, RED = "|cffffd100", "|cff9c1a1a"
@@ -69,11 +70,15 @@ local VO, env = stub.LoadQuests(QUESTS, SPOKEN)
 dofile(QUESTS .. "UI/DialogueUIBridge.lua")
 local Bridge = VO.DialogueUIBridge
 VO.Addon:OnInitialize()
+-- The gossip module too: gossip and greetings on DialogueUI's window are its to read.
+local G = stub.LoadGossip(GOSSIP, SPOKEN, true)
+G.Addon:OnInitialize()
 VO.DataModules:Register("TestPack", {
-    SoundLengthLookupByFileName = { ["101-accept"] = 12, ["101-progress"] = 2 },
+    SoundLengthLookupByFileName = { ["101-accept"] = 12, ["101-progress"] = 2, ["gossip-hello"] = 3 },
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
-    -- A speaker the pack knows, whose one line has no recording in it.
-    GossipLookupByNPCID = { [5678] = { ["Hail, friend. The roads are long."] = "gossip-missing" } },
+    -- A speaker the pack knows, whose one line has no recording in it; and one whose line has.
+    GossipLookupByNPCID = { [5678] = { ["Hail, friend. The roads are long."] = "gossip-missing" },
+        [4321] = { ["Well met, traveller."] = "gossip-hello" } },
 })
 stub.Advance(2)
 world.title = "Wolves"; world.questText = QUEST_TEXT; world.progressText = "Well?"
@@ -243,15 +248,16 @@ world.gossipText = "Hail, friend. The roads are long."
 DUI.handler = "HandleGossip"
 DUI:HandleGossip()
 Expect("gossip whose recording is missing shows whole at once", Paragraph(1) ~= "" and Paragraph(1) ~= nil, true)
-local gossipHandler = VO.Addon.GOSSIP_SHOW
-VO.Addon.GOSSIP_SHOW = function() end
-VO.Addon.ExpectedLine = function() return world.gossipText end
+-- Gossip is the gossip module's: the bridge asks it for the words its line will carry.
+local gossipHandler, expectedLine = G.Addon.GOSSIP_SHOW, G.Addon.ExpectedLine
+G.Addon.GOSSIP_SHOW = function() end
+G.Addon.ExpectedLine = function() return world.gossipText end
 DUI:HandleGossip()
-Expect("a page kept blank for its line", Paragraph(1), "")
-VO.Addon:InvokeQuestHandler("GOSSIP_SHOW", "test")
+Expect("a gossip page kept blank for the gossip module's line", Paragraph(1), "")
+G.Addon:InvokeHandler("GOSSIP_SHOW", "test")
 Tick(0)
 Expect("...shows whole once the read queues nothing, not after the wait", Paragraph(1) ~= "", true)
-VO.Addon.GOSSIP_SHOW, VO.Addon.ExpectedLine = gossipHandler, nil
+G.Addon.GOSSIP_SHOW, G.Addon.ExpectedLine = gossipHandler, expectedLine
 world.npcGUID, world.gossipText, DUI.handler = questGiver, nil, nil
 
 -- A zone clip whose transcript is the quest text word for word.
@@ -369,7 +375,7 @@ Expect("left-click plays the page's line", Spoken:GetCurrent() and Spoken:GetCur
 Expect("...and the waves move while it sounds", play.Wave1:IsShown(), true)
 play.scripts.OnEnter(play)
 local tip = play.tooltip
-Expect("its tooltip says a click stops it", tip and tip.text, VO.L.OPT_STOP)
+Expect("its tooltip says a click stops it", tip and tip.text, _G.SpokenEnv.L.DIALOGUE_STOP)
 local saysRightClick = false
 for _, text in ipairs(tip and tip.lines or {}) do
     if text == VO.L.OPT_DUI_PLAY_RIGHT_CLICK then saysRightClick = true end
@@ -384,6 +390,38 @@ play.scripts.OnClick(play, "RightButton")
 Expect("right-click turns Read Automatically off", audio.Autoplay, false)
 play.scripts.OnClick(play, "RightButton")
 Expect("...and on again", audio.Autoplay, true)
+
+-- On a gossip page the button reads the gossip module's line: the bridge asks the module the page
+-- belongs to. Gossip has no Read Automatically, so its tooltip says nothing of it and a
+-- right-click leaves the quests module's alone.
+Spoken:StopAll()
+local questNPC = world.npcGUID
+world.npcGUID, world.gossipText = "Creature-0-0-0-0-4321-0", "Well met, traveller."
+DUI.handler = "HandleGossip"
+Bridge:RefreshPlayButton("GOSSIP_SHOW")
+local _, gossipLine = Bridge:PlayButtonState()
+Expect("a gossip page with a recording shows the Play button, for the gossip module's line",
+    play:IsShown() and gossipLine and gossipLine.fileName, "gossip-hello")
+Expect("...the line the Report button asks the bridge for", Bridge:LineFor("GOSSIP_SHOW") and
+    Bridge:LineFor("GOSSIP_SHOW").fileName, "gossip-hello")
+play.scripts.OnClick(play, "LeftButton")
+local playing = Spoken:GetCurrent()
+Expect("left-click plays it, from the gossip module", playing and playing.fileName .. " " ..
+    tostring(playing.source == G.Player.source), "gossip-hello true")
+play.scripts.OnEnter(play)
+local gossipTip = play.tooltip
+local mentionsAutoplay = false
+for _, text in ipairs(gossipTip and gossipTip.lines or {}) do
+    if text == VO.L.OPT_DUI_PLAY_RIGHT_CLICK or text == VO.L.OPT_PANEL_AUTOPLAY then mentionsAutoplay = true end
+end
+Expect("...its tooltip says nothing of Read Automatically, which is the quests module's", mentionsAutoplay, false)
+play.scripts.OnLeave(play)
+play.scripts.OnClick(play, "RightButton")
+Expect("...and a right-click leaves Read Automatically as it was", audio.Autoplay, true)
+Spoken:StopAll()
+world.npcGUID, world.gossipText = questNPC, nil
+DUI.handler = "HandleQuestDetail"
+Bridge:RefreshPlayButton("QUEST_DETAIL")
 zones:Enqueue({ key = "z:16", path = "z16.ogg", length = 12,
     present = { header = "Duskwood", transcript = "Lore.", bullet = "zone",
         portrait = { kind = "texture", texture = "Book" } } })
@@ -526,7 +564,7 @@ env.Addon:SetPlayerStyle("classic")
 driver:Show()
 
 ---------------------------------------------------------------- Report and Contribute
-dofile(QUESTS .. "UI/ContributeButton.lua")
+dofile(SPOKEN .. "Dialogue/ContributeButton.lua")
 local Contribute = VO.ContributeButton
 Contribute:Setup()
 local panelButton = Contribute.button
@@ -554,7 +592,7 @@ Expect("...full under the pointer", icon:GetAlpha(), 1)
 local tip = Contribute.tooltip
 Expect("...with a tooltip of its own on DialogueUI's window, which UIParent's hiding leaves up",
     tip ~= nil and tip:GetParent() == DUI and tip:IsShown(), true)
-Expect("...saying what Report is for", tip and tip.lines and tip.lines[1], VO.L.OPT_REPORT_PROBLEM)
+Expect("...saying what Report is for", tip and tip.lines and tip.lines[1], _G.SpokenEnv.L.DIALOGUE_REPORT_PROBLEM)
 Expect("...at the size the game's tooltip would be", tip and tip:GetScale(), 1 / 0.8)
 Fire(icon, "OnLeave")
 Expect("...faint again after", icon:GetAlpha(), 0.4)
@@ -581,10 +619,10 @@ world.questID = 102
 DUI:HandleQuestDetail()
 Expect("a quest no pack voices shows the icon in full", icon:IsShown() and icon:GetAlpha(), 1)
 Expect("...with the words to contribute beside it", link:IsShown(), true)
-Expect("...saying so", link.label:GetText(), VO.L.OPT_CONTRIBUTE_NO_VO)
+Expect("...saying so", link.label:GetText(), _G.SpokenEnv.L.DIALOGUE_CONTRIBUTE_NO_VO)
 Expect("...on DialogueUI's window", link:GetParent(), DUI)
 Fire(link, "OnEnter")
-Expect("...its tooltip saying what is missing", tip and tip.lines and tip.lines[1], VO.L.OPT_CONTRIBUTE_TIP_QUEST)
+Expect("...its tooltip saying what is missing", tip and tip.lines and tip.lines[1], _G.SpokenEnv.L.DIALOGUE_CONTRIBUTE_TIP_QUEST)
 Fire(link, "OnLeave")
 Expect("...still in full once the pointer leaves", icon:GetAlpha(), 1)
 -- DialogueUI's font colour tells which theme is on.

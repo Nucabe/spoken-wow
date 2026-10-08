@@ -51,6 +51,9 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@[ -n "$(LUA)" ] || { echo "No luajit found: brew install luajit"; exit 1; }
 	@$(LUA) tests/lua/quest_dispatch_test.lua
 	@$(LUA) tests/lua/quest_autoplay_test.lua
+	@$(LUA) tests/lua/gossip_frequency_test.lua
+	@$(LUA) tests/lua/gossip_takeover_test.lua
+	@$(LUA) tests/lua/gossip_options_test.lua
 	@$(LUA) tests/lua/quest_overlay_test.lua
 	@$(LUA) tests/lua/quest_followup_test.lua
 	@$(LUA) tests/lua/easter_egg_test.lua
@@ -198,7 +201,7 @@ package-all: ## Build every addon zip: Spoken with its modules, then quests and 
 
 # Spoken's download: Spoken and its three modules in one zip, each module built by its own
 # packager. No sound packs; scripts/spoken/package.sh says why.
-package-spoken: ## Zip Spoken with its modules, Quests, Books and Zones, without the sound packs
+package-spoken: ## Zip Spoken with its modules, Quests, Gossip, Books and Zones, without the sound packs
 	@./scripts/spoken/package.sh
 
 # The last release of each retired project, spoken-quests, spoken-zones and spoken-books: a

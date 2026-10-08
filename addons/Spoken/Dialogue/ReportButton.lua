@@ -1,4 +1,5 @@
 setfenv(1, VoiceOver)
+local L = SpokenEnv.L
 
 --- The Report button and the copy box behind it.
 ---
@@ -155,7 +156,7 @@ function ReportButton:Initialize()
     -- link people use and a link people read.
     StaticPopupDialogs[COPY_DIALOG] =
     {
-        text = L.OPT_REPORT_COPY,
+        text = L.DIALOGUE_REPORT_COPY,
         button1 = OKAY,
         timeout = 0,
         whileDead = 1,

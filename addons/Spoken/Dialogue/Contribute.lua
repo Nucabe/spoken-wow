@@ -1,4 +1,5 @@
 setfenv(1, VoiceOver)
+local L = SpokenEnv.L
 
 -- What this addon sends when it has no line for what is on screen.
 --
@@ -508,7 +509,10 @@ local function BaseFields()
         -- Compatibility.lua for clients that moved it there), is the real mechanism to reuse
         -- rather than inventing a second one; "dev" is what a source checkout with no .toc
         -- metadata at all reads back as.
-        { "addon", format("SpokenQuests/%s", (GetAddOnMetadata and GetAddOnMetadata(AddonFolder, "Version")) or "dev") },
+        -- The quests addon's folder where it is loaded, Spoken's where only gossip is: all ship
+        -- at one version.
+        { "addon", format("SpokenQuests/%s", (GetAddOnMetadata
+            and GetAddOnMetadata(rawget(VoiceOver, "AddonFolder") or "Spoken", "Version")) or "dev") },
         { "build", format("%s/%s", (GetBuildInfo and select(1, GetBuildInfo())) or "?",
                                    (GetBuildInfo and select(2, GetBuildInfo())) or "?") },
         -- The client's, because the text is as the client shows it: a German client sends
@@ -750,8 +754,8 @@ function Contribute:ShowTooltip(owner, gossip, tooltip)
         return
     end
     tooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    tooltip:SetText(gossip and L.OPT_CONTRIBUTE_TIP_LINE or L.OPT_CONTRIBUTE_TIP_QUEST)
-    tooltip:AddLine(L.OPT_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
+    tooltip:SetText(gossip and L.DIALOGUE_CONTRIBUTE_TIP_LINE or L.DIALOGUE_CONTRIBUTE_TIP_QUEST)
+    tooltip:AddLine(L.DIALOGUE_CONTRIBUTE_TIP_SHARE, 1, 0.8, 0.2, true)
     -- Its right-click opens the debug log's menu, where Spoken Developer is installed. Not on
     -- DialogueUI's window, whose own tooltip this is and whose corner has no such menu.
     local hint = tooltip == GameTooltip and Spoken and Spoken.LogMenuHint and Spoken:LogMenuHint()

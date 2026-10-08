@@ -1,4 +1,5 @@
 setfenv(1, VoiceOver)
+local L = SpokenEnv.L
 
 -- The Contribute button, on the Blizzard quest frame itself.
 --
@@ -157,7 +158,9 @@ function ContributeButton:ReportFromDialogueUI()
     if not target then
         return
     end
-    local ok, line = pcall(Addon.GetVisibleLine, Addon, Utils:DialogueUIPage())
+    -- Asked of the module whose page it is, quests or gossip, through the bridge.
+    local bridge = rawget(VoiceOver, "DialogueUIBridge")
+    local ok, line = pcall(function() return bridge and bridge.LineFor and bridge:LineFor(Utils:DialogueUIPage()) end)
     ReportButton:ShowLink(target, ok and line and line.language or nil)
 end
 
@@ -194,7 +197,7 @@ function ContributeButton:DialogueUICorner(frame)
     local label = link:CreateFontString(nil, "OVERLAY")
     label:SetFontObject(_G.DUIFont_QuestType_Left or GameFontNormalSmall)
     label:SetPoint("RIGHT", link, "RIGHT", 0, 0)
-    label:SetText(L.OPT_CONTRIBUTE_NO_VO)
+    label:SetText(L.DIALOGUE_CONTRIBUTE_NO_VO)
     if label.SetTextScale then
         label:SetTextScale(DUI_TEXT_SCALE)
     end
@@ -215,8 +218,8 @@ function ContributeButton:DialogueUICorner(frame)
             Contribute:ShowTooltip(owner, ContributeButton.gossip, tooltip)
         else
             tooltip:SetOwner(owner, "ANCHOR_RIGHT")
-            tooltip:SetText(L.OPT_REPORT_PROBLEM)
-            tooltip:AddLine(L.OPT_REPORT_LINE_TIP, 1, 0.8, 0.2, true)
+            tooltip:SetText(L.DIALOGUE_REPORT_PROBLEM)
+            tooltip:AddLine(L.DIALOGUE_REPORT_LINE_TIP, 1, 0.8, 0.2, true)
             tooltip:Show()
         end
     end
@@ -296,7 +299,10 @@ function ContributeButton:Refresh()
     if not button then
         return
     end
-    if not Addon:IsPartOn() then
+    -- The module the window belongs to must be switched on: Quests for a quest, Gossip for what
+    -- an NPC says.
+    local questWindow = QuestPanelOnScreen()
+    if Spoken and Spoken.IsPartOn and not Spoken:IsPartOn(questWindow and "quests" or "gossip") then
         button:Hide()
         self:HideOnDialogueUI()
         return
@@ -318,7 +324,7 @@ function ContributeButton:Refresh()
     end
 
     local placed
-    if QuestPanelOnScreen() then
+    if questWindow then
         self.gossip = false
         placed = self:PositionAtCorner(_G.QuestFrame, CloseButtonOf(_G.QuestFrame, "QuestFrameCloseButton"))
     else
@@ -347,7 +353,7 @@ function ContributeButton:Setup()
     -- "Contribute", not "No voice -- contribute": the long form was the first thing a player
     -- said was wrong about this button, and it has to share a row with Blizzard's own controls.
     -- The books addon's button already says exactly this word, so the two now match.
-    button:SetText(L.OPT_CONTRIBUTE)
+    button:SetText(L.DIALOGUE_CONTRIBUTE)
     if button.SetFrameStrata then
         -- DIALOG rather than a verified match for QuestFrame's or GossipFrame's own strata --
         -- this file did not check what either actually is (neither Vanilla/QuestFrame.xml,

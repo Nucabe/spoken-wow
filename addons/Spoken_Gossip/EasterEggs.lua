@@ -1,4 +1,5 @@
-setfenv(1, VoiceOver)
+if not SpokenGossipEnv then return end
+setfenv(1, SpokenGossipEnv)
 
 -- Recordings the player ships itself, to be heard instead of the pack's take on the same line
 -- when their option is on. Keyed on file name, which is what DataModules resolves a line to
@@ -41,3 +42,7 @@ function EasterEggs:Apply(soundData)
         { METADATA = { AddonName = self.ADDON_NAME, Title = self.ADDON_NAME } }
     return true
 end
+
+-- Into the core by name: its DataModules swaps a recording in as it resolves a line, and reads
+-- only its own table (DataModules.lua).
+Core.EasterEggs = EasterEggs
