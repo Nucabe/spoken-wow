@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import type { Section as ContributionSection } from "@/lib/contributions/query";
 import { localeHref, type Lang } from "@/lib/lang";
-import { cn } from "@/lib/utils";
+
+import { TAB_ROW, tabClass } from "./tab-styles";
 
 const SECTIONS = [
   { key: "quests", label: "Quests", href: "/contributions/quests" },
@@ -41,7 +42,7 @@ export default function ContributionsTabs({
     <>
       <TabRow label="Contributions" lang={lang} tabs={sections} active={section} />
       {section === "quests" ? (
-        <TabRow label="Quests" lang={lang} tabs={QUEST_VIEWS} active={view ?? "contributions"} small />
+        <TabRow label="Quests" lang={lang} tabs={QUEST_VIEWS} active={view ?? "contributions"} />
       ) : null}
     </>
   );
@@ -52,28 +53,20 @@ function TabRow({
   lang,
   tabs,
   active,
-  small,
 }: {
   label: string;
   lang: Lang;
   tabs: readonly { key: string; label: string; href: string }[];
   active: string;
-  small?: boolean;
 }) {
   return (
-    <nav aria-label={label} className={cn("mb-4 flex gap-1 border-b", small && "-mt-2 mb-3")}>
+    <nav aria-label={label} className={TAB_ROW}>
       {tabs.map((tab) => (
         <Link
           key={tab.key}
           href={localeHref(lang, tab.href)}
           aria-current={tab.key === active ? "page" : undefined}
-          className={cn(
-            "-mb-px border-b-2 px-3",
-            small ? "py-1.5 text-xs" : "py-2 text-sm",
-            tab.key === active
-              ? "border-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground border-transparent",
-          )}
+          className={tabClass(tab.key === active)}
         >
           {tab.label}
         </Link>

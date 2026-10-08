@@ -550,7 +550,6 @@ export default function ContributionTable({
           counts={bucketCounts}
           onGo={push}
           hrefFor={(next) => localeHref(lang, contributionsHref(filters, { bucket: next }))}
-          className="-mt-1"
         />
       ) : null}
       <nav className="mb-4 flex flex-wrap items-center gap-2">

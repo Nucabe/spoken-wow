@@ -350,15 +350,14 @@ export default async function Page({
           not queue anything -- it only marks the row for the next export, which the pipelines
           pull on their own schedule.
         </p>
-
-        <ContributionsTabs
-            lang={lang}
-            section={source}
-            view="contributions"
-            showNpcs={can(viewer, "regenerate", BASE_LANG)}
-          />
       </Contained>
       <Wide>
+        <ContributionsTabs
+          lang={lang}
+          section={source}
+          view="contributions"
+          showNpcs={can(viewer, "regenerate", BASE_LANG)}
+        />
         <ContributionTable
           initial={rows}
           // Every row the filters match, on any page, as just its id and status: what "Accept all"

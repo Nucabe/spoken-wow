@@ -106,14 +106,14 @@ export default async function Page({
           rewording a quest since the corpus was extracted. Accept a correction to make the
           player&apos;s text what the line speaks; reject one that is wrong.
         </p>
+      </Contained>
+      <Wide>
         <ContributionsTabs
           lang={lang}
           section="quests"
           view="corrections"
           showNpcs={can(viewer, "regenerate", BASE_LANG)}
         />
-      </Contained>
-      <Wide>
         <CorrectionTable initial={rows} status={status} client={client} stage={stage} q={q} searchIn={searchIn} />
       </Wide>
     </main>

@@ -6,6 +6,8 @@ import type { ContributionStatus } from "@/lib/contributions/contributions";
 import type { Bucket } from "@/lib/contributions/query";
 import { cn } from "@/lib/utils";
 
+import { TAB_ROW, tabClass } from "./tab-styles";
+
 type TabsProps<T extends string> = {
   label: string;
   tabs: { value: T; label: string }[];
@@ -22,7 +24,7 @@ type TabsProps<T extends string> = {
 
 function LinkTabs<T extends string>({ label, tabs, active, hrefFor, onGo, className }: TabsProps<T>) {
   return (
-    <nav aria-label={label} className={cn("mb-3 flex gap-1", className)}>
+    <nav aria-label={label} className={cn(TAB_ROW, className)}>
       {tabs.map((tab) => (
         <Link
           key={tab.value}
@@ -34,10 +36,7 @@ function LinkTabs<T extends string>({ label, tabs, active, hrefFor, onGo, classN
             onGo(hrefFor(tab.value));
           }}
           aria-current={tab.value === active ? "page" : undefined}
-          className={cn(
-            "rounded-md px-2.5 py-1 text-sm",
-            tab.value === active ? "bg-muted font-medium" : "text-muted-foreground hover:text-foreground",
-          )}
+          className={tabClass(tab.value === active)}
         >
           {tab.label}
         </Link>
