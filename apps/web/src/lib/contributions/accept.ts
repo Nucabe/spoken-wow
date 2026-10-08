@@ -43,14 +43,13 @@ import type { CorpusLine } from "@/lib/corpus";
 import { isGeneratable } from "@/lib/books/tools";
 import { speakPlayerTokens } from "@/lib/player-words";
 import { corpus } from "@/lib/quests/catalogue";
-import { isVoice } from "@/lib/voices/voices";
+import { isVoice, voiceNameFor } from "@/lib/voices/voices";
 
 import type { ContributionStatus } from "./contributions";
 import {
   answersQuestMoment,
   answersQuestMomentSql,
   lineIdentityFor,
-  voiceNameFor,
   type LineIdentity,
 } from "./naming";
 import { recordBroadcast, resolveGossip, type GossipPlan } from "./gossip";

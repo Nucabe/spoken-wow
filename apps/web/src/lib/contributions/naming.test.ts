@@ -12,7 +12,6 @@ import {
   localizedGossipStem,
   questFileName,
   questLineId,
-  voiceNameFor,
 } from "./naming";
 
 describe("questLineId / questFileName", () => {
@@ -43,16 +42,6 @@ describe("gossipHash / gossipLineId / gossipFileName", () => {
     const b = gossipHash("Halt!", "human", "female");
     const c = gossipHash("Halt!", "orc", "male");
     expect(new Set([a, b, c]).size).toBe(3);
-  });
-});
-
-describe("voiceNameFor", () => {
-  it("joins race-gender-flavor when there is a flavor", () => {
-    expect(voiceNameFor("tauren", "male", "warrior")).toBe("tauren-male-warrior");
-  });
-
-  it("drops the flavor segment when there is none", () => {
-    expect(voiceNameFor("bloodelf", "female", null)).toBe("bloodelf-female");
   });
 });
 

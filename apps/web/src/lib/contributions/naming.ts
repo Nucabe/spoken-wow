@@ -75,8 +75,6 @@ export function gossipStemRank(stem: string): 0 | 1 | 2 {
   return stem.includes("-") ? 2 : 1;
 }
 
-export { voiceNameFor } from "../voices/voices";
-
 export type LineIdentity = {
   source: string;
   lineId: string;
