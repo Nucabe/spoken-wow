@@ -453,19 +453,27 @@ local function TextLookup(module, name)
     return module[name], module.LookupLocale or module.METADATA.Language
 end
 
+--- A table of `prefix`ByNPCID or `prefix`ByObjectID for the giver a GUID names, and its id.
+---@param prefix string
+---@param unitGUID string
+---@return string|nil table
+---@return number|nil id
+local function GiverLookupKey(prefix, unitGUID)
+    local type = Utils:GetGUIDType(unitGUID)
+    if Enums.GUID:IsCreature(type) then
+        return prefix .. "ByNPCID", Utils:GetIDFromGUID(unitGUID)
+    elseif type == Enums.GUID.GameObject then
+        return prefix .. "ByObjectID", Utils:GetIDFromGUID(unitGUID)
+    end
+end
+
 --- The gossip table a speaker is filed under, and its key there.
 ---@param soundData { unitGUID: string?, name: string?, unitIsObjectOrItem: boolean? }
 ---@return string|nil table
 ---@return any npc
 local function GossipLookupKey(soundData)
     if soundData.unitGUID then
-        local type = Utils:GetGUIDType(soundData.unitGUID)
-        if Enums.GUID:IsCreature(type) then
-            return "GossipLookupByNPCID", Utils:GetIDFromGUID(soundData.unitGUID)
-        elseif type == Enums.GUID.GameObject then
-            return "GossipLookupByObjectID", Utils:GetIDFromGUID(soundData.unitGUID)
-        end
-        return
+        return GiverLookupKey("GossipLookup", soundData.unitGUID)
     end
     return soundData.unitIsObjectOrItem and "GossipLookupByObjectName" or "GossipLookupByNPCName",
         soundData.name and (replaceDoubleQuotes(soundData.name))
@@ -704,23 +712,18 @@ setmetatable(getFileNameForEvent,
 
 --- The file a quest line is in, in the voice of the NPC or object giving it, where that is
 --- not the line's own: one quest given by NPCs of different voices is a file per voice.
----@param soundData SoundData
----@param fileName string The quest line's own file, as getFileNameForEvent names it
+---@param soundData SoundData Its fileName the quest line's own, as getFileNameForEvent names it
 ---@return string|nil
-function DataModules:GetQuestFileForGiver(soundData, fileName)
+function DataModules:GetQuestFileForGiver(soundData)
     if not Enums.SoundEvent:IsQuestEvent(soundData.event) or not soundData.unitGUID then
         return
     end
-    local type = Utils:GetGUIDType(soundData.unitGUID)
-    local name = Enums.GUID:IsCreature(type) and "QuestFileLookupByNPCID"
-        or type == Enums.GUID.GameObject and "QuestFileLookupByObjectID"
-        or nil
+    local name, id = GiverLookupKey("QuestFileLookup", soundData.unitGUID)
     if not name then
         return
     end
-    local id = Utils:GetIDFromGUID(soundData.unitGUID)
     for _, module in self:GetModules() do
-        local byGiver = module[name] and module[name][fileName]
+        local byGiver = module[name] and module[name][soundData.fileName]
         if byGiver and byGiver[id] then
             return byGiver[id]
         end
@@ -748,7 +751,7 @@ function DataModules:PrepareSound(soundData)
 
     -- A quest given by NPCs of different voices is a file per voice: this giver's own first,
     -- then the line's, so a voice no installed pack has yet still plays the line.
-    local own = self:GetQuestFileForGiver(soundData, soundData.fileName)
+    local own = self:GetQuestFileForGiver(soundData)
     if own then
         local line = soundData.fileName
         soundData.fileName = own

@@ -159,12 +159,6 @@ def npc_answers(npcs) -> list:
     return rows
 
 
-#: The npc table's ranking (apps/web/src/lib/npc/store.ts provenanceRank): an answer only
-#: lands over one ranked no higher.
-_RANK = """case {} when 'moderator' then 4 when 'corpus' then 3 when 'display' then 2
-                   when 'client' then 1 when 'none' then 0 else -1 end"""
-
-
 def _import_npcs(cur, npc_rows):
     """The file's NPC answers into the npc table (apps/web migration 0070), each under its own
     provenance and only over an answer ranked no higher: the extract's `corpus` answers over a
@@ -183,7 +177,7 @@ def _import_npcs(cur, npc_rows):
               and not exists (select 1 from "npc_import" i
                                where i."npcKind" = n."npcKind" and i."npcId" = n."npcId")""")
     cur.execute(
-        f"""insert into "npc" as n ("npcKind", "npcId", "race", "gender", "flavor",
+        """insert into "npc" as n ("npcKind", "npcId", "race", "gender", "flavor",
                                     "provenance", "confirmed")
             select "npcKind", "npcId", "race", "gender", "flavor", "provenance",
                    "provenance" in ('corpus', 'display', 'moderator')
@@ -192,7 +186,7 @@ def _import_npcs(cur, npc_rows):
               set "race" = excluded."race", "gender" = excluded."gender",
                   "flavor" = excluded."flavor", "provenance" = excluded."provenance",
                   "confirmed" = excluded."confirmed", "updatedAt" = now()
-            where {_RANK.format('n."provenance"')} <= {_RANK.format('excluded."provenance"')}
+            where "npc_provenance_rank"(n."provenance") <= "npc_provenance_rank"(excluded."provenance")
               and (n."race", n."gender", n."flavor", n."provenance")
                   is distinct from (excluded."race", excluded."gender", excluded."flavor",
                                     excluded."provenance")""")
