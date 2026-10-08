@@ -78,3 +78,13 @@ def test_a_line_in_another_voice_is_ignored_with_its_line():
     ignored = {"q:109:accept": "a test quest"}
     assert build_tables(corpus, ignored)["npc_quest_file_lookups"][1] == {}
     assert "quests/109-accept-human-male-warrior.mp3" in ignored_files(corpus, ignored)
+
+
+def test_a_speaker_written_in_another_voice_still_moves_off_the_first_speakers_file():
+    corpus = {
+        "lines": [line(1, "human-male-official"), line(2, "human-male-warrior")],
+        "npcs": CORPUS["npcs"],
+    }
+    stems = stored_stems(["quests/109-accept-human-male-warrior.mp3"])
+    rows = [(row["npcId"], row["fileName"]) for row in with_voice_files(corpus, stems)["lines"]]
+    assert rows == [(1, "109-accept"), (2, "109-accept-human-male-warrior")]

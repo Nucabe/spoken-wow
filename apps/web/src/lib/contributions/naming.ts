@@ -87,6 +87,12 @@ export function variantFileName(fileName: string, voice: string): string {
   return `${fileName}-${voice}`;
 }
 
+/** The line a voice's line is of: naming.py's split_voice. Text and ignores are the line's. */
+export function baseLineId(lineId: string): string {
+  const at = lineId.indexOf("~");
+  return at < 0 ? lineId : lineId.slice(0, at);
+}
+
 export type LineIdentity = {
   source: string;
   lineId: string;

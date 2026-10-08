@@ -13,6 +13,7 @@
  */
 import type { Corpus, CorpusLine } from "./corpus";
 import { npcKey } from "./corpus";
+import { baseLineId } from "./contributions/naming";
 import { audioRelPath } from "./audio";
 import { hasNarration, restoresOnlyNarration } from "./generation/narration";
 import { kindOf, type Kind, type NpcType, type Source } from "./line-fields";
@@ -438,8 +439,8 @@ export function matchingLines(
   // over a corpus without them unless they are what was asked for.
   if (ignores?.size) {
     lines = ignored
-      ? lines.filter((line) => ignores.has(line.lineId))
-      : lines.filter((line) => !ignores.has(line.lineId));
+      ? lines.filter((line) => ignores.has(baseLineId(line.lineId)))
+      : lines.filter((line) => !ignores.has(baseLineId(line.lineId)));
   }
   if (query) lines = lines.filter((line) => matches(line, query, filter));
   if (state === "missing") lines = lines.filter((line) => isGap(line, store, overrides));
@@ -553,7 +554,7 @@ export function search(
       voiceable: isVoiceable(line, override ?? line.text),
       narration: hasNarration(override ?? line.text),
       narrationRestored: override !== null && restoresOnlyNarration(override, line.text),
-      ignored: context.ignores?.get(line.lineId)?.reason ?? null,
+      ignored: context.ignores?.get(baseLineId(line.lineId))?.reason ?? null,
       madeBy: context.madeBy?.get(audioPath) ?? null,
       ...(context.recordings && { recording: context.recordings.get(audioPath) ?? null }),
     };

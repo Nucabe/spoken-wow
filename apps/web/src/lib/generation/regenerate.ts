@@ -18,6 +18,7 @@ import { BASE_LANG, type Lang } from "@/lib/lang";
 import { audioRelPath } from "@/lib/audio";
 import type { CorpusLine } from "@/lib/corpus";
 import { lineIndex } from "@/lib/quests/catalogue";
+import { baseLineId } from "@/lib/contributions/naming";
 import { readIgnores } from "@/lib/quests/ignores";
 import { readOverrides } from "@/lib/quests/overrides";
 import { commitTake } from "@/lib/takes/commit";
@@ -93,7 +94,7 @@ export async function regenerateLine(
   // decision, not a defect, so no override can rescue it and there is nothing to weigh up.
   // A queued job can outlive the decision, which is exactly why this is checked here rather
   // than only where the queue is filled.
-  const ignore = (await readIgnores(lang)).get(lineId);
+  const ignore = (await readIgnores(lang)).get(baseLineId(lineId));
   if (ignore) {
     return {
       ok: false,

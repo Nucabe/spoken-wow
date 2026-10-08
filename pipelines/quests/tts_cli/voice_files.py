@@ -38,10 +38,15 @@ def with_voice_files(corpus: dict, stems: set) -> dict:
     """The corpus with each row of OWN_VOICE_SOURCES moved to its NPC's own voice's file, where that
     file has audio among `stems`. The rest are as they were."""
     voices = npc_voices(corpus)
+    # A line's file was made in its first speaker's voice, as the site reads it (catalogue.ts
+    # voiced): a later speaker written with another voice still speaks that file's.
+    written = {}
+    for line in corpus["lines"]:
+        written.setdefault(line["lineId"], line["voice"])
     lines = []
     for line in corpus["lines"]:
         voice = voices.get((line["npcType"], line["npcId"]))
-        if line["source"] in OWN_VOICE_SOURCES and voice and voice != line["voice"]:
+        if line["source"] in OWN_VOICE_SOURCES and voice and voice != written[line["lineId"]]:
             file_name = variant_file_name(line["fileName"], voice)
             if f'{subfolder_from_line_id(line["lineId"])}/{file_name}' in stems:
                 line = {**line, "lineId": variant_line_id(line["lineId"], voice),

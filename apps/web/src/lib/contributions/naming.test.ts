@@ -4,6 +4,7 @@ import { corpus } from "@/lib/quests/catalogue";
 
 import {
   answersQuestMoment,
+  baseLineId,
   broadcastGossipStem,
   gossipFileName,
   gossipHash,
@@ -81,5 +82,12 @@ describe("variantLineId / variantFileName", () => {
   ])("names %s in another voice after it", (lineId, fileName, voice, variantId, variantFile) => {
     expect(variantLineId(lineId, voice)).toBe(variantId);
     expect(variantFileName(fileName, voice)).toBe(variantFile);
+  });
+});
+
+describe("baseLineId", () => {
+  it("is the line a voice's line is of, and a plain line itself", () => {
+    expect(baseLineId(variantLineId("q:109:accept:m", "tauren-male-elder"))).toBe("q:109:accept:m");
+    expect(baseLineId("g:abc")).toBe("g:abc");
   });
 });
