@@ -255,12 +255,14 @@ def locale_tables(corpus: dict, rows: list, ignored=()) -> dict:
         texts.setdefault((row["lineId"], row["originalText"]), []).append(row["localeText"])
     tables = {kind: {} for kind in LOCALE_TABLES}
     for line in corpus["lines"]:
-        if line["source"] != "gossip" or line["lineId"] in ignored:
+        # A line in another voice has the words of the line it is a voice of.
+        base_id = split_voice(line["lineId"])[0]
+        if line["source"] != "gossip" or base_id in ignored:
             continue
         kind = line["npcType"]
         if kind not in tables:
             continue
-        for text in texts.get((line["lineId"], line["originalText"]), ()):
+        for text in texts.get((base_id, line["originalText"]), ()):
             tables[kind].setdefault(line["npcId"], {})[escape_lua_string(text)] = \
                 gossip_hash_from_line_id(line["lineId"])
     return {filename: (table_name, tables[kind])

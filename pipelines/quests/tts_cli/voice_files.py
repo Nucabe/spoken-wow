@@ -15,8 +15,10 @@ import re
 from tts_cli.flavors import voice_name
 from tts_cli.naming import subfolder_from_line_id, variant_file_name, variant_line_id
 
-#: The lines an NPC speaks in its own voice. Progress text is never voiced.
-OWN_VOICE_SOURCES = frozenset({"accept", "complete"})
+#: The lines an NPC speaks in its own voice: all of them but progress text, which is never
+#: voiced. A quest moment's giver is found through QuestFileLookupBy*; a greeting's speaker and
+#: a follow-up's are looked up per NPC already, so their tables simply name its own file.
+OWN_VOICE_SOURCES = frozenset({"accept", "complete", "gossip", "followup"})
 _PLAYER_GENDER = re.compile(r":[mf]$")
 
 

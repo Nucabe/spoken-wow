@@ -30,7 +30,7 @@ import { nameStamp, versionStamp } from "@/lib/stamp";
 import type { Corpus, CorpusLine } from "@/lib/corpus";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 import { variantFileName, variantLineId } from "@/lib/contributions/naming";
-import { consensusFlavor, flavorsOf, isVoice, voiceNameFor } from "@/lib/voices/voices";
+import { flavorsOf, isVoice, voiceNameFor } from "@/lib/voices/voices";
 
 
 /**
@@ -127,14 +127,14 @@ const SPEAKERS = `(
 )`;
 
 /**
- * The quest moments an NPC speaks in its own voice. Where NPCs of different voices share one,
- * the file already made keeps the voice it was made in -- the one its speakers were written
- * with -- and each other voice is a line of its own (naming.ts's variantLineId): the same
- * words, in a file named after the voice. An NPC whose voice changes moves to its new voice's
- * line, which has no audio until somebody generates it; one with no flavor yet moves to a line
- * nobody can voice until it gets one. Progress text is never voiced, so it is never split.
+ * Every NPC speaks a line in its own voice. Where NPCs of different voices share one, the file
+ * already made keeps the voice it was made in -- the one its speakers were written with -- and
+ * each other voice is a line of its own (naming.ts's variantLineId): the same words, in a file
+ * named after the voice. An NPC whose voice changes moves to its new voice's line, which has no
+ * audio until somebody generates it; one with no flavor yet moves to a line nobody can voice
+ * until it gets one. Progress text is never voiced, so it is never split.
  */
-const OWN_VOICE_SOURCES: ReadonlySet<string> = new Set(["accept", "complete"]);
+const OWN_VOICE_SOURCES: ReadonlySet<string> = new Set(["accept", "complete", "gossip", "followup"]);
 
 type Speaking = {
   lineId: string;
@@ -149,31 +149,14 @@ type Speaking = {
   skipReason: string | null;
 };
 
-/**
- * Each row's voice. A quest moment's speaker speaks in its NPC's own (OWN_VOICE_SOURCES); a
- * greeting or a follow-up line is still one voice for all its speakers, in their race and
- * gender and the flavor most of their NPCs have, as the extract has always agreed one file.
- */
 function voiced<T extends Speaking>(rows: T[]): (T & { voice: string })[] {
   const written = new Map<string, string>();
-  const groups = new Map<string, (string | null)[]>();
   const lineOf = (row: T) => `${row.lineId}|${row.variant}`;
-  const keyOf = (row: T) => `${lineOf(row)}|${row.race}|${row.gender}`;
-  for (const row of rows) {
-    if (!written.has(lineOf(row))) written.set(lineOf(row), row.writtenVoice);
-    const group = groups.get(keyOf(row));
-    if (group) group.push(row.flavor);
-    else groups.set(keyOf(row), [row.flavor]);
-  }
-  const agreed = new Map([...groups].map(([key, flavors]) => [key, consensusFlavor(flavors)]));
+  for (const row of rows) if (!written.has(lineOf(row))) written.set(lineOf(row), row.writtenVoice);
 
   return rows.map((row) => {
-    if (!OWN_VOICE_SOURCES.has(row.source)) {
-      const flavor = agreed.get(keyOf(row)) ?? null;
-      return { ...row, flavor, voice: voiceNameFor(row.race, row.gender, flavor) };
-    }
     const voice = voiceNameFor(row.race, row.gender, row.flavor);
-    if (voice === written.get(lineOf(row))) return { ...row, voice };
+    if (!OWN_VOICE_SOURCES.has(row.source) || voice === written.get(lineOf(row))) return { ...row, voice };
     return {
       ...row,
       voice,
