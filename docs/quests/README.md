@@ -890,28 +890,34 @@ client knows which words those were — so a contributed line is a template like
 one: stored as `originalText`, spoken as `Adventurer`/`Traveler` by the extract's own table,
 and hashed on the template when it is gossip. Class and race are swapped wherever they occur as
 whole words, so a warrior's "a warrior's discipline" arrives as "a `$c`'s discipline"; that
-false positive is accepted over voicing one player's class at everyone. The speaker row is the mark, not the line's origin, because an edit puts an `edited`
-version on top; it is also what `corpus_db.py`'s import leaves alone when it replaces every
-extracted speaker, and it numbers from 1,000,000 so a re-import never meets it. The corpus
+false positive is accepted over voicing one player's class at everyone. The contribution's id on its speaker row, or its note on the first
+version of a line it wrote without one, is the mark, not the line's origin, because an edit
+puts an `edited` version on top. A contributed speaker is what `corpus_db.py`'s import leaves
+alone when it replaces every extracted speaker, and it numbers from 1,000,000 so a re-import
+never meets it. The corpus
 wins where it already has the line: a quest moment is matched by quest id and moment alone
 (the tables carry some only as `:m`/`:f` variants), and a gossip line it already has gains the
 contributing NPC as one more speaker instead of a copy. Progress lines are kept, marked
 `progress` and never voiced, as the extract marks its own. Once written, a contribution cannot
 be moved back to new or rejected; ignoring the line in the explorer is how to back out.
 
-A quest row sent from a client in another language is that language's text of the moment. If
-English has the moment, accepting writes its translation: a `quest_line` row in the language,
-with its structure copied from the English one and no speaker of its own. If English does not,
-the line is written as the language's own: a `quest_line` and a `quest_line_speaker` row, both
-under the language, the line's text kept with its `$N`, `$C` and `$R` as a translation's is.
-Nothing has to be sent in English first. Its id and file are the quest's and the moment's, the
-same in every language, so it is voiced into the file English would use. The language's
-explorer lists it, and the English one does not. When English sends the moment later, English's line
-and speakers become the skeleton, and the language's row becomes its translation, with the
-same id, file and takes. The translated explorer shows the English template from the
-English row itself, so the native row's own `originalText` never stands in for it. Who speaks it is answered by a moderator with `regenerate` in the
-contribution's language. The answer is about the NPC (`npc_resolution`), so it holds for
-every language.
+A quest row is accepted the same way whatever language its client was in. A line is the
+language's own `quest_line` row; who speaks it is a fact about the world, so a speaker row any
+language wrote voices the line in every language. Accepting a quest moment writes the
+language's row, with its structure copied from another language's row of the moment where
+there is one (English's first), and a `quest_line_speaker` row only when the moment has no
+speaker in any language yet. Only then does it need the NPC's race and gender answered. Its id
+and file are the quest's and the moment's, the same in every language, so nothing has to be
+sent in English first, and English sending the moment later writes English's row under the
+same id and file, voiced by the speaker already there. In another language the line keeps its
+`$N`, `$C` and `$R`, as a translation's does.
+
+The catalogues read speakers the same way (`catalogue.ts`'s `SPEAKERS`, and `export_corpus`):
+a line's English speakers where it has any, otherwise those a language wrote, each NPC once.
+A language's explorer lists its own rows, plus English's lines it has no text for, marked
+untranslated; English is joined only to show what a line says in English. Who speaks is
+answered by a moderator with `regenerate` in the contribution's language. The answer is about
+the NPC (`npc_resolution`), so it holds for every language.
 
 A gossip row, in any language, is matched in three steps (`apps/web/src/lib/contributions/gossip.ts`):
 

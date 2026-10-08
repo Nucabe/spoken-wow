@@ -382,20 +382,34 @@ def export_corpus(path, check=False, verbose=True):
                     "quest_line has not been seeded -- run: make quests-import-corpus"
                 )
 
-            # Ordered by the corpus's own row order, which is what `ord` records.
+            # A line's speakers are every language's: English's where it has any, otherwise
+            # the ones a language wrote when it accepted the moment first, each NPC once. The
+            # web catalogue reads them the same way (catalogue.ts SPEAKERS). Ordered by the
+            # corpus's own row order, which is what `ord` records, English's first.
             cur.execute(
                 """select s."npcType", s."npcId", s."npcName", s."race", s."gender",
                           s."flavor", s."voice", s."contributionId",
                           l."lineId", l."source", l."questId", l."questTitle",
                           l."playerGender", l."text", l."originalText", l."fileName",
                           l."generatable", l."skipReason"
-                     from "quest_line_speaker" s
+                     from (
+                       select * from (
+                         select s.*,
+                                bool_or(s."lang" = %(lang)s)
+                                  over (partition by s."lineId", s."variant") as "hasEnglish",
+                                row_number() over (
+                                  partition by s."lineId", s."variant", s."npcType", s."npcId",
+                                               s."lang" = %(lang)s
+                                  order by s."ord", s."id") as "nth"
+                           from "quest_line_speaker" s
+                       ) ranked
+                       where case when "hasEnglish" then "lang" = %(lang)s else "nth" = 1 end
+                     ) s
                      join "quest_line" l
                        on l."lineId" = s."lineId" and l."variant" = s."variant"
-                      and l."lang" = s."lang" and l."isCurrent"
-                    where s."lang" = %s
-                    order by s."ord" """,
-                (LANG,),
+                      and l."lang" = %(lang)s and l."isCurrent"
+                    order by s."lang" <> %(lang)s, s."ord" """,
+                {"lang": LANG},
             )
             rows = cur.fetchall()
 

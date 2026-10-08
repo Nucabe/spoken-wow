@@ -12,7 +12,7 @@ import { clientOf, isClientFamily } from "@/lib/contributions/client";
 import { corpusLookup } from "@/lib/contributions/existing";
 import { lineStates, tabOf } from "@/lib/contributions/known";
 import { isStatus, type ContributionStatus } from "@/lib/contributions/contributions";
-import { englishHasMoment, linesInExplorer } from "@/lib/contributions/accept";
+import { linesInExplorer, momentHasSpeaker } from "@/lib/contributions/accept";
 import {
   isSearchIn,
   bucketOf,
@@ -292,10 +292,10 @@ export default async function Page({
     .filter((row) => matchesSearch({ text: row.text, npc: npcs[row.id], quest: questFor(row) }, q, searchIn));
 
   // Counted after the other filters, so each tab's count matches what it shows.
-  const englishHas = await englishHasMoment(filtered);
+  const hasSpeaker = await momentHasSpeaker(filtered);
   const bucketCounts: Record<Bucket, number> = { ready: 0, blocked: 0 };
   const matching = filtered.filter((row) => {
-    const own = bucketOf({ ...row, quest: questFor(row), englishHas: englishHas.has(row.id) }, npcs[row.id] ?? null);
+    const own = bucketOf({ ...row, quest: questFor(row), hasSpeaker: hasSpeaker.has(row.id) }, npcs[row.id] ?? null);
     bucketCounts[own]++;
     return status !== "new" || own === bucket;
   });
@@ -338,7 +338,7 @@ export default async function Page({
     quest: questFor(row),
     book: bookFor(row, row.pageId === null ? null : (bookMatches.get(row.pageId) ?? null)),
     hasLine: linedIds.has(row.id),
-    englishHas: englishHas.has(row.id),
+    hasSpeaker: hasSpeaker.has(row.id),
     place: placeOf(row),
   }));
 
