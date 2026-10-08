@@ -499,7 +499,6 @@ export default function ContributionTable({
     // envelope gave, in its own locale.
     return override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
   };
-  /** Where the row stands now, which an answer saved here may have moved. */
   const bucketNow = (row: ContributionRow): Bucket => bucketOf(row.source, npcOf(row));
 
   // Only rows still on screen count: a selected row a bulk reject just moved out of this view
@@ -797,7 +796,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
   /** The row's status, with this session's own changes over the server's. */
   current: ContributionStatus;
   npc: NpcSummary | null;
-  /** Whether accept would take the row as its speaker stands (query.ts's bucketOf). */
+  /** Whether accept would take the row as its speaker stands. */
   acceptable: boolean;
   /** The New tab's other half, when an answer saved here moved the row into it. */
   movedTo: Bucket | null;

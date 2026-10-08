@@ -61,7 +61,7 @@ export default function StatusTabs(props: Omit<TabsProps<ContributionStatus>, "l
   );
 }
 
-/** The New tab split by whether a row can be accepted as it stands (query.ts's bucketOf). */
+/** The New tab split by whether each row can be accepted as it stands. */
 export function BucketTabs({
   counts,
   ...props

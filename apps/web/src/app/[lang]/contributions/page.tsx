@@ -279,7 +279,7 @@ export default async function Page({
     .filter((row) => matchesStage(questFor(row), stage))
     .filter((row) => matchesSearch({ text: row.text, npc: npcs[row.id], quest: questFor(row) }, q, searchIn));
 
-  // Counted over the other filters, so each tab says what it holds in the view as narrowed.
+  // Counted after the other filters, so each tab's count matches what it shows.
   const buckets = new Map(filtered.map((row) => [row.id, bucketOf(row.source, npcs[row.id] ?? null)]));
   const bucketCounts: Record<Bucket, number> = { ready: 0, blocked: 0 };
   for (const value of buckets.values()) bucketCounts[value]++;
