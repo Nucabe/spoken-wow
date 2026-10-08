@@ -20,8 +20,8 @@ export type { NpcKind, Provenance };
 
 export type NpcResolution = {
   npcKind: NpcKind;
-  /** English where English names it, otherwise whichever language does; written to English only where it has none. */
   npcId: number;
+  /** English where English names it, otherwise whichever language does; written to English only where it has none. */
   npcName: string | null;
   race: string | null;
   gender: string | null;
@@ -61,28 +61,8 @@ export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcRe
 // sits between them, because it is the game's own voice set for the appearance the player saw
 // and so beats a model guess, but the corpus is the older authority for every NPC it carries;
 // `client` outranks `none` because a mapped model id is still an observation where a bare
-// envelope is none at all. This CASE is inlined into the upsert's `where` twice
-// (once for the stored row, once for the incoming one) so the comparison lives in the one
-// place both sides of a write pass through, rather than in whichever caller happens to be last.
-//
-// This list and the npc_provenance_check constraint in the migration must change
-// together: a provenance added to one and not the other either can never be written (rejected
-// by the constraint) or falls through to `else` here. The `else` is -1, one below `none`'s own
-// 0, on purpose -- an unranked value must not tie `none`, or it would silently win every write
-// over an unresolved row while still losing every write to anything already resolved, and only
-// the second half of that would ever be noticed. Ranked strictly below everything, a forgotten
-// rank can never land at all, so store.test.ts's PROVENANCES-driven test (every real provenance
-// must beat a `none` row) goes red immediately, naming the value, instead of shipping quietly.
-function provenanceRank(column: string): string {
-  return `case ${column}
-    when 'moderator' then 4
-    when 'corpus' then 3
-    when 'display' then 2
-    when 'client' then 1
-    when 'none' then 0
-    else -1
-  end`;
-}
+// envelope is none at all. The ranks are npc_provenance_rank (migration 0067), which must change
+// with the npc_provenance_check constraint.
 
 export async function upsertResolution(
   input: Omit<NpcResolution, "updatedAt">,
@@ -91,7 +71,8 @@ export async function upsertResolution(
   // write from an older addon that sends no model at all would wipe a `client` or `corpus`
   // row's race back to null, and `client` would freely overwrite `corpus`'s exact answer.
   // Equal rank still updates (`>=`), so a fresh corpus read can refresh a name and a second
-  // moderator edit still lands. A skipped update returns no row -- `do update ... where` makes
+  // moderator edit still lands. An answer identical to the stored one is skipped, so it leaves
+  // updatedAt, and with it every catalogue's stamp, alone. A skipped update returns no row -- `do update ... where` makes
   // the row a no-op, not a match failure -- so the read-back below is what keeps this
   // function's return type honest in that case.
   await db().query(
@@ -113,7 +94,13 @@ export async function upsertResolution(
            "note" = excluded."note",
            "resolvedBy" = excluded."resolvedBy",
            "updatedAt" = now()
-       where ${provenanceRank(`n."provenance"`)} <= ${provenanceRank(`excluded."provenance"`)}`,
+       where "npc_provenance_rank"(n."provenance") <= "npc_provenance_rank"(excluded."provenance")
+         and (n."race", n."gender", n."flavor", n."provenance", n."confirmed", n."doubtful",
+              n."modelFileId", n."sex", n."creatureType", n."build", n."note", n."resolvedBy")
+             is distinct from
+             (excluded."race", excluded."gender", excluded."flavor", excluded."provenance",
+              excluded."confirmed", excluded."doubtful", excluded."modelFileId", excluded."sex",
+              excluded."creatureType", excluded."build", excluded."note", excluded."resolvedBy")`,
     [
       input.npcKind, input.npcId, input.race, input.gender, input.flavor,
       input.provenance, input.confirmed, input.doubtful, input.modelFileId, input.sex, input.creatureType,
@@ -123,7 +110,7 @@ export async function upsertResolution(
   if (input.npcName?.trim()) await nameInEnglish(input.npcKind, input.npcId, input.npcName.trim());
 
   // Read back either way: a write the `where` turned into a no-op means the row on disk
-  // outranks this submission, and that row is the answer.
+  // outranks this submission or already is it, and that row is the answer.
   const stored = await getResolution(input.npcKind, input.npcId);
   if (!stored) throw new Error(`upsertResolution: no row for ${input.npcKind}/${input.npcId}`);
   return stored;

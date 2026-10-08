@@ -14,7 +14,7 @@
  * An NPC that answers to none of them resolves to no race, which is a normal outcome rather
  * than a failure: the corpus already carries `narrator-male` for things that are not a race.
  */
-import { defaultFlavorFor, npcVoiceFromCorpus } from "@/lib/quests/catalogue";
+import { defaultFlavorFor } from "@/lib/quests/catalogue";
 
 import { voiceFromDisplays } from "./display-voices";
 import { raceForModel } from "./models";
@@ -116,16 +116,18 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
   const existing = await getResolution(npcKind, npcId);
   // The store's upsert already ranks provenance and would refuse a lower-ranked write on its
   // own, so this is not what keeps a moderator's answer safe -- it is here so a moderator-owned
-  // NPC skips the corpus scan and the write entirely, rather than doing both to arrive back
-  // where it started.
+  // NPC skips the write entirely, rather than arriving back where it started.
   if (existing?.provenance === "moderator") return existing;
 
-  const corpus = await npcVoiceFromCorpus(npcKind, npcId);
+  // The extract's answer is the npc table's `corpus` row (migration 0067). Only extracted NPCs
+  // have one: an NPC a contribution named was answered from its own resolution at the time, and
+  // reading that back as the corpus would confirm a guess. Its name is in entity_name already.
+  const corpus = existing?.provenance === "corpus" && existing.race && existing.gender ? existing : null;
   if (corpus) {
     return upsertResolution({
       npcKind,
       npcId,
-      npcName: corpus.npcName,
+      npcName: null,
       race: corpus.race,
       gender: corpus.gender,
       flavor: corpus.flavor,

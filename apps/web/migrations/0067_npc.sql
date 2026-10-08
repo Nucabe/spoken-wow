@@ -10,8 +10,8 @@
 -- `item` kind speakers already use. A `corpus` row is the extract's: race and gender from the
 -- display, flavor from the NPC's greeting sounds, and no flavor where the game has none.
 --
--- Additive: npc_resolution and the speaker columns stay, still written, so the previous
--- release keeps reading them. Backfilled from both, so no line loses its voice between this
+-- Additive: npc_resolution and the speaker columns stay, so the previous release keeps
+-- reading them. Backfilled from both, so no line loses its voice between this
 -- migration and the next corpus import, which replaces the `corpus` rows with the extract's.
 
 create table if not exists "npc" (
@@ -43,6 +43,15 @@ create table if not exists "npc" (
 
 create index if not exists "npc_unconfirmed_idx" on "npc" ("confirmed", "updatedAt" desc);
 
+-- An answer lands only over one ranked no higher (lib/npc/store.ts says why each sits where it
+-- does). A value missing here ranks below `none`, so it can never land and the store's
+-- every-provenance test names it, rather than tying `none` and winning quietly.
+create or replace function "npc_provenance_rank"("provenance" text) returns integer
+language sql immutable as $$
+  select case "provenance" when 'moderator' then 4 when 'corpus' then 3 when 'display' then 2
+                           when 'client' then 1 when 'none' then 0 else -1 end
+$$;
+
 -- The extract's speakers: one row per NPC, its most common flavor until the next import
 -- writes the extract's own.
 insert into "npc" ("npcKind", "npcId", "race", "gender", "flavor", "provenance", "confirmed")
@@ -69,10 +78,7 @@ on conflict ("npcKind", "npcId") do update
       "sex" = excluded."sex", "creatureType" = excluded."creatureType",
       "build" = excluded."build", "note" = excluded."note",
       "resolvedBy" = excluded."resolvedBy", "updatedAt" = excluded."updatedAt"
-  where (case "npc"."provenance" when 'moderator' then 4 when 'corpus' then 3
-           when 'display' then 2 when 'client' then 1 else 0 end)
-     <= (case excluded."provenance" when 'moderator' then 4 when 'corpus' then 3
-           when 'display' then 2 when 'client' then 1 else 0 end);
+  where "npc_provenance_rank"("npc"."provenance") <= "npc_provenance_rank"(excluded."provenance");
 
 -- The names those answers carried, in English where English has none: a contribution's NPC
 -- the extract never named had its name nowhere else.

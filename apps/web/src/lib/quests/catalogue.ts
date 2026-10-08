@@ -320,32 +320,6 @@ export async function lineIndex(lang: Lang = BASE_LANG): Promise<Map<string, Cor
 }
 
 /**
- * What the extract knows about an NPC, or null for one it has never carried: the npc table's
- * `corpus` row (migration 0067), named in English. Its flavor is null where the game has none.
- *
- * Extracted NPCs only. An NPC a contribution named was answered from its own resolution at the
- * time -- often an unconfirmed model guess -- and reading that back as "the corpus" confirmed
- * the guess and let it outrank every later, better answer.
- */
-export async function npcVoiceFromCorpus(
-  npcType: string,
-  npcId: number,
-): Promise<{ race: string; gender: string; flavor: string | null; npcName: string } | null> {
-  const rows = await query<{ race: string; gender: string; flavor: string | null; npcName: string | null }>(
-    `select n."race", n."gender", n."flavor",
-            (select e."name" from "entity_name" e
-              where e."kind" = n."npcKind" and e."entityId" = n."npcId"::text
-                and e."lang" = '${BASE_LANG}' and e."isCurrent") as "npcName"
-       from "npc" n
-      where n."npcKind" = $1 and n."npcId" = $2 and n."provenance" = 'corpus'
-        and n."race" is not null and n."gender" is not null`,
-    [npcType, npcId],
-  );
-  const row = rows[0];
-  return row ? { race: row.race, gender: row.gender, flavor: row.flavor, npcName: row.npcName ?? `npc ${npcId}` } : null;
-}
-
-/**
  * The flavor to give a race-gender the game data does not answer for -- an NPC resolved only
  * from the model file id the addon reported, which names a race and a gender but never a
  * flavor.

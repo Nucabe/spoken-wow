@@ -95,7 +95,6 @@ describe("observedFrom", () => {
 });
 
 vi.mock("@/lib/quests/catalogue", () => ({
-  npcVoiceFromCorpus: vi.fn(),
   defaultFlavorFor: vi.fn(),
 }));
 vi.mock("./display-voices", () => ({ voiceFromDisplays: vi.fn() }));
@@ -105,7 +104,7 @@ vi.mock("./store", () => ({
   upsertResolution: vi.fn(async (row) => ({ ...row, updatedAt: "now" })),
 }));
 
-import { defaultFlavorFor, npcVoiceFromCorpus } from "@/lib/quests/catalogue";
+import { defaultFlavorFor } from "@/lib/quests/catalogue";
 
 import { voiceFromDisplays } from "./display-voices";
 import { getResolution, upsertResolution } from "./store";
@@ -134,9 +133,9 @@ describe("resolveNpc", () => {
   });
 
   it("takes the corpus's answer, flavor and all, for an npc it already carries", async () => {
-    vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue({
-      race: "tauren", gender: "male", flavor: "grim", npcName: "Boarton Shadetotem",
+    vi.mocked(getResolution).mockResolvedValue({
+      ...observed, race: "tauren", gender: "male", flavor: "grim",
+      provenance: "corpus", confirmed: true, doubtful: false, note: null, resolvedBy: null, updatedAt: "now",
     });
     const row = await resolveNpc(observed);
     expect(row).toMatchObject({ race: "tauren", flavor: "grim", provenance: "corpus", confirmed: true });
@@ -144,7 +143,6 @@ describe("resolveNpc", () => {
 
   it("falls back to the model the client reported, with a corpus-derived defaulted flavor", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     // tauren-male has no "standard" voice at all (the branch's own flagship case, model
     // 122055) -- defaultFlavorFor is what decides that, not a constant, so this only proves
     // resolveNpc plumbs its answer through rather than proving the answer itself; corpus.test.ts
@@ -159,7 +157,6 @@ describe("resolveNpc", () => {
 
   it("leaves the flavor null when the race-gender has no default to fall back on", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(defaultFlavorFor).mockResolvedValue(null);
     const row = await resolveNpc(observed);
     expect(row).toMatchObject({ flavor: null, provenance: "client", confirmed: false });
@@ -167,7 +164,6 @@ describe("resolveNpc", () => {
 
   it("resolves to no race for a creature model that is not a character", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(defaultFlavorFor).mockClear();
     const row = await resolveNpc({ ...observed, modelFileId: 1 });
     expect(row).toMatchObject({ race: null, provenance: "none", confirmed: false });
@@ -182,7 +178,6 @@ describe("resolveNpc", () => {
 
   it("does not mistake npc id 0 for no npc at all", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     const row = await resolveNpc({ ...observed, npcId: 0 });
     expect(row).not.toBe(null);
     expect(getResolution).toHaveBeenCalledWith(observed.npcKind, 0);
@@ -199,7 +194,6 @@ describe("resolveNpc", () => {
   });
   it("takes the game's voice for the appearance the player saw, confirmed", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockResolvedValue({
       exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
     });
@@ -212,7 +206,6 @@ describe("resolveNpc", () => {
 
   it("picks the default flavor when it is one the appearances offer", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockResolvedValue({
       exact: false, race: "dwarf", gender: "female", flavors: ["guard", "maternal", "young"],
     });
@@ -225,7 +218,6 @@ describe("resolveNpc", () => {
 
   it("picks among the offered flavors when the default is not one of them", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockResolvedValue({
       exact: false, race: "dwarf", gender: "female", flavors: ["guard", "young"],
     });
@@ -236,7 +228,6 @@ describe("resolveNpc", () => {
 
   it("falls back to the model when the appearances say nothing", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockResolvedValue(null);
     vi.mocked(defaultFlavorFor).mockResolvedValue("warrior");
     const row = await resolveNpc({ ...observed, displayIds: [999_999] });
@@ -245,7 +236,6 @@ describe("resolveNpc", () => {
 
   it("does not look appearances up when the envelope carried none", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockClear();
     await resolveNpc(observed);
     expect(voiceFromDisplays).not.toHaveBeenCalled();
@@ -254,7 +244,6 @@ describe("resolveNpc", () => {
   // voice. Without a model the server knows, they narrow a guess and nothing more.
   it("does not confirm a voice from appearances without a model it knows", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockResolvedValue({
       exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
     });
@@ -269,7 +258,6 @@ describe("resolveNpc", () => {
   // the number, so a gameobject's appearances mean nothing even if an envelope carries them.
   it("never looks appearances up for a gameobject", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    vi.mocked(npcVoiceFromCorpus).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockClear();
     await resolveNpc({ ...observed, npcKind: "gameobject", displayIds: [9392] });
     expect(voiceFromDisplays).not.toHaveBeenCalled();

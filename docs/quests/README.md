@@ -1024,8 +1024,8 @@ at least as high as what is already there. A submission carrying less informatio
 erase one carrying more — the case that matters is a player on an older addon, whose envelope
 has no model at all, submitting for an NPC somebody else already resolved.
 
-`corpus` means an *extracted* speaker: `npcVoiceFromCorpus` skips the speakers accepted
-contributions wrote. Those carry the NPC's own resolution at the time it was accepted, often a
+`corpus` means an *extracted* speaker: only the corpus import writes `corpus` rows, never the
+speakers accepted contributions wrote. Those carry the NPC's own resolution at the time it was accepted, often a
 `client` guess, and reading one back as `corpus` confirmed the guess and let it outrank the game's
 own appearance data. Migration 0058 demoted the 71 rows that had been confirmed that way.
 
