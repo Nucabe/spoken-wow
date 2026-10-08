@@ -389,7 +389,10 @@ export default function LineRow({
                 // ?status=accepted -- page.tsx defaults to status=new, and a contributed
                 // line's own contribution is by definition accepted, so a bare /contributions
                 // link would land on a queue that never shows the row it points at.
-                href={localeHref(lang, `/contributions?status=accepted#contribution-${line.contributionId}`)}
+                href={localeHref(
+                  lang,
+                  `/contributions/${line.source === "gossip" ? "gossip" : "quests"}?status=accepted#contribution-${line.contributionId}`,
+                )}
                 onClick={(event) => event.stopPropagation()}
                 title="Accepted from a player's contribution"
                 className="text-muted-foreground hover:text-foreground underline underline-offset-2"

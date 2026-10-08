@@ -10,7 +10,7 @@
  */
 import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
-import { isEnvelopeSource, type EnvelopeSource } from "./envelope";
+import type { EnvelopeSource } from "./envelope";
 import { BASE_LANG } from "../lang";
 import { isVoice, voiceNameFor } from "../voices/voices";
 import type { Filter } from "../search";
@@ -49,22 +49,21 @@ export function bucketOf(
 export type ClientFilter = ClientFamily | "all";
 
 /**
- * An envelope source, or gossip: the quests rows tied to no quest, which the site shows as a
- * section of their own although the addon still files them as quests.
+ * A section of /contributions, which is the page's path: an envelope source, or gossip -- the
+ * quests rows tied to no quest, which the site shows apart although the addon files them as
+ * quests.
  */
-export type SourceFilter = EnvelopeSource | "gossip" | "all";
+export const SECTIONS = ["quests", "gossip", "books", "zones"] as const;
 
-export function isSourceFilter(value: unknown): value is SourceFilter {
-  return isEnvelopeSource(value) || value === "gossip" || value === "all";
+export type Section = (typeof SECTIONS)[number];
+
+export function isSection(value: unknown): value is Section {
+  return SECTIONS.includes(value as Section);
 }
 
-/** The section a row is listed under, as the Source column and dropdown name it. */
-export function sectionOf(row: { source: EnvelopeSource }, quest: QuestSummary | null): EnvelopeSource | "gossip" {
+/** The section a row is listed under. */
+export function sectionOf(row: { source: EnvelopeSource }, quest: QuestSummary | null): Section {
   return quest === "gossip" ? "gossip" : row.source;
-}
-
-export function matchesSource(section: EnvelopeSource | "gossip", filter: SourceFilter): boolean {
-  return filter === "all" || section === filter;
 }
 
 /**
@@ -101,7 +100,7 @@ export function matchesStage(quest: QuestSummary | null, filter: StageFilter): b
  * out per row after the query, and paging a list sorted on them would mean resolving every row
  * in the queue first.
  */
-export const SORT_COLUMNS = ["filed", "source", "count"] as const;
+export const SORT_COLUMNS = ["filed", "count"] as const;
 
 export type SortColumn = (typeof SORT_COLUMNS)[number];
 
@@ -124,12 +123,10 @@ export function isSortDirection(value: unknown): value is SortDirection {
 export const DEFAULT_SORT: ContributionSort = { column: "count", direction: "desc" };
 
 /**
- * The direction a column starts in when its header is first clicked: biggest and newest first
- * for the numbers and dates, alphabetical for the words.
+ * The direction a column starts in when its header is first clicked: biggest and newest first.
  */
 const FIRST_DIRECTION: Record<SortColumn, SortDirection> = {
   filed: "desc",
-  source: "asc",
   count: "desc",
 };
 
@@ -149,7 +146,8 @@ export type ContributionFilters = {
   status: ContributionStatus;
   bucket: Bucket;
   client: ClientFilter;
-  source: SourceFilter;
+  /** The section, which is the page's path rather than a filter. */
+  source: Section;
   stage: StageFilter;
   sort: ContributionSort;
   /** Absent or blank searches nothing. */
@@ -162,7 +160,6 @@ export type FilterChange = {
   status?: ContributionStatus;
   bucket?: Bucket;
   client?: ClientFilter;
-  source?: SourceFilter;
   stage?: StageFilter;
   sort?: ContributionSort;
   q?: string;
@@ -186,7 +183,7 @@ export function nextContributionFilters(
     status: "status" in next ? (next.status ?? "new") : current.status,
     bucket: "bucket" in next ? (next.bucket ?? "ready") : current.bucket,
     client: "client" in next ? (next.client ?? "all") : current.client,
-    source: "source" in next ? (next.source ?? "all") : current.source,
+    source: current.source,
     stage: "stage" in next ? (next.stage ?? "all") : current.stage,
     sort: "sort" in next ? (next.sort ?? DEFAULT_SORT) : current.sort,
     q: "q" in next ? next.q : current.q,
@@ -215,9 +212,8 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
   const params = new URLSearchParams({
     status: filters.status,
     client: filters.client,
-    source: filters.source,
-    stage: filters.stage,
   });
+  if (filters.stage !== "all") params.set("stage", filters.stage);
   if (filters.bucket !== "ready") params.set("bucket", filters.bucket);
   if (filters.q?.trim()) params.set("q", filters.q.trim());
   if (filters.searchIn && filters.searchIn !== "any") params.set("filter", filters.searchIn);
@@ -226,7 +222,7 @@ export function contributionsHref(current: ContributionFilters, next: FilterChan
     params.set("dir", filters.sort.direction);
   }
   if (page > 1) params.set("page", String(page));
-  return `/contributions?${params}`;
+  return `/contributions/${filters.source}?${params}`;
 }
 
 export function isSearchIn(value: unknown): value is Filter {
@@ -263,4 +259,13 @@ export function matchesSearch(
   if (filter === "npc") return npcHit;
   if (filter === "quest") return questHit;
   return npcHit || questHit || textHit;
+}
+
+/** A page's searchParams as a query string, for a redirect that keeps them. */
+export function queryOf(search: Record<string, string | string[] | undefined>): URLSearchParams {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    for (const one of [value].flat()) if (one !== undefined) query.append(key, one);
+  }
+  return query;
 }

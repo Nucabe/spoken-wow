@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_SORT, bucketOf, contributionsHref, nextSort, sortOf, matchesSearch, matchesSource, matchesStage, nextContributionFilters, pageOf, sectionOf } from "./query";
+import { DEFAULT_SORT, bucketOf, contributionsHref, nextSort, sortOf, matchesSearch, matchesStage, nextContributionFilters, pageOf, sectionOf } from "./query";
 
 describe("nextContributionFilters", () => {
-  const current = { status: "new", bucket: "ready", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
+  const current = { status: "new", bucket: "ready", client: "all", source: "quests", stage: "all", sort: DEFAULT_SORT } as const;
 
   it("changes the dimension named in `next` and keeps the other", () => {
     expect(nextContributionFilters(current, { bucket: "blocked" })).toEqual({
       status: "new",
       bucket: "blocked",
       client: "all",
-      source: "all",
+      source: "quests",
       stage: "all",
       sort: DEFAULT_SORT,
     });
@@ -28,10 +28,6 @@ describe("nextContributionFilters", () => {
     expect(nextContributionFilters(current, { client: "legacy" })).toEqual({ ...current, client: "legacy" });
   });
 
-  it("changes the source dimension alone", () => {
-    expect(nextContributionFilters(current, { source: "zones" })).toEqual({ ...current, source: "zones" });
-  });
-
   it("leaves every dimension alone when `next` names none", () => {
     expect(nextContributionFilters(current, {})).toEqual(current);
   });
@@ -39,24 +35,32 @@ describe("nextContributionFilters", () => {
 
 describe("contributionsHref", () => {
   it("builds a query string carrying every dimension", () => {
-    expect(contributionsHref({ status: "new", bucket: "ready", client: "era", source: "all", stage: "all", sort: DEFAULT_SORT }, { status: "rejected" })).toBe(
-      "/contributions?status=rejected&client=era&source=all&stage=all",
+    expect(contributionsHref({ status: "new", bucket: "ready", client: "era", source: "quests", stage: "all", sort: DEFAULT_SORT }, { status: "rejected" })).toBe(
+      "/contributions/quests?status=rejected&client=era",
     );
+  });
+
+  it("puts the section in the path and the stage in the query only when one is picked", () => {
+    const books = { status: "new", bucket: "ready", client: "all", source: "books", stage: "all", sort: DEFAULT_SORT } as const;
+    expect(contributionsHref(books, {})).toBe("/contributions/books?status=new&client=all");
+    expect(contributionsHref({ ...books, source: "quests" }, { stage: "complete" })).toBe(
+      "/contributions/quests?status=new&client=all&stage=complete",
+    );
+    expect(contributionsHref({ ...books, source: "gossip" }, {})).toBe("/contributions/gossip?status=new&client=all");
   });
 
   it("writes the bucket only when it is not the ready rows", () => {
     expect(
-      contributionsHref({ status: "new", bucket: "ready", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT }, { bucket: "blocked" }),
-    ).toBe("/contributions?status=new&client=all&source=all&stage=all&bucket=blocked");
+      contributionsHref({ status: "new", bucket: "ready", client: "all", source: "quests", stage: "all", sort: DEFAULT_SORT }, { bucket: "blocked" }),
+    ).toBe("/contributions/quests?status=new&client=all&bucket=blocked");
   });
 });
 
 describe("sort", () => {
-  const filters = { status: "new", bucket: "ready", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
+  const filters = { status: "new", bucket: "ready", client: "all", source: "quests", stage: "all", sort: DEFAULT_SORT } as const;
 
   it("starts a newly clicked column in its own direction, and flips the one in force", () => {
     expect(nextSort(DEFAULT_SORT, "filed")).toEqual({ column: "filed", direction: "desc" });
-    expect(nextSort(DEFAULT_SORT, "source")).toEqual({ column: "source", direction: "asc" });
     expect(nextSort(DEFAULT_SORT, "count")).toEqual({ column: "count", direction: "asc" });
     expect(nextSort({ column: "count", direction: "asc" }, "count")).toEqual({ column: "count", direction: "desc" });
   });
@@ -70,26 +74,26 @@ describe("sort", () => {
 
   it("carries a sort in the href and leaves the default out", () => {
     expect(contributionsHref(filters, { sort: { column: "filed", direction: "asc" } })).toBe(
-      "/contributions?status=new&client=all&source=all&stage=all&sort=filed&dir=asc",
+      "/contributions/quests?status=new&client=all&sort=filed&dir=asc",
     );
     expect(contributionsHref({ ...filters, sort: { column: "filed", direction: "asc" } }, { sort: DEFAULT_SORT })).toBe(
-      "/contributions?status=new&client=all&source=all&stage=all",
+      "/contributions/quests?status=new&client=all",
     );
   });
 
   it("keeps the sort across a filter change", () => {
-    const sort = { column: "source", direction: "desc" } as const;
+    const sort = { column: "filed", direction: "asc" } as const;
     expect(nextContributionFilters({ ...filters, sort }, { status: "accepted" }).sort).toEqual(sort);
   });
 });
 
 describe("paging", () => {
   it("carries a page past the first, and leaves the first page bare", () => {
-    const filters = { status: "new", bucket: "ready", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
-    expect(contributionsHref(filters, {}, 3)).toBe("/contributions?status=new&client=all&source=all&stage=all&page=3");
-    expect(contributionsHref(filters, {}, 1)).toBe("/contributions?status=new&client=all&source=all&stage=all");
+    const filters = { status: "new", bucket: "ready", client: "all", source: "quests", stage: "all", sort: DEFAULT_SORT } as const;
+    expect(contributionsHref(filters, {}, 3)).toBe("/contributions/quests?status=new&client=all&page=3");
+    expect(contributionsHref(filters, {}, 1)).toBe("/contributions/quests?status=new&client=all");
     // A filter change starts again from the first page.
-    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions?status=accepted&client=all&source=all&stage=all");
+    expect(contributionsHref(filters, { status: "accepted" })).toBe("/contributions/quests?status=accepted&client=all");
   });
 
   it("reads anything that is not a positive integer as the first page", () => {
@@ -193,19 +197,19 @@ describe("matchesSearch", () => {
 });
 
 describe("contributionsHref search", () => {
-  const filters = { status: "new", bucket: "ready", client: "all", source: "all", stage: "all", sort: DEFAULT_SORT } as const;
+  const filters = { status: "new", bucket: "ready", client: "all", source: "quests", stage: "all", sort: DEFAULT_SORT } as const;
 
   it("writes the query and where it is searched only when set, and keeps them across a filter change", () => {
     expect(contributionsHref(filters, { q: " dughan ", searchIn: "npc" })).toBe(
-      "/contributions?status=new&client=all&source=all&stage=all&q=dughan&filter=npc",
+      "/contributions/quests?status=new&client=all&q=dughan&filter=npc",
     );
     expect(contributionsHref({ ...filters, q: "dughan", searchIn: "any" }, { status: "accepted" })).toBe(
-      "/contributions?status=accepted&client=all&source=all&stage=all&q=dughan",
+      "/contributions/quests?status=accepted&client=all&q=dughan",
     );
   });
 });
 
-describe("sectionOf / matchesSource", () => {
+describe("sectionOf", () => {
   const quest = { title: "Stalk With The Earthmother", questId: 76156, stage: "accept" as const };
 
   it("lists a quests row with no quest under gossip, and every other row under its source", () => {
@@ -213,11 +217,5 @@ describe("sectionOf / matchesSource", () => {
     expect(sectionOf({ source: "quests" }, quest)).toBe("quests");
     expect(sectionOf({ source: "zones" }, null)).toBe("zones");
   });
-
-  it("keeps gossip out of quests and quests out of gossip", () => {
-    expect(matchesSource("gossip", "quests")).toBe(false);
-    expect(matchesSource("quests", "gossip")).toBe(false);
-    expect(matchesSource("gossip", "gossip")).toBe(true);
-    expect(matchesSource("gossip", "all")).toBe(true);
-  });
 });
+
