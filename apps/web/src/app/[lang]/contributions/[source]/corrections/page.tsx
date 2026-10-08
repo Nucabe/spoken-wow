@@ -63,8 +63,8 @@ export default async function Page({
   const q = typeof rawQ === "string" ? rawQ.trim() : "";
   const searchIn = isSearchIn(rawFilter) ? rawFilter : "any";
 
-  const listed = (await listContributions(status, lang)).filter(
-    (row) => row.source === "quests" && (client === "all" || clientOf(row.build).family === client),
+  const listed = (await listContributions(status, lang, undefined, "quests")).filter(
+    (row) => client === "all" || clientOf(row.build).family === client,
   );
   const states = await lineStates(listed);
 

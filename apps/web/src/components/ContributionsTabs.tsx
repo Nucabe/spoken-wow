@@ -1,9 +1,7 @@
-import Link from "next/link";
-
 import type { Section as ContributionSection } from "@/lib/contributions/query";
 import { localeHref, type Lang } from "@/lib/lang";
 
-import { TAB_ROW, tabClass } from "./tab-styles";
+import { LinkTabs } from "@/components/StatusTabs";
 
 const SECTIONS = [
   { key: "quests", label: "Quests", href: "/contributions/quests" },
@@ -40,37 +38,14 @@ export default function ContributionsTabs({
   const sections = SECTIONS.filter((tab) => tab.key !== "npcs" || showNpcs);
   return (
     <>
-      <TabRow label="Contributions" lang={lang} tabs={sections} active={section} />
+      <LinkTabs label="Contributions" tabs={localised(lang, sections)} active={section} />
       {section === "quests" ? (
-        <TabRow label="Quests" lang={lang} tabs={QUEST_VIEWS} active={view ?? "contributions"} />
+        <LinkTabs label="Quests" tabs={localised(lang, QUEST_VIEWS)} active={view ?? "contributions"} />
       ) : null}
     </>
   );
 }
 
-function TabRow({
-  label,
-  lang,
-  tabs,
-  active,
-}: {
-  label: string;
-  lang: Lang;
-  tabs: readonly { key: string; label: string; href: string }[];
-  active: string;
-}) {
-  return (
-    <nav aria-label={label} className={TAB_ROW}>
-      {tabs.map((tab) => (
-        <Link
-          key={tab.key}
-          href={localeHref(lang, tab.href)}
-          aria-current={tab.key === active ? "page" : undefined}
-          className={tabClass(tab.key === active)}
-        >
-          {tab.label}
-        </Link>
-      ))}
-    </nav>
-  );
+function localised(lang: Lang, tabs: readonly { key: string; label: string; href: string }[]) {
+  return tabs.map((tab) => ({ value: tab.key, label: tab.label, href: localeHref(lang, tab.href) }));
 }

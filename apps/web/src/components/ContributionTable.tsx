@@ -490,7 +490,6 @@ export default function ContributionTable({
     // envelope gave, in its own locale.
     return override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
   };
-  const bucketNow = (row: ContributionRow): Bucket => bucketOf(row, npcOf(row));
 
   // Only rows still on screen count: a selected row a bulk reject just moved out of this view
   // must not be accepted by the next click on a button that no longer shows it.
@@ -504,7 +503,7 @@ export default function ContributionTable({
     .map((row) => row.id);
   // A row with no speaker would only come back refused.
   const selectedToAccept = changeable(
-    selectedRows.filter((row) => bucketNow(row) === "ready"),
+    selectedRows.filter((row) => bucketOf(row, npcOf(row)) === "ready"),
     "accepted",
   );
   const selectedToReject = changeable(selectedRows, "rejected");
@@ -714,8 +713,8 @@ export default function ContributionTable({
                   book={book}
                   current={resolved[row.id] ?? row.status}
                   npc={npc}
-                  acceptable={now === "ready"}
-                  movedTo={status === "new" && now !== bucket ? now : null}
+                  bucket={now}
+                  moved={status === "new" && now !== bucket}
                   found={existing[row.id]}
                   selected={selected.has(row.id)}
                   busy={busy === row.id}
@@ -766,8 +765,8 @@ const ContributionTableRow = memo(function ContributionTableRow({
   book,
   current,
   npc,
-  acceptable,
-  movedTo,
+  bucket,
+  moved,
   found,
   selected,
   busy,
@@ -792,9 +791,10 @@ const ContributionTableRow = memo(function ContributionTableRow({
   current: ContributionStatus;
   npc: NpcSummary | null;
   /** Whether accept would take the row as its speaker stands. */
-  acceptable: boolean;
-  /** The New tab's other half, when an answer saved here moved the row into it. */
-  movedTo: Bucket | null;
+  /** Where the row stands now: an answer saved here may have moved it. Only ready rows offer Accept. */
+  bucket: Bucket;
+  /** On the New tab, the row now belongs to the other half. */
+  moved: boolean;
   /** The corpus text the row's key already resolves to, if any. */
   found: string | undefined;
   selected: boolean;
@@ -999,7 +999,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
 
         <td>
           <div className="flex items-center justify-end gap-1">
-            {current !== "accepted" && acceptable ? (
+            {current !== "accepted" && bucket === "ready" ? (
               <LiteButton
                 variant="accept"
                 disabled={busy || locked}
@@ -1040,9 +1040,9 @@ const ContributionTableRow = memo(function ContributionTableRow({
               </LiteButton>
             ) : null}
           </div>
-          {movedTo ? (
+          {moved ? (
             <p className="text-muted-foreground mt-1 text-right text-xs">
-              {movedTo === "ready" ? "Ready now" : "Needs a speaker now"}
+              {bucket === "ready" ? "Ready now" : "Needs a speaker now"}
             </p>
           ) : null}
           {refusal ? (

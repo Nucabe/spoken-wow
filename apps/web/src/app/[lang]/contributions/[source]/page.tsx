@@ -291,11 +291,12 @@ export default async function Page({
 
   // Counted after the other filters, so each tab's count matches what it shows.
   const englishHas = await englishHasMoment(filtered);
-  const bucketRow = (row: Contribution) => ({ ...row, quest: questFor(row), englishHas: englishHas.has(row.id) });
-  const buckets = new Map(filtered.map((row) => [row.id, bucketOf(bucketRow(row), npcs[row.id] ?? null)]));
   const bucketCounts: Record<Bucket, number> = { ready: 0, blocked: 0 };
-  for (const value of buckets.values()) bucketCounts[value]++;
-  const matching = status === "new" ? filtered.filter((row) => buckets.get(row.id) === bucket) : filtered;
+  const matching = filtered.filter((row) => {
+    const own = bucketOf({ ...row, quest: questFor(row), englishHas: englishHas.has(row.id) }, npcs[row.id] ?? null);
+    bucketCounts[own]++;
+    return status !== "new" || own === bucket;
+  });
 
   // A page of rows, not the whole queue: every row rendered is a row the browser has to build
   // and React has to diff, and a queue of hundreds made both the load and every click slow.
