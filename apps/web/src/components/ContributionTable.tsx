@@ -94,6 +94,8 @@ export type ContributionRow = Pick<
    * is offered: a row accepted before this feature existed has none yet.
    */
   hasLine: boolean;
+  /** A translated quests row whose moment English already has: accepted with no speaker. */
+  englishHas: boolean;
 };
 
 /** An English book a translated page can be matched to. */
@@ -499,7 +501,7 @@ export default function ContributionTable({
     // envelope gave, in its own locale.
     return override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
   };
-  const bucketNow = (row: ContributionRow): Bucket => bucketOf(row.source, npcOf(row));
+  const bucketNow = (row: ContributionRow): Bucket => bucketOf(row, npcOf(row));
 
   // Only rows still on screen count: a selected row a bulk reject just moved out of this view
   // must not be accepted by the next click on a button that no longer shows it.
@@ -709,7 +711,7 @@ export default function ContributionTable({
           <tbody>
             {rows.map((row) => {
               const npc = npcOf(row);
-              const now = bucketOf(row.source, npc);
+              const now = bucketOf(row, npc);
               const book =
                 row.book && row.id in bookOverrides ? { ...row.book, match: bookOverrides[row.id] } : row.book;
               return (

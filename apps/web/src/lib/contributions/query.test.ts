@@ -100,24 +100,40 @@ describe("paging", () => {
 
 describe("bucketOf", () => {
   const npc = { race: "tauren", gender: "male", flavor: "warrior" as string | null, conflict: [] };
+  const quest = { title: "A Threat Within", questId: 783, stage: "accept" as const };
+  const english = { source: "quests" as const, locale: "enUS", quest, englishHas: false };
 
-  it("is ready for a quests row whose NPC has a race and gender in a roster voice, guessed or not", () => {
-    expect(bucketOf("quests", npc)).toBe("ready");
+  it("is ready for an English quests row whose NPC has a race and gender in a roster voice, guessed or not", () => {
+    expect(bucketOf(english, npc)).toBe("ready");
   });
 
-  it("is blocked for a quests row with no NPC, no race or gender, a conflict, or a voice off the roster", () => {
-    expect(bucketOf("quests", null)).toBe("blocked");
-    expect(bucketOf("quests", { ...npc, gender: null })).toBe("blocked");
-    expect(bucketOf("quests", { ...npc, race: null })).toBe("blocked");
-    expect(bucketOf("quests", { ...npc, conflict: [{}] })).toBe("blocked");
-    expect(bucketOf("quests", { ...npc, race: "murloc" })).toBe("blocked");
+  it("blocks an English quests row with no NPC, no race or gender, a conflict, or a voice off the roster", () => {
+    expect(bucketOf(english, null)).toBe("blocked");
+    expect(bucketOf(english, { ...npc, gender: null })).toBe("blocked");
+    expect(bucketOf(english, { ...npc, race: null })).toBe("blocked");
+    expect(bucketOf(english, { ...npc, conflict: [{}] })).toBe("blocked");
+    expect(bucketOf(english, { ...npc, race: "murloc" })).toBe("blocked");
     // tauren-male has only flavored voices, so the bare pair is not one.
-    expect(bucketOf("quests", { ...npc, flavor: null })).toBe("blocked");
+    expect(bucketOf(english, { ...npc, flavor: null })).toBe("blocked");
+  });
+
+  it("is ready for a translated quests row English has the moment for, with no speaker at all", () => {
+    expect(bucketOf({ ...english, locale: "deDE", englishHas: true }, null)).toBe("ready");
+  });
+
+  it("checks the speaker of a translated quests row English lacks the moment for", () => {
+    const native = { ...english, locale: "deDE", englishHas: false };
+    expect(bucketOf(native, null)).toBe("blocked");
+    expect(bucketOf(native, npc)).toBe("ready");
+  });
+
+  it("blocks a translated greeting, which nothing can match to English", () => {
+    expect(bucketOf({ ...english, locale: "deDE", quest: "gossip" }, npc)).toBe("blocked");
   });
 
   it("is ready for zones and books, which name no NPC", () => {
-    expect(bucketOf("zones", null)).toBe("ready");
-    expect(bucketOf("books", null)).toBe("ready");
+    expect(bucketOf({ ...english, source: "zones", quest: null }, null)).toBe("ready");
+    expect(bucketOf({ ...english, source: "books", quest: null, locale: "deDE" }, null)).toBe("ready");
   });
 });
 

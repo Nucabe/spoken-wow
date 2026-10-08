@@ -12,7 +12,7 @@ import { clientOf, isClientFamily } from "@/lib/contributions/client";
 import { corpusLookup } from "@/lib/contributions/existing";
 import { lineStates, tabOf } from "@/lib/contributions/known";
 import { isStatus, type ContributionStatus } from "@/lib/contributions/contributions";
-import { linesInExplorer } from "@/lib/contributions/accept";
+import { englishHasMoment, linesInExplorer } from "@/lib/contributions/accept";
 import {
   isSearchIn,
   bucketOf,
@@ -280,7 +280,9 @@ export default async function Page({
     .filter((row) => matchesSearch({ text: row.text, npc: npcs[row.id], quest: questFor(row) }, q, searchIn));
 
   // Counted after the other filters, so each tab's count matches what it shows.
-  const buckets = new Map(filtered.map((row) => [row.id, bucketOf(row.source, npcs[row.id] ?? null)]));
+  const englishHas = await englishHasMoment(filtered);
+  const bucketRow = (row: Contribution) => ({ ...row, quest: questFor(row), englishHas: englishHas.has(row.id) });
+  const buckets = new Map(filtered.map((row) => [row.id, bucketOf(bucketRow(row), npcs[row.id] ?? null)]));
   const bucketCounts: Record<Bucket, number> = { ready: 0, blocked: 0 };
   for (const value of buckets.values()) bucketCounts[value]++;
   const matching = status === "new" ? filtered.filter((row) => buckets.get(row.id) === bucket) : filtered;
@@ -323,6 +325,7 @@ export default async function Page({
     quest: questFor(row),
     book: bookFor(row, row.pageId === null ? null : (bookMatches.get(row.pageId) ?? null)),
     hasLine: linedIds.has(row.id),
+    englishHas: englishHas.has(row.id),
   }));
 
   const facetValues = await facets();

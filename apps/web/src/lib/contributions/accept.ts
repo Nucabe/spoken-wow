@@ -351,6 +351,24 @@ export async function linesInExplorer(contributions: readonly Contribution[]): P
 }
 
 /**
+ * The translated quests rows whose moment English already has, by id. acceptTranslation copies
+ * English's line for those and asks for no speaker; only the rest need one.
+ */
+export async function englishHasMoment(contributions: readonly Contribution[]): Promise<Set<number>> {
+  const translated = contributions.filter(
+    (c) => c.source === "quests" && c.locale !== BASE_LANG && c.meta.quest && c.meta.event,
+  );
+  if (translated.length === 0) return new Set();
+  const { lines } = await corpus();
+  const found = new Set<number>();
+  for (const c of translated) {
+    const identity = lineIdentityFor(c.meta, c.text ?? "", "", "");
+    if (identity && answering(lines, identity.lineId).length > 0) found.add(c.id);
+  }
+  return found;
+}
+
+/**
  * The books side of linesInExplorer: an accepted row from another language is there once the
  * language has its page -- written by this row, or by anything before it, which accept would
  * leave alone. An English row writes nothing, so it is never "missing" from the explorer.
