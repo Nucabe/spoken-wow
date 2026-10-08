@@ -917,7 +917,7 @@ a line's English speakers where it has any, otherwise those a language wrote, ea
 A language's explorer lists its own rows, plus English's lines it has no text for, marked
 untranslated; English is joined only to show what a line says in English. Who speaks is
 answered by a moderator with `regenerate` in the contribution's language. The answer is about
-the NPC (`npc_resolution`), so it holds for every language.
+the NPC (`npc`), so it holds for every language.
 
 A gossip row, in any language, is matched in three steps (`apps/web/src/lib/contributions/gossip.ts`):
 
@@ -1005,8 +1005,16 @@ the contribution meant, and that pick is stored on the contribution (`contributi
 migration 0033), never in `meta`, which stays what the client sent. From then on every reader
 treats the row as if its envelope had carried the kind.
 
-The answer is stored once per NPC, keyed on the kind *and* the id for that same reason, so one
-correction fixes every line that NPC speaks. `npc_resolution` also keeps what the client
+The answer is stored once per NPC in `npc` (migration 0067), keyed on the kind *and* the id for
+that same reason, and every line reads its voice from it: a speaker row names the NPC, and a
+line speaks in its speakers' race and gender and the flavor most of their NPCs have, as the
+extract has always agreed one file on one voice. So one correction fixes every line that NPC
+speaks, the extract's included, and their audio goes stale. The extract's own answers are the
+`corpus` rows, which `import-corpus` writes from the corpus file's `npcs`: race and gender from
+the display, flavor from the NPC's greeting sounds, and no flavor where the game names none.
+Such an NPC's lines have no voice until somebody gives it one on `/contributions/npcs`, which
+lists every NPC. A speaker whose NPC nobody knows anything about keeps the voice written with it.
+Names are per language, in `entity_name`. `npc` also keeps what the client
 reported even when a moderator overrules it — evidence about the NPC is worth more than the
 guess it produced — along with the client build, since model ids are per-build data.
 
@@ -1043,7 +1051,7 @@ nothing in `C_GossipInfo`, `GOSSIP_SHOW` or any event while the window was open)
 client writes every row it is sent to `Cache/ADB/<locale>/DBCache.bin`, with the id. Forever's
 client ships almost none of the table, so every greeting a player sees passes through there.
 
-`broadcast_text` (migration 0066) keeps those rows per language. `/contribute` takes
+`broadcast_text` (migration 0067) keeps those rows per language. `/contribute` takes
 `DBCache.bin` and its per-session `DBCache.bin<n>.tmp` files from signed-in players, reads them
 in the browser (`apps/web/src/lib/broadcast/cache.ts`) and posts only the BroadcastText rows to
 `/api/broadcast-text`. A cache says nothing about its language except the folder it sat in, so

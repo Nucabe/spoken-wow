@@ -141,6 +141,33 @@ def _bulk(cur, what, rows, sql, template=None, page=1000):
         _progress(f"{what}: none")
 
 
+def _import_npcs(cur, npc_rows):
+    """The extract's NPCs as the npc table's `corpus` answers (apps/web migration 0067).
+
+    Over anything ranked below the corpus -- a display read, a client guess, nothing -- and
+    never over a moderator's answer. A `corpus` row the file no longer carries goes, so the
+    export gives the file back.
+    """
+    cur.execute("""create temporary table "npc_import" ("npcKind" text, "npcId" integer,
+                     "race" text, "gender" text, "flavor" text) on commit drop""")
+    _bulk(cur, "npc_import", npc_rows,
+          """insert into "npc_import" ("npcKind", "npcId", "race", "gender", "flavor") values %s""")
+    cur.execute(
+        """delete from "npc" n
+            where n."provenance" = 'corpus'
+              and not exists (select 1 from "npc_import" i
+                               where i."npcKind" = n."npcKind" and i."npcId" = n."npcId")""")
+    cur.execute(
+        """insert into "npc" as n ("npcKind", "npcId", "race", "gender", "flavor",
+                                   "provenance", "confirmed")
+           select "npcKind", "npcId", "race", "gender", "flavor", 'corpus', true from "npc_import"
+           on conflict ("npcKind", "npcId") do update
+             set "race" = excluded."race", "gender" = excluded."gender",
+                 "flavor" = excluded."flavor", "provenance" = 'corpus', "confirmed" = true,
+                 "doubtful" = false, "updatedAt" = now()
+           where n."provenance" <> 'moderator'""")
+
+
 def import_corpus(path, verbose=True):
     """corpus.json.gz -> quest_line, quest_line_speaker, quest_spawn.
 
@@ -294,6 +321,13 @@ def import_corpus(path, verbose=True):
                         "race", "gender", "flavor", "voice")
                      values %s""")
 
+            npc_rows = [
+                (npc["npcType"], npc["npcId"], npc["race"], npc["gender"], npc["flavor"])
+                for npc in corpus.get("npcs", [])
+            ]
+            if "npcs" in corpus:
+                _import_npcs(cur, npc_rows)
+
             # Only from a marked file: in an older one, the rows that would match are the
             # contributed speakers' own round-tripped copies, skipped above or not.
             superseded = 0
@@ -339,7 +373,7 @@ def import_corpus(path, verbose=True):
             f"{counts['record']} recorded without promoting (edited here), "
             f"{counts['skip']} unchanged"
         )
-        print(f"{len(speaker_rows)} speakers, {len(spawn_rows)} spawn points")
+        print(f"{len(speaker_rows)} speakers, {len(npc_rows)} NPCs, {len(spawn_rows)} spawn points")
         print(
             f"{contributed} contributed rows left as they are, {superseded} contributed "
             f"speakers overtaken by the dump"
@@ -429,6 +463,15 @@ def export_corpus(path, check=False, verbose=True):
                     order by "id" """
             )
             spawn_rows = cur.fetchall()
+
+            # The extract's NPCs: the `corpus` answers, in the order build_corpus writes them.
+            # A moderator's answer replaced one, and is not the extract's to give back.
+            cur.execute(
+                """select "npcKind", "npcId", "race", "gender", "flavor" from "npc"
+                    where "provenance" = 'corpus'
+                    order by "npcKind", "npcId" """
+            )
+            npc_rows = cur.fetchall()
     finally:
         conn.close()
 
@@ -474,6 +517,10 @@ def export_corpus(path, check=False, verbose=True):
         "lineCount": len(lines),
         "lines": lines,
         "spawns": spawns,
+        "npcs": [
+            {"npcType": kind, "npcId": npc_id, "race": race, "gender": gender, "flavor": flavor}
+            for kind, npc_id, race, gender, flavor in npc_rows
+        ],
     }
 
     if check:

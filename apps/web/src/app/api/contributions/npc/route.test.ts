@@ -39,7 +39,7 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
-  await db().query(`delete from "npc_resolution" where "npcId" in ($1, 0)`, [npcId]);
+  await db().query(`delete from "npc" where "npcId" in ($1, 0)`, [npcId]);
   await db().query(`delete from "activity" where "kind" = 'npc.resolved' and "actorId" = $1`, [
     RESOLVER,
   ]);

@@ -78,7 +78,7 @@ afterEach(async () => {
     await db().query(`delete from "contribution" where "id" = any($1::int[])`, [contributionIds]);
     contributionIds = [];
   }
-  await db().query(`delete from "npc_resolution" where "npcId" between $1 and $2`, [base, base + 100]);
+  await db().query(`delete from "npc" where "npcId" between $1 and $2`, [base, base + 100]);
 });
 
 afterAll(async () => {

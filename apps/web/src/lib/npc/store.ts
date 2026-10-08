@@ -1,6 +1,7 @@
 /**
- * The only module that knows the npc_resolution table's column names, as
- * lib/contributions/store.ts is for contributions.
+ * The only module that knows the npc table's column names, as lib/contributions/store.ts is for
+ * contributions. One row per NPC, read for every line it speaks (migration 0067); its name is
+ * per language, in entity_name.
  *
  * Every read and write takes the kind as well as the id. The pair is the key, because the two
  * id spaces overlap and a bare id would merge a Stormwind City Guard with a Wanted Poster.
@@ -19,6 +20,7 @@ export type { NpcKind, Provenance };
 
 export type NpcResolution = {
   npcKind: NpcKind;
+  /** English where English names it, otherwise whichever language does; written to English only where it has none. */
   npcId: number;
   npcName: string | null;
   race: string | null;
@@ -37,13 +39,17 @@ export type NpcResolution = {
   updatedAt: string;
 };
 
-const COLUMNS = `"npcKind", "npcId", "npcName", "race", "gender", "flavor", "provenance",
-                 "confirmed", "doubtful", "modelFileId", "sex", "creatureType", "build", "note",
-                 "resolvedBy", "updatedAt"::text`;
+const NAME = `(select e."name" from "entity_name" e
+                where e."kind" = n."npcKind" and e."entityId" = n."npcId"::text and e."isCurrent"
+                order by e."lang" <> 'enUS', e."lang" limit 1)`;
+
+const COLUMNS = `n."npcKind", n."npcId", ${NAME} as "npcName", n."race", n."gender", n."flavor",
+                 n."provenance", n."confirmed", n."doubtful", n."modelFileId", n."sex",
+                 n."creatureType", n."build", n."note", n."resolvedBy", n."updatedAt"::text`;
 
 export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcResolution | null> {
   const { rows } = await db().query<NpcResolution>(
-    `select ${COLUMNS} from "npc_resolution" where "npcKind" = $1 and "npcId" = $2`,
+    `select ${COLUMNS} from "npc" n where n."npcKind" = $1 and n."npcId" = $2`,
     [kind, npcId],
   );
   return rows[0] ?? null;
@@ -59,7 +65,7 @@ export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcRe
 // (once for the stored row, once for the incoming one) so the comparison lives in the one
 // place both sides of a write pass through, rather than in whichever caller happens to be last.
 //
-// This list and the npc_resolution_provenance_check constraint in the migration must change
+// This list and the npc_provenance_check constraint in the migration must change
 // together: a provenance added to one and not the other either can never be written (rejected
 // by the constraint) or falls through to `else` here. The `else` is -1, one below `none`'s own
 // 0, on purpose -- an unranked value must not tie `none`, or it would silently win every write
@@ -88,14 +94,13 @@ export async function upsertResolution(
   // moderator edit still lands. A skipped update returns no row -- `do update ... where` makes
   // the row a no-op, not a match failure -- so the read-back below is what keeps this
   // function's return type honest in that case.
-  const { rows } = await db().query<NpcResolution>(
-    `insert into "npc_resolution"
-       ("npcKind", "npcId", "npcName", "race", "gender", "flavor", "provenance", "confirmed",
+  await db().query(
+    `insert into "npc" as n
+       ("npcKind", "npcId", "race", "gender", "flavor", "provenance", "confirmed",
         "doubtful", "modelFileId", "sex", "creatureType", "build", "note", "resolvedBy")
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      on conflict ("npcKind", "npcId") do update
-       set "npcName" = excluded."npcName",
-           "race" = excluded."race",
+       set "race" = excluded."race",
            "gender" = excluded."gender",
            "flavor" = excluded."flavor",
            "provenance" = excluded."provenance",
@@ -108,25 +113,35 @@ export async function upsertResolution(
            "note" = excluded."note",
            "resolvedBy" = excluded."resolvedBy",
            "updatedAt" = now()
-       where ${provenanceRank(`"npc_resolution"."provenance"`)}
-             <= ${provenanceRank(`excluded."provenance"`)}
-     returning ${COLUMNS}`,
+       where ${provenanceRank(`n."provenance"`)} <= ${provenanceRank(`excluded."provenance"`)}`,
     [
-      input.npcKind, input.npcId, input.npcName, input.race, input.gender, input.flavor,
+      input.npcKind, input.npcId, input.race, input.gender, input.flavor,
       input.provenance, input.confirmed, input.doubtful, input.modelFileId, input.sex, input.creatureType,
       input.build, input.note, input.resolvedBy,
     ],
   );
-  if (rows[0]) return rows[0];
+  if (input.npcName?.trim()) await nameInEnglish(input.npcKind, input.npcId, input.npcName.trim());
 
-  // The `where` above turned the write into a no-op, which means the row on disk already
-  // outranks this submission -- hand that back rather than undefined, so a caller that ignores
-  // the possibility still gets a real NpcResolution.
-  const existing = await getResolution(input.npcKind, input.npcId);
-  if (!existing) {
-    throw new Error(`upsertResolution: no-op update left no row for ${input.npcKind}/${input.npcId}`);
-  }
-  return existing;
+  // Read back either way: a write the `where` turned into a no-op means the row on disk
+  // outranks this submission, and that row is the answer.
+  const stored = await getResolution(input.npcKind, input.npcId);
+  if (!stored) throw new Error(`upsertResolution: no row for ${input.npcKind}/${input.npcId}`);
+  return stored;
+}
+
+/**
+ * An NPC's name as a contribution or a moderator gave it, in English where English has no name
+ * yet. As 'contributed', so the extract's own name, when it comes, promotes over it.
+ */
+async function nameInEnglish(kind: NpcKind, npcId: number, name: string): Promise<void> {
+  await db().query(
+    `insert into "entity_name" ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
+     select $1, $2, 'enUS', 1, true, 'contributed', $3
+      where not exists (select 1 from "entity_name"
+                         where "kind" = $1 and "entityId" = $2 and "lang" = 'enUS')
+     on conflict do nothing`,
+    [kind, String(npcId), name],
+  );
 }
 
 /**
@@ -144,7 +159,7 @@ export async function getResolutionsById(npcIds: number[]): Promise<Map<number, 
   if (npcIds.length === 0) return new Map();
 
   const { rows } = await db().query<NpcResolution>(
-    `select ${COLUMNS} from "npc_resolution" where "npcId" = any($1::int[])`,
+    `select ${COLUMNS} from "npc" n where n."npcId" = any($1::int[]) and n."npcKind" <> 'item'`,
     [npcIds],
   );
   const grouped = new Map<number, NpcResolution[]>();
@@ -175,10 +190,10 @@ export async function getResolutions(
   if (keys.length === 0) return new Map();
 
   const { rows } = await db().query<NpcResolution>(
-    `select ${COLUMNS} from "npc_resolution" r
+    `select ${COLUMNS} from "npc" n
       where exists (
         select 1 from unnest($1::text[], $2::int[]) as pairs("npcKind", "npcId")
-         where r."npcKind" = pairs."npcKind" and r."npcId" = pairs."npcId"
+         where n."npcKind" = pairs."npcKind" and n."npcId" = pairs."npcId"
       )`,
     [keys.map((key) => key.npcKind), keys.map((key) => key.npcId)],
   );
@@ -186,13 +201,12 @@ export async function getResolutions(
 }
 
 /**
- * Every NPC on file, for /contributions/npcs. Every row here came from a contribution naming the
- * NPC (resolveNpc at intake or at triage) or a moderator answering one, so this is "every NPC
- * the contributions have named".
+ * Every NPC on file, for /contributions/npcs: every one the extract carries and every one a
+ * contribution named. Items are left out: they speak no greeting a race could voice.
  */
 export async function listResolutions(): Promise<NpcResolution[]> {
   const { rows } = await db().query<NpcResolution>(
-    `select ${COLUMNS} from "npc_resolution" order by "npcId", "npcKind"`,
+    `select ${COLUMNS} from "npc" n where n."npcKind" <> 'item' order by n."npcId", n."npcKind"`,
   );
   return rows;
 }
@@ -204,9 +218,9 @@ export async function listResolutions(): Promise<NpcResolution[]> {
  */
 export async function listUnconfirmed(kind: NpcKind): Promise<NpcResolution[]> {
   const { rows } = await db().query<NpcResolution>(
-    `select ${COLUMNS} from "npc_resolution"
-      where "confirmed" = false and "npcKind" = $1
-      order by "npcId"`,
+    `select ${COLUMNS} from "npc" n
+      where n."confirmed" = false and n."npcKind" = $1
+      order by n."npcId"`,
     [kind],
   );
   return rows;

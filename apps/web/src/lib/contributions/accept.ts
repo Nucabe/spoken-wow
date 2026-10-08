@@ -93,7 +93,7 @@ type Prepared =
   | { kind: "line"; identity: LineIdentity; text: string; speaker: Speaker; broadcastTextId?: number | null };
 
 /**
- * The npc_resolution rows for many contributions' NPCs, read up front in two queries -- what
+ * The npc rows for many contributions' NPCs, read up front in two queries -- what
  * linesInExplorer hands resolvedSpeaker so a page of rows is not a round trip per row.
  */
 type Resolutions = {
@@ -114,7 +114,7 @@ async function resolutionsFor(contributions: readonly Contribution[]): Promise<R
   return { byKey, byId };
 }
 
-/** Who speaks a quests contribution, from npc_resolution -- the same lookup triage.ts's page renders from. */
+/** Who speaks a quests contribution, from the npc table -- the same lookup triage.ts's page renders from. */
 async function resolvedSpeaker(
   meta: Record<string, string>,
   resolutions?: Resolutions,

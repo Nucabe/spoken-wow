@@ -3,7 +3,7 @@
 /**
  * /contributions/npcs: every NPC on file, one row each, with the triage table's own speaker
  * controls. `initial` is NpcSummary, built server-side (npcSummaryFrom), so nothing from
- * npc_resolution beyond what is rendered crosses into the client.
+ * the npc table beyond what is rendered crosses into the client.
  */
 import { SearchIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -120,7 +120,7 @@ export default function NpcEditor({
   /** One answer, posted and taken into `saved`. True when it landed. */
   const post = useCallback(
     async (npc: NpcSummary, answer: SpeakerAnswer): Promise<boolean> => {
-      // Every row here came from npc_resolution, so npcKind is never null and the route's
+      // Every row here came from the npc table, so npcKind is never null and the route's
       // required kind is always the row's own.
       const response = await fetch("/api/contributions/npc", {
         method: "POST",

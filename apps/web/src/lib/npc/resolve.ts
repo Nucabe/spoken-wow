@@ -21,7 +21,7 @@ import { raceForModel } from "./models";
 import { INT32_MAX } from "./npc";
 import { getResolution, NPC_KINDS, upsertResolution, type NpcKind, type NpcResolution } from "./store";
 
-// The three integer columns npc_resolution and contribution both ultimately feed from an
+// The three integer columns npc and contribution both ultimately feed from an
 // unauthenticated envelope: an id this large is still "a digit run ending at a space" as far
 // as checkEnvelope is concerned, but Postgres's `integer` tops out at 2147483647, and a value
 // past that 500s every reader of the row (the triage page's Promise.all, the export's
@@ -46,7 +46,7 @@ const DIGITS = /^\d+$/;
 // npcId, modelFileId and sex all land in an `integer` column (migration 0030), and all three
 // come straight from an unauthenticated envelope: checkEnvelope only requires a digit run, with
 // no magnitude bound. Past 2147483647 Postgres rejects the insert, but that only protects the
-// npc_resolution row -- the contribution itself already stored, permanently, with the
+// npc row -- the contribution itself already stored, permanently, with the
 // oversized value in its meta. Bounding here, before either column is ever written, is what
 // keeps a single out-of-range paste from turning into a row that 500s every reader of it: the
 // triage page's Promise.all (page.tsx) and the export's unnest($::int[]) (export/route.ts) both
