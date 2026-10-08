@@ -44,6 +44,7 @@ local B = LoadBooks()
 B:InitDB()
 B:SetupSource()
 dofile(BOOKS .. "Data/Books.lua")
+dofile(BOOKS .. "Data/Places.lua")
 
 --- The books clips in the player's queue, in order, by page id.
 local function QueuedPages()
@@ -74,8 +75,9 @@ Expect("...carrying the recorded duration", clip.length, 30.5)
 Expect("...carrying the first page's saved captions", clip.present.transcript,
     SpokenBooksData.pages[261].text)
 Expect("...with readable text even before opening the book", #clip.present.transcript > 0, true)
-Expect("...titled with the book", clip.present.header, "Hillsbrad Town Registry")
-Expect("...and numbered, because this book has more than one page", clip.present.label, "Page 1 of 4")
+Expect("...under what it is, as the Compendium sorts it, as a speaker over a quest", clip.present.header, "Book")
+Expect("...named by the book, whatever page of it this is: the book is one line", clip.present.label,
+    "Hillsbrad Town Registry")
 Expect("a page the pack does not carry has no clip", B:ClipFor(263), nil)
 
 ---------------------------------------------------------------- reporting a bad reading
@@ -102,25 +104,31 @@ Expect("...saying what the address is for",
 ---------------------------------------------------------------- reading a book
 Expect("a book lists the pages from here on", Same(B:PagesFrom(262), { 262, 263, 265 }), true)
 
-B:PlayFrom(261)
-Expect("opening page 1 queues the whole book, skipping the page with no clip",
-    Same(QueuedPages(), { 261, 262, 265 }), true)
+Expect("opening page 1 reads the whole book, skipping the page with no clip", B:PlayFrom(261), 3)
+Expect("...the book one line in the queue: its first page", Same(QueuedPages(), { 261 }), true)
+Expect("...the rest to follow it", Same(B.following and B.following.pages or {}, { 262, 265 }), true)
 
 ---------------------------------------------------------------- turning pages
-local before = #QueuedPages()
-Expect("turning to a page already queued changes nothing", B:SyncTo(262), 0)
-Expect("...and leaves the queue alone", #QueuedPages(), before)
+Expect("turning to a page still to come changes nothing", B:SyncTo(262), 0)
+Expect("...and leaves the queue alone", Same(QueuedPages(), { 261 }), true)
 Expect("...and leaves the current clip's captions on its own page",
     Spoken:GetQueue()[1].present.transcript, SpokenBooksData.pages[261].text)
-Expect("the next queued page already carries its own captions",
-    Spoken:GetQueue()[2].present.transcript, SpokenBooksData.pages[262].text)
+Expect("the next page carries its own captions", B:ClipFor(262).present.transcript, SpokenBooksData.pages[262].text)
+Expect("turning to the last page also changes nothing", B:SyncTo(265), 0)
 
-Expect("turning to the last queued page also changes nothing", B:SyncTo(265), 0)
+---------------------------------------------------------------- a page finishing
+stub.Advance(31)
+Expect("a page finishing puts the next at the head, still one line", Same(QueuedPages(), { 262 }), true)
+Expect("...what follows it shorter by that page", Same(B.following and B.following.pages or {}, { 265 }), true)
+Spoken:Skip()
+Expect("Skip skips the rest of the book", #QueuedPages() .. " " .. tostring(B.following), "0 nil")
+B:PlayFrom(261)
 
 -- Opening a different book: nothing queued covers it, so this source's queue is dropped
 -- and rebuilt from the new page rather than narrating on through the old book.
 B:SyncTo(2810)
-Expect("opening another book rebuilds the queue from there", Same(QueuedPages(), { 2810 }), true)
+Expect("opening another readable replaces the book: one at a time", Same(QueuedPages(), { 2810 }), true)
+Expect("...nothing of the book left to follow", B.following, nil)
 
 ---------------------------------------------------------------- stopping by hand
 -- What `/spb stop` reaches. Closing the frame does not come here: a book carries on being
@@ -132,7 +140,7 @@ Expect("stopping drops this source's narration", #QueuedPages(), 0)
 SpokenBooksSettings.readWholeBook = false
 B:PlayFrom(261)
 Expect("with whole-book reading off, only the page on screen is queued",
-    Same(QueuedPages(), { 261 }), true)
+    Same(QueuedPages(), { 261 }) and B.following == nil, true)
 SpokenBooksSettings.readWholeBook = true
 B:StopReading()
 
