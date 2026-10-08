@@ -127,7 +127,7 @@ describe("resolveNpc", () => {
       ...observed, race: "highmountaintauren", gender: "male", flavor: "grim",
       provenance: "moderator", confirmed: true, doubtful: false, note: null, resolvedBy: "u1", updatedAt: "now",
     });
-    const row = await resolveNpc(observed);
+    const row = await resolveNpc(observed, "enUS");
     expect(row?.race).toBe("highmountaintauren");
     expect(upsertResolution).not.toHaveBeenCalled();
   });
@@ -137,7 +137,7 @@ describe("resolveNpc", () => {
       ...observed, race: "tauren", gender: "male", flavor: "grim",
       provenance: "corpus", confirmed: true, doubtful: false, note: null, resolvedBy: null, updatedAt: "now",
     });
-    const row = await resolveNpc(observed);
+    const row = await resolveNpc(observed, "enUS");
     expect(row).toMatchObject({ race: "tauren", flavor: "grim", provenance: "corpus", confirmed: true });
   });
 
@@ -148,24 +148,33 @@ describe("resolveNpc", () => {
     // resolveNpc plumbs its answer through rather than proving the answer itself; corpus.test.ts
     // pins defaultFlavorFor's own behaviour against the real corpus.
     vi.mocked(defaultFlavorFor).mockResolvedValue("warrior");
-    const row = await resolveNpc(observed);
+    const row = await resolveNpc(observed, "enUS");
     expect(row).toMatchObject({
       race: "tauren", gender: "male", flavor: "warrior", provenance: "client", confirmed: false,
     });
     expect(defaultFlavorFor).toHaveBeenCalledWith("tauren", "male");
   });
 
+  it("names the npc in the language of the client that saw it", async () => {
+    vi.mocked(getResolution).mockResolvedValue(null);
+    vi.mocked(defaultFlavorFor).mockResolvedValue("warrior");
+    await resolveNpc(observed, "deDE");
+    expect(upsertResolution).toHaveBeenLastCalledWith(
+      expect.objectContaining({ npcName: "Boarton Shadetotem", nameLang: "deDE" }),
+    );
+  });
+
   it("leaves the flavor null when the race-gender has no default to fall back on", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
     vi.mocked(defaultFlavorFor).mockResolvedValue(null);
-    const row = await resolveNpc(observed);
+    const row = await resolveNpc(observed, "enUS");
     expect(row).toMatchObject({ flavor: null, provenance: "client", confirmed: false });
   });
 
   it("resolves to no race for a creature model that is not a character", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
     vi.mocked(defaultFlavorFor).mockClear();
-    const row = await resolveNpc({ ...observed, modelFileId: 1 });
+    const row = await resolveNpc({ ...observed, modelFileId: 1 }, "enUS");
     expect(row).toMatchObject({ race: null, provenance: "none", confirmed: false });
     // No race-gender to look a default up for -- raceForModel(1) answers null, so there is
     // nothing for defaultFlavorFor to be asked about at all.
@@ -173,12 +182,12 @@ describe("resolveNpc", () => {
   });
 
   it("does nothing at all for an envelope with no npc", async () => {
-    expect(await resolveNpc({ ...observed, npcId: null })).toBe(null);
+    expect(await resolveNpc({ ...observed, npcId: null }, "enUS")).toBe(null);
   });
 
   it("does not mistake npc id 0 for no npc at all", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
-    const row = await resolveNpc({ ...observed, npcId: 0 });
+    const row = await resolveNpc({ ...observed, npcId: 0 }, "enUS");
     expect(row).not.toBe(null);
     expect(getResolution).toHaveBeenCalledWith(observed.npcKind, 0);
   });
@@ -188,7 +197,7 @@ describe("resolveNpc", () => {
   it("does nothing for a kind-less envelope, and touches neither the store nor the contribution", async () => {
     vi.mocked(getResolution).mockClear();
     vi.mocked(upsertResolution).mockClear();
-    expect(await resolveNpc({ ...observed, npcKind: null })).toBe(null);
+    expect(await resolveNpc({ ...observed, npcKind: null }, "enUS")).toBe(null);
     expect(getResolution).not.toHaveBeenCalled();
     expect(upsertResolution).not.toHaveBeenCalled();
   });
@@ -197,7 +206,7 @@ describe("resolveNpc", () => {
     vi.mocked(voiceFromDisplays).mockResolvedValue({
       exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
     });
-    const row = await resolveNpc({ ...observed, displayIds: [2141, 9392] });
+    const row = await resolveNpc({ ...observed, displayIds: [2141, 9392] }, "enUS");
     expect(voiceFromDisplays).toHaveBeenCalledWith([2141, 9392], 122055);
     expect(row).toMatchObject({
       race: "tauren", gender: "female", flavor: "official", provenance: "display", confirmed: true,
@@ -210,7 +219,7 @@ describe("resolveNpc", () => {
       exact: false, race: "dwarf", gender: "female", flavors: ["guard", "maternal", "young"],
     });
     vi.mocked(defaultFlavorFor).mockResolvedValue("maternal");
-    const row = await resolveNpc({ ...observed, displayIds: [36630, 144322, 146689] });
+    const row = await resolveNpc({ ...observed, displayIds: [36630, 144322, 146689] }, "enUS");
     expect(row).toMatchObject({
       race: "dwarf", gender: "female", flavor: "maternal", provenance: "client", confirmed: false,
     });
@@ -222,7 +231,7 @@ describe("resolveNpc", () => {
       exact: false, race: "dwarf", gender: "female", flavors: ["guard", "young"],
     });
     vi.mocked(defaultFlavorFor).mockResolvedValue("maternal");
-    const row = await resolveNpc({ ...observed, displayIds: [144322, 146689] });
+    const row = await resolveNpc({ ...observed, displayIds: [144322, 146689] }, "enUS");
     expect(row).toMatchObject({ flavor: "guard", provenance: "client", confirmed: false });
   });
 
@@ -230,14 +239,14 @@ describe("resolveNpc", () => {
     vi.mocked(getResolution).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockResolvedValue(null);
     vi.mocked(defaultFlavorFor).mockResolvedValue("warrior");
-    const row = await resolveNpc({ ...observed, displayIds: [999_999] });
+    const row = await resolveNpc({ ...observed, displayIds: [999_999] }, "enUS");
     expect(row).toMatchObject({ race: "tauren", gender: "male", flavor: "warrior", provenance: "client" });
   });
 
   it("does not look appearances up when the envelope carried none", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockClear();
-    await resolveNpc(observed);
+    await resolveNpc(observed, "enUS");
     expect(voiceFromDisplays).not.toHaveBeenCalled();
   });
   // The envelope is unauthenticated: appearances alone must not be able to plant a confirmed
@@ -248,7 +257,7 @@ describe("resolveNpc", () => {
       exact: true, voice: { race: "tauren", gender: "female", flavor: "official" },
     });
     vi.mocked(defaultFlavorFor).mockResolvedValue("standard");
-    const row = await resolveNpc({ ...observed, modelFileId: null, displayIds: [9392] });
+    const row = await resolveNpc({ ...observed, modelFileId: null, displayIds: [9392] }, "enUS");
     expect(row).toMatchObject({
       race: "tauren", gender: "female", flavor: "official", provenance: "client", confirmed: false,
     });
@@ -259,7 +268,7 @@ describe("resolveNpc", () => {
   it("never looks appearances up for a gameobject", async () => {
     vi.mocked(getResolution).mockResolvedValue(null);
     vi.mocked(voiceFromDisplays).mockClear();
-    await resolveNpc({ ...observed, npcKind: "gameobject", displayIds: [9392] });
+    await resolveNpc({ ...observed, npcKind: "gameobject", displayIds: [9392] }, "enUS");
     expect(voiceFromDisplays).not.toHaveBeenCalled();
   });
 });

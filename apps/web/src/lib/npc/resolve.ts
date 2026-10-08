@@ -14,6 +14,7 @@
  * An NPC that answers to none of them resolves to no race, which is a normal outcome rather
  * than a failure: the corpus already carries `narrator-male` for things that are not a race.
  */
+import type { Lang } from "@/lib/lang";
 import { defaultFlavorFor } from "@/lib/quests/catalogue";
 
 import { voiceFromDisplays } from "./display-voices";
@@ -102,7 +103,8 @@ export function observedFrom(meta: Record<string, string>): Observed {
   };
 }
 
-export async function resolveNpc(observed: Observed): Promise<NpcResolution | null> {
+/** `lang` is the language of the client that observed the NPC, and so of its name. */
+export async function resolveNpc(observed: Observed, lang: Lang | null): Promise<NpcResolution | null> {
   const { npcKind, npcId } = observed;
   // `npcId === null`, not a truthiness check: id 0 is a real id and must not be mistaken for
   // "no npc at all". A kind-less envelope (see observedFrom) also fails here since npcKind is
@@ -159,7 +161,8 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
     return upsertResolution({
       npcKind,
       npcId,
-      npcName: observed.npcName,
+      npcName: lang ? observed.npcName : null,
+      nameLang: lang ?? undefined,
       ...fromDisplays.voice,
       provenance: "display",
       confirmed: true,
@@ -195,7 +198,8 @@ export async function resolveNpc(observed: Observed): Promise<NpcResolution | nu
   return upsertResolution({
     npcKind,
     npcId,
-    npcName: observed.npcName,
+    npcName: lang ? observed.npcName : null,
+    nameLang: lang ?? undefined,
     race: fromModel?.race ?? null,
     gender: fromModel?.gender ?? null,
     flavor,

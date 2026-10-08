@@ -68,7 +68,8 @@ export async function POST(request: Request) {
   const row = await upsertResolution({
     npcKind,
     npcId,
-    npcName: existing?.npcName ?? null,
+    // Its name is already on file, in whichever language gave it.
+    npcName: null,
     race: orExisting(body.race, existing?.race ?? null, 64),
     gender: orExisting(body.gender, existing?.gender ?? null, 16),
     flavor: orExisting(body.flavor, existing?.flavor ?? null, 64),

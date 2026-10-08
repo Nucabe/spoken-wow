@@ -57,6 +57,15 @@ describe("upsertResolution", () => {
     expect(row?.confirmed).toBe(false);
   });
 
+  it("names the npc in the language it was named in, not in English", async () => {
+    await upsertResolution({ ...resolution({ npcName: "Eberton Schattentotem" }), nameLang: "deDE" });
+    const { rows } = await db().query<{ lang: string; name: string }>(
+      `select "lang", "name" from "entity_name" where "kind" = 'creature' and "entityId" = $1`,
+      [String(npcId)],
+    );
+    expect(rows).toEqual([{ lang: "deDE", name: "Eberton Schattentotem" }]);
+  });
+
   it("replaces an earlier answer for the same npc", async () => {
     await upsertResolution(resolution());
     await upsertResolution(

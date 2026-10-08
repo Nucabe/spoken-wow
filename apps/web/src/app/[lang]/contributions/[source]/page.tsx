@@ -45,7 +45,7 @@ import {
 import { facets } from "@/lib/facets";
 import { observedFrom, resolveNpc } from "@/lib/npc/resolve";
 import { getResolutions, getResolutionsById, resolutionKey, type NpcKind } from "@/lib/npc/store";
-import { BASE_LANG, isClientLang, langName } from "@/lib/lang";
+import { BASE_LANG, isClientLang, isLang, langName, type Lang } from "@/lib/lang";
 import { can } from "@/lib/permissions";
 import { lineByPath } from "@/lib/zones/catalogue";
 import { Contained, Wide } from "@/components/Width";
@@ -149,17 +149,17 @@ async function npcFor(contributions: Contribution[]): Promise<Record<number, Npc
   // same row back, and a row already answered (not least a moderator's own) must never be
   // touched here. Deduplicated by key first: two of the three real rows name the same NPC, and
   // without this, resolving them in the same Promise.all would race two upserts for one row.
-  const toResolve = new Map<string, (typeof observed)[number]["observed"]>();
-  for (const { observed: o } of observed) {
+  const toResolve = new Map<string, { observed: (typeof observed)[number]["observed"]; lang: Lang | null }>();
+  for (const { row, observed: o } of observed) {
     if (o.npcKind === null || o.npcId === null) continue;
     const key = resolutionKey(o.npcKind, o.npcId);
-    if (!resolutions.has(key) && !toResolve.has(key)) toResolve.set(key, o);
+    if (!resolutions.has(key) && !toResolve.has(key)) toResolve.set(key, { observed: o, lang: isLang(row.locale) ? row.locale : null });
   }
   // resolveMissing tolerates a single resolveNpc call throwing (a DB blip, pool exhaustion)
   // rather than letting it reject this whole render -- one unresolved row must never 500 the
   // entire queue for every collaborator, the same principle the intake route already follows
   // for the same call.
-  const newlyResolved = await resolveMissing(toResolve, resolveNpc);
+  const newlyResolved = await resolveMissing(toResolve, (entry) => resolveNpc(entry.observed, entry.lang));
   for (const [key, resolution] of newlyResolved) {
     resolutions.set(key, resolution);
   }

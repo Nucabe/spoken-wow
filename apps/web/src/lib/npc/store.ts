@@ -7,6 +7,7 @@
  * id spaces overlap and a bare id would merge a Stormwind City Guard with a Wanted Poster.
  */
 import { db } from "@/lib/db";
+import { BASE_LANG, type Lang } from "@/lib/lang";
 
 // Defined in npc.ts, which is free of node imports -- see its own docstring for why that
 // split exists (ContributionTable.tsx, a client component, needs PROVENANCES as a value, and
@@ -21,7 +22,7 @@ export type { NpcKind, Provenance };
 export type NpcResolution = {
   npcKind: NpcKind;
   npcId: number;
-  /** English where English names it, otherwise whichever language does; written to English only where it has none. */
+  /** English where English names it, otherwise whichever language does. */
   npcName: string | null;
   race: string | null;
   gender: string | null;
@@ -64,8 +65,13 @@ export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcRe
 // envelope is none at all. The ranks are npc_provenance_rank (migration 0067), which must change
 // with the npc_provenance_check constraint.
 
+/**
+ * `nameLang` is the language `npcName` is in, English unless said otherwise: a contribution's
+ * NPC is named in the client's language, and saving that as English would show it on every
+ * English page.
+ */
 export async function upsertResolution(
-  input: Omit<NpcResolution, "updatedAt">,
+  input: Omit<NpcResolution, "updatedAt"> & { nameLang?: Lang },
 ): Promise<NpcResolution> {
   // The `where` compares ranks rather than special-casing `moderator`: without it, a `none`
   // write from an older addon that sends no model at all would wipe a `client` or `corpus`
@@ -107,7 +113,9 @@ export async function upsertResolution(
       input.build, input.note, input.resolvedBy,
     ],
   );
-  if (input.npcName?.trim()) await nameInEnglish(input.npcKind, input.npcId, input.npcName.trim());
+  if (input.npcName?.trim()) {
+    await nameIfUnnamed(input.npcKind, input.npcId, input.npcName.trim(), input.nameLang ?? BASE_LANG);
+  }
 
   // Read back either way: a write the `where` turned into a no-op means the row on disk
   // outranks this submission or already is it, and that row is the answer.
@@ -117,17 +125,17 @@ export async function upsertResolution(
 }
 
 /**
- * An NPC's name as a contribution or a moderator gave it, in English where English has no name
- * yet. As 'contributed', so the extract's own name, when it comes, promotes over it.
+ * An NPC's name as a contribution or a moderator gave it, where its language has no name yet.
+ * As 'contributed', so the extract's own name, when it comes, promotes over it.
  */
-async function nameInEnglish(kind: NpcKind, npcId: number, name: string): Promise<void> {
+async function nameIfUnnamed(kind: NpcKind, npcId: number, name: string, lang: Lang): Promise<void> {
   await db().query(
     `insert into "entity_name" ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
-     select $1, $2, 'enUS', 1, true, 'contributed', $3
+     select $1, $2, $4, 1, true, 'contributed', $3
       where not exists (select 1 from "entity_name"
-                         where "kind" = $1 and "entityId" = $2 and "lang" = 'enUS')
+                         where "kind" = $1 and "entityId" = $2 and "lang" = $4)
      on conflict do nothing`,
-    [kind, String(npcId), name],
+    [kind, String(npcId), name, lang],
   );
 }
 
