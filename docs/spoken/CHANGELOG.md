@@ -13,6 +13,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   [DEBUG-LOG.md](DEBUG-LOG.md).
 - For feature addons: `Spoken:Log`, `AddDiagnostics`, `AddDeveloperSettings`, `AddLogSource`
   and the rest, all doing nothing without the module.
+- NPC voices you switched off (the Dialog channel) stay off. With Spoken on another channel,
+  closing a quest or gossip window switched them back on.
 
 ## 3.1.0 — 2026-10-06
 
