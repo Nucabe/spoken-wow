@@ -65,6 +65,8 @@ function SpokenBooks:IsComing(pageId)
 	return false
 end
 
+local Follow
+
 --- A page left the queue: finished, the next page with a clip goes to the head; skipped or
 --- stopped, the rest of the book goes with it.
 local function PageEnded(clip, finished)
@@ -80,13 +82,23 @@ local function PageEnded(clip, finished)
 		local id = table.remove(following.pages, 1)
 		local nextClip = SpokenBooks:ClipFor(id)
 		if nextClip then
-			nextClip.stopCallback = PageEnded
+			Follow(nextClip)
 			if SpokenBooks.source and SpokenBooks.source:Continue(nextClip) then
 				return
 			end
 		end
 	end
 	SpokenBooks.following = nil
+end
+
+--- `clip` puts the next page at the head as it ends (PageEnded), before whatever else its own
+--- stopCallback does: the next page is coming by the time that asks.
+function Follow(clip)
+	local after = clip.stopCallback
+	clip.stopCallback = function(ended, finished)
+		PageEnded(ended, finished)
+		if after then after(ended, finished) end
+	end
 end
 
 --- Whether any page of `book` is still queued or speaking.
@@ -135,7 +147,7 @@ function SpokenBooks:PlayFrom(pageId, browsing)
 		if queued == 0 then
 			local clip = self:ClipFor(id)
 			if clip then
-				clip.stopCallback = PageEnded
+				Follow(clip)
 				if source:Enqueue(clip) then
 					queued = 1
 				end
