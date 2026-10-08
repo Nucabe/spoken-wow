@@ -52,7 +52,7 @@ end
 local lastQuestEvent
 
 -- Defined with the handlers below, and asked by functions above them.
-local ResolveQuestID, NoteGossipPage
+local ResolveQuestID, NoteGossipPage, GossipPageFollowsOption
 
 -- The quest globals as they stood when the client fired a quest event. An addon that
 -- accepts or turns in the quest from its own handler - Leatrix Plus, and the auto-turn-in
@@ -389,8 +389,7 @@ Addon.DialogueUIDefaults = defaults.profile.DialogueUI
 
 local lastGossipOptions
 local selectedGossipOption
--- Set by picking any option, even one whose label could not be found: a page reached that way
--- was asked for, so how often the NPC's greetings play is no reason to keep it quiet.
+-- Set by picking any option, even one whose label could not be found.
 local gossipOptionPicked
 local currentQuestSoundData
 local currentGossipSoundData
@@ -1260,8 +1259,7 @@ function Addon:ExpectedLine(event, textIsCurrent)
         if not guid and not speaker.name then
             return nil
         end
-        -- NoteGossipPage has not run yet this early, so the pick is read before it is consumed.
-        local followsOption = event == "GOSSIP_SHOW" and gossipOptionPicked
+        local followsOption = event == "GOSSIP_SHOW" and GossipPageFollowsOption(textIsCurrent)
         if not self:ShouldPlayGossip(guid, nil, false, followsOption)
             or not DataModules:HasGossipFor(speaker) then
             return nil
@@ -1328,8 +1326,22 @@ local shownGossipFollowsOption
 --- A fresh gossip page: note which option led here and what the page offers next, whether or
 --- not it is read. With autoplay off it is not, and the next page's label would otherwise be
 --- looked up in this page's predecessor's options.
+local function GossipPageKey()
+    return tostring(Utils:GetNPCGUID() or Utils:GetNPCName()) .. ":" .. tostring(GetGossipText())
+end
+
+--- Whether the gossip page on screen was reached by picking an option. Before NoteGossipPage
+--- the pick is still pending; after it, the page it noted carries it. DialogueUI can draw the
+--- page on either side of that, so a drawn page (`textIsCurrent`) checks both.
+function GossipPageFollowsOption(textIsCurrent)
+    if gossipOptionPicked then
+        return true
+    end
+    return textIsCurrent and shownGossipFollowsOption and shownGossipKey == GossipPageKey() or false
+end
+
 function NoteGossipPage()
-    local pageKey = tostring(Utils:GetNPCGUID() or Utils:GetNPCName()) .. ":" .. tostring(GetGossipText())
+    local pageKey = GossipPageKey()
     if not gossipOptionPicked and pageKey == shownGossipKey then
         return
     end
