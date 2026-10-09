@@ -57,7 +57,8 @@ function SpokenBooks:PageMaterial()
 	return ItemTextGetMaterial and ItemTextGetMaterial() or nil
 end
 
--- One readable of each kind the Compendium sorts them into (Data/Places.lua), by name.
+-- What each kind of readable is called, one of it, by the kinds the Compendium sorts them into
+-- (Data/Places.lua).
 local KINDS = { book = "READABLE_BOOK", letter = "READABLE_LETTER", note = "READABLE_NOTE",
 	scroll = "READABLE_SCROLL", tablet = "READABLE_TABLET", plaque = "READABLE_PLAQUE",
 	grave = "READABLE_GRAVE", exhibit = "READABLE_EXHIBIT", other = "READABLE_OTHER" }
@@ -115,6 +116,13 @@ local ACTIONS = {
 	},
 }
 
+-- Guarded: a test loads the clips without Events.lua.
+local function PageStopped(clip, finished)
+	if finished and SpokenBooks.OnPageFinished then
+		SpokenBooks:OnPageFinished(clip)
+	end
+end
+
 --- The clip for a page, as the player's queue wants it, or nil when no pack carries it.
 ---
 --- Language before pack order: a pack in the voice language answers before any other, and a
@@ -137,6 +145,10 @@ function SpokenBooks:ClipFor(pageId)
 				if not text and self.pageText and self.pageText[language] then
 					text = self.pageText[language][pageId]
 				end
+				-- The title the client showed, in the language of the words below it; the
+				-- corpus's own is English.
+				local title = self.bookTitle and self.bookTitle[language] and self.bookTitle[language][place.book]
+					or (book and book.title) or ""
 				return {
 					key = "b:" .. pageId,
 					path = [[Interface\AddOns\]] .. pack.addon .. [[\Sounds\]] .. entry.file .. ".mp3",
@@ -155,12 +167,13 @@ function SpokenBooks:ClipFor(pageId)
 						-- book is one line, whatever page of it this is.
 						header = self:KindOf(place.book),
 						transcript = text,
-						label = book and book.title or nil,
+						label = title ~= "" and title or nil,
 						bullet = "book",
 						material = self:PageMaterial(),
 						portrait = self:PagePicture(),
 						actions = ACTIONS,
 					},
+					stopCallback = PageStopped,
 				}
 			end
 		end
