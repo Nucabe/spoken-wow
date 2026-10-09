@@ -133,3 +133,16 @@ def test_a_languages_greeting_reaches_each_speakers_own_file():
     tables = locale_tables(voiced, rows)
     assert tables["npc_gossip_file_lookups"][1] == {5: {"Geh zu Gryan.": "abc-human-male-warrior"}}
 
+
+
+def test_a_gendered_greeting_keeps_one_file_for_both_players_until_both_have_the_voice():
+    rows = [line(5, "human-male-official", line_id="g:abc:m", file_name="m-abc", source="gossip"),
+            line(5, "human-male-official", line_id="g:abc:f", file_name="f-abc", source="gossip")]
+    one = stored_stems(["gossip/m-abc-human-male-warrior.mp3"])
+    for order in (rows, rows[::-1]):
+        tables = build_tables(with_voice_files({"lines": order, "npcs": CORPUS["npcs"]}, one))
+        assert tables["npc_gossip_file_lookups"][1] == {5: {"Go to Gryan.": "abc"}}
+    both = stored_stems(["gossip/m-abc-human-male-warrior.mp3",
+                         "gossip/f-abc-human-male-warrior.mp3"])
+    tables = build_tables(with_voice_files({"lines": rows, "npcs": CORPUS["npcs"]}, both))
+    assert tables["npc_gossip_file_lookups"][1] == {5: {"Go to Gryan.": "abc-human-male-warrior"}}
