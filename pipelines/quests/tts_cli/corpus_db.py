@@ -367,8 +367,14 @@ def _speaker_rows(cur):
     # web catalogue reads them the same way (catalogue.ts SPEAKERS). Ordered by the
     # corpus's own row order, which is what `ord` records, English's first.
     cur.execute(
-        """select s."npcType", s."npcId", s."npcName", s."race", s."gender",
-                  s."flavor", s."voice", s."contributionId",
+        """select s."npcType", s."npcId",
+                  -- Another language's row names the NPC as its client did: English's name
+                  -- stands in where English has one (catalogue.ts SPEAKER_NAME).
+                  case when s."lang" = %(lang)s then s."npcName" else coalesce(
+                    (select n."name" from "entity_name" n
+                      where n."kind" = s."npcType" and n."entityId" = s."npcId"::text
+                        and n."lang" = %(lang)s and n."isCurrent"), s."npcName") end,
+                  s."race", s."gender", s."flavor", s."voice", s."contributionId",
                   l."lineId", l."source", l."questId", l."questTitle",
                   l."playerGender", l."text", l."originalText", l."fileName",
                   l."generatable", l."skipReason"

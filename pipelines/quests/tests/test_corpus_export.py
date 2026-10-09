@@ -75,3 +75,14 @@ def test_lines_english_speaks_come_first(cur):
     speaker(cur, f"q:{QUEST}:accept", "deDE", 0, 1)
     speaker(cur, f"q:{QUEST}:complete", "enUS", 1, 2)
     assert exported(cur) == [(f"q:{QUEST}:complete", 2), (f"q:{QUEST}:accept", 1)]
+
+
+def test_a_speaker_another_language_wrote_is_named_in_english_where_english_has_a_name(cur):
+    line(cur, f"q:{QUEST}:accept")
+    speaker(cur, f"q:{QUEST}:accept", "deDE", 0, QUEST + 1)
+    speaker(cur, f"q:{QUEST}:accept", "deDE", 1, QUEST + 2)
+    cur.execute("""insert into "entity_name" ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
+                   values ('creature', %s, 'enUS', 1, true, 'extracted', 'English Name')""",
+                (str(QUEST + 1),))
+    names = [(row[1], row[2]) for row in _speaker_rows(cur) if row[8] == f"q:{QUEST}:accept"]
+    assert names == [(QUEST + 1, "English Name"), (QUEST + 2, "Test Speaker")]

@@ -658,6 +658,21 @@ describe("resolveContribution: a translation", () => {
       expect(await lineIsInExplorer(english)).toBe(true);
     });
 
+    it("names the language's speaker in English, where English has a name for the NPC", async () => {
+      await speaker(npcId, "tauren", "male", "warrior");
+      await accepted(await native());
+      await db().query(
+        `insert into "entity_name" ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
+         values ('creature', $1, 'enUS', 1, true, 'extracted', 'Test Speaker')
+         on conflict do nothing`,
+        [String(npcId)],
+      );
+      await accepted(await questContribution());
+
+      const listed = (await corpus(BASE_LANG)).lines.filter((line) => line.lineId === momentId());
+      expect(listed.map((line) => line.npcName)).toEqual(["Test Speaker"]);
+    });
+
     it("is one-way once its text is written, even with no speaker row of its own", async () => {
       await englishLine();
       const translated = await accepted(await native());

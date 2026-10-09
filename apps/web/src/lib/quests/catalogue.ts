@@ -67,9 +67,11 @@ export function isCorpusEmpty(error: unknown): boolean {
 const SPEAKER_STAMP = `(select coalesce(max("id"), 0) || ':' || count(*) from "quest_line_speaker")`;
 
 async function stampOf(lang: Lang): Promise<string> {
-  // Speakers are every language's, so every catalogue moves when any of them do. Another
-  // language also reads English's rows for display, and its own names.
-  const english = `${versionStamp("quest_line", `"lang" = '${BASE_LANG}'`)} || '/' || ${SPEAKER_STAMP}`;
+  // Speakers are every language's, so every catalogue moves when any of them do, and so do
+  // English NPC names, which name another language's speakers (SPEAKER_NAME). Another language
+  // also reads English's rows for display, and its own names.
+  const english = `${versionStamp("quest_line", `"lang" = '${BASE_LANG}'`)} || '/' || ${SPEAKER_STAMP} || '/' ||
+    ${versionStamp("entity_name", `"lang" = '${BASE_LANG}' and "kind" in ('creature', 'gameobject', 'item')`)}`;
   const rows = await query<{ stamp: string }>(
     lang === BASE_LANG
       ? `select ${english} as "stamp"`
@@ -81,13 +83,24 @@ async function stampOf(lang: Lang): Promise<string> {
 }
 
 /**
+ * A speaker row keeps the name its client showed, so one another language wrote names the NPC in
+ * that language. The NPC's English name stands in for it where English has one.
+ */
+const SPEAKER_NAME = `case when "lang" = '${BASE_LANG}' then "npcName" else coalesce(
+    (select n."name" from "entity_name" n
+      where n."kind" = ranked."npcType" and n."entityId" = ranked."npcId"::text
+        and n."lang" = '${BASE_LANG}' and n."isCurrent"), "npcName") end`;
+
+/**
  * Who speaks each line, whichever language wrote the speaker: a speaker is a fact about the
  * world, not about a language. The extract's English speakers where a line has any; otherwise
  * the ones a language wrote when it accepted the line first, each NPC once however many
  * languages named it.
  */
 const SPEAKERS = `(
-  select * from (
+  select "id", "lineId", "variant", "lang", "ord", "npcType", "npcId", ${SPEAKER_NAME} as "npcName",
+         "race", "gender", "flavor", "voice", "contributionId"
+    from (
     select s.*,
            bool_or(s."lang" = '${BASE_LANG}') over (partition by s."lineId", s."variant") as "hasEnglish",
            row_number() over (
