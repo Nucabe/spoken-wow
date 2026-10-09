@@ -51,6 +51,32 @@ Expect("a quest with no giver known is the line's", Resolve(VO, nil), "109-accep
 VO = Install({ ["109-accept"] = 5.0 }, nil, nil)
 Expect("a pack built before per-voice files resolves as it always has", Resolve(VO, FARMER), "109-accept")
 
+-- Two packs of different languages: the player's own language holds only the line, English
+-- holds the giver's voice too. The line in the player's language wins over English.
+stub.SetClient("11509"); stub.ResetSound(); stub.ResetTimers()
+stub.SetLocale("deDE")
+stub.SetAddOns({
+    { folder = "German", meta = { ["X-SpokenQuests-DataModule-Version"] = "1", Version = "1.0.0",
+        Title = "German", ["X-SpokenQuests-Language"] = "deDE" } },
+    { folder = "English", meta = { ["X-SpokenQuests-DataModule-Version"] = "1", Version = "1.0.0",
+        Title = "English" } },
+})
+_G.SpokenQuestsSettings = nil
+VO = stub.LoadQuests(QUESTS, SPOKEN)
+VO.Addon:OnInitialize()
+VO.DataModules:EnumerateAddons(false)
+local byNPC = { ["109-accept"] = { [237] = "109-accept-human-male-standard" } }
+VO.DataModules:Register("German", { SoundLengthLookupByFileName = { ["109-accept"] = 5.0 },
+    QuestFileLookupByNPCID = byNPC, GetSoundPath = function(_, fileName) return fileName end })
+VO.DataModules:Register("English", { SoundLengthLookupByFileName = { ["109-accept"] = 5.0,
+    ["109-accept-human-male-standard"] = 5.2 }, QuestFileLookupByNPCID = byNPC,
+    GetSoundPath = function(_, fileName) return fileName end })
+local soundData = { event = VO.Enums.SoundEvent.QuestAccept, questID = 109, unitGUID = FARMER }
+VO.DataModules:PrepareSound(soundData)
+Expect("a giver's voice only another language has yields to the line in the player's", soundData.language, "deDE")
+Expect("and the file is the line's", soundData.fileName, "109-accept")
+
+stub.SetLocale("enUS")
 stub.ResetAddOns()
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quest voice file tests passed")

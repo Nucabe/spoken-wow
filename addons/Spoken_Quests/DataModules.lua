@@ -750,20 +750,15 @@ function DataModules:PrepareSound(soundData)
     end
 
     -- A quest given by NPCs of different voices is a file per voice: this giver's own first,
-    -- then the line's, so a voice no installed pack has yet still plays the line.
+    -- then the line's, in each language before the next, so a voice no pack in the player's
+    -- language has yet plays the line in that language rather than the voice in another.
     local own = self:GetQuestFileForGiver(soundData)
-    if own then
-        local line = soundData.fileName
-        soundData.fileName = own
-        if self:ResolveSoundFile(soundData) then
-            return true
-        end
-        soundData.fileName = line
-    end
-
-    if self:ResolveSoundFile(soundData) then
+    local line = soundData.fileName
+    soundData.fileName = own or line
+    if self:ResolveSoundFile(soundData, own and line) then
         return true
     end
+    soundData.fileName = line
 
     -- No pack holds the line - but an easter egg for it ships with the player itself.
     if EasterEggs:Apply(soundData) then
@@ -775,9 +770,11 @@ end
 --- Find the pack holding `soundData.fileName` and fill in the path, length and language.
 --- Split from PrepareSound for a caller that already knows the file it wants rather than
 --- the line - Followup.lua, whose packs name a follow-up line's file in FollowupLookup.
+--- `instead`, where given, is the file to try in each language when that one is missing there.
 ---@param soundData SoundData
+---@param instead string|nil
 ---@return boolean found
-function DataModules:ResolveSoundFile(soundData)
+function DataModules:ResolveSoundFile(soundData, instead)
     -- Language before priority. A pack that holds the line in the language the player
     -- asked for answers it even if a higher-priority pack holds the same line in another
     -- language; only when no pack in the selected language has it does the fallback
@@ -794,11 +791,14 @@ function DataModules:ResolveSoundFile(soundData)
     -- a sibling's name beats the fallback language under the line's own.
     local languages = Language:ResolutionOrder()
 
-    local candidates = { soundData.fileName }
-    local aliases = GossipAliases and GossipAliases[soundData.fileName]
-    if aliases then
-        for _, alias in ipairs(aliases) do
-            table.insert(candidates, alias)
+    local candidates = {}
+    for _, name in ipairs({ soundData.fileName, instead }) do
+        table.insert(candidates, name)
+        local aliases = GossipAliases and GossipAliases[name]
+        if aliases then
+            for _, alias in ipairs(aliases) do
+                table.insert(candidates, alias)
+            end
         end
     end
     for _, language in ipairs(languages) do
