@@ -1031,7 +1031,8 @@ voice's line. A pack points a giver at its voice's file only once that file has 
 store (`tts_cli/voice_files.py`). A quest giver is found through `QuestFileLookupByNPCID` and
 `QuestFileLookupByObjectID`, and the addon falls back to the moment's own file when no
 installed pack has it; a greeting's speaker and a follow-up's are looked up per NPC already, so
-their tables simply name the speaker's own file. Progress text is never voiced and never split.
+their tables simply name the speaker's own file. The greeting tables keyed by NPC name, used when
+the addon has no id, name the line's own file, since same-named NPCs can differ in voice. Progress text is never voiced and never split.
 
 `npc` also keeps what the client
 reported even when a moderator overrules it — evidence about the NPC is worth more than the

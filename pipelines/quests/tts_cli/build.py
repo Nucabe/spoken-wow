@@ -193,8 +193,10 @@ def build_tables(corpus: dict, ignored=()) -> dict:
             # The bare hash: the addon adds the gender prefix when resolving.
             digest = gossip_hash_from_line_id(line["lineId"])
             gossip_by_id[kind].setdefault(line["npcId"], {})[text] = digest
+            # Same-named NPCs of different voices share one entry here, so it names the line's
+            # own file, never a voice's that only some of them speak.
             gossip_by_name[kind].setdefault(
-                escape_lua_string(line["npcName"]), {})[text] = digest
+                escape_lua_string(line["npcName"]), {})[text] = gossip_hash_from_line_id(base_id)
             continue
 
         # Progress text is never voiced, so an entry would resolve to silence.

@@ -146,3 +146,13 @@ def test_a_gendered_greeting_keeps_one_file_for_both_players_until_both_have_the
                          "gossip/f-abc-human-male-warrior.mp3"])
     tables = build_tables(with_voice_files({"lines": rows, "npcs": CORPUS["npcs"]}, both))
     assert tables["npc_gossip_file_lookups"][1] == {5: {"Go to Gryan.": "abc-human-male-warrior"}}
+
+
+def test_a_greeting_looked_up_by_name_names_the_lines_own_file_whatever_the_row_order():
+    rows = [line(5, "human-male-official", line_id="g:abc", file_name="abc", source="gossip"),
+            line(1, "human-male-official", line_id="g:abc", file_name="abc", source="gossip")]
+    stems = stored_stems(["gossip/abc-human-male-warrior.mp3"])
+    for order in (rows, rows[::-1]):
+        named = [{**row, "npcName": "Stormwind Guard"} for row in order]
+        tables = build_tables(with_voice_files({"lines": named, "npcs": CORPUS["npcs"]}, stems))
+        assert tables["npc_name_gossip_file_lookups"][1] == {"Stormwind Guard": {"Go to Gryan.": "abc"}}
