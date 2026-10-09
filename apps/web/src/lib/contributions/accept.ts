@@ -48,6 +48,7 @@ import { isVoice, voiceNameFor } from "@/lib/voices/voices";
 import type { ContributionStatus } from "./contributions";
 import {
   answersQuestMomentSql,
+  baseLineId,
   lineIdentityFor,
   type LineIdentity,
 } from "./naming";
@@ -153,7 +154,8 @@ async function resolvedSpeaker(
  * linear scan per row was most of what a page of accepted rows, or a batch accept, cost.
  *
  * `byPrefix` holds each line under its own id and under every shorter `:`-joined prefix of it,
- * which is exactly answersQuestMoment: `q:1:accept` finds `q:1:accept` and `q:1:accept:m`.
+ * which is exactly answersQuestMoment: `q:1:accept` finds `q:1:accept` and `q:1:accept:m`. A
+ * voice's line is held under its line's id: its speakers are the line's.
  * `gossipByText` is the by-text match below, keyed on race, gender and normalised text. Both
  * keep the catalogue's order, so a first match is the same line a scan would have found.
  *
@@ -184,9 +186,9 @@ function indexOf(lines: readonly CorpusLine[]): CorpusIndex {
   index = { byPrefix: new Map(), gossipByText: new Map(), position: new Map() };
   for (const [position, line] of lines.entries()) {
     index.position.set(line, position);
-    const parts = line.lineId.split(":");
+    const parts = baseLineId(line.lineId).split(":");
     for (let end = parts.length; end >= 2; end--) pushTo(index.byPrefix, parts.slice(0, end).join(":"), line);
-    if (parts.length < 2) pushTo(index.byPrefix, line.lineId, line);
+    if (parts.length < 2) pushTo(index.byPrefix, parts[0], line);
     if (line.source === "gossip") {
       pushTo(index.gossipByText, gossipTextKey(line.race, line.gender, normaliseText(line.originalText)), line);
     }
@@ -257,7 +259,7 @@ async function prepareLine(
   const text = contribution.text;
   const index = indexOf(lines);
   const byId = (index.byPrefix.get(identity.lineId) ?? []).find(
-    (l) => l.source === "gossip" && l.lineId === identity.lineId,
+    (l) => l.source === "gossip" && baseLineId(l.lineId) === identity.lineId,
   );
   const byText = index.gossipByText.get(gossipTextKey(speaker.race, speaker.gender, text))?.[0];
   const match =
@@ -267,11 +269,13 @@ async function prepareLine(
     return { ok: true, prepared: preparedFrom(plan, text, speaker) };
   }
 
-  const speaks = (index.byPrefix.get(match.lineId) ?? []).some(
-    (l) => l.lineId === match.lineId && l.npcType === speaker.npcType && l.npcId === speaker.npcId,
+  // The line the match is a voice of: speakers are written to the line, never to a voice's id.
+  const lineId = baseLineId(match.lineId);
+  const speaks = (index.byPrefix.get(lineId) ?? []).some(
+    (l) => baseLineId(l.lineId) === lineId && l.npcType === speaker.npcType && l.npcId === speaker.npcId,
   );
   if (speaks) return { ok: true, prepared: { kind: "exists" } };
-  return { ok: true, prepared: { kind: "speaker", lineId: match.lineId, variant: 0, speaker } };
+  return { ok: true, prepared: { kind: "speaker", lineId, variant: 0, speaker } };
 }
 
 /** An English gossip plan as prepareLine's answer: English has no translation to write. */

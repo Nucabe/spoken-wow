@@ -339,6 +339,22 @@ describe("resolveContribution: quests accept", () => {
     expect(group![0]).toMatchObject({ source: "gossip", fileName: gossipFileName(hash), questId: null, contributionId: id });
   });
 
+  it("a gossip line whose only speaker moved to another voice gains a speaker on the line, not the voice", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    const text = "The plains remember every hoofbeat, stranger.";
+    const first = await gossipContribution(text, npcId);
+    expect((await resolveContribution(first, "accepted", RESOLVER)).ok).toBe(true);
+    // Its only speaker now speaks it in another voice's line, so the catalogue lists no plain row.
+    await speaker(npcId, "tauren", "male", "elder");
+
+    await speaker(npcId + 1, "tauren", "male", "warrior");
+    const second = await gossipContribution(text, npcId + 1);
+    expect((await resolveContribution(second, "accepted", RESOLVER)).ok).toBe(true);
+
+    const lineId = gossipLineId(gossipHash(text, "tauren", "male"));
+    expect((await speakersOf(second)).map((s) => s.lineId)).toEqual([lineId]);
+  });
+
   it("a line sent with the reader's tokens keeps them as its template and speaks them as the extract does", async () => {
     await speaker(npcId, "tauren", "male", "warrior");
     const template = "Well met, $N. The $R $c walks with the Earth Mother.";
