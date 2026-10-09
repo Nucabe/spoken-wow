@@ -415,5 +415,38 @@ gateHeld = false
 stub.Advance(1)
 Expect("...it plays once released, with no cue", Cues() == 0 and #world.played == 2, true)
 
+---------------------------------------------------------------- the client cuts the voice (#239)
+-- With Sound in Background off, the client stops every sound when the game loses focus and
+-- never starts it again. Measured in-game: C_Sound.IsPlaying turns false at the alt-tab and stays so.
+local cut = {}
+_G.C_Sound = { IsPlaying = function(handle) return not cut[handle] end }
+
+Fresh()
+local long, after = H.Clip({ length = 10 }), H.Clip()
+quests:Enqueue(long); quests:Enqueue(after)
+stub.Advance(2)
+cut[1] = true
+stub.Advance(2)
+Expect("a voice the client cut stops the line", Q:IsPaused(), true)
+Expect("...keeping it at the head", Q:GetCurrentSound(), long)
+Expect("...and not speaking, so the bar stops", Q:IsPlaying(), false)
+stub.Advance(10)
+Expect("...the next line waits", #world.played, 1)
+Q:ResumeQueue()
+Expect("Replay plays it from the start", world.played[2], long.path)
+stub.Advance(4)
+Expect("...and the replay is not taken for a cut", Q:IsPaused(), false)
+
+Fresh()
+cut = {}
+local whole = H.Clip({ length = 3 })
+quests:Enqueue(whole)
+stub.Advance(2.9)
+cut[1] = true
+stub.Advance(0.5)
+Expect("a voice that ends with its length is not a cut", Q:IsPaused(), false)
+
+_G.C_Sound = nil
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll queue tests passed")

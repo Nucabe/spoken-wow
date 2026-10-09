@@ -447,6 +447,40 @@ local function AfterSpoken(clip)
     end
 end
 
+-- With Sound in Background off, the client stops every sound as the game loses focus and never
+-- restarts it, while the line's timer and bar ran on in silence. A voice gone before its length
+-- is stopped the way Stop stops it, so Replay plays it from the start. The margin keeps a voice
+-- a little shorter than its recorded length from reading as a cut.
+local CUT_POLL, CUT_MARGIN = 0.5, 0.5
+
+local function StopWatching(clip)
+    if clip.cutWatch then
+        Addon:CancelTimer(clip.cutWatch)
+        clip.cutWatch = nil
+    end
+end
+
+local function WatchForCut(clip)
+    StopWatching(clip)
+    if not (C_Sound and C_Sound.IsPlaying) or type(clip.handle) ~= "number" then
+        return
+    end
+    local handle = clip.handle
+    clip.cutWatch = Addon:ScheduleRepeatingTimer(function()
+        if SoundQueue:GetCurrentSound() ~= clip or clip.handle ~= handle or not clip.nextSoundTimer
+            or GetTime() >= clip.spokenAt - CUT_MARGIN then
+            StopWatching(clip)
+            return
+        end
+        local ok, playing = pcall(C_Sound.IsPlaying, handle)
+        if ok and playing == false then
+            StopWatching(clip)
+            if Developer then Developer:Log("player", "voice cut by the client, line stopped") end
+            SoundQueue:PauseQueue()
+        end
+    end, CUT_POLL)
+end
+
 ---@param clip SpokenClip
 function SoundQueue:PlaySound(clip)
     local channel = SpeakingChannel(clip)
@@ -471,6 +505,7 @@ function SoundQueue:PlaySound(clip)
     clip.nextSoundTimer = Addon:ScheduleTimer(function()
         AfterSpoken(clip)
     end, (clip.delay or 0) + clip.length)
+    WatchForCut(clip)
 end
 
 --- Seconds of `clip`'s voice heard so far: 0 before it starts, its length once it has ended.
