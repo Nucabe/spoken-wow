@@ -352,6 +352,29 @@ carries them, once per language; the faction packs and every English pack are bu
 before. A language with no imported text (`make import-locale LOCALE=esMX`) still builds, with
 a warning, and its gossip is matched against the English text.
 
+#### A line for each player gender, where a language's text needs it
+
+A language's own text decides whether a moment is one line or two. Where it branches on the
+player's gender (`$G`) the moment is `:m` and `:f`, in files `m-…` and `f-…`;
+otherwise it is one plain line, for every player, whatever English does. German can say one
+thing where English says "lad" and "lass", and French can need two forms where English has one.
+The import (`tts_cli/locale_import.py`), accept and the explorer's text editor all follow the
+rule. A plain line made from a split English line is read beside English's male side.
+
+A player's client has already picked one side of any `$G`, so a contribution is one plain line.
+A moderator splits it by writing the `$G` back in the explorer: the plain line stops being
+current and `:m` and `:f` take its place, both holding the template. Edited without a `$G`, a
+side of a split moment changes alone; putting the plain version back undoes the split. English
+is not split here: its shape is the extract's.
+
+The forms of one moment are linked by its id without the suffix. Each takes the moment's
+speakers, and the explorer shows a language its own lines, or English's while it has none. An
+import that would reshape a moment retires the lines of the old shape, unless somebody edited
+the moment here. The addon tries the player's `m-`/`f-` file before the plain one, so a pack
+plays whichever forms its store holds, and while a split moment waits for both its files, the
+plain take still in the store keeps it from going silent. Ignoring a line ignores every form
+of its file.
+
 A language's pack is built from its whole store, not from the English corpus, so a take of a
 quest line only that language has (see "When there is no line at all") ships with the rest.
 The addon finds a quest sound by its file name alone. A language split into faction packs would need
@@ -904,9 +927,8 @@ be moved back to new or rejected; ignoring the line in the explorer is how to ba
 A quest row is accepted the same way whatever language its client was in. A line is the
 language's own `quest_line` row; who speaks it is a fact about the world, so a speaker row any
 language wrote voices the line in every language. Accepting a quest moment writes the
-language's row, with its structure copied from another language's row of the moment where
-there is one (English's first), and a `quest_line_speaker` row only when the moment has no
-speaker in any language yet. Only then does it need the NPC's race and gender answered. Its id
+language's row and a `quest_line_speaker` row only when the moment has no speaker in any
+language yet. Only then does it need the NPC's race and gender answered. Its id
 and file are the quest's and the moment's, the same in every language, so nothing has to be
 sent in English first, and English sending the moment later writes English's row under the
 same id and file, voiced by the speaker already there. In another language the line keeps its
