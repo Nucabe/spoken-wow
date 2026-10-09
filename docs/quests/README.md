@@ -1015,7 +1015,10 @@ the display, and flavor from the NPC's greeting sounds. Where the game names non
 Cairne Bloodhoof's hand-made display, the import gives the race-gender's default ("standard",
 or its busiest flavor) and marks the answer doubtful; the export writes it back without one.
 Such an NPC keeps the voice its lines were made in and is listed under Doubtful on
-`/contributions/npcs`, which lists every NPC, for a moderator to confirm or change. A speaker whose NPC nobody knows anything about keeps the voice written with it.
+`/contributions/npcs`, which lists every NPC, for a moderator to confirm or change.
+A speaker whose NPC nobody knows anything about keeps the voice written with it.
+`import-corpus` never replaces a moderator's answer unless a moderator marked it doubtful, even
+with a moderator answer from the file, and lists every answer it kept over a different one.
 Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language their
 rights are checked in (English unless the request names another), and the import leaves an
 edited English name alone.

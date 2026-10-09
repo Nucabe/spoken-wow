@@ -142,6 +142,13 @@ def _bulk(cur, what, rows, sql, template=None, page=1000):
         _progress(f"{what}: none")
 
 
+#: Whether an imported answer {new} lands over the table's {old}.
+_REPLACES = """(case when {old}."provenance" = 'moderator'
+                     then {old}."doubtful" and {new}."provenance" <> 'none'
+                     else "npc_provenance_rank"({old}."provenance")
+                          <= "npc_provenance_rank"({new}."provenance") end)"""
+
+
 def npc_answers(npcs) -> list:
     """The file's NPCs as npc rows, (kind, id, race, gender, flavor, doubtful).
 
@@ -162,8 +169,12 @@ def npc_answers(npcs) -> list:
 def _import_npcs(cur, npc_rows):
     """The file's NPC answers into the npc table (apps/web migration 0070), each under its own
     provenance and only over an answer ranked no higher: the extract's `corpus` answers over a
-    display read, a client guess or nothing, never over a moderator's. A `corpus` row the file
-    no longer carries goes, so the export gives the file back.
+    display read, a client guess or nothing. A moderator's answer is kept, even against the
+    file's own moderator answer, which may be older, unless a moderator marked it doubtful. A
+    `corpus` row the file no longer carries goes, so the export gives the file back.
+
+    Returns the file's answers that differed from one kept, as (kind, id, kept, file's), each
+    answer a (race, gender, flavor, provenance) tuple.
     """
     cur.execute("""create temporary table "npc_import" ("npcKind" text, "npcId" integer,
                      "race" text, "gender" text, "flavor" text, "provenance" text)
@@ -177,6 +188,16 @@ def _import_npcs(cur, npc_rows):
               and not exists (select 1 from "npc_import" i
                                where i."npcKind" = n."npcKind" and i."npcId" = n."npcId")""")
     cur.execute(
+        """select i."npcKind", i."npcId", n."race", n."gender", n."flavor", n."provenance",
+                  i."race", i."gender", i."flavor", i."provenance"
+             from "npc_import" i
+             join "npc" n on n."npcKind" = i."npcKind" and n."npcId" = i."npcId"
+            where not ({replaces})
+              and (n."race", n."gender", n."flavor", n."provenance")
+                  is distinct from (i."race", i."gender", i."flavor", i."provenance")
+            order by 1, 2""".format(replaces=_REPLACES.format(old="n", new="i")))
+    kept = [(r[0], r[1], tuple(r[2:6]), tuple(r[6:10])) for r in cur.fetchall()]
+    cur.execute(
         """insert into "npc" as n ("npcKind", "npcId", "race", "gender", "flavor",
                                     "provenance", "confirmed")
             select "npcKind", "npcId", "race", "gender", "flavor", "provenance",
@@ -185,11 +206,13 @@ def _import_npcs(cur, npc_rows):
             on conflict ("npcKind", "npcId") do update
               set "race" = excluded."race", "gender" = excluded."gender",
                   "flavor" = excluded."flavor", "provenance" = excluded."provenance",
-                  "confirmed" = excluded."confirmed", "updatedAt" = now()
-            where "npc_provenance_rank"(n."provenance") <= "npc_provenance_rank"(excluded."provenance")
+                  "confirmed" = excluded."confirmed", "doubtful" = false, "updatedAt" = now()
+            where {replaces}
               and (n."race", n."gender", n."flavor", n."provenance")
                   is distinct from (excluded."race", excluded."gender", excluded."flavor",
-                                    excluded."provenance")""")
+                                    excluded."provenance")""".format(
+            replaces=_REPLACES.format(old="n", new="excluded")))
+    return kept
 
 
 def import_corpus(path, verbose=True):
@@ -350,8 +373,9 @@ def import_corpus(path, verbose=True):
                  npc.get("provenance", "corpus"))
                 for npc in corpus.get("npcs", [])
             ]
+            kept_npcs = []
             if "npcs" in corpus:
-                _import_npcs(cur, npc_rows)
+                kept_npcs = _import_npcs(cur, npc_rows)
 
             # Only from a marked file: in an older one, the rows that would match are the
             # contributed speakers' own round-tripped copies, skipped above or not.
@@ -399,6 +423,11 @@ def import_corpus(path, verbose=True):
             f"{counts['skip']} unchanged"
         )
         print(f"{len(speaker_rows)} speakers, {len(npc_rows)} NPCs, {len(spawn_rows)} spawn points")
+        print(f"{len(kept_npcs)} NPC answers kept over a different one in the file"
+              + (":" if kept_npcs else ""))
+        for kind, npc_id, kept, theirs in kept_npcs:
+            print(f"  {kind} {npc_id}: kept {'/'.join(map(str, kept))}, "
+                  f"file had {'/'.join(map(str, theirs))}")
         print(
             f"{contributed} contributed rows left as they are, {superseded} contributed "
             f"speakers overtaken by the dump"
