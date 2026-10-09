@@ -51,7 +51,6 @@ local selectedGossipOption
 -- was asked for, so how often the NPC's greetings play is no reason to keep it quiet.
 local gossipOptionPicked
 local currentGossipSoundData
--- Defined with the page noting below, and asked by ExpectedLine above it.
 local GossipPageFollowsOption
 
 --------------------------------------------------------------------------------
@@ -273,9 +272,8 @@ function Addon:TakeOverFromQuests()
         end
     end
 
-    -- Which profile each character is on there, every character's and not only this one's: alts
-    -- sharing a profile there share it here too. Only where this module has none yet; the
-    -- character logging in now is on its default already, so it is set below.
+    -- Every character's profile there, where this module has none yet, so alts sharing one there
+    -- share it here. The character logging in already has its default, so it is set below.
     if type(quests.profileKeys) == "table" then
         sv.profileKeys = sv.profileKeys or {}
         for key, name in pairs(quests.profileKeys) do
@@ -560,8 +558,8 @@ function Addon:MuteGreetingAhead(event)
     if not guid and not speaker.name then
         return
     end
-    -- A page reached by picking an option is read whatever the frequency (#166). The page is not
-    -- noted yet this early, so the pick is still pending.
+    -- A page reached by picking an option is read whatever the frequency. The page is not noted
+    -- yet this early, so the pick is still pending.
     local followsOption = event == "GOSSIP_SHOW" and GossipPageFollowsOption(false)
     if not self:ShouldPlayGossip(guid, nil, false, followsOption) or not DataModules:HasGossipFor(speaker) then
         return

@@ -455,11 +455,9 @@ function Addon:RetireOldFolders()
     end
 end
 
---- Game Greeting First was the quests module's setting (Audio.GreetingFirst in its profiles,
---- shipped in 3.1.0) until the dialogue core moved here. On each character's first login since,
---- it comes over from the quests profile that character is on: no released Spoken had it in its
---- own profile, and AceDB's copied-in default cannot be told from a value set there anyway. At
---- login, once the quests module's saved settings have loaded.
+--- Game Greeting First was the quests module's setting. On each character's first login it comes
+--- over from that character's quests profile, once those settings have loaded. It cannot check
+--- for "unset" here: AceDB copies its defaults in, so unset reads as false.
 function Addon:TakeGreetingFirstFromQuests()
     local db = self.db
     if not db or db.char.greetingFromQuests then

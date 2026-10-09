@@ -1,8 +1,7 @@
 -- How often gossip plays (the Greetings setting): Once per NPC holds back an NPC's greeting
 -- after the first time, and nothing past it. A guard's directions are a page the player
--- picked an option to reach, and they went quiet along with the greeting (issue #166).
--- The gossip module's, which reads gossip since it left the quests module. Run with
--- `make test-player`.
+-- picked an option to reach, and they went quiet along with the greeting. On the gossip
+-- module. Run with `make test-player`.
 --
 -- Both gossip APIs are covered, because picking an option is noticed through a hook on each:
 -- C_GossipInfo.SelectOption on Blizzard's clients and SelectGossipOption on the 1.12 one.
