@@ -730,6 +730,15 @@ function DataModules:GetQuestFileForGiver(soundData)
     end
 end
 
+--- A greeting's table names its speaker's own voice's file, `{hash}-{voice}`: the line's own
+--- file is the hash, tried in each language before the next.
+---@param fileName string
+---@return string|nil
+local function GreetingOfVoice(fileName)
+    local _, _, hash = string.find(fileName, "^(" .. string.rep("%x", 32) .. ")%-")
+    return hash
+end
+
 ---@param soundData SoundData
 ---@return boolean found Whether the sound is found and can be played
 --- Whether a pack has the line, filling in its file, length and pack if so. When not, the second
@@ -755,7 +764,7 @@ function DataModules:PrepareSound(soundData)
     local own = self:GetQuestFileForGiver(soundData)
     local line = soundData.fileName
     soundData.fileName = own or line
-    if self:ResolveSoundFile(soundData, own and line) then
+    if self:ResolveSoundFile(soundData, own and line or GreetingOfVoice(line)) then
         return true
     end
     soundData.fileName = line

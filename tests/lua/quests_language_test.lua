@@ -365,6 +365,18 @@ Expect("a language this addon does not know reads as English",
 ---------------------------------------------------------------- in step with SpokenZones
 -- The two addons sit side by side; a language one offers and the other does not is a
 -- setting the player makes once and finds half-honoured.
+------------------------------------------- a greeting's speaker of a voice only English has yet
+-- The English pack names the speaker's own voice's file; the German pack has only the line's.
+local HASH = "0123456789abcdef0123456789abcdef"
+local VOICED = { [INNKEEPER] = { [GOSSIP_TEXT] = HASH .. "-human-male-warrior" } }
+VO = Install({
+    { folder = "GermanPack", language = "deDE", lines = { [HASH] = 4.0 } },
+    { folder = "EnglishPack", lines = { [HASH] = 4.0, [HASH .. "-human-male-warrior"] = 4.1 }, gossip = VOICED },
+}, "deDE")
+gossipPack, gossipSound = ResolveGossip(VO, GOSSIP_TEXT)
+Expect("a greeting's voice only another language has yields to the line in the player's", gossipPack, "GermanPack")
+Expect("...the line's own file", gossipSound.fileName, HASH)
+
 local questsCodes = {}
 for _, locale in ipairs(VO.Language.LOCALES) do table.insert(questsCodes, locale.code) end
 Expect("the language list matches SpokenZones'", table.concat(questsCodes, " "), H.ZonesLocaleCodes(here))
