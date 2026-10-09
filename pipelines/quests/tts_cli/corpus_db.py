@@ -150,19 +150,22 @@ _REPLACES = """(case when {old}."provenance" = 'moderator'
 
 
 def npc_answers(npcs) -> list:
-    """The file's NPCs as npc rows, (kind, id, race, gender, flavor, doubtful).
+    """The file's NPCs as npc rows, (kind, id, race, gender, flavor, provenance, doubtful).
 
     An NPC the game names no flavor for -- a hand-made display like Cairne Bloodhoof's -- is
     given its race-gender's default (flavors.fallback_flavors), marked doubtful, so its lines
     keep the voice they were made in and a moderator finds it under Doubtful to confirm or
-    change. A race-gender with no flavors at all, as the narrator's, keeps none.
+    change. Only the extract's own answers: anybody else's is as they gave it. A race-gender
+    with no flavors at all, as the narrator's, keeps none.
     """
     defaults = fallback_flavors((f'{npc["race"]}-{npc["gender"]}', npc["flavor"]) for npc in npcs)
     rows = []
     for npc in npcs:
-        guess = None if npc["flavor"] else defaults.get(f'{npc["race"]}-{npc["gender"]}')
+        provenance = npc.get("provenance", "corpus")
+        guess = None if npc["flavor"] or provenance != "corpus" else \
+            defaults.get(f'{npc["race"]}-{npc["gender"]}')
         rows.append((npc["npcType"], npc["npcId"], npc["race"], npc["gender"],
-                     npc["flavor"] or guess, guess is not None))
+                     npc["flavor"] or guess, provenance, guess is not None))
     return rows
 
 
@@ -177,11 +180,11 @@ def _import_npcs(cur, npc_rows):
     answer a (race, gender, flavor, provenance) tuple.
     """
     cur.execute("""create temporary table "npc_import" ("npcKind" text, "npcId" integer,
-                     "race" text, "gender" text, "flavor" text, "provenance" text)
-                   on commit drop""")
+                     "race" text, "gender" text, "flavor" text, "provenance" text,
+                     "doubtful" boolean) on commit drop""")
     _bulk(cur, "npc_import", npc_rows,
           """insert into "npc_import" ("npcKind", "npcId", "race", "gender", "flavor",
-                                       "provenance") values %s""")
+                                       "provenance", "doubtful") values %s""")
     cur.execute(
         """delete from "npc" n
             where n."provenance" = 'corpus'
@@ -199,14 +202,15 @@ def _import_npcs(cur, npc_rows):
     kept = [(r[0], r[1], tuple(r[2:6]), tuple(r[6:10])) for r in cur.fetchall()]
     cur.execute(
         """insert into "npc" as n ("npcKind", "npcId", "race", "gender", "flavor",
-                                    "provenance", "confirmed")
+                                    "provenance", "confirmed", "doubtful")
             select "npcKind", "npcId", "race", "gender", "flavor", "provenance",
-                   "provenance" in ('corpus', 'display', 'moderator')
+                   "provenance" in ('corpus', 'display', 'moderator') and not "doubtful", "doubtful"
               from "npc_import"
             on conflict ("npcKind", "npcId") do update
               set "race" = excluded."race", "gender" = excluded."gender",
                   "flavor" = excluded."flavor", "provenance" = excluded."provenance",
-                  "confirmed" = excluded."confirmed", "doubtful" = false, "updatedAt" = now()
+                  "confirmed" = excluded."confirmed", "doubtful" = excluded."doubtful",
+                  "updatedAt" = now()
             where {replaces}
               and (n."race", n."gender", n."flavor", n."provenance")
                   is distinct from (excluded."race", excluded."gender", excluded."flavor",
@@ -368,11 +372,7 @@ def import_corpus(path, verbose=True):
                         "race", "gender", "flavor", "voice")
                      values %s""")
 
-            npc_rows = [
-                (npc["npcType"], npc["npcId"], npc["race"], npc["gender"], npc["flavor"],
-                 npc.get("provenance", "corpus"))
-                for npc in corpus.get("npcs", [])
-            ]
+            npc_rows = npc_answers(corpus.get("npcs", []))
             kept_npcs = []
             if "npcs" in corpus:
                 kept_npcs = _import_npcs(cur, npc_rows)
@@ -520,8 +520,11 @@ def export_corpus(path, check=False, verbose=True):
 
             # Every NPC answer, in the order build_corpus writes them: a pack is voiced in
             # whatever the site answered, and a pack build reads no database.
+            # The import's default for the extract's flavorless NPC is not the file's (npc_answers).
             cur.execute(
-                """select "npcKind", "npcId", "race", "gender", "flavor", "provenance" from "npc"
+                """select "npcKind", "npcId", "race", "gender",
+                          case when "provenance" = 'corpus' and "doubtful" then null else "flavor" end,
+                          "provenance" from "npc"
                     order by "npcKind", "npcId" """
             )
             npc_rows = cur.fetchall()

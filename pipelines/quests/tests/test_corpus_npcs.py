@@ -43,7 +43,7 @@ def seed(cur, npc_id, flavor, provenance, doubtful=False):
 
 def test_a_moderators_answer_stays_and_is_reported(cur):
     seed(cur, NPC_ID, "warrior", "moderator")
-    kept = _import_npcs(cur, [("creature", NPC_ID, "human", "male", "official", "moderator")])
+    kept = _import_npcs(cur, [("creature", NPC_ID, "human", "male", "official", "moderator", False)])
     assert answer(cur, NPC_ID) == ("human", "male", "warrior", "moderator", False)
     assert kept == [("creature", NPC_ID, ("human", "male", "warrior", "moderator"),
                      ("human", "male", "official", "moderator"))]
@@ -51,18 +51,18 @@ def test_a_moderators_answer_stays_and_is_reported(cur):
 
 def test_a_doubtful_moderators_answer_gives_way_to_the_file(cur):
     seed(cur, NPC_ID, "warrior", "moderator", doubtful=True)
-    kept = _import_npcs(cur, [("creature", NPC_ID, "human", "male", "official", "corpus")])
+    kept = _import_npcs(cur, [("creature", NPC_ID, "human", "male", "official", "corpus", False)])
     assert answer(cur, NPC_ID) == ("human", "male", "official", "corpus", False)
     assert kept == []
 
 
 def test_the_extract_still_updates_its_own_answer(cur):
     seed(cur, NPC_ID, "warrior", "corpus")
-    kept = _import_npcs(cur, [("creature", NPC_ID, "human", "male", "official", "corpus")])
+    kept = _import_npcs(cur, [("creature", NPC_ID, "human", "male", "official", "corpus", False)])
     assert answer(cur, NPC_ID) == ("human", "male", "official", "corpus", False)
     assert kept == []
 
 
 def test_the_same_answer_is_not_reported(cur):
     seed(cur, NPC_ID, "warrior", "moderator")
-    assert _import_npcs(cur, [("creature", NPC_ID, "human", "male", "warrior", "moderator")]) == []
+    assert _import_npcs(cur, [("creature", NPC_ID, "human", "male", "warrior", "moderator", False)]) == []

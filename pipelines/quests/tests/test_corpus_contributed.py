@@ -58,12 +58,19 @@ def test_an_npc_the_game_names_no_flavor_for_gets_its_race_genders_default_marke
                         npc(3, "human", "male", None), npc(4, "tauren", "male", "warrior"),
                         npc(5, "tauren", "male", None), npc(6, "narrator", "male", None, "gameobject")])
     assert rows == [
-        ("creature", 1, "human", "male", "standard", False),
-        ("creature", 2, "human", "male", "official", False),
-        ("creature", 3, "human", "male", "standard", True),
-        ("creature", 4, "tauren", "male", "warrior", False),
+        ("creature", 1, "human", "male", "standard", "corpus", False),
+        ("creature", 2, "human", "male", "official", "corpus", False),
+        ("creature", 3, "human", "male", "standard", "corpus", True),
+        ("creature", 4, "tauren", "male", "warrior", "corpus", False),
         # No standard voice for the race-gender: its busiest.
-        ("creature", 5, "tauren", "male", "warrior", True),
+        ("creature", 5, "tauren", "male", "warrior", "corpus", True),
         # A race-gender with no flavors keeps none.
-        ("gameobject", 6, "narrator", "male", None, False),
+        ("gameobject", 6, "narrator", "male", None, "corpus", False),
     ]
+
+
+def test_only_the_extracts_own_flavorless_answer_gets_the_default():
+    from tts_cli.corpus_db import npc_answers
+    rows = npc_answers([npc(1, "human", "male", "standard"),
+                        dict(npc(2, "human", "male", None), provenance="moderator")])
+    assert rows[1] == ("creature", 2, "human", "male", None, "moderator", False)
