@@ -100,7 +100,7 @@ const SPEAKER_NAME = `case when r."lang" = '${BASE_LANG}' then r."npcName" else 
  * world, not about a language. The extract's English speakers where a line has any; otherwise
  * the ones a language wrote when it accepted the line first, each NPC once.
  *
- * Race, gender and flavor are the NPC's (migration 0067), so an answer given for an NPC voices
+ * Race, gender and flavor are the NPC's (migration 0068), so an answer given for an NPC voices
  * every line it speaks. A speaker whose NPC nobody knows anything about -- no row, or `none` --
  * keeps the values written with it, which were an answer once.
  */

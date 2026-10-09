@@ -1005,7 +1005,7 @@ the contribution meant, and that pick is stored on the contribution (`contributi
 migration 0033), never in `meta`, which stays what the client sent. From then on every reader
 treats the row as if its envelope had carried the kind.
 
-The answer is stored once per NPC in `npc` (migration 0067), keyed on the kind *and* the id for
+The answer is stored once per NPC in `npc` (migration 0068), keyed on the kind *and* the id for
 that same reason, and every line reads its voice from it: a speaker row names the NPC, and a
 line speaks in its speakers' race and gender and the flavor most of their NPCs have, as the
 extract has always agreed one file on one voice. So one correction fixes every line that NPC
@@ -1051,7 +1051,7 @@ nothing in `C_GossipInfo`, `GOSSIP_SHOW` or any event while the window was open)
 client writes every row it is sent to `Cache/ADB/<locale>/DBCache.bin`, with the id. Forever's
 client ships almost none of the table, so every greeting a player sees passes through there.
 
-`broadcast_text` (migration 0067) keeps those rows per language. `/contribute` takes
+`broadcast_text` (migration 0066) keeps those rows per language. `/contribute` takes
 `DBCache.bin` and its per-session `DBCache.bin<n>.tmp` files from signed-in players, reads them
 in the browser (`apps/web/src/lib/broadcast/cache.ts`) and posts only the BroadcastText rows to
 `/api/broadcast-text`. A cache says nothing about its language except the folder it sat in, so

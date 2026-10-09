@@ -142,7 +142,7 @@ def _bulk(cur, what, rows, sql, template=None, page=1000):
 
 
 def _import_npcs(cur, npc_rows):
-    """The extract's NPCs as the npc table's `corpus` answers (apps/web migration 0067).
+    """The extract's NPCs as the npc table's `corpus` answers (apps/web migration 0068).
 
     Over anything ranked below the corpus -- a display read, a client guess, nothing -- and
     never over a moderator's answer. A `corpus` row the file no longer carries goes, so the

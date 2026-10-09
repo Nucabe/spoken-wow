@@ -83,7 +83,7 @@ describe("upsertResolution", () => {
     expect((await getResolution("creature", npcId))?.race).toBe("tauren");
     expect((await getResolution("gameobject", npcId))?.race).toBe(null);
     await db().query(`delete from "npc" where "npcId" = $1`, [npcId]);
-  await db().query(`delete from "entity_name" where "entityId" = $1`, [String(npcId)]);
+    await db().query(`delete from "entity_name" where "entityId" = $1`, [String(npcId)]);
   });
 
   it("answers null for an npc nobody has resolved", async () => {
@@ -230,7 +230,7 @@ describe("getResolutionsById", () => {
     expect(grouped.get(npcId)?.length).toBe(2);
     expect(grouped.get(npcId)?.map((r) => r.npcKind).sort()).toEqual(["creature", "gameobject"]);
     await db().query(`delete from "npc" where "npcId" = $1`, [npcId]);
-  await db().query(`delete from "entity_name" where "entityId" = $1`, [String(npcId)]);
+    await db().query(`delete from "entity_name" where "entityId" = $1`, [String(npcId)]);
   });
 
   it("answers nothing for an id nobody has resolved", async () => {

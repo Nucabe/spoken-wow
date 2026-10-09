@@ -1,5 +1,5 @@
 /**
- * A line's voice, read from its speakers' NPCs (migration 0067). Against a real Postgres,
+ * A line's voice, read from its speakers' NPCs (migration 0068). Against a real Postgres,
  * because what is being tested is the catalogue's join.
  *
  * Needs DATABASE_URL and migrations applied.
