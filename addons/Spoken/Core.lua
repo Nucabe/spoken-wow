@@ -455,6 +455,31 @@ function Addon:RetireOldFolders()
     end
 end
 
+--- Game Greeting First was the quests module's setting (Audio.GreetingFirst in its profiles,
+--- shipped in 3.1.0) until the dialogue core moved here. On each character's first login since,
+--- it comes over from the quests profile that character is on: no released Spoken had it in its
+--- own profile, and AceDB's copied-in default cannot be told from a value set there anyway. At
+--- login, once the quests module's saved settings have loaded.
+function Addon:TakeGreetingFirstFromQuests()
+    local db = self.db
+    if not db or db.char.greetingFromQuests then
+        return
+    end
+    db.char.greetingFromQuests = true
+    local quests = rawget(_G, "SpokenQuestsSettings")
+    if type(quests) ~= "table" or type(quests.profiles) ~= "table" then
+        return
+    end
+    -- The profile AceDB gives the character there: its own key unless it chose another.
+    local charKey = db.keys and db.keys.char
+    local name = charKey and (type(quests.profileKeys) == "table" and quests.profileKeys[charKey] or charKey)
+    local profile = name and quests.profiles[name]
+    local audio = type(profile) == "table" and profile.Audio
+    if type(audio) == "table" and audio.GreetingFirst == true then
+        db.profile.Audio.GreetingFirst = true
+    end
+end
+
 -- AceDB needs the saved variable to exist, which is only true once the client has loaded
 -- this addon's file. 1.12 hands an OnEvent handler nothing and sets the globals `event`
 -- and `arg1` instead, hence the fallback.
@@ -466,6 +491,7 @@ loader:SetScript("OnEvent", function(_, ev, name)
     if ev == "ADDON_LOADED" and (name or arg1) == AddonFolder then
         Addon:InitDB()
     elseif ev == "PLAYER_LOGIN" then
+        Addon:TakeGreetingFirstFromQuests()
         Addon:Enable()
         Addon:RetireOldFolders()
         WatchPausedQueue()
