@@ -709,6 +709,83 @@ describe("resolveContribution: a translation", () => {
       expect((await rowsIn(LOCALE)).map((row) => row.originalText)).toEqual(["Bring me six wolf pelts, druid."]);
     });
   });
+
+  describe("whose text decides its own lines", { timeout: 20_000 }, () => {
+    const momentId = () => questLineId(questId, "accept");
+
+    afterEach(async () => {
+      await db().query(`delete from "quest_line_speaker" where "lineId" like $1`, [`q:${questId}:%`]);
+      await db().query(`delete from "quest_line" where "lineId" like $1`, [`q:${questId}:%`]);
+    });
+
+    /** English's line for the moment as the extract writes a `$G` one: `:m` and `:f`, one speaker each. */
+    async function englishByPlayerGender(): Promise<void> {
+      await speaker(npcId, "tauren", "male", "warrior");
+      for (const [index, g] of (["m", "f"] as const).entries()) {
+        await db().query(
+          `insert into "quest_line"
+             ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "questId",
+              "questTitle", "playerGender", "fileName", "text", "originalText", "generatable")
+           values ($1, 0, 'enUS', 1, true, 'extracted', 'accept', $2, 'A Test Quest', $3, $4, $5, $6, true)`,
+          [`${momentId()}:${g}`, questId, g, `${g}-${questFileName(questId, "accept")}`,
+           g === "m" ? "Well met, lad." : "Well met, lass.", "Well met, $glad:lass;."],
+        );
+        await db().query(
+          `insert into "quest_line_speaker"
+             ("lineId", "variant", "lang", "ord", "npcType", "npcId", "npcName", "race", "gender", "flavor", "voice")
+           values ($1, 0, 'enUS', $2, 'creature', $3, 'Test Speaker', 'tauren', 'male', 'warrior', 'tauren-male-warrior')`,
+          [`${momentId()}:${g}`, 1_950_000_000 + (questId % 20_000_000) * 2 + index, npcId],
+        );
+      }
+    }
+
+    async function lines(lang: string) {
+      const { rows } = await db().query(
+        `select "lineId", "playerGender", "fileName", "originalText" from "quest_line"
+          where "lineId" like $1 and "lang" = $2 and "isCurrent" order by "lineId"`,
+        [`q:${questId}:%`, lang],
+      );
+      return rows;
+    }
+
+    it("writes one line where English has two, translating the male one", async () => {
+      await englishByPlayerGender();
+      const id = await translation(String(questId), "accept", "Saudações.", { kind: "creature", npc: `${npcId} Orador` });
+      expect((await resolveContribution(id, "accepted", RESOLVER)).ok).toBe(true);
+
+      expect(await lines(LOCALE)).toEqual([
+        { lineId: momentId(), playerGender: null, fileName: questFileName(questId, "accept"), originalText: "Well met, $glad:lass;." },
+      ]);
+      const listed = (await corpus(LOCALE)).lines.filter((line) => line.lineId.startsWith(momentId()));
+      expect(listed.map((line) => [line.lineId, line.npcId, line.text])).toEqual([[momentId(), npcId, "Saudações."]]);
+    });
+
+    it("writes two lines where its own text branches on the player's gender, though English has one", async () => {
+      await englishLine();
+      const id = await translation(String(questId), "accept", "Saudações, $gsenhor:senhora;.", { kind: "creature", npc: `${npcId} Orador` });
+      expect((await resolveContribution(id, "accepted", RESOLVER)).ok).toBe(true);
+
+      const file = questFileName(questId, "accept");
+      expect(await lines(LOCALE)).toEqual([
+        { lineId: `${momentId()}:f`, playerGender: "f", fileName: `f-${file}`, originalText: "Bring me six wolf pelts, druid." },
+        { lineId: `${momentId()}:m`, playerGender: "m", fileName: `m-${file}`, originalText: "Bring me six wolf pelts, druid." },
+      ]);
+      const listed = (await corpus(LOCALE)).lines.filter((line) => line.lineId.startsWith(momentId()));
+      expect(listed.map((line) => [line.lineId, line.npcId, line.english?.questTitle])).toEqual([
+        [`${momentId()}:f`, npcId, "A Test Quest"],
+        [`${momentId()}:m`, npcId, "A Test Quest"],
+      ]);
+    });
+
+    it("lists English's two lines, untranslated, for a language with neither", async () => {
+      await englishByPlayerGender();
+      const listed = (await corpus(LOCALE)).lines.filter((line) => line.lineId.startsWith(momentId()));
+      expect(listed.map((line) => [line.lineId, line.missing?.text])).toEqual([
+        [`${momentId()}:f`, true],
+        [`${momentId()}:m`, true],
+      ]);
+    });
+  });
 });
 
 describe("resolveContribution: a greeting in any language", { timeout: 20_000 }, () => {
