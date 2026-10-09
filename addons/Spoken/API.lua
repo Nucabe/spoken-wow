@@ -127,6 +127,13 @@ function Spoken:AreContributeButtonsHidden()
     return Addon.db and Addon.db.profile.Contribute.HideButtons and true or false
 end
 
+--- Whether the player turned every Report button off in Spoken's settings, the player's and
+--- those feature addons draw. Ask before showing one, and again on REPORT_SETTINGS_CHANGED.
+function Spoken:AreReportButtonsHidden()
+    local frame = Addon.db and Addon.db.profile.Frame
+    return frame and frame.HiddenActions and frame.HiddenActions.report and true or false
+end
+
 --------------------------------------------------------------------------------
 -- The frame, the minimap button, the settings
 --------------------------------------------------------------------------------
