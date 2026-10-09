@@ -64,6 +64,7 @@ local function Lit()
 end
 
 ---------------------------------------------------------------- boot
+local GREETING, DIRECTIONS = "Well met. How can I help?", "The bank is past the fountain."
 stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers()
 world.questID = 0; stub.ShowPanel(nil); world.gossipText = nil; world.greetingText = nil
 local VO, env = stub.LoadQuests(QUESTS, SPOKEN)
@@ -74,11 +75,15 @@ VO.Addon:OnInitialize()
 local G = stub.LoadGossip(GOSSIP, SPOKEN, true)
 G.Addon:OnInitialize()
 VO.DataModules:Register("TestPack", {
-    SoundLengthLookupByFileName = { ["101-accept"] = 12, ["101-progress"] = 2, ["gossip-hello"] = 3 },
+    SoundLengthLookupByFileName = { ["101-accept"] = 12, ["101-progress"] = 2, ["gossip-hello"] = 3,
+        ["guard-greeting"] = 2, ["guard-directions"] = 2 },
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
-    -- A speaker the pack knows, whose one line has no recording in it; and one whose line has.
-    GossipLookupByNPCID = { [5678] = { ["Hail, friend. The roads are long."] = "gossip-missing" },
-        [4321] = { ["Well met, traveller."] = "gossip-hello" } },
+    GossipLookupByNPCID = {
+        -- A speaker the pack knows, whose one line has no recording in it; and one whose lines have.
+        [5678] = { ["Hail, friend. The roads are long."] = "gossip-missing" },
+        [4321] = { ["Well met, traveller."] = "gossip-hello", [GREETING] = "guard-greeting",
+            [DIRECTIONS] = "guard-directions" },
+    },
 })
 stub.Advance(2)
 world.title = "Wolves"; world.questText = QUEST_TEXT; world.progressText = "Well?"
@@ -258,6 +263,46 @@ G.Addon:InvokeHandler("GOSSIP_SHOW", "test")
 Tick(0)
 Expect("...shows whole once the read queues nothing, not after the wait", Paragraph(1) ~= "", true)
 G.Addon.GOSSIP_SHOW, G.Addon.ExpectedLine = gossipHandler, expectedLine
+
+-- Once per NPC, a guard already heard: the greeting stays quiet, the directions picked from it
+-- do not. DialogueUI can draw the directions before Spoken Gossip notes the page or after.
+world.npcGUID = "Creature-0-0-0-0-4321-0"
+G.Addon.db.profile.Audio.GossipFrequency = G.Enums.GossipFrequency.OncePerNPC
+G.Addon.db.char.hasSeenGossipForNPC[world.npcGUID] = true
+local function Greet()
+    Spoken:StopAll()
+    stub.ShowGossip(GREETING, { "Where is the bank?" })
+    DUI:HandleGossip()
+    stub.FireEvent("GOSSIP_SHOW")
+    stub.Advance(1)
+end
+Greet()
+Expect("a greeting heard before shows whole at once", Paragraph(1), GREETING)
+stub.SelectGossipOption("Where is the bank?")
+stub.ShowGossip(DIRECTIONS)
+DUI:HandleGossip()
+Expect("directions drawn before Spoken Quests sees the page are kept blank for their line",
+    Paragraph(1), "")
+stub.FireEvent("GOSSIP_SHOW")
+stub.Advance(1)
+stub.HidePanels()
+stub.FireEvent("GOSSIP_CLOSED")
+Greet()
+stub.SelectGossipOption("Where is the bank?")
+stub.ShowGossip(DIRECTIONS)
+stub.FireEvent("GOSSIP_SHOW")
+stub.Advance(0.6)
+Spoken:StopAll()
+Expect("...and so are directions drawn after it", G.Addon:ExpectedLine("GOSSIP_SHOW", true), DIRECTIONS)
+Spoken:StopAll()
+stub.HidePanels()
+stub.FireEvent("GOSSIP_CLOSED")
+Greet()
+Expect("...but not the greeting on the next visit", G.Addon:ExpectedLine("GOSSIP_SHOW", true), nil)
+stub.HidePanels()
+stub.FireEvent("GOSSIP_CLOSED")
+Spoken:StopAll()
+G.Addon.ExpectedLine = expectedLine
 world.npcGUID, world.gossipText, DUI.handler = questGiver, nil, nil
 
 -- A zone clip whose transcript is the quest text word for word.

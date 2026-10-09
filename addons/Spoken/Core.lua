@@ -56,6 +56,10 @@ Defaults = {
             -- On, an NPC's own greeting is heard and the lines read off its window wait for it
             -- (GreetingFirst.lua); off, Silence NPC Voices cuts it where a pack has one.
             GreetingFirst = false,
+            -- A short sound in the pause between one line and the next (#142): at a quest hub a hand-in
+            -- and the next pickup otherwise run together, often in the same NPC's voice.
+            -- Off by default, as the queue has always played without it.
+            CueBetweenLines = false,
             -- The other channels turned down while a line is spoken (OtherSounds.lua), each to
             -- this share of the player's own volume, for the length of a line. Not on the legacy
             -- clients, where speech itself goes out on the music channel.
