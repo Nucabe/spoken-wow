@@ -371,8 +371,9 @@ The forms of one moment are linked by its id without the suffix. Each takes the 
 speakers, and the explorer shows a language its own lines, or English's while it has none. An
 import that would reshape a moment retires the lines of the old shape, unless somebody edited
 the moment here. The addon tries the player's `m-`/`f-` file before the plain one, so a pack
-plays whichever forms its store holds, and while a split moment waits for both its files, the
-plain take still in the store keeps it from going silent. Ignoring a line ignores every form
+carries only the audio a current line names, or a voice of it (`scripts/audio/relevant.mjs`):
+an old shape's takes stay live but would otherwise still play. A moment split or joined is
+silent in that language until its new files are generated. Ignoring a line ignores every form
 of its file.
 
 A language's pack is built from its whole store, not from the English corpus, so a take of a
