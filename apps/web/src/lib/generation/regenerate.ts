@@ -20,6 +20,7 @@ import type { CorpusLine } from "@/lib/corpus";
 import { lineIndex } from "@/lib/quests/catalogue";
 import { baseLineId } from "@/lib/contributions/naming";
 import { readIgnores } from "@/lib/quests/ignores";
+import { overrideOf } from "@/lib/quests/override";
 import { readOverrides } from "@/lib/quests/overrides";
 import { commitTake } from "@/lib/takes/commit";
 import { INVALID_CHARS, isVoiceable } from "@/lib/text-gate";
@@ -114,7 +115,7 @@ export async function regenerateLine(
   // English only: an override rewrites the English corpus. Another language's rewrites are
   // versions of its own text, which `line` already is.
   const overrides = await readOverrides(lang);
-  const source = overrides.get(file)?.text ?? line.text;
+  const source = overrideOf(overrides, file)?.text ?? line.text;
 
   if (!isVoiceable(line, source)) {
     const why =

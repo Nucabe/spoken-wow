@@ -18,7 +18,7 @@ import { audioRelPath } from "./audio";
 import { hasNarration, restoresOnlyNarration } from "./generation/narration";
 import { kindOf, type Kind, type NpcType, type Source } from "./line-fields";
 import type { LineIgnore } from "./quests/ignores";
-import type { LineOverride } from "./quests/override";
+import { overrideOf, type LineOverride } from "./quests/override";
 import type { LineBroadcast } from "./broadcast/store";
 import type { BroadcastStatus } from "./broadcast/status";
 import type { AudioState } from "./audio-state";
@@ -289,7 +289,7 @@ export function batchJobs(
     const audioPath = audioRelPath(line);
     // The effective text, so the estimate prices what will actually be sent and a rescued
     // line is not quietly dropped from the batch that was quoted for it.
-    const text = overrides.get(audioPath)?.text ?? line.text;
+    const text = overrideOf(overrides, audioPath)?.text ?? line.text;
     if (!isVoiceable(line, text)) continue;
     if (byFile.has(audioPath)) continue;
     byFile.set(audioPath, {
@@ -363,7 +363,7 @@ export function isGap(
   overrides: Map<string, LineOverride> = NO_CONTEXT.overrides,
 ): boolean {
   const audioPath = audioRelPath(line);
-  const text = overrides.get(audioPath)?.text ?? line.text;
+  const text = overrideOf(overrides, audioPath)?.text ?? line.text;
   return isVoiceable(line, text) && !store.has(audioPath);
 }
 
@@ -461,7 +461,7 @@ export function matchingLines(
   // which is 314 of them, and the ones most worth finding.
   if (narration) {
     lines = lines.filter((line) =>
-      hasNarration(overrides.get(audioRelPath(line))?.text ?? line.text),
+      hasNarration(overrideOf(overrides, audioRelPath(line))?.text ?? line.text),
     );
   }
   // An id the corpus no longer carries matches nothing rather than everything, because a
@@ -487,7 +487,7 @@ export function matchingLines(
   // words, so it does not belong in a list of lines someone rewrote by hand.
   if (overridden) {
     lines = lines.filter((line) => {
-      const override = overrides.get(audioRelPath(line))?.text;
+      const override = overrideOf(overrides, audioRelPath(line))?.text;
       return override !== undefined && !restoresOnlyNarration(override, line.text);
     });
   }
@@ -538,7 +538,7 @@ export function search(
   const start = Math.max(0, Math.floor(offset));
   const lines = all.slice(start, start + limit).map((line) => {
     const audioPath = audioRelPath(line);
-    const override = context.overrides.get(audioPath)?.text ?? null;
+    const override = overrideOf(context.overrides, audioPath)?.text ?? null;
     return {
       ...line,
       key: keys.get(line)!,
