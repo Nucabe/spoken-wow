@@ -300,19 +300,26 @@ function ContributeButton:Refresh()
         return
     end
     -- The module the window belongs to must be switched on: Quests for a quest, Gossip for what
-    -- an NPC says.
+    -- an NPC says (gossip and quest-giver greetings). DialogueUI hides Blizzard's panels, so on
+    -- its window the page it shows says which.
+    local page = Utils:DialogueUIPage()
     local questWindow = QuestPanelOnScreen()
-    if Spoken and Spoken.IsPartOn and not Spoken:IsPartOn(questWindow and "quests" or "gossip") then
+    local gossipPage
+    if page then
+        gossipPage = page == "GOSSIP_SHOW" or page == "QUEST_GREETING"
+    else
+        gossipPage = not questWindow
+    end
+    if Spoken and Spoken.IsPartOn and not Spoken:IsPartOn(gossipPage and "gossip" or "quests") then
         button:Hide()
         self:HideOnDialogueUI()
         return
     end
 
     -- DialogueUI's window: the corner is there on every page, Report or Contribute.
-    local page = Utils:DialogueUIPage()
     if page then
         button:Hide()
-        self.gossip = page == "GOSSIP_SHOW"
+        self.gossip = gossipPage
         self:ShowOnDialogueUI(_G.DUIQuestFrame, Contribute:HasGap())
         return
     end

@@ -696,6 +696,25 @@ Expect("...for the gossip line", Contribute.gossip, true)
 local gossip = VO.Contribute:Capture()
 Expect("...and it sends the words DialogueUI shows", gossip and gossip:match("\nquest=") == nil
     and gossip:match("\nStrange times, friend%.\n") ~= nil, true)
+-- Each page is its own module's: Gossip off takes the corner from gossip pages only, Quests off from
+-- quest pages only. DialogueUI hides Blizzard's panels, so the page it shows tells which.
+_G.Spoken:SetPartOn("gossip", false)
+DUI:HandleGossip()
+local onGossip = icon:IsShown() or link:IsShown()
+DUI.handler = "HandleQuestDetail"
+DUI:HandleQuestDetail()
+Expect("with Gossip off, the corner leaves gossip pages but stays on quest pages",
+    tostring(onGossip) .. " " .. tostring(icon:IsShown()), "false true")
+_G.Spoken:SetPartOn("gossip", true)
+_G.Spoken:SetPartOn("quests", false)
+DUI:HandleQuestDetail()
+local onQuest = icon:IsShown() or link:IsShown()
+DUI.handler = "HandleGossip"
+DUI:HandleGossip()
+Expect("...and with Quests off, it leaves quest pages but stays on gossip pages",
+    tostring(onQuest) .. " " .. tostring(icon:IsShown()), "false true")
+_G.Spoken:SetPartOn("quests", true)
+DUI:HandleGossip()
 Fire(link, "OnClick")
 Expect("the copy box opens over DialogueUI's window", box and box.frame:IsShown() and box.frame:GetParent(), DUI)
 Expect("...the same size on screen", box and box.frame:GetScale(), 1 / 0.8)
