@@ -10,12 +10,14 @@ The site reads lines the same way (apps/web/src/lib/quests/catalogue.ts): a spea
 nobody knows anything about keeps the voice its row was written with.
 """
 import os
+import re
 
 from tts_cli.flavors import voice_name
 from tts_cli.naming import subfolder_from_line_id, variant_file_name, variant_line_id
 
 #: The lines an NPC speaks in its own voice. Progress text is never voiced.
 OWN_VOICE_SOURCES = frozenset({"accept", "complete"})
+_PLAYER_GENDER = re.compile(r":[mf]$")
 
 
 def npc_voices(corpus: dict) -> dict:
@@ -43,13 +45,26 @@ def with_voice_files(corpus: dict, stems: set) -> dict:
     written = {}
     for line in corpus["lines"]:
         written.setdefault(line["lineId"], line["voice"])
-    lines = []
-    for line in corpus["lines"]:
+
+    def moved(line):
         voice = voices.get((line["npcType"], line["npcId"]))
-        if line["source"] in OWN_VOICE_SOURCES and voice and voice != written[line["lineId"]]:
-            file_name = variant_file_name(line["fileName"], voice)
-            if f'{subfolder_from_line_id(line["lineId"])}/{file_name}' in stems:
-                line = {**line, "lineId": variant_line_id(line["lineId"], voice),
-                        "fileName": file_name, "voice": voice}
-        lines.append(line)
+        if line["source"] not in OWN_VOICE_SOURCES or not voice or voice == written[line["lineId"]]:
+            return None
+        file_name = variant_file_name(line["fileName"], voice)
+        return {**line, "lineId": variant_line_id(line["lineId"], voice), "fileName": file_name,
+                "voice": voice}
+
+    # A line's player-gender versions move together, once each has its file: their tables hold
+    # one name for both, and the addon adds the player's m-/f- to it, so moving one alone would
+    # send the other player to a file that does not exist.
+    def together(line):
+        return (line["npcType"], line["npcId"], _PLAYER_GENDER.sub("", line["lineId"]))
+
+    ready = {}
+    for line in corpus["lines"]:
+        candidate = moved(line)
+        stored = candidate is not None and \
+            f'{subfolder_from_line_id(line["lineId"])}/{candidate["fileName"]}' in stems
+        ready[together(line)] = ready.get(together(line), True) and stored
+    lines = [moved(line) if ready[together(line)] else line for line in corpus["lines"]]
     return {**corpus, "lines": lines}

@@ -88,3 +88,17 @@ def test_a_speaker_written_in_another_voice_still_moves_off_the_first_speakers_f
     stems = stored_stems(["quests/109-accept-human-male-warrior.mp3"])
     rows = [(row["npcId"], row["fileName"]) for row in with_voice_files(corpus, stems)["lines"]]
     assert rows == [(1, "109-accept"), (2, "109-accept-human-male-warrior")]
+
+
+def test_a_lines_player_gender_versions_move_together_once_both_files_exist():
+    rows = [line(2, "human-male-official", line_id="q:109:accept:m", file_name="m-109-accept"),
+            line(2, "human-male-official", line_id="q:109:accept:f", file_name="f-109-accept")]
+    corpus = {"lines": rows, "npcs": CORPUS["npcs"]}
+    one = stored_stems(["quests/m-109-accept-human-male-warrior.mp3"])
+    for order in (rows, rows[::-1]):
+        voiced = with_voice_files({**corpus, "lines": order}, one)["lines"]
+        assert [row["fileName"] for row in voiced] == [row["fileName"] for row in order]
+    both = stored_stems(["quests/m-109-accept-human-male-warrior.mp3",
+                         "quests/f-109-accept-human-male-warrior.mp3"])
+    assert [row["fileName"] for row in with_voice_files(corpus, both)["lines"]] == [
+        "m-109-accept-human-male-warrior", "f-109-accept-human-male-warrior"]
