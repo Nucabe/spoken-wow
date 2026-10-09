@@ -49,8 +49,7 @@ function SpokenBooks:PagePicture()
 	return { kind = "texture", texture = BOOK_TEXTURE }
 end
 
--- What each kind of readable is called, one of it, by the kinds the Compendium sorts them into
--- (Data/Places.lua).
+-- One readable of each kind the Compendium sorts them into (Data/Places.lua), by name.
 local KINDS = { book = "READABLE_BOOK", letter = "READABLE_LETTER", note = "READABLE_NOTE",
 	scroll = "READABLE_SCROLL", tablet = "READABLE_TABLET", plaque = "READABLE_PLAQUE",
 	grave = "READABLE_GRAVE", exhibit = "READABLE_EXHIBIT", other = "READABLE_OTHER" }
