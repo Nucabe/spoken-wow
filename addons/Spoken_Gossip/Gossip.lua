@@ -273,6 +273,17 @@ function Addon:TakeOverFromQuests()
         end
     end
 
+    -- Which profile each character is on there, every character's and not only this one's: alts
+    -- sharing a profile there share it here too. Only where this module has none yet; the
+    -- character logging in now is on its default already, so it is set below.
+    if type(quests.profileKeys) == "table" then
+        sv.profileKeys = sv.profileKeys or {}
+        for key, name in pairs(quests.profileKeys) do
+            if sv.profileKeys[key] == nil then
+                sv.profileKeys[key] = name
+            end
+        end
+    end
     local charKey = db.keys and db.keys.char
     local profile = quests.profileKeys and charKey and quests.profileKeys[charKey]
     if profile and profile ~= db:GetCurrentProfile() then
