@@ -38,7 +38,9 @@ create table if not exists "npc" (
     check (not "confirmed" or "provenance" in ('corpus', 'display', 'moderator')),
   constraint "npc_none_is_empty_check"
     check ("provenance" <> 'none' or ("race" is null and "gender" is null and "flavor" is null)),
-  constraint "npc_doubtful_provenance_check" check (not "doubtful" or "provenance" = 'moderator')
+  -- A moderator's doubt, or the import's default flavor for an NPC the game names none for.
+  constraint "npc_doubtful_provenance_check"
+    check (not "doubtful" or "provenance" in ('moderator', 'corpus'))
 );
 
 create index if not exists "npc_unconfirmed_idx" on "npc" ("confirmed", "updatedAt" desc);

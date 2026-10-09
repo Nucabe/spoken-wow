@@ -1011,9 +1011,11 @@ line speaks in its speakers' race and gender and the flavor most of their NPCs h
 extract has always agreed one file on one voice. So one correction fixes every line that NPC
 speaks, the extract's included, and their audio goes stale. The extract's own answers are the
 `corpus` rows, which `import-corpus` writes from the corpus file's `npcs`: race and gender from
-the display, flavor from the NPC's greeting sounds, and no flavor where the game names none.
-Such an NPC's lines have no voice until somebody gives it one on `/contributions/npcs`, which
-lists every NPC. A speaker whose NPC nobody knows anything about keeps the voice written with it.
+the display, and flavor from the NPC's greeting sounds. Where the game names none, as for
+Cairne Bloodhoof's hand-made display, the import gives the race-gender's default ("standard",
+or its busiest flavor) and marks the answer doubtful; the export writes it back without one.
+Such an NPC keeps the voice its lines were made in and is listed under Doubtful on
+`/contributions/npcs`, which lists every NPC, for a moderator to confirm or change. A speaker whose NPC nobody knows anything about keeps the voice written with it.
 Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language their
 rights are checked in (English unless the request names another), and the import leaves an
 edited English name alone. `npc` also
