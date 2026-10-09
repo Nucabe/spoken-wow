@@ -85,6 +85,10 @@ Expect("...under what it is, as the Compendium sorts it, as a speaker over a que
 Expect("...named by the book, whatever page of it this is: the book is one line", clip.present.label,
     "Hillsbrad Town Registry")
 Expect("a page the pack does not carry has no clip", B:ClipFor(263), nil)
+-- The group is what keeps the cue between items out of a book, and every way a page is
+-- queued builds its clip here.
+Expect("pages of one book share a group", B:ClipFor(262).group, clip.group)
+Expect("...which another book's page does not", B:ClipFor(2810).group ~= clip.group, true)
 
 ---------------------------------------------------------------- reporting a bad reading
 local report = clip.present.actions and clip.present.actions[1]
