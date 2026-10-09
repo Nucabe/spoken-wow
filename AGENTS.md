@@ -86,7 +86,8 @@ A change that players see bumps a version and writes its changelog section in th
 Tooling, the site, CI and docs bump nothing.
 
 - Spoken, its modules, `SpokenContributions` and the tombstones move together, in every
-  `.toc`, both `Environment.lua` `AddonVersion` literals included. Their notes go in
+  `.toc`, all three `Environment.lua` `AddonVersion` literals (Spoken, Spoken_Quests,
+  Spoken_Gossip) included. Their notes go in
   `docs/spoken/CHANGELOG.md`, and they release as the `spoken/vX` tag.
 - Sound packs version on their own, with sections in their section's changelog.
 - Release scripts look for the exact `## <version>` heading and fail without it. Write the
