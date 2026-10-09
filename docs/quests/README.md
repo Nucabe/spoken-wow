@@ -1014,9 +1014,11 @@ speaks, the extract's included, and their audio goes stale. The extract's own an
 the display, flavor from the NPC's greeting sounds, and no flavor where the game names none.
 Such an NPC's lines have no voice until somebody gives it one on `/contributions/npcs`, which
 lists every NPC. A speaker whose NPC nobody knows anything about keeps the voice written with it.
-Names are per language, in `entity_name`. `npc` also keeps what the client
-reported even when a moderator overrules it — evidence about the NPC is worth more than the
-guess it produced — along with the client build, since model ids are per-build data.
+Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language its
+name is shown in, English included, and the import leaves an edited English name alone. `npc` also
+keeps what the client reported even when a moderator overrules it — evidence about the NPC is
+worth more than the guess it produced — along with the client build, since model ids are
+per-build data.
 
 Precedence is enforced in the SQL rather than by whoever calls it: `moderator` outranks
 `corpus`, which outranks `display`, which outranks `client`, which outranks `none`, and a write only lands when it ranks

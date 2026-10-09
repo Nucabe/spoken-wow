@@ -90,3 +90,29 @@ select r."npcKind", r."npcId"::text, 'enUS', 1, true, 'contributed', r."npcName"
                     where e."kind" = r."npcKind" and e."entityId" = r."npcId"::text
                       and e."lang" = 'enUS')
 on conflict do nothing;
+
+-- A moderator can rename an NPC in English too (api/contributions/npc). The speaker trigger
+-- writes the extract's English name on every import, so it leaves an edited name alone.
+create or replace function "entity_name_set"(k text, eid text, l text, n text) returns void
+language plpgsql as $$
+declare
+  current_name text;
+  current_origin text;
+begin
+  if n is null or n = '' then
+    return;
+  end if;
+
+  select "name", "origin" into current_name, current_origin from "entity_name"
+   where "kind" = k and "entityId" = eid and "lang" = l and "isCurrent";
+  if current_name is not distinct from n or current_origin = 'edited' then
+    return;
+  end if;
+
+  update "entity_name" set "isCurrent" = false
+   where "kind" = k and "entityId" = eid and "lang" = l and "isCurrent";
+  insert into "entity_name" ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
+  select k, eid, l, coalesce(max("version"), 0) + 1, true, 'extracted', n
+    from "entity_name" where "kind" = k and "entityId" = eid and "lang" = l;
+end;
+$$;

@@ -8,6 +8,7 @@
  */
 import { db } from "@/lib/db";
 import { BASE_LANG, type Lang } from "@/lib/lang";
+import { saveName } from "@/lib/names/store";
 
 // Defined in npc.ts, which is free of node imports -- see its own docstring for why that
 // split exists (ContributionTable.tsx, a client component, needs PROVENANCES as a value, and
@@ -40,9 +41,12 @@ export type NpcResolution = {
   updatedAt: string;
 };
 
+/** The language an NPC's shown name is in: English where English names it. */
+const NAME_LANG_ORDER = `order by e."lang" <> '${BASE_LANG}', e."lang" limit 1`;
+
 const NAME = `(select e."name" from "entity_name" e
                 where e."kind" = n."npcKind" and e."entityId" = n."npcId"::text and e."isCurrent"
-                order by e."lang" <> 'enUS', e."lang" limit 1)`;
+                ${NAME_LANG_ORDER})`;
 
 const COLUMNS = `n."npcKind", n."npcId", ${NAME} as "npcName", n."race", n."gender", n."flavor",
                  n."provenance", n."confirmed", n."doubtful", n."modelFileId", n."sex",
@@ -125,7 +129,20 @@ export async function upsertResolution(
 }
 
 /**
- * An NPC's name as a contribution or a moderator gave it, where its language has no name yet.
+ * A moderator's name for an NPC, over whatever is there, in the language its name is shown in
+ * (English for an NPC nobody has named).
+ */
+export async function renameNpc(kind: NpcKind, npcId: number, name: string, editedBy: string): Promise<void> {
+  const { rows } = await db().query<{ lang: Lang }>(
+    `select e."lang" from "entity_name" e
+      where e."kind" = $1 and e."entityId" = $2 and e."isCurrent" ${NAME_LANG_ORDER}`,
+    [kind, String(npcId)],
+  );
+  await saveName({ kind, entityId: String(npcId), lang: rows[0]?.lang ?? BASE_LANG, name, editedBy, anyLanguage: true });
+}
+
+/**
+ * An NPC's name as a contribution gave it, where its language has no name yet.
  * As 'contributed', so the extract's own name, when it comes, promotes over it.
  */
 async function nameIfUnnamed(kind: NpcKind, npcId: number, name: string, lang: Lang): Promise<void> {
