@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   const npcName = text(body.npcName, 200);
   const answersVoice = ["race", "gender", "flavor", "doubtful", "note"].some((field) => field in body);
   if (npcName && !answersVoice && !existing) return Response.json({ error: "unknown npc" }, { status: 404 });
-  if (npcName) await renameNpc(npcKind, npcId, npcName, session.user.id);
+  if (npcName) await renameNpc(npcKind, npcId, npcName, session.user.id, lang);
   if (npcName && !answersVoice) return Response.json({ resolution: await getResolution(npcKind, npcId) });
 
   // Absent from the body and sent-as-empty are different answers, and the form now posts race,

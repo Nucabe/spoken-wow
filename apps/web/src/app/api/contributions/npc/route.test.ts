@@ -93,6 +93,23 @@ describe("POST /api/contributions/npc", () => {
     expect((await getResolution("creature", npcId))?.npcName).toBe("Some Guard");
   });
 
+  it("renames in the language the moderator's rights were checked in, and nowhere else", async () => {
+    await upsertResolution({
+      npcKind: "creature", npcId, npcName: "Some Guard", race: null, gender: null, flavor: null,
+      provenance: "none", confirmed: false, doubtful: false, modelFileId: null, sex: null,
+      creatureType: null, build: null, note: null, resolvedBy: null,
+    });
+    asked.length = 0;
+    await POST(post({ npcKind: "creature", npcId, npcName: "Guarda" }, "ptBR"));
+
+    expect(asked).toEqual(["regenerate@ptBR"]);
+    const { rows } = await db().query(
+      `select "lang", "name" from "entity_name" where "entityId" = $1 and "isCurrent" order by "lang"`,
+      [String(npcId)],
+    );
+    expect(rows).toEqual([{ lang: "enUS", name: "Some Guard" }, { lang: "ptBR", name: "Guarda" }]);
+  });
+
   it("will not name an NPC it has no row for", async () => {
     expect((await POST(post({ npcKind: "creature", npcId, npcName: "Nobody" }))).status).toBe(404);
   });

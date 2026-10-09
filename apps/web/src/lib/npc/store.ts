@@ -42,11 +42,9 @@ export type NpcResolution = {
 };
 
 /** The language an NPC's shown name is in: English where English names it. */
-const NAME_LANG_ORDER = `order by e."lang" <> '${BASE_LANG}', e."lang" limit 1`;
-
 const NAME = `(select e."name" from "entity_name" e
                 where e."kind" = n."npcKind" and e."entityId" = n."npcId"::text and e."isCurrent"
-                ${NAME_LANG_ORDER})`;
+                order by e."lang" <> '${BASE_LANG}', e."lang" limit 1)`;
 
 const COLUMNS = `n."npcKind", n."npcId", ${NAME} as "npcName", n."race", n."gender", n."flavor",
                  n."provenance", n."confirmed", n."doubtful", n."modelFileId", n."sex",
@@ -129,16 +127,11 @@ export async function upsertResolution(
 }
 
 /**
- * A moderator's name for an NPC, over whatever is there, in the language its name is shown in
- * (English for an NPC nobody has named).
+ * A moderator's name for an NPC, over whatever is there, in `lang`: the language their rights
+ * were checked in, English included.
  */
-export async function renameNpc(kind: NpcKind, npcId: number, name: string, editedBy: string): Promise<void> {
-  const { rows } = await db().query<{ lang: Lang }>(
-    `select e."lang" from "entity_name" e
-      where e."kind" = $1 and e."entityId" = $2 and e."isCurrent" ${NAME_LANG_ORDER}`,
-    [kind, String(npcId)],
-  );
-  await saveName({ kind, entityId: String(npcId), lang: rows[0]?.lang ?? BASE_LANG, name, editedBy, anyLanguage: true });
+export async function renameNpc(kind: NpcKind, npcId: number, name: string, editedBy: string, lang: Lang): Promise<void> {
+  await saveName({ kind, entityId: String(npcId), lang, name, editedBy, anyLanguage: true });
 }
 
 /**

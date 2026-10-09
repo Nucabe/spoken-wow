@@ -1014,8 +1014,9 @@ speaks, the extract's included, and their audio goes stale. The extract's own an
 the display, flavor from the NPC's greeting sounds, and no flavor where the game names none.
 Such an NPC's lines have no voice until somebody gives it one on `/contributions/npcs`, which
 lists every NPC. A speaker whose NPC nobody knows anything about keeps the voice written with it.
-Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language its
-name is shown in, English included, and the import leaves an edited English name alone. `npc` also
+Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language their
+rights are checked in (English unless the request names another), and the import leaves an
+edited English name alone. `npc` also
 keeps what the client reported even when a moderator overrules it — evidence about the NPC is
 worth more than the guess it produced — along with the client build, since model ids are
 per-build data.
