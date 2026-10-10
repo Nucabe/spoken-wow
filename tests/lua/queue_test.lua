@@ -415,7 +415,7 @@ gateHeld = false
 stub.Advance(1)
 Expect("...it plays once released, with no cue", Cues() == 0 and #world.played == 2, true)
 
----------------------------------------------------------------- the client cuts the voice (#239)
+---------------------------------------------------------------- the client cuts the voice
 -- With Sound in Background off, the client stops every sound when the game loses focus and
 -- never starts it again. Measured in-game: C_Sound.IsPlaying turns false at the alt-tab and stays so.
 local cut = {}
@@ -439,12 +439,13 @@ Expect("...and the replay is not taken for a cut", Q:IsPaused(), false)
 
 Fresh()
 cut = {}
-local whole = H.Clip({ length = 3 })
+-- Ends 0.4s before its recorded length, between two polls: only the margin tells it from a cut.
+local whole = H.Clip({ length = 3.2 })
 quests:Enqueue(whole)
-stub.Advance(2.9)
+stub.Advance(2.8)
 cut[whole.handle] = true
-stub.Advance(0.5)
-Expect("a voice that ends with its length is not a cut", Q:IsPaused(), false)
+stub.Advance(0.6)
+Expect("a voice a little shorter than its length is not a cut", Q:IsPaused(), false)
 
 _G.C_Sound = nil
 
