@@ -236,7 +236,12 @@ end
 function Addon:ApplyHost(frame)
     if not frame then return end
     -- A window drawn as one image while it fades moves once it is itself again (DialogueUIPlayer).
-    if frame.spokenFrozen then frame.spokenHostPending = true; return end
+    if frame.spokenFrozen then
+        frame.spokenHostPending = true
+        -- Hidden with the host it leaves, it never ticks to its fade's end: ended now, unseen.
+        if frame.spokenEndFade and not frame:IsVisible() then frame.spokenEndFade() end
+        return
+    end
     local host, cfg = self.playerHost, self:Profile("Frame")
     local base = frame.spokenBaseScale or cfg.FrameScale
     if host then

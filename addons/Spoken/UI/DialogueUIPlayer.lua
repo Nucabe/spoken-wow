@@ -95,8 +95,10 @@ local LINE_IN, SIZE_EASE = .28, 10
 -- Every fade is of the window as one image (Skin:Buffer), and nothing in it may change while it is
 -- one. Before it becomes one: still this long (a face or picture just set is drawn or loaded a
 -- moment after), and, fading out, deaf to the pointer for ARM_FRAMES frames so a click's pressed
--- and lit states have settled. Never waiting longer than ARM_MOST.
-local STILL, ARM_FRAMES, ARM_MOST = 0.1, 2, 0.5
+-- and lit states have settled. Never waiting longer than ARM_MOST. Fading in, a texture that never
+-- says it has loaded would keep it unseen: after PREPARE_MOST it fades in as itself instead, not one
+-- image, so a late load changes nothing that could crash.
+local STILL, ARM_FRAMES, ARM_MOST, PREPARE_MOST = 0.1, 2, 0.5, 1
 -- What follows the title, "• (Stopped)" and the waiting count "• +N": this far after it, fading
 -- over COUNT_IN, Stopped in and out as the line stops and plays, the count in as a line is added.
 local COUNT_GAP, COUNT_IN = 6, .25
@@ -206,6 +208,7 @@ function Skin:Initialize()
         if button == "RightButton" then Options:Open() end
     end)
     frame:SetScript("OnUpdate", function(_, elapsed) self:Tick(elapsed) end)
+    frame.spokenEndFade = function() self:EndFade() end
     frame:SetScript("OnHide", function() self:HideTooltip() end)
     -- The captions take the wheel first and hand it here when Ctrl is held.
     frame:EnableMouseWheel(true)
@@ -609,6 +612,8 @@ function Skin:Dress()
 end
 
 function Skin:ConfigurePortrait()
+    -- One image fading: the face is painted by the update waiting for it (Skin:Unbuffer).
+    if self.buffered then self.pending = self.pending or "update"; return end
     -- A face set or redrawn: it is drawn a moment after.
     self:Touch()
     -- Always the face: the header strip has its socket, which would stand empty without it.
@@ -903,7 +908,7 @@ function Skin:SetVisible(visible, immediate)
         -- From nothing: laid out unseen, then once it is still, faded in as one image (Skin:Tick).
         self:SetLevel(0)
         self.frame:Show()
-        self.preparing, self.fadeTime = true, nil
+        self.preparing, self.fadeTime = { waited = 0 }, nil
         return
     end
     if self.preparing or not self.frame:IsShown() or (self.level or 0) <= 0 then
@@ -925,10 +930,28 @@ function Skin:SetVisible(visible, immediate)
     self.arming, self.fadeTime = { waited = 0, frames = 0 }, nil
 end
 
---- Start the fade, as one image where the client can draw one.
-function Skin:StartFade()
-    self:Buffer()
+--- Start the fade, as one image where the client can draw one, unless asked not to.
+function Skin:StartFade(asItself)
+    if not asItself then self:Buffer() end
     self.fadeFrom, self.fadeTime = self.level or 0, 0
+end
+
+--- The fade at its end: hidden if it went out, itself again, and the next line in if it turned.
+function Skin:EndFade()
+    self:SetLevel(self.wanted and 1 or 0)
+    self.fadeTime = nil
+    if not self.wanted then
+        self.frame:Hide()
+        self:Undeafen()
+        -- Held from the start of the fade-out, frame buffer or not (Skin:SetVisible).
+        Transcript:Release()
+    end
+    self:Unbuffer()
+    -- Faded out to turn to the next line: now it comes in.
+    if self.turning then
+        self.turning = nil
+        if not self.wanted then self:Update() end
+    end
 end
 
 --- After the title, as the subtitle has them: "• (Stopped)" while the line is stopped, and the
@@ -976,9 +999,13 @@ function Skin:Tick(elapsed)
     if self.settling then self:SettleStep(elapsed) end
     self.stillFor = (self.stillFor or 0) + elapsed
     -- Waiting to be still before it becomes one image: in, laid out unseen; out, deaf to the pointer.
-    if self.preparing and self:Still() then
-        self.preparing = nil
-        self:StartFade()
+    local preparing = self.preparing
+    if preparing then
+        preparing.waited = preparing.waited + elapsed
+        if self:Still() or preparing.waited >= PREPARE_MOST then
+            self.preparing = nil
+            self:StartFade(not self:Still())
+        end
     end
     local arming = self.arming
     if arming then
@@ -1020,20 +1047,7 @@ function Skin:Tick(elapsed)
         local eased = t * t * (3 - 2 * t)
         self:SetLevel(self.fadeFrom + ((self.wanted and 1 or 0) - self.fadeFrom) * eased)
         if t == 1 then
-            self.fadeTime = nil
-            if not self.wanted then
-                self.frame:Hide()
-                self:Undeafen()
-                -- Held from the start of the fade-out, frame buffer or not (Skin:SetVisible).
-                Transcript:Release()
-            end
-            -- Faded: itself again, catching up on what waited.
-            self:Unbuffer()
-            -- Faded out to turn to the next line: now it comes in.
-            if self.turning then
-                self.turning = nil
-                if not self.wanted then self:Update() end
-            end
+            self:EndFade()
             if not self.wanted then return end
         end
     end

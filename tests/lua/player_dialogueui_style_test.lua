@@ -404,7 +404,19 @@ end
 local report = Skin.row[3]
 Expect("...Report after Skip, as large and as strong, as the subtitle shows it", report ~= nil and report:GetParent() == Skin.controls
     and report:GetWidth() == Skin.play:GetWidth() and report:GetAlpha() == 1, true)
-Expect("...and no fold or close button", Skin.fold == nil and Skin.close == nil, true)
+local extra = {}
+local function Walk(frame)
+    for _, child in ipairs({ frame:GetChildren() }) do
+        if child:GetObjectType() == "Button" then
+            local known = false
+            for _, button in ipairs(Skin.row) do known = known or button == child end
+            if not known then table.insert(extra, child) end
+        end
+        Walk(child)
+    end
+end
+Walk(Skin.frame)
+Expect("...and no other button on it: no fold, close button or resize handle", #extra, 0)
 Expect("...nor a second Stop on the face: the header's is the one, as the subtitle has one", Skin.pause, nil)
 Expect("the line's title is a name, nothing to click: Skip takes a line away",
     Skin.title:GetObjectType() .. " " .. tostring(Skin.title.scripts.OnClick) .. " " .. tostring(Skin.title.scripts.OnEnter),
@@ -662,6 +674,53 @@ Spoken:SetPlayerHost(nil)
 DUI:Hide()
 Skin:CloseStep(1)
 Spoken:StopAll()
+Skin:Tick(1)
+
+---------------------------------------------------------------- the host leaving mid-fade
+-- On DialogueUI's window, fading in as one image, when the window closes: hidden with it, the
+-- window never ticks again, so its fade ends there and it comes back to the screen.
+Spoken:SetPlayerHost(DUI)
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "Four", portrait = { kind = "none" } } }))
+Skin:Tick(0.1)
+Expect("hosted, a line fades in as one image", tostring(Skin.buffered) .. " " .. tostring(Skin.fadeTime ~= nil), "true true")
+local IsVisible = Skin.frame.IsVisible
+Skin.frame.IsVisible = function() return false end
+Spoken:SetPlayerHost(nil)
+Skin.frame.IsVisible = IsVisible
+Expect("...the host closing ends the fade at once, the window itself again and back on the screen",
+    tostring(Skin.buffered) .. " " .. tostring(Skin.frame:GetParent() == _G.UIParent) .. " " .. Skin.level, "nil true 1")
+Spoken:StopAll()
+Skin:Tick(1)
+
+---------------------------------------------------------------- a face found while it fades in
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "Five", portrait = { kind = "none" } } }))
+Skin:Tick(0.1)
+local painted = 0
+local Configure = env.StaticPortrait.Configure
+env.StaticPortrait.Configure = function(...) painted = painted + 1; return Configure(...) end
+Skin:ConfigurePortrait()
+Expect("a face found while the window is one image is not painted into it",
+    tostring(Skin.buffered) .. " " .. painted .. " " .. tostring(Skin.pending), "true 0 update")
+Skin:Tick(1)
+Expect("...but once the fade ends", tostring(Skin.buffered) .. " " .. tostring(painted > 0), "nil true")
+env.StaticPortrait.Configure = Configure
+Spoken:StopAll()
+Skin:Tick(1)
+
+---------------------------------------------------------------- a picture that never loads
+local Still = Skin.Still
+Skin.Still = function() return false end
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "Six", portrait = { kind = "none" } } }))
+Skin:Tick(0.5); Skin:Tick(0.4)
+Expect("a picture still loading keeps the window unseen a moment", tostring(Skin.preparing ~= nil) .. " " .. Skin.level, "true 0")
+Skin:Tick(0.11)
+Expect("...but not for good: it fades in as itself, not one image a late load could crash",
+    tostring(Skin.preparing) .. " " .. tostring(Skin.buffered) .. " " .. tostring(Skin.fadeTime ~= nil), "nil nil true")
+Skin:Tick(1)
+Expect("...all the way", Skin.level, 1)
+Skin.Still = Still
+Spoken:StopAll()
+Skin:Tick(1)
 
 ---------------------------------------------------------------- from the dialog to the top left
 -- DialogueUI's window closes on a line that plays on: the window starts where the dialog was, as
