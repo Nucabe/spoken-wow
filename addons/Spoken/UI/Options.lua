@@ -387,12 +387,10 @@ local function Build(canvas)
             function(v) transcript().SubtitleName = v end, refreshSubtitle), Subtitles)
     end
     if captions then
-        -- The subtitle's and the DialogueUI window's progress line.
-        local progress = layout:Checkbox(L.OPT_SUBTITLE_PROGRESS, L.OPT_SUBTITLE_PROGRESS_TIP,
+        -- The subtitle's progress line. The DialogueUI window always draws its own.
+        ForSubtitles(layout:Checkbox(L.OPT_SUBTITLE_PROGRESS, L.OPT_SUBTITLE_PROGRESS_TIP,
             function() return transcript().SubtitleProgress ~= false end,
-            function(v) transcript().SubtitleProgress = v end, function() refreshSubtitle(); refresh() end)
-        Only(progress, function() return Subtitles() or DUI() end)
-        Requires(progress, function() return not Subtitles() or Words() end, L.REASON_WORDS)
+            function(v) transcript().SubtitleProgress = v end, refreshSubtitle))
     end
     -- Hiding the portrait and hiding a button are one kind of choice, so they sit together. Not
     -- for the DialogueUI window, whose header has the face's socket built in.
@@ -421,11 +419,19 @@ local function Build(canvas)
     -- lines like the others, chosen with them above.
 
     if captions then
+        -- DialogueUI's own quest text, which Spoken Quests marks whatever the style, follows Show
+        -- Words, Highlight Words and Type Words Out (Spoken:GetCaptionOptions): with DialogueUI
+        -- they do something under Voice Only too, and their tooltips say so.
+        local function DUIText() return DialogueUITheme ~= nil and DialogueUITheme:Available() end
+        -- The legacy clients' stub has no Installed: no DialogueUI there.
+        local withDUI = DialogueUITheme ~= nil and DialogueUITheme.Installed ~= nil and DialogueUITheme:Installed()
+        local function Tip(tip, extra) return withDUI and tip .. " " .. extra or tip end
+        local function Marks() return Shown() or DUIText() end
         -- Show Words first: everything under it waits on it.
         layout:Section(L.OPT_TEXT_TITLE)
-        Only(layout:Checkbox(L.TRANSCRIPT_SHOW, L.TRANSCRIPT_SHOW_TIP,
+        Only(layout:Checkbox(L.TRANSCRIPT_SHOW, Tip(L.TRANSCRIPT_SHOW_TIP, L.TRANSCRIPT_SHOW_DUI_TIP),
             function() return transcript().Enabled end,
-            function(v) Transcript:SetEnabled(v) end, function() Options:UpdateRows() end), Shown)
+            function(v) Transcript:SetEnabled(v) end, function() Options:UpdateRows() end), Marks)
         local function InWindowText(row)
             Only(row, InWindow)
             Requires(row, Words, L.REASON_WORDS)
@@ -465,20 +471,20 @@ local function Build(canvas)
             function(v) transcript().SubtitleScroll = v end, function() refreshSubtitle(); Options:UpdateRows() end,
             function(v) return SCROLL_LABELS[v] or v end))
         -- The word being read lit. The subtitle lights it only while it shows its words whole:
-        -- typed at their own pace, an estimated word timing would show every miss. With
-        -- DialogueUI installed, also for the quest text Spoken Quests marks there, under any style.
-        local highlight = layout:Checkbox(L.TRANSCRIPT_HIGHLIGHT, L.TRANSCRIPT_HIGHLIGHT_TIP,
+        -- typed at their own pace, an estimated word timing would show every miss.
+        local highlight = layout:Checkbox(L.TRANSCRIPT_HIGHLIGHT, Tip(L.TRANSCRIPT_HIGHLIGHT_TIP, L.TRANSCRIPT_DUI_TIP),
             function() return transcript().HighlightWord end,
             function(v) transcript().HighlightWord = v end, refreshTranscript)
-        Only(highlight, function() return InWindow() or Subtitles() or DialogueUITheme:Available() end)
+        Only(highlight, Marks)
         Requires(highlight, Words, L.REASON_WORDS)
         Requires(highlight, function() return not (Subtitles() and transcript().Typewriter) end, L.REASON_UNTYPED)
-        local typewriter = layout:Checkbox(L.TRANSCRIPT_TYPEWRITER, L.TRANSCRIPT_TYPEWRITER_TIP,
+        local typewriter = layout:Checkbox(L.TRANSCRIPT_TYPEWRITER, Tip(L.TRANSCRIPT_TYPEWRITER_TIP, L.TRANSCRIPT_DUI_TIP),
             function() return transcript().Typewriter end,
             function(v) transcript().Typewriter = v end, refreshTranscript)
-        Only(typewriter, Shown)
+        Only(typewriter, Marks)
         Requires(typewriter, Words, L.REASON_WORDS)
-        -- How the words are typed, under it: letter by letter, or whole words.
+        -- How the words are typed, under it: letter by letter, or whole words. DialogueUI's quest
+        -- text is always typed by whole words, so not under Voice Only.
         layout:Indent()
         local by = layout:Dropdown(L.TRANSCRIPT_TYPEWRITER_BY, L.TRANSCRIPT_TYPEWRITER_BY_TIP, { "word", "letter" },
             function() return transcript().TypewriterBy or "letter" end,
