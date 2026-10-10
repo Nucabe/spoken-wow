@@ -2,6 +2,12 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## Unreleased
+
+- **NPC voices you switched off (the Dialog channel) stay off.** With Spoken on another channel,
+  they came back on after any line it read, from an NPC's window, a zone or a book.
+  *([svengabr](https://github.com/svengabr))*
+
 ## 3.3.0 — 2026-10-09
 
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
@@ -15,9 +21,6 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Hide Report Buttons hides every Report button.** It sits beside Hide Contribute Buttons and
   also takes Report off the quest log, DialogueUI's window, the lore beside the map and the
   Compendium. *([Nucabe](https://github.com/Nucabe))*
-- **NPC voices you switched off (the Dialog channel) stay off.** With Spoken on another channel,
-  they came back on after any line it read, from an NPC's window, a zone or a book.
-  *([svengabr](https://github.com/svengabr))*
 
 ## 3.2.0 — 2026-10-08
 
