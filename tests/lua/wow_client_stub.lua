@@ -579,6 +579,7 @@ function M.ShowGossip(text, options)
     world.gossipOptions = options
     world.panels.GossipFrame = true
 end
+local function GossipOptionID(i) return 1000 + i end
 --- The namespaced gossip API. SetClient hands it to the clients that have one.
 M.gossipAPI = {
     GetText = function() return world.gossipText or "" end,
@@ -587,7 +588,7 @@ M.gossipAPI = {
     GetOptions = function()
         local infos = {}
         for i, name in ipairs(world.gossipOptions or {}) do
-            infos[i] = { name = name, gossipOptionID = 1000 + i }
+            infos[i] = { name = name, gossipOptionID = GossipOptionID(i) }
         end
         return infos
     end,
@@ -609,7 +610,7 @@ function M.SelectGossipOption(name)
     for i, option in ipairs(world.gossipOptions or {}) do
         if option == name then
             if _G.C_GossipInfo then
-                _G.C_GossipInfo.SelectOption(1000 + i)
+                _G.C_GossipInfo.SelectOption(GossipOptionID(i))
             else
                 _G.SelectGossipOption(i)
             end
@@ -1162,8 +1163,9 @@ end
 --- Load the zones addon's playback files the way the client would -- each chunk receives
 --- the addon name and the shared table as varargs -- against a hand-built SpokenZones table
 --- carrying the few Core.lua facts Audio.lua and Autoplay.lua read. Returns that table.
+--- UI/Compendium.lua too, as the toc loads it: a clip's header is the place above, from its tree.
 function M.LoadZones(addonDirectory, SpokenZones)
-    for _, file in ipairs({ "Audio", "UI/ReportButton", "Autoplay" }) do
+    for _, file in ipairs({ "Audio", "UI/ReportButton", "Autoplay", "UI/Compendium" }) do
         local chunk = assert(loadfile(addonDirectory .. file .. ".lua"))
         chunk("Spoken_Zones", SpokenZones)
     end
