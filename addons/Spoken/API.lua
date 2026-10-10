@@ -66,8 +66,6 @@ end
 --
 -- The player sets id, handle, source and nextSoundTimer; a caller never does.
 
---- A row bullet, registered once by a feature addon so SpokenBooks needs no change to
---- the player to have one of its own.
 --- Declare an action switchable, and what the player's settings should call it. Report has
 --- its own row; the modules still declare it for an older player, which has no such row.
 ---@param id string the action id, as it appears in a clip's presentation
@@ -76,6 +74,8 @@ function Spoken:RegisterOptionalAction(id, label)
     return Actions:RegisterOptional(id, label)
 end
 
+--- A row bullet, registered once by a feature addon so SpokenBooks needs no change to
+--- the player to have one of its own.
 function Spoken:RegisterBullet(id, texture, size)
     Bullets[id] = { texture = texture, size = size }
 end

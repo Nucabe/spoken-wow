@@ -413,7 +413,7 @@ local function Build(canvas)
     -- The report action's switch, which the windows already follow, so a hidden Report stays
     -- hidden; addons that draw their own hear REPORT_SETTINGS_CHANGED.
     local function ReportRow(tip)
-        layout:Checkbox(L.OPT_HIDE_REPORT, tip,
+        return layout:Checkbox(L.OPT_HIDE_REPORT, tip,
             function() return cfg().HiddenActions.report end,
             function(v) cfg().HiddenActions.report = v or nil end, function()
                 refresh()
@@ -422,10 +422,11 @@ local function Build(canvas)
             end)
     end
     -- Where there is no Contribute section to put it beside (the legacy clients), here. Its tip
-    -- names only what they have: no Small Window, and no subtitles on 1.12.
+    -- names only what they have: no Small Window, and no subtitles on 1.12. Only with a window or
+    -- subtitles: they are the only Report buttons these clients have.
     if not Spoken.Contribute then
-        ReportRow(Version.IsLegacyVanilla and L.OPT_HIDE_REPORT_TIP_VANILLA
-            or L.OPT_HIDE_REPORT_TIP_LEGACY)
+        Only(ReportRow(Version.IsLegacyVanilla and L.OPT_HIDE_REPORT_TIP_VANILLA
+            or L.OPT_HIDE_REPORT_TIP_LEGACY), function() return InWindow() or Subtitles() end)
     end
     -- No "hide the window" switch: nothing on screen at all is Voice Only, a way of showing
     -- lines like the others, chosen with them above.
