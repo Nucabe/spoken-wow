@@ -7,6 +7,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
   voice among them, and Spoken plays the one for the NPC you are talking to. Until a pack has
   that voice, the quest plays as before.
+- **Volume Follows is back.** Choose which volume slider Spoken's voices follow: Master, Effects,
+  Music, Ambience or Dialog. On Dialog, a note says which features stop working there.
+  *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
