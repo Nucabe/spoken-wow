@@ -156,3 +156,30 @@ def test_a_greeting_looked_up_by_name_names_the_lines_own_file_whatever_the_row_
         named = [{**row, "npcName": "Stormwind Guard"} for row in order]
         tables = build_tables(with_voice_files({"lines": named, "npcs": CORPUS["npcs"]}, stems))
         assert tables["npc_name_gossip_file_lookups"][1] == {"Stormwind Guard": {"Go to Gryan.": "abc"}}
+
+
+def test_a_language_whose_own_text_is_one_line_reaches_its_voice_by_the_plain_file():
+    rows = [line(5, "human-male-official", line_id="g:abc:m", file_name="m-abc", source="gossip"),
+            line(5, "human-male-official", line_id="g:abc:f", file_name="f-abc", source="gossip")]
+    tables = build_tables(with_voice_files({"lines": rows, "npcs": CORPUS["npcs"]},
+                                           stored_stems(["gossip/abc-human-male-warrior.mp3"])))
+    assert tables["npc_gossip_file_lookups"][1] == {5: {"Go to Gryan.": "abc-human-male-warrior"}}
+
+
+def test_a_language_whose_own_text_is_two_lines_reaches_its_voice_once_both_have_it():
+    rows = [line(5, "human-male-official", line_id="g:abc", file_name="abc", source="gossip")]
+    corpus = {"lines": rows, "npcs": CORPUS["npcs"]}
+    one = stored_stems(["gossip/m-abc-human-male-warrior.mp3"])
+    assert build_tables(with_voice_files(corpus, one))["npc_gossip_file_lookups"][1] == {
+        5: {"Go to Gryan.": "abc"}}
+    both = stored_stems(["gossip/m-abc-human-male-warrior.mp3", "gossip/f-abc-human-male-warrior.mp3"])
+    assert build_tables(with_voice_files(corpus, both))["npc_gossip_file_lookups"][1] == {
+        5: {"Go to Gryan.": "abc-human-male-warrior"}}
+
+
+def test_a_languages_greeting_joins_english_by_moment_whatever_its_own_shape():
+    corpus = {"lines": [line(5, "human-male-official", line_id="g:abc:m", file_name="m-abc",
+                             source="gossip")], "npcs": CORPUS["npcs"]}
+    rows = [{"lineId": "g:abc", "originalText": "Go to Gryan.", "localeText": "Geh zu Gryan."}]
+    tables = locale_tables(corpus, rows)
+    assert tables["npc_gossip_file_lookups"][1] == {5: {"Geh zu Gryan.": "abc"}}

@@ -16,7 +16,7 @@ from tqdm import tqdm
 from tts_cli.ignores import ignored_files
 from tts_cli.length_table import write_sound_length_table_lua
 from tts_cli.naming import (FOLLOWUP, followup_stem_from_line_id, gossip_hash_from_line_id,
-                            split_voice, subfolder_from_line_id, variant_file_name)
+                            moment_of, split_voice, subfolder_from_line_id, variant_file_name)
 from tts_cli.store import SUBFOLDERS, audio_extension, stored_files
 from tts_cli.utils import (get_first_n_words, get_last_n_words,
                            replace_dollar_bs_with_space)
@@ -248,13 +248,14 @@ def locale_tables(corpus: dict, rows: list, ignored=()) -> dict:
     """One client locale's gossip tables, as {output filename: (lua table name, data)}.
 
     Keyed by the locale's text and pointing at the English line's hash, which names the
-    file in every pack. A row is joined to the corpus on (lineId, originalText) -- the
-    English text is what a translated row is anchored to -- so it takes its speakers from
-    the corpus, and a row whose English has since changed is dropped.
+    file in every pack. A row is joined to the corpus on its moment and originalText -- the
+    English text is what a translated row is anchored to, and the language's own text may
+    make one line of English's two or two of its one -- so it takes its speakers from the
+    corpus, and a row whose English has since changed is dropped.
     """
     texts = {}
     for row in rows:
-        texts.setdefault((row["lineId"], row["originalText"]), []).append(row["localeText"])
+        texts.setdefault((moment_of(row["lineId"]), row["originalText"]), []).append(row["localeText"])
     tables = {kind: {} for kind in LOCALE_TABLES}
     for line in corpus["lines"]:
         # A line in another voice has the words of the line it is a voice of.
@@ -264,7 +265,7 @@ def locale_tables(corpus: dict, rows: list, ignored=()) -> dict:
         kind = line["npcType"]
         if kind not in tables:
             continue
-        for text in texts.get((base_id, line["originalText"]), ()):
+        for text in texts.get((moment_of(base_id), line["originalText"]), ()):
             tables[kind].setdefault(line["npcId"], {})[escape_lua_string(text)] = \
                 gossip_hash_from_line_id(line["lineId"])
     return {filename: (table_name, tables[kind])

@@ -113,6 +113,11 @@ def line_id_for_row(row) -> str:
 VOICE_SEPARATOR = "~"
 
 
+def moment_of(line_id: str) -> str:
+    """A line id without its :m/:f player-gender suffix: what its forms share in every language."""
+    return line_id[:-2] if line_id[-2:] in (":m", ":f") else line_id
+
+
 def variant_line_id(line_id: str, voice: str) -> str:
     """A line in one more voice than its file was made in."""
     return f"{line_id}{VOICE_SEPARATOR}{voice}"

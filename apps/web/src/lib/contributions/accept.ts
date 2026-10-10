@@ -20,7 +20,8 @@
  * and race put back as `$N`, `$C` and `$R` by the addon -- the only side that knows which words
  * they were. So it is a template, like the extract's: stored as `originalText`, with `text` its
  * spoken form (tokens.ts). Anything else the client substituted -- the one branch of a `$G` it
- * picked -- stays as displayed; an editor has the text-override flow for that.
+ * picked -- stays as displayed; a moderator who writes the `$G` back splits the line by player
+ * gender (quests/text.ts).
  */
 import { skipReasonFor } from "@/lib/text-gate";
 import type { PoolClient } from "pg";
@@ -41,7 +42,7 @@ import {
 import { BASE_LANG, isLang, type Lang } from "@/lib/lang";
 import type { CorpusLine } from "@/lib/corpus";
 import { isGeneratable } from "@/lib/books/tools";
-import { speakPlayerTokens } from "@/lib/player-words";
+import { branchesOnPlayerGender, speakPlayerTokens } from "@/lib/player-words";
 import { corpus } from "@/lib/quests/catalogue";
 import { isVoice, voiceNameFor } from "@/lib/voices/voices";
 
@@ -50,9 +51,10 @@ import {
   answersQuestMomentSql,
   baseLineId,
   lineIdentityFor,
+  playerGenderForms,
   type LineIdentity,
 } from "./naming";
-import { recordBroadcast, resolveGossip, type GossipPlan } from "./gossip";
+import { gossipIdentity, recordBroadcast, resolveGossip, type GossipPlan } from "./gossip";
 import { CONTRIBUTION_COLUMNS, observationMeta, type Contribution } from "./store";
 import { spokenFromTemplate } from "./tokens";
 import { idOnlyResolution } from "./triage";
@@ -524,21 +526,33 @@ async function momentTaken(client: PoolClient, lang: Lang, momentId: string): Pr
   return (rowCount ?? 0) > 0;
 }
 
-/**
- * The rows other languages have for a moment, one per line id, English's first: the shape a
- * new language's row takes. The tables carry some moments only as `:m`/`:f` player-gender
- * variants, which a contribution, naming the moment alone, writes both of.
- */
-async function momentRows(client: PoolClient, momentId: string): Promise<(MomentRow & { lang: string })[]> {
-  const { rows } = await client.query<MomentRow & { lang: string }>(
-    `select distinct on ("lineId") "lineId", "lang", "playerGender", "fileName", "source", "questId",
-            "questTitle", "originalText"
-       from "quest_line"
-      where "isCurrent" and "variant" = 0 and ${answersQuestMomentSql(`"lineId"`, "$1")}
-      order by "lineId", "lang" <> $2, "id"`,
+/** English's original text for each of a moment's lines, by line id. */
+async function englishOriginals(client: PoolClient, momentId: string): Promise<Map<string, string>> {
+  const { rows } = await client.query<{ lineId: string; originalText: string }>(
+    `select "lineId", "originalText" from "quest_line"
+      where "lang" = $2 and "isCurrent" and "variant" = 0 and ${answersQuestMomentSql(`"lineId"`, "$1")}`,
     [momentId, BASE_LANG],
   );
-  return rows;
+  return new Map(rows.map((row) => [row.lineId, row.originalText]));
+}
+
+/**
+ * A language's rows for a moment. Its own text decides whether that is one line or one per
+ * player gender, whatever other languages made of the moment; a client has already picked one
+ * side of any $G, so a contribution is almost always one line.
+ */
+async function ownRows(client: PoolClient, identity: LineIdentity, text: string, lang: Lang): Promise<MomentRow[]> {
+  const originals = lang === BASE_LANG ? new Map<string, string>() : await englishOriginals(client, identity.lineId);
+  return playerGenderForms(identity.lineId, identity.fileName, branchesOnPlayerGender(text)).map((form) => ({
+    ...form,
+    source: identity.source,
+    questId: identity.questId,
+    questTitle: lang === BASE_LANG ? identity.questTitle : null,
+    // A language's row keeps the English template it translates: the same line's, else the
+    // plain one's, else the male one's. English's own, or a line English lacks, is its words.
+    originalText:
+      originals.get(form.lineId) ?? originals.get(identity.lineId) ?? originals.get(`${identity.lineId}:m`) ?? text,
+  }));
 }
 
 /**
@@ -547,9 +561,9 @@ async function momentRows(client: PoolClient, momentId: string): Promise<(Moment
  * the world, so a speaker one language wrote voices the line in every other.
  *
  * A moment the language already has is left alone: an import or a translator got there first.
- * The id and file are the quest's and the event's in every language, so a language that sends
- * the moment later writes the same line and the same file. In another language the quest's and
- * the NPC's names the client showed are written too (namesSeenIn).
+ * The id and file are the quest's and the event's in every language, in the shape ownRows
+ * gives them. In another language the quest's and the NPC's names the client showed are
+ * written too (namesSeenIn).
  */
 async function acceptQuestMoment(
   client: PoolClient,
@@ -569,16 +583,7 @@ async function acceptQuestMoment(
   await lockLine(client, identity.lineId);
   if (await momentTaken(client, lang, identity.lineId)) return null;
 
-  const others = await momentRows(client, identity.lineId);
-  const english = others.some((row) => row.lang === BASE_LANG);
-  const rows: MomentRow[] = others.length
-    ? others.map((row) => ({
-        ...row,
-        // A language's row keeps English's template as its original; English's own is its words.
-        originalText: lang === BASE_LANG || !english ? text : row.originalText,
-        questTitle: lang === BASE_LANG ? identity.questTitle : null,
-      }))
-    : [{ ...identity, playerGender: null, originalText: text }];
+  const rows = await ownRows(client, identity, text, lang);
 
   const { rowCount: spoken } = await client.query(
     `select 1 from "quest_line_speaker" where ${answersQuestMomentSql(`"lineId"`, "$1")} limit 1`,
@@ -941,81 +946,23 @@ async function acceptTranslatedGossip(
   await lockLine(client, lineId);
   if (plan.kind === "speaker") {
     await addSpeakerOnce(client, contribution.id, lineId, 0, speaker, plan.lang);
-  } else if (plan.kind === "translation") {
-    const english = await englishMoment(client, lineId.replace(/:[mf]$/, ""));
-    await translateLines(client, contribution, userId, english, "gossip");
-    if (plan.addSpeaker) await addSpeakerOnce(client, contribution.id, lineId, 0, speaker);
-  } else if (plan.kind === "line" && !(await momentTaken(client, lang, lineId))) {
-    await insertLine(client, contribution.id, userId, { ...plan.identity, playerGender: null, originalText: text }, text, lang);
-    await insertSpeaker(client, contribution.id, plan.identity.lineId, 0, speaker, lang);
+  } else if (plan.kind !== "exists") {
+    // A translation of English's moment or a line of the language's own, shaped by its own text
+    // as a quest moment is.
+    const identity = plan.kind === "line" ? plan.identity : gossipIdentity(lineId);
+    if (!(await momentTaken(client, lang, identity.lineId))) {
+      for (const row of await ownRows(client, identity, text, lang)) {
+        await insertLine(client, contribution.id, userId, row, text, lang);
+        if (plan.kind === "line") await insertSpeaker(client, contribution.id, row.lineId, 0, speaker, lang);
+      }
+    }
+    if (plan.kind === "translation" && plan.addSpeaker) await addSpeakerOnce(client, contribution.id, lineId, 0, speaker);
   }
   await recordBroadcast(client, lineId, plan.broadcastTextId);
   for (const name of namesSeenIn(contribution)) {
     await nameIfUnnamed(client, { ...name, lang, userId, note: noteFor(contribution.id) });
   }
   return null;
-}
-
-/**
- * The language's row for each English line given, where it has none: the contribution's text
- * over the English line's id and file.
- */
-async function translateLines(
-  client: PoolClient,
-  contribution: Contribution,
-  userId: string,
-  english: readonly Pick<CorpusLine, "lineId" | "variant" | "playerGender">[],
-  source: string,
-): Promise<void> {
-  const text = contribution.text ?? "";
-  const lang = contribution.locale as Lang;
-  const seen = new Set<string>();
-  for (const line of english) {
-    // Variant 0 only: a language keeps one text per line id, whichever content patch the
-    // English variants come from (tts_cli/locale_import.py says why).
-    if (line.variant) continue;
-    if (seen.has(line.lineId)) continue;
-    seen.add(line.lineId);
-    // Per line id: its $N is spoken in the form the line's player gender takes.
-    const skipReason = skipReasonFor(
-      source, text, lang, line.playerGender,
-    );
-    await client.query(
-      `insert into "quest_line"
-         ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "questId",
-          "questTitle", "playerGender", "fileName", "text", "originalText", "localeText",
-          "generatable", "skipReason", "editedBy", "note")
-       select e."lineId", e."variant", $3, 1, true, 'contributed', e."source", e."questId",
-              null, e."playerGender", e."fileName", $4, e."originalText", $4, $5, $6, $7, $8
-         from "quest_line" e
-        where e."lineId" = $1 and e."variant" = $2 and e."lang" = $9 and e."isCurrent"
-          and not exists (select 1 from "quest_line" t
-                           where t."lineId" = $1 and t."variant" = $2 and t."lang" = $3)`,
-      [
-        line.lineId, 0, contribution.locale, text, skipReason === null,
-        skipReason, userId, `contribution #${contribution.id}`, BASE_LANG,
-      ],
-    );
-  }
-}
-
-/**
- * The English lines answering a moment the catalogue did not have, from the table and under
- * the line's lock: a batch reads the catalogue once, before any of it is written, and English
- * may have landed since.
- */
-async function englishMoment(
-  client: PoolClient,
-  momentId: string,
-): Promise<Pick<CorpusLine, "lineId" | "variant" | "playerGender">[]> {
-  await lockLine(client, momentId);
-  const { rows } = await client.query<Pick<CorpusLine, "lineId" | "variant" | "playerGender">>(
-    `select "lineId", "variant", "playerGender" from "quest_line"
-      where "lang" = $1 and "isCurrent" and ${answersQuestMomentSql(`"lineId"`, "$2")}
-      order by "lineId", "variant"`,
-    [BASE_LANG, momentId],
-  );
-  return rows;
 }
 
 /** How many rows of a batch resolve at once -- well inside the pool (db.ts's POOL_MAX). */

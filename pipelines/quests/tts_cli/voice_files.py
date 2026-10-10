@@ -10,16 +10,14 @@ The site reads lines the same way (apps/web/src/lib/quests/catalogue.ts): a spea
 nobody knows anything about keeps the voice its row was written with.
 """
 import os
-import re
 
 from tts_cli.flavors import voice_name
-from tts_cli.naming import subfolder_from_line_id, variant_file_name, variant_line_id
+from tts_cli.naming import moment_of, subfolder_from_line_id, variant_file_name, variant_line_id
 
 #: The lines an NPC speaks in its own voice: all of them but progress text, which is never
 #: voiced. A quest moment's giver is found through QuestFileLookupBy*; a greeting's speaker and
 #: a follow-up's are looked up per NPC already, so their tables simply name its own file.
 OWN_VOICE_SOURCES = frozenset({"accept", "complete", "gossip", "followup"})
-_PLAYER_GENDER = re.compile(r":[mf]$")
 
 
 def npc_voices(corpus: dict) -> dict:
@@ -60,13 +58,21 @@ def with_voice_files(corpus: dict, stems: set) -> dict:
     # one name for both, and the addon adds the player's m-/f- to it, so moving one alone would
     # send the other player to a file that does not exist.
     def together(line):
-        return (line["npcType"], line["npcId"], _PLAYER_GENDER.sub("", line["lineId"]))
+        return (line["npcType"], line["npcId"], moment_of(line["lineId"]))
+
+    # Every player reaches a file the addon can find: their m-/f- one, else the plain one. A
+    # language pack's store holds its own text's forms, which need not be English's.
+    def reachable(line, file_name):
+        folder = subfolder_from_line_id(line["lineId"])
+        if moment_of(line["lineId"]) != line["lineId"]:
+            return f"{folder}/{file_name}" in stems or f"{folder}/{file_name[2:]}" in stems
+        return f"{folder}/{file_name}" in stems or all(
+            f"{folder}/{g}-{file_name}" in stems for g in ("m", "f"))
 
     ready = {}
     for line in corpus["lines"]:
         candidate = moved(line)
-        stored = candidate is not None and \
-            f'{subfolder_from_line_id(line["lineId"])}/{candidate["fileName"]}' in stems
+        stored = candidate is not None and reachable(line, candidate["fileName"])
         ready[together(line)] = ready.get(together(line), True) and stored
     lines = [moved(line) if ready[together(line)] else line for line in corpus["lines"]]
     return {**corpus, "lines": lines}
