@@ -199,9 +199,10 @@ function Addon:ClipFont(fontString, clip)
     -- the one to go back to.
     if face ~= fontString.spokenClipFace then fontString.spokenOwnFace = face end
     local want = clip and clip.present and clip.present.font or fontString.spokenOwnFace
-    -- SetFont answers false for a face the client cannot load; back to the player's own rather
-    -- than a string with no font. 1.12 answers nothing.
-    if want ~= face and fontString:SetFont(want, size, flags or "") == false then
+    -- A face the client cannot load: current clients answer false, older ones nil or nothing, so
+    -- the face it reports afterwards is asked too. Back to the player's own rather than a
+    -- string with no font.
+    if want ~= face and (fontString:SetFont(want, size, flags or "") == false or not fontString:GetFont()) then
         want = fontString.spokenOwnFace
         fontString:SetFont(want, size, flags or "")
     end

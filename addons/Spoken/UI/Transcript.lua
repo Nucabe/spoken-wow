@@ -589,8 +589,8 @@ function Transcript:ApplyFont()
     local own = (self.style or {}).font or GameFontNormal:GetFont()
     local face, size = present and present.font or own, FontSize()
     if face == self.face and size == self.faceSize then return end
-    -- SetFont answers false for a face the client cannot load.
-    if self.measure:SetFont(face, size, "") == false then
+    -- A face the client cannot load: false on current clients, no face reported on older ones.
+    if self.measure:SetFont(face, size, "") == false or not self.measure:GetFont() then
         face = own
         self.measure:SetFont(face, size, "")
     end

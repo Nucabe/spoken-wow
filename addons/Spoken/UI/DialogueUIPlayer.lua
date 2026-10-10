@@ -482,6 +482,11 @@ function Skin:Dress()
         row.color = colors.gossip
     end
     for _, button in ipairs(self.buttons) do Paint(button.text, fonts.paragraph, body, colors.paragraph) end
+    -- Layout runs this on every step of a resize drag, so a clip's own face goes back on here
+    -- rather than waiting for the drop.
+    Addon:ClipFont(self.name, self.clip)
+    Addon:ClipFont(self.title.text, self.clip)
+    for _, row in ipairs(self.rows) do Addon:ClipFont(row.text, row.clip) end
     self.colors = colors
     local tint = colors.portraitTint
     if self.viewport.texture then self.viewport.texture:SetVertexColor(tint[1], tint[2], tint[3]) end

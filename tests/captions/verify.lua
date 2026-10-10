@@ -775,6 +775,11 @@ do
     source:Enqueue(broken); Play(.7)
     Check(Face(T.labels[1])=='font.ttf' and Face(M.name)=='font.ttf','a face the client cannot load leaves the player\'s own')
     Q:RemoveAllSoundsFromQueue(); Play(.6)
+    broken=Clip('old','Text in a face an older client lacks.',3)
+    broken.present.font='missing-old.ttf'
+    source:Enqueue(broken); Play(.7)
+    Check(Face(T.labels[1])=='font.ttf' and Face(M.name)=='font.ttf','...and so does one on an older client, which says nothing')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
     local style=E.Addon:PlayerStyle()
     E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
     czech=Clip('cz2','Příliš žluťoučký kůň úpěl ďábelské ódy.',4)
