@@ -10,6 +10,7 @@ const { closeDb, db, query } = await import("@/lib/db");
 const { questTextHistory, restoreQuestText, saveQuestText, QuestTextConflict, QuestTextMissing } = await import("./text");
 const { saveName, nameHistory } = await import("@/lib/names/store");
 const { clearIgnore, readIgnores, writeIgnore } = await import("./ignores");
+const { keepLanguage } = await import("./keep-language");
 
 const LANG = "koKR";
 let english: { lineId: string; variant: number; questId: number; fileName: string; source: string };
@@ -17,12 +18,15 @@ let userId: string;
 
 beforeAll(async () => {
   const rows = await query<typeof english>(
-    `select "lineId", "variant", "questId", "fileName", "source" from "quest_line"
+    `select "lineId", "variant", "questId", "fileName", "source" from "quest_line" e
       where "lang" = 'enUS' and "isCurrent" and "questId" is not null and "source" = 'accept'
         and "lineId" !~ ':[mf]$'
+        and not exists (select 1 from "quest_line" k
+                         where k."lineId" in (e."lineId", e."lineId" || ':m', e."lineId" || ':f') and k."lang" = $1)
       order by "lineId" limit 1`,
+    [LANG],
   );
-  if (!rows[0]) throw new Error("text.test.ts needs the corpus imported");
+  if (!rows[0]) throw new Error(`text.test.ts needs an English line ${LANG} has not translated`);
   english = rows[0];
   userId = `test-${Math.random().toString(36).slice(2, 10)}`;
   await db().query(
@@ -32,11 +36,11 @@ beforeAll(async () => {
   );
 });
 
+keepLanguage(LANG);
+
 afterEach(async () => {
   // Every write here is logged as this user's, so their rows are exactly the ones to drop.
   await db().query(`delete from "activity" where "actorId" = $1`, [userId]);
-  await db().query(`delete from "quest_line" where "lang" = $1`, [LANG]);
-  await db().query(`delete from "entity_name" where "lang" = $1`, [LANG]);
   await db().query(`delete from "line_ignore" where "lineId" = $1`, ["q:0:ignore-test"]);
 });
 
