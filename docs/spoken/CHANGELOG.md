@@ -9,6 +9,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   that voice, the quest plays as before.
 - **Abandoning a quest while its voice speaks fades the voice out.** Before, it was cut off
   mid-word and the quest's next line started for a moment. *([Nucabe](https://github.com/Nucabe))*
+- **Fixed: Books and Zones said "Not installed" in Spoken's module list after login**, and a
+  module's settings page could show it switched off after it was switched on from Spoken's page.
+  *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
