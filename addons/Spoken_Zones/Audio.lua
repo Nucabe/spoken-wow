@@ -538,10 +538,6 @@ local ACTIONS = {
 	}
 }
 
--- A Spoken clip for a lore entry, or nil when the installed pack cannot narrate it.
--- One factory so that every route to a clip -- a click, a slash command, a
--- discovery -- produces the same shape.
---
 --- How wide Place Lore draws a picture beside the map, in the screen's pixels: its text column
 --- (the panel less its margins and scroll bar, TextView's 400 at most), at the map's scale. A
 --- window showing the picture over a line's words draws it this large too.
@@ -554,6 +550,10 @@ function SpokenZones:PicturePixels()
 	return width * scale
 end
 
+-- A Spoken clip for a lore entry, or nil when the installed pack cannot narrate it.
+-- One factory so that every route to a clip -- a click, a slash command, a
+-- discovery -- produces the same shape.
+--
 -- The key is the line id the website and the generation pipeline use -- z:{mapID} or
 -- s:{mapID}:{key} -- and it is frozen: it is what the player dedups on, what a report
 -- names, and what audio-history is keyed by.
