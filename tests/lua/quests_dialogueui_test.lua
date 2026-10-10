@@ -282,9 +282,7 @@ stub.Advance(1)
 stub.HidePanels()
 stub.FireEvent("GOSSIP_CLOSED")
 Greet()
-stub.SelectGossipOption("Where is the bank?")
-stub.ShowGossip(DIRECTIONS)
-stub.FireEvent("GOSSIP_SHOW")
+stub.PickGossipOption("Where is the bank?", DIRECTIONS)
 stub.Advance(0.6)
 Spoken:StopAll()
 Expect("...and so are directions drawn after it", VO.Addon:ExpectedLine("GOSSIP_SHOW", true), DIRECTIONS)
@@ -296,7 +294,6 @@ Expect("...but not the greeting on the next visit", VO.Addon:ExpectedLine("GOSSI
 stub.HidePanels()
 stub.FireEvent("GOSSIP_CLOSED")
 Spoken:StopAll()
-VO.Addon.ExpectedLine = nil
 world.npcGUID, world.gossipText, DUI.handler = questGiver, nil, nil
 
 -- A zone clip whose transcript is the quest text word for word.
