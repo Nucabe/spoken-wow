@@ -37,10 +37,10 @@ local SETTLE_GROW, SETTLE_RISE, SETTLE_BOW, SETTLE_GIVE = .03, 4, .16, 7
 local CONTENT_OUT, CONTENT_IN = .1, .16
 -- A quest page closing (QUEST_FINISHED): DialogueUI waits up to a second before it hides its window
 -- (0.5 when the NPC has more quests, in case its gossip comes back, and up to 0.5 more for the
--- camera). The words fade at once instead, and the window is closed here QUEST_GRACE after the page
--- closed, unless DialogueUI shows a page again by then (gossip, the next quest page). The wait runs
--- with the fade, not after it: after it, the bare page hung there before anything moved.
-local QUEST_GRACE = .12
+-- camera; DialogueUI 1.0.5's Code/Core.lua). The words fade at once, but only DialogueUI's own Hide
+-- closes the window; with no Hide within QUEST_WAIT (a page shown again, or the event early), the
+-- words come back.
+local QUEST_WAIT = 1.1
 -- A dialog closing on another line than its own: its page goes behind this window (Skin:Tuck). A
 -- line queued this long before its dialog showed is still the dialog's: Spoken and DialogueUI hear
 -- the same event, in either order.
@@ -228,7 +228,12 @@ function Skin:Initialize()
             self.dialogHides = self.dialogHides or {}
             self.dialogHides[dialog] = hide
             dialog.Hide = function(frame, ...)
-                if self.closing and self.closing.dialog == frame then return end
+                local closing = self.closing
+                if closing and closing.dialog == frame then
+                    -- Its words already fading since QUEST_FINISHED: it closes now (Skin:CloseStep).
+                    if not closing.hiding then closing.hiding = true; self:CloseStep(0) end
+                    return
+                end
                 -- Already hidden (DialogueUI hides it again from its own OnHide): nothing to fade.
                 if not frame:IsShown() then return hide(frame, ...) end
                 local ok, fades = pcall(self.FadesOnClose, self, frame)
@@ -1310,16 +1315,18 @@ function Skin:FadesOnClose(dialog)
         and PlayerFrame:Current() ~= nil and (self:Owns(dialog) or self:QueuedBy(dialog) ~= nil)
 end
 
---- DialogueUI hiding `dialog`: its words fade first, then `hide` (its own Hide) closes it.
---- A quest page closed: if DialogueUI's window hands a line on, its words fade now and it closes
---- QUEST_GRACE from now (Skin:CloseStep), unless DialogueUI shows a page again first.
+--- A quest page closed: if DialogueUI's window hands a line on, its words fade now, and it closes
+--- when DialogueUI hides it.
 function Skin:QuestFinished(dialog)
     if self.closing or not dialog:IsShown() then return end
     local ok, fades = pcall(self.FadesOnClose, self, dialog)
-    if ok and fades then self:FadeDialogOut(dialog, self.dialogHides[dialog], QUEST_GRACE) end
+    if ok and fades then self:FadeDialogOut(dialog, self.dialogHides[dialog], QUEST_WAIT) end
 end
 
-function Skin:FadeDialogOut(dialog, hide, grace)
+--- DialogueUI hiding `dialog`: its words fade first, then `hide` (its own Hide) closes it. With
+--- `wait` (QUEST_FINISHED), its words fade before DialogueUI hides it, and come back if it has not
+--- within `wait`.
+function Skin:FadeDialogOut(dialog, hide, wait)
     local paper = {}
     for _, key in ipairs(PAPER_FRAMES) do
         if type(dialog[key]) == "table" then paper[dialog[key]] = true end
@@ -1332,7 +1339,7 @@ function Skin:FadeDialogOut(dialog, hide, grace)
     end
     local footer = type(dialog.Footer) == "table" and dialog.Footer.FooterDivider
     if type(footer) == "table" and footer.GetAlpha then table.insert(parts, { part = footer, alpha = footer:GetAlpha() or 1 }) end
-    self.closing = { dialog = dialog, hide = hide, time = 0, parts = parts, grace = grace or 0 }
+    self.closing = { dialog = dialog, hide = hide, time = 0, parts = parts, hiding = wait == nil, wait = wait }
     -- Driven by a frame of no parent: DialogueUI may be hiding the interface.
     if not self.closeDriver then
         self.closeDriver = CreateFrame("Frame")
@@ -1350,23 +1357,29 @@ function Skin:CloseStep(elapsed)
     closing.time = closing.time + elapsed
     local left = 1 - Smooth(Clamp(closing.time / CONTENT_OUT, 0, 1))
     for _, entry in ipairs(closing.parts) do entry.part:SetAlpha(entry.alpha * left) end
-    if closing.time >= math.max(CONTENT_OUT, closing.grace) then
-        -- Its words given back, then closed for real in the same moment, so they are never seen
-        -- back: given back after, DialogueUI hiding it again from its own OnHide read them faded.
-        self.closing = nil
-        if self.closeDriver then self.closeDriver:Hide() end
-        for _, entry in ipairs(closing.parts) do entry.part:SetAlpha(entry.alpha) end
-        closing.hide(closing.dialog)
+    if closing.hiding and closing.time >= CONTENT_OUT then
+        self:EndClose(true)
+    elseif not closing.hiding and closing.time >= closing.wait then
+        self:EndClose(false)
     end
+end
+
+--- The dialog's words given back, and with `hide` it closed for real in the same moment, so they
+--- are never seen back: given back after, DialogueUI hiding it again from its own OnHide read them
+--- faded.
+function Skin:EndClose(hide)
+    local closing = self.closing
+    if not closing then return end
+    self.closing = nil
+    if self.closeDriver then self.closeDriver:Hide() end
+    for _, entry in ipairs(closing.parts) do entry.part:SetAlpha(entry.alpha) end
+    if hide then closing.hide(closing.dialog) end
 end
 
 --- DialogueUI showing the dialog again before it closed (another page, another line): it stays.
 function Skin:CancelDialogFade(dialog)
     local closing = self.closing
-    if not (closing and closing.dialog == dialog) then return end
-    self.closing = nil
-    if self.closeDriver then self.closeDriver:Hide() end
-    for _, entry in ipairs(closing.parts) do entry.part:SetAlpha(entry.alpha) end
+    if closing and closing.dialog == dialog then self:EndClose(false) end
 end
 
 ---------------------------------------------------------------- a dialog's line joining the queue

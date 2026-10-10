@@ -711,18 +711,22 @@ Expect("...then closes, its words given back unseen, and still there when Dialog
 DUI:SetScript("OnHide", function() end)
 Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
 DUI.BackgroundFrame = nil
--- A quest page closing: its words fade at once, not when DialogueUI gets round to hiding it, and
--- the window closes a moment after unless DialogueUI shows a page again.
+-- A quest page closing: its words fade at once, not when DialogueUI gets round to hiding it, but
+-- only DialogueUI closes its window. Left open past DialogueUI's wait, the words come back.
 OpenDialog()
 Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
 Skin:CloseStep(0.05)
 Expect("a quest page closing fades the dialog's words at once, without waiting for DialogueUI",
     DUI:IsShown() and Skin.closing ~= nil and words.alpha < 1, true)
-Skin:CloseStep(0.06)
-Expect("...faded, still held for a page coming back", tostring(DUI:IsShown()) .. " " .. words.alpha, "true 0")
-Skin:CloseStep(0.02)
-Expect("...then closed 0.12 after the page closed, the wait running with the fade, not after it",
-    tostring(DUI:IsShown()) .. " " .. words.alpha, "false 1")
+for _ = 1, 30 do Skin:CloseStep(0.05) end
+Expect("...and DialogueUI not hiding its window within its wait, it stays open, its words back",
+    tostring(DUI:IsShown()) .. " " .. words.alpha .. " " .. tostring(Skin.closing), "true 1 nil")
+Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
+Skin:CloseStep(0.06); Skin:CloseStep(0.06)
+Expect("...faded, the dialog left for DialogueUI to close", tostring(DUI:IsShown()) .. " " .. words.alpha, "true 0")
+DUI:Hide()
+Expect("...its own Hide closing it at once, the words given back unseen",
+    tostring(DUI:IsShown()) .. " " .. words.alpha .. " " .. tostring(Skin.closing), "false 1 nil")
 Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
 Expect("the dialog closing on a line starts the window where the dialog was, as large",
     Near(Skin.frame.scale, 0.8) and Near(Skin.frame.anchor.x * 0.8, dialogLeft) and Near(Skin.frame.anchor.y * 0.8, dialogTop)
