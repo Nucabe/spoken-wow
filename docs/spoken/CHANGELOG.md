@@ -18,6 +18,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **NPC voices you switched off (the Dialog channel) stay off.** With Spoken on another channel,
   they came back on after any line it read, from an NPC's window, a zone or a book.
   *([svengabr](https://github.com/svengabr))*
+- **Spoken Zones no longer raises a Lua error on chat messages the game keeps hidden from addons**,
+  as in a dungeon group. *([svengabr](https://github.com/svengabr))*
 
 ## 3.2.0 — 2026-10-08
 
