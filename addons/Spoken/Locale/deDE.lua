@@ -97,7 +97,7 @@ L.OPT_CHANNEL_SFX = "Effektlautstärke"
 L.OPT_CHANNEL_MUSIC = "Musiklautstärke"
 L.OPT_CHANNEL_AMBIENCE = "Umgebungslautstärke"
 L.OPT_CHANNEL_DIALOG = "Dialoglautstärke"
-L.OPT_CHANNEL_DIALOG_WARN = "Bei „Dialoglautstärke“ schaltet „NPC-Stimmen stummschalten“ auch die Stimmen von Spoken stumm, und „Spiel-Begrüßung zuerst“ kann sie nicht von denen der NPCs unterscheiden."
+L.OPT_CHANNEL_DIALOG_WARN = "Bei „Dialoglautstärke“ werden NPC-Stimmen, während Spoken spricht, weder stummgeschaltet noch abgesenkt, und „Spiel-Begrüßung zuerst“ kann die Stimmen von Spoken nicht von denen der NPCs unterscheiden."
 L.OPT_COPY_HINT_LINK = "Kopiere dies und öffne es in deinem Browser:"
 L.OPT_COPY_HINT_PASTE = "Drücke Strg+C und füge es ein unter:"
 

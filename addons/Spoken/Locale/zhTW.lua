@@ -97,7 +97,7 @@ L.OPT_CHANNEL_SFX = "音效音量"
 L.OPT_CHANNEL_MUSIC = "音樂音量"
 L.OPT_CHANNEL_AMBIENCE = "環境音量"
 L.OPT_CHANNEL_DIALOG = "對話音量"
-L.OPT_CHANNEL_DIALOG_WARN = "選擇「對話音量」時，「靜音 NPC 語音」也會將 Spoken 的語音靜音，「先播放遊戲問候」也無法分辨 Spoken 的語音和 NPC 的語音。"
+L.OPT_CHANNEL_DIALOG_WARN = "選擇「對話音量」時，Spoken 說話期間 NPC 語音既不會靜音也不會調低，「先播放遊戲問候」也無法分辨 Spoken 的語音和 NPC 的語音。"
 L.OPT_COPY_HINT_LINK = "複製此內容並在瀏覽器中開啟："
 L.OPT_COPY_HINT_PASTE = "按 Ctrl+C，然後貼到："
 

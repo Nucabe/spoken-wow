@@ -97,7 +97,7 @@ L.OPT_CHANNEL_SFX = "효과음 음량"
 L.OPT_CHANNEL_MUSIC = "배경음악 음량"
 L.OPT_CHANNEL_AMBIENCE = "주변 소리 음량"
 L.OPT_CHANNEL_DIALOG = "대화 음량"
-L.OPT_CHANNEL_DIALOG_WARN = "'대화 음량'에서는 'NPC 음성 끄기'가 Spoken의 음성도 끄고, '게임 인사말 먼저'가 Spoken의 음성과 NPC의 음성을 구분하지 못합니다."
+L.OPT_CHANNEL_DIALOG_WARN = "'대화 음량'에서는 Spoken이 말하는 동안 NPC 음성이 꺼지지도 줄어들지도 않으며, '게임 인사말 먼저'가 Spoken의 음성과 NPC의 음성을 구분하지 못합니다."
 L.OPT_COPY_HINT_LINK = "이것을 복사하여 브라우저에서 여세요:"
 L.OPT_COPY_HINT_PASTE = "Ctrl+C를 누른 뒤 여기에 붙여넣으세요:"
 

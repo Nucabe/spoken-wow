@@ -98,7 +98,7 @@ L.OPT_CHANNEL_SFX = "Volumen de efectos"
 L.OPT_CHANNEL_MUSIC = "Volumen de música"
 L.OPT_CHANNEL_AMBIENCE = "Volumen ambiental"
 L.OPT_CHANNEL_DIALOG = "Volumen de diálogo"
-L.OPT_CHANNEL_DIALOG_WARN = "Con «Volumen de diálogo», «Silenciar voces de PNJ» silencia también las voces de Spoken, y «Saludo del juego primero» no puede distinguirlas de las de un PNJ."
+L.OPT_CHANNEL_DIALOG_WARN = "Con «Volumen de diálogo», las voces de los PNJ no se silencian ni se bajan mientras Spoken habla, y «Saludo del juego primero» no puede distinguir las voces de Spoken de las de un PNJ."
 L.OPT_COPY_HINT_LINK = "Copia esto y ábrelo en tu navegador:"
 L.OPT_COPY_HINT_PASTE = "Pulsa Ctrl+C y pégalo en:"
 
