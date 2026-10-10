@@ -27,9 +27,9 @@ import {
   gossipLineId,
   gossipStemRank,
   localizedGossipStem,
-  voiceNameFor,
   type LineIdentity,
 } from "./naming";
+import { voiceNameFor } from "@/lib/voices/voices";
 
 type Queryable = Pick<PoolClient, "query">;
 
