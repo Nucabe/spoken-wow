@@ -20,8 +20,8 @@ end
 
 ---@param key string  "quests" | "zones" | "books"
 ---@param info SpokenSourceInfo
----@return table source  Carries Enqueue, PlayNow, Remove, StopAll, AddGate, RecheckGates, Retry,
----                      CanPlay, SetQueueLimit and SetInterClipGap.
+---@return table source  Carries Enqueue, Continue, PlayNow, Remove, StopAll, AddGate, RecheckGates,
+---                      Retry, CanPlay, SetQueueLimit and SetInterClipGap.
 function Spoken:RegisterSource(key, info)
     return Sources:Register(key, info)
 end
