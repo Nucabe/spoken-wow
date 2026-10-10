@@ -542,7 +542,8 @@ local ACTIONS = {
 --- zone's continent, a continent's world. Nil for the world.
 function SpokenZones:PlaceAbove(mapID)
 	local C = _G.SpokenCompendium
-	if mapID == C.WORLD then return nil end
+	-- A Compendium that failed to load costs the header, not the clip.
+	if not C or mapID == C.WORLD then return nil end
 	for _, continent in ipairs(C.CONTINENTS) do
 		if continent == mapID then return C.WORLD end
 	end
