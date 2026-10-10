@@ -126,6 +126,8 @@ Expect("the window's size is the player's Window Size", Shown(main, env.L.OPT_SC
 Expect("...its words' size and lines theirs", Shown(main, env.L.TRANSCRIPT_SIZE, env.L.TRANSCRIPT_SIZE_TIP)
     and Shown(main, env.L.TRANSCRIPT_LINES), true)
 Expect("...and how the words scroll too", Shown(main, env.L.TRANSCRIPT_SCROLL), true)
+Expect("Hide Portrait is not offered: DialogueUI's window always shows its face",
+    Shown(main, env.L.OPT_HIDE_PORTRAIT), false)
 local page = Page.layout
 page:Refresh()
 local function Live(label, tooltip) local row = Row(page, label, tooltip); return row ~= nil and row.layoutReason == nil end
@@ -135,6 +137,8 @@ Expect("...but nothing Spoken's page has already", Row(page, env.L.OPT_SCALE) ==
     and Row(page, env.L.TRANSCRIPT_SIZE) == nil and Row(page, env.L.TRANSCRIPT_LINES) == nil, true)
 Expect("the theme waits on not following DialogueUI's", Row(page, env.L.OPT_DUI_THEME).layoutReason, env.L.REASON_DUI_FOLLOW)
 env.Addon:SetPlayerStyle("minimal")
+main:Refresh()
+Expect("...as the other windows' is", Shown(main, env.L.OPT_HIDE_PORTRAIT), true)
 page:Refresh()
 Expect("with another style chosen they wait on this one, saying where to choose it",
     Row(page, env.L.OPT_DUI_FIT_TEXT).layoutReason, env.L.REASON_DUI_STYLE)
