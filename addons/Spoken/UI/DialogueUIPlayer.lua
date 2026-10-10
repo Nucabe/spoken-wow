@@ -884,13 +884,13 @@ function Skin:PaperOverhang()
         math.max(0, capHeight * (0.5 - PAPER_TOP))
 end
 
---- The screen's top left, EDGE from the paper: where the window settles when DialogueUI's
---- window closes on a line that plays on (Skin:Settle), out of the way of the next dialog.
 --- Where it rests: the place the player dragged it to, or the default.
 function Skin:PlaceHome()
     if not Addon:RestoreLayout("DialogueUI", self.frame) then self:PlaceDefault() end
 end
 
+--- The screen's top left, EDGE from the paper: where the window settles when DialogueUI's
+--- window closes on a line that plays on (Skin:Settle), out of the way of the next dialog.
 function Skin:PlaceDefault()
     local frame = self.frame
     -- In the frame's own units: its effective scale is UIParent's times its base scale.
