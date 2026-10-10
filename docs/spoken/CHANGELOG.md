@@ -15,6 +15,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   of it when it closes. *([Nucabe](https://github.com/Nucabe))*
 - **The DialogueUI window settles into place with animation.** A queued line's page tucks behind the
   window, and the words fade from one line to the next. *([Nucabe](https://github.com/Nucabe))*
+- **What NPCs say is its own module, Spoken Gossip, with its own switch and settings page.**
+  Your gossip settings carry over from Spoken Quests. *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
