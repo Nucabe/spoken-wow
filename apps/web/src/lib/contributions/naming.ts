@@ -9,9 +9,9 @@
  * implementations of one frozen format, pinned together by tests on both sides rather than
  * shared code, because one is Python and the other TypeScript.
  *
- * No player-gender branch: naming.py's `:{m|f}` suffix exists for a template the game expands
- * differently per player gender, and a contribution carries no such variant -- the client
- * already picked one side of any `$G` (see the accept.ts docstring).
+ * naming.py's `:{m|f}` suffix exists for a text that branches on the player's gender (`$G`).
+ * Each language decides it from its own text (playerGenderForms), so one moment can be a
+ * plain line in one language and two in another.
  */
 import { createHash } from "node:crypto";
 
@@ -36,6 +36,30 @@ export function questLineId(questId: number, event: QuestEvent): string {
  */
 export function answersQuestMoment(lineId: string, momentId: string): boolean {
   return lineId === momentId || lineId.startsWith(`${momentId}:`);
+}
+
+/** A line id without its `:m`/`:f` player-gender suffix: the moment its forms share in every language. */
+export function momentOf(lineId: string): string {
+  return lineId.replace(/:[mf]$/, "");
+}
+
+/** momentOf in SQL, for a `lineId` column. */
+export function momentSql(column: string): string {
+  return `regexp_replace(${column}, ':[mf]$', '')`;
+}
+
+/**
+ * The lines a language's text makes of a moment: one, or one per player gender where the text
+ * branches on `$G`. The plain form is what an ungendered language plays to every player; the
+ * addon tries the player's `m-`/`f-` file first and falls back to the plain one.
+ */
+export function playerGenderForms(
+  moment: string,
+  fileName: string,
+  gendered: boolean,
+): { lineId: string; fileName: string; playerGender: "m" | "f" | null }[] {
+  if (!gendered) return [{ lineId: moment, fileName, playerGender: null }];
+  return (["m", "f"] as const).map((g) => ({ lineId: `${moment}:${g}`, fileName: `${g}-${fileName}`, playerGender: g }));
 }
 
 /**

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { corpus } from "@/lib/quests/catalogue";
 
 import {
-  consensusFlavor,
   flavorsOf,
   GENDERS,
   gendersOf,
@@ -71,17 +70,6 @@ describe("VOICES", () => {
     expect(flavorsOf("skybourneelf", "male")).toEqual(["3776", "3775"]);
     expect(flavorsOf("narrator", "male")).toEqual([]);
     expect(flavorsOf("murloc", "male")).toEqual([]);
-  });
-});
-
-describe("consensusFlavor", () => {
-  // The same vectors as tts_cli/flavors.py's consensus_flavor, which this mirrors.
-  it("takes the most common flavor, ties alphabetical, ignoring the NPCs that have none", () => {
-    expect(consensusFlavor(["official", "warrior", "official"])).toBe("official");
-    expect(consensusFlavor(["warrior", "official"])).toBe("official");
-    expect(consensusFlavor([null, "grim", null])).toBe("grim");
-    expect(consensusFlavor([null, null])).toBeNull();
-    expect(consensusFlavor([])).toBeNull();
   });
 });
 

@@ -95,22 +95,6 @@ export function voiceNameFor(race: string, gender: string, flavor: string | null
   return voiceName({ race, gender: gender as Gender, flavor });
 }
 
-/**
- * The one flavor a line's speakers share its file in: the most common, ties alphabetical, so
- * the choice never drifts between reads. Mirrors flavors.py's consensus_flavor. Null when no
- * speaker's NPC has one, and then the line has no voice until somebody gives it one.
- */
-export function consensusFlavor(flavors: Iterable<string | null>): string | null {
-  const tally = new Map<string, number>();
-  for (const flavor of flavors) if (flavor) tally.set(flavor, (tally.get(flavor) ?? 0) + 1);
-  let best: string | null = null;
-  for (const [flavor, count] of tally) {
-    const bestCount = best === null ? 0 : tally.get(best)!;
-    if (count > bestCount || (count === bestCount && best !== null && flavor < best)) best = flavor;
-  }
-  return best;
-}
-
 /** A name a line may be spoken in: the roster's, or a model slot. */
 export function isVoice(name: string): boolean {
   return VOICE_NAMES.includes(name) || isModelVoice(name);

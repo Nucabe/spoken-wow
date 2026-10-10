@@ -122,16 +122,16 @@ describe("a quest moment's voice", WHOLE_CORPUS, () => {
 });
 
 describe("a greeting's voice", WHOLE_CORPUS, () => {
-  it("is one for every speaker, in the flavor most of their NPCs have", async () => {
-    await line(npcIds.map((npcId) => ({ npcId, race: "human", gender: "male", flavor: "standard" })), "gossip");
+  it("is each speaker's own, one file per voice, as a quest moment's is", async () => {
+    await line(npcIds.map((npcId) => ({ npcId, race: "human", gender: "male", flavor: "official" })), "gossip");
     await npc(npcIds[0], { race: "human", gender: "male", flavor: "warrior", provenance: "corpus" });
     await npc(npcIds[1], { race: "human", gender: "male", flavor: "official", provenance: "corpus" });
     await npc(npcIds[2], { race: "human", gender: "male", flavor: "official", provenance: "corpus" });
 
-    expect((await spoken()).map((row) => row.split(" ").at(-1))).toEqual([
-      "human-male-official",
-      "human-male-official",
-      "human-male-official",
+    expect(await spoken()).toEqual([
+      `${lineId}~human-male-warrior ${questId}-accept-human-male-warrior human-male-warrior`,
+      `${lineId} ${questId}-accept human-male-official`,
+      `${lineId} ${questId}-accept human-male-official`,
     ]);
   });
 });

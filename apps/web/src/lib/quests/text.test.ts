@@ -20,7 +20,9 @@ beforeAll(async () => {
   const rows = await query<typeof english>(
     `select "lineId", "variant", "questId", "fileName", "source" from "quest_line" e
       where "lang" = 'enUS' and "isCurrent" and "questId" is not null and "source" = 'accept'
-        and not exists (select 1 from "quest_line" k where k."lineId" = e."lineId" and k."lang" = $1)
+        and "lineId" !~ ':[mf]$'
+        and not exists (select 1 from "quest_line" k
+                         where k."lineId" in (e."lineId", e."lineId" || ':m', e."lineId" || ':f') and k."lang" = $1)
       order by "lineId" limit 1`,
     [LANG],
   );
@@ -162,6 +164,66 @@ describe("a line English does not have", () => {
       [NATIVE, LANG],
     );
     expect(rows[0]).toEqual({ fileName: "0-accept", source: "accept", localeText: "Salve.", generatable: true });
+  });
+});
+
+describe("a line split by the player's gender", () => {
+  const save = (lineId: string, text: string) =>
+    saveQuestText({ lineId, variant: english.variant, lang: LANG, text, editedBy: userId });
+
+  async function live(moment: string) {
+    return query<{ lineId: string; fileName: string; playerGender: string | null; text: string }>(
+      `select "lineId", "fileName", "playerGender", "text" from "quest_line"
+        where "lineId" like $1 and "lang" = $2 and "isCurrent" order by "lineId"`,
+      [`${moment}%`, LANG],
+    );
+  }
+
+  it("is two lines once a moderator writes the $G into a plain one", async () => {
+    await save(english.lineId, "Olá.");
+    const saved = await save(english.lineId, "Olá, $gsenhor:senhora;.");
+
+    expect(saved).toMatchObject({ lineId: `${english.lineId}:m`, version: 1, text: "Olá, $gsenhor:senhora;." });
+    expect(await live(english.lineId)).toEqual([
+      { lineId: `${english.lineId}:f`, fileName: `f-${english.fileName}`, playerGender: "f", text: "Olá, $gsenhor:senhora;." },
+      { lineId: `${english.lineId}:m`, fileName: `m-${english.fileName}`, playerGender: "m", text: "Olá, $gsenhor:senhora;." },
+    ]);
+  });
+
+  it("edits one side alone while the text has no $G, and both sides with it", async () => {
+    await save(english.lineId, "Olá, $gsenhor:senhora;.");
+    await save(`${english.lineId}:f`, "Olá, senhora.");
+    expect((await live(english.lineId)).map((row) => row.text)).toEqual(["Olá, senhora.", "Olá, $gsenhor:senhora;."]);
+
+    await save(`${english.lineId}:f`, "Bom dia, $gsenhor:senhora;.");
+    expect((await live(english.lineId)).map((row) => row.text)).toEqual(["Bom dia, $gsenhor:senhora;.", "Bom dia, $gsenhor:senhora;."]);
+  });
+
+  it("is one line again when its plain version is put back, and refuses a side put back alone", async () => {
+    await save(english.lineId, "Olá.");
+    await save(english.lineId, "Olá, $gsenhor:senhora;.");
+
+    await restoreQuestText(english.lineId, english.variant, LANG, 1, userId);
+    expect(await live(english.lineId)).toEqual([
+      { lineId: english.lineId, fileName: english.fileName, playerGender: null, text: "Olá." },
+    ]);
+    await expect(restoreQuestText(`${english.lineId}:m`, english.variant, LANG, 1, userId)).rejects.toBeInstanceOf(
+      QuestTextConflict,
+    );
+  });
+
+  it("is one plain line when English's is two and the translation has no $G", async () => {
+    const [gendered] = await query<{ lineId: string; fileName: string }>(
+      `select "lineId", "fileName" from "quest_line"
+        where "lang" = 'enUS' and "isCurrent" and "variant" = 0 and "lineId" like 'q:%:m' order by "lineId" limit 1`,
+    );
+    if (!gendered) return;
+    const moment = gendered.lineId.slice(0, -2);
+    await save(gendered.lineId, "Olá.");
+
+    expect(await live(moment)).toEqual([
+      { lineId: moment, fileName: gendered.fileName.slice(2), playerGender: null, text: "Olá." },
+    ]);
   });
 });
 

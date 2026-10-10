@@ -29,8 +29,8 @@ import { memoByLang } from "@/lib/memo";
 import { nameStamp, versionStamp } from "@/lib/stamp";
 import type { Corpus, CorpusLine } from "@/lib/corpus";
 import { BASE_LANG, type Lang } from "@/lib/lang";
-import { variantFileName, variantLineId } from "@/lib/contributions/naming";
-import { consensusFlavor, flavorsOf, isVoice, voiceNameFor } from "@/lib/voices/voices";
+import { momentSql, variantFileName, variantLineId } from "@/lib/contributions/naming";
+import { flavorsOf, isVoice, voiceNameFor } from "@/lib/voices/voices";
 
 
 /**
@@ -105,36 +105,49 @@ const SPEAKER_NAME = `case when r."lang" = '${BASE_LANG}' then r."npcName" else 
  * every line it speaks. A speaker whose NPC nobody knows anything about -- no row, or `none` --
  * keeps the values written with it, which were an answer once.
  */
-const SPEAKERS = `(
-  select r."id", r."lineId", r."variant", r."lang", r."ord", r."npcType", r."npcId", ${SPEAKER_NAME} as "npcName",
+function speakersBy(key: string): string {
+  return `(
+  select r."id", r."key", r."lineId", r."variant", r."lang", r."ord", r."npcType", r."npcId", ${SPEAKER_NAME} as "npcName",
          r."contributionId", r."voice" as "writtenVoice",
          case when n."known" then coalesce(n."race", '') else r."race" end as "race",
          case when n."known" then coalesce(n."gender", '') else r."gender" end as "gender",
          case when n."known" then n."flavor" else r."flavor" end as "flavor"
     from (
-      select s.*,
-             bool_or(s."lang" = '${BASE_LANG}') over (partition by s."lineId", s."variant") as "hasEnglish",
+      select s.*, ${key} as "key",
+             bool_or(s."lang" = '${BASE_LANG}') over (partition by ${key}, s."variant") as "hasEnglish",
              row_number() over (
-               partition by s."lineId", s."variant", s."npcType", s."npcId", s."lang" = '${BASE_LANG}'
+               partition by ${key}, s."variant", s."npcType", s."npcId", s."lang" = '${BASE_LANG}'
                order by s."ord", s."id"
-             ) as "nth"
+             ) as "nth",
+             first_value(s."lineId") over (
+               partition by ${key}, s."variant", s."lang" = '${BASE_LANG}' order by s."ord", s."id"
+             ) as "firstLine"
         from "quest_line_speaker" s
     ) r
     left join (select *, "provenance" <> 'none' and "race" is not null and "gender" is not null as "known"
                  from "npc") n
       on n."npcKind" = r."npcType" and n."npcId" = r."npcId"
-   where case when r."hasEnglish" then r."lang" = '${BASE_LANG}' else r."nth" = 1 end
+   where case when r."hasEnglish" then r."lang" = '${BASE_LANG}' and r."lineId" = r."firstLine" else r."nth" = 1 end
 )`;
+}
+
+const SPEAKERS = speakersBy(`s."lineId"`);
 
 /**
- * The quest moments an NPC speaks in its own voice. Where NPCs of different voices share one,
- * the file already made keeps the voice it was made in -- the one its speakers were written
- * with -- and each other voice is a line of its own (naming.ts's variantLineId): the same
- * words, in a file named after the voice. An NPC whose voice changes moves to its new voice's
- * line, which has no audio until somebody generates it; one with no flavor yet moves to a line
- * nobody can voice until it gets one. Progress text is never voiced, so it is never split.
+ * Each moment's speakers, shared by its plain and player-gender lines in every language. English's
+ * `:m` and `:f` lines carry the same NPCs, so a moment takes its first English line's.
  */
-const OWN_VOICE_SOURCES: ReadonlySet<string> = new Set(["accept", "complete"]);
+const MOMENT_SPEAKERS = speakersBy(momentSql(`s."lineId"`));
+
+/**
+ * Every NPC speaks a line in its own voice. Where NPCs of different voices share one, the file
+ * already made keeps the voice it was made in -- the one its speakers were written with -- and
+ * each other voice is a line of its own (naming.ts's variantLineId): the same words, in a file
+ * named after the voice. An NPC whose voice changes moves to its new voice's line, which has no
+ * audio until somebody generates it; one with no flavor yet moves to a line nobody can voice
+ * until it gets one. Progress text is never voiced, so it is never split.
+ */
+const OWN_VOICE_SOURCES: ReadonlySet<string> = new Set(["accept", "complete", "gossip", "followup"]);
 
 type Speaking = {
   lineId: string;
@@ -149,31 +162,14 @@ type Speaking = {
   skipReason: string | null;
 };
 
-/**
- * Each row's voice. A quest moment's speaker speaks in its NPC's own (OWN_VOICE_SOURCES); a
- * greeting or a follow-up line is still one voice for all its speakers, in their race and
- * gender and the flavor most of their NPCs have, as the extract has always agreed one file.
- */
 function voiced<T extends Speaking>(rows: T[]): (T & { voice: string })[] {
   const written = new Map<string, string>();
-  const groups = new Map<string, (string | null)[]>();
   const lineOf = (row: T) => `${row.lineId}|${row.variant}`;
-  const keyOf = (row: T) => `${lineOf(row)}|${row.race}|${row.gender}`;
-  for (const row of rows) {
-    if (!written.has(lineOf(row))) written.set(lineOf(row), row.writtenVoice);
-    const group = groups.get(keyOf(row));
-    if (group) group.push(row.flavor);
-    else groups.set(keyOf(row), [row.flavor]);
-  }
-  const agreed = new Map([...groups].map(([key, flavors]) => [key, consensusFlavor(flavors)]));
+  for (const row of rows) if (!written.has(lineOf(row))) written.set(lineOf(row), row.writtenVoice);
 
   return rows.map((row) => {
-    if (!OWN_VOICE_SOURCES.has(row.source)) {
-      const flavor = agreed.get(keyOf(row)) ?? null;
-      return { ...row, flavor, voice: voiceNameFor(row.race, row.gender, flavor) };
-    }
     const voice = voiceNameFor(row.race, row.gender, row.flavor);
-    if (voice === written.get(lineOf(row))) return { ...row, voice };
+    if (!OWN_VOICE_SOURCES.has(row.source) || voice === written.get(lineOf(row))) return { ...row, voice };
     return {
       ...row,
       voice,
@@ -248,6 +244,11 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
  * exported or voiced, and a missing line is not generatable, so English cannot be recorded
  * under the language's name. A line English lacks carries no `english`.
  *
+ * A LANGUAGE'S TEXT DECIDES ITS LINES. Where it branches on the player's gender a moment is two
+ * lines, `:m` and `:f`, and otherwise one, whatever English does. Its speakers are the moment's,
+ * and its English is the matching line: the same id, else the plain one, else the male one. A
+ * moment the language has no row for lists English's lines, untranslated.
+ *
  * ONE ROW PER LINE ID AND SPEAKER, NOT PER VARIANT. A second English variant is the same
  * quest in another content patch -- kept in English for the addon's title lookup -- and it
  * shares the first's file and its speakers. A language has one text for it
@@ -264,7 +265,17 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
       englishName: string;
     }
   >(
-    `select s."lineId", s."variant",
+    `with "own" as (
+       select "id", "lineId", ${momentSql(`"lineId"`)} as "moment" from "quest_line"
+        where "lang" = $1 and "variant" = 0 and "isCurrent"
+     ), "lines" as (
+       select "lineId", "moment", "id" as "ownId" from "own"
+       union all
+       select e."lineId", ${momentSql(`e."lineId"`)}, null from "quest_line" e
+        where e."lang" = '${BASE_LANG}' and e."variant" = 0 and e."isCurrent"
+          and not exists (select 1 from "own" o where o."moment" = ${momentSql(`e."lineId"`)})
+     )
+     select ln."lineId", s."variant",
             coalesce(t."source", e."source") as "source",
             coalesce(t."questId", e."questId") as "questId",
             coalesce(qn."name", t."questTitle", e."questTitle") as "questTitle",
@@ -282,20 +293,24 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
             nn."id" is null as "nameMissing",
             e."id" is null as "native",
             e."questTitle" as "englishTitle", s."npcName" as "englishName"
-       from ${SPEAKERS} s
-       left join "quest_line" t
-         on t."lineId" = s."lineId" and t."variant" = 0 and t."lang" = $1 and t."isCurrent"
-       left join "quest_line" e
-         on e."lineId" = s."lineId" and e."variant" = 0
-        and e."lang" = '${BASE_LANG}' and e."isCurrent"
+       from "lines" ln
+       join ${MOMENT_SPEAKERS} s on s."key" = ln."moment" and s."variant" = 0
+       left join "quest_line" t on t."id" = ln."ownId"
+       -- The English it translates: the same line, else the moment's plain one, else its male one.
+       left join lateral (
+         select * from "quest_line" e
+          where e."lineId" = any(array[ln."lineId", ln."moment", ln."moment" || ':m'])
+            and e."variant" = 0 and e."lang" = '${BASE_LANG}' and e."isCurrent"
+          order by e."lineId" = ln."lineId" desc, e."lineId" = ln."moment" desc
+          limit 1
+       ) e on true
        left join "entity_name" qn
          on qn."kind" = 'quest' and qn."entityId" = coalesce(t."questId", e."questId")::text
         and qn."lang" = $1 and qn."isCurrent"
        left join "entity_name" nn
          on nn."kind" = s."npcType" and nn."entityId" = s."npcId"::text
         and nn."lang" = $1 and nn."isCurrent"
-      where s."variant" = 0 and (t."id" is not null or e."id" is not null)
-      order by s."lang" <> '${BASE_LANG}', s."ord"`,
+      order by s."lang" <> '${BASE_LANG}', s."ord", ln."lineId"`,
     [lang],
   );
 
