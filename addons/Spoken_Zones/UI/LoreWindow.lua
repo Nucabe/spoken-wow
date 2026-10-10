@@ -339,8 +339,7 @@ local function ShowEntry()
 	-- Chosen from elsewhere (the map's panel), a place not found yet: named, and no more.
 	if SpokenZones:IsLocked(mapID, key) then
 		local entry = key and SpokenZones.Subzones[mapID] and SpokenZones.Subzones[mapID][key]
-		-- Where it sits, a click away, as its page once found says: the zone for an area or a
-		-- city, the continent for a zone.
+		-- Where it sits, a click away: the zone for an area or a city, the continent for a zone.
 		local up = key and mapID or SpokenZones:PlaceAbove(mapID)
 		local line = up and string.format(L.IN_ZONE_FMT, ZoneName(up)) or nil
 		page:Show({ title = entry and (entry.name or key) or ZoneName(mapID), subtitle = line,

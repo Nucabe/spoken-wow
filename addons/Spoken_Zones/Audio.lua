@@ -578,7 +578,7 @@ function SpokenZones:NewLoreSound(mapID, areaKey)
 		mapID = mapID,
 		areaKey = areaKey,
 		present = {
-			-- Over the place's name, the place it is in.
+			-- An area under its zone; anything else under the place above it.
 			header = areaKey and (self:GetMapName(mapID) or label) or self:GetMapName(self:PlaceAbove(mapID)),
 			label = label,
 			transcript = entry and entry.full,
