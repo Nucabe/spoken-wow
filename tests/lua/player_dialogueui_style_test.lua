@@ -535,6 +535,20 @@ Skin:Tick(0.05)
 Expect("...then fades in as one image", tostring(Skin.frame:IsFrameBuffer()) .. " " .. Skin.content:GetAlpha(), "true 1")
 Skin:Tick(0.4)
 Expect("...itself again once in", tostring(Skin.frame:IsFrameBuffer()) .. " " .. Skin.frame:GetAlpha(), "false 1")
+do
+    -- A client with no frame buffers: the paper and what is on it fade in turn.
+    local SetIsFrameBuffer = Skin.frame.SetIsFrameBuffer
+    Skin.frame.SetIsFrameBuffer = false
+    Skin:Tick(1); Skin:SetVisible(false)
+    for _ = 1, 40 do Skin:Tick(0.05) end
+    local out = tostring(Skin.frame:IsShown()) .. " " .. tostring(T.held)
+    Skin:SetVisible(true)
+    for _ = 1, 40 do Skin:Tick(0.05) end
+    Skin.frame.SetIsFrameBuffer = SetIsFrameBuffer
+    Expect("with no frame buffer, a finished fade-out lets the captions go, so the next line's words show",
+        out .. " " .. tostring(Skin.frame:IsShown()) .. " " .. Skin.frame:GetAlpha() .. " " .. tostring(T.held),
+        "false nil true 1 nil")
+end
 
 -- A line ending: nothing in the image changes while it fades out.
 Skin:Tick(1)

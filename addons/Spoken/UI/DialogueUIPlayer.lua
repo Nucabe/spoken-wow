@@ -991,6 +991,8 @@ function Skin:Tick(elapsed)
             if not self.wanted then
                 self.frame:Hide()
                 self:Undeafen()
+                -- Held from the start of the fade-out, frame buffer or not (Skin:SetVisible).
+                Transcript:Release()
             end
             -- Faded: itself again, catching up on what waited.
             self:Unbuffer()
