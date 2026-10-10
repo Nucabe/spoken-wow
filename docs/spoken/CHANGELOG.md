@@ -29,6 +29,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **A zone's story is headed by the place it is in.** It showed its own name twice, as
   "Mulgore / Mulgore". The narrator now shows a zone's continent over it and a city's zone, and
   the Compendium's "In ..." line names the same place. *([Nucabe](https://github.com/Nucabe))*
+- For feature addons: `present.font` on a clip draws its speaker, title, queue row, captions and
+  subtitle in that face, for a script the game's font has no glyphs for. A face the client cannot
+  load leaves the player's own. *([damesene](https://github.com/damesene))*
 
 ## 3.2.0 — 2026-10-08
 
