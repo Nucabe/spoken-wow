@@ -36,7 +36,6 @@ local SIZE_EASE = 10
 -- The controls shown on hover: the windows' round pause button, skip, and Report.
 local CONTROL_SIZE, CONTROL_GAP = 24, 4
 local CONTROLS_FADE = .15
-local PORTRAIT_ATLAS_SIZE = 512
 local UTF8_CHAR = "[%z\1-\127\194-\244][\128-\191]*"
 
 local function Config()

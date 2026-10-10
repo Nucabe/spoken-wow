@@ -171,8 +171,7 @@ end
 --- the usual "next" mark. The subtitle's controls and the DialogueUI window's header show it.
 function Actions.SkipButton(parent)
     local skip = Actions.RoundButton(parent, 10)
-    skip.glyph:SetTexture(PORTRAIT_ATLAS)
-    skip.glyph:SetTexCoord(0, 93 / PORTRAIT_ATLAS_SIZE, 419 / PORTRAIT_ATLAS_SIZE, 1)
+    Actions.Glyph(skip.glyph, "play")
     skip.glyph:ClearAllPoints()
     skip.glyph:SetPoint("CENTER", -2, 0)
     skip.bar = skip:CreateTexture(nil, "ARTWORK")

@@ -87,6 +87,29 @@ local STONE = { Stone = true, Marble = true, Silver = true, Bronze = true, Proge
 -- opening is 56 of its 96 across, where the face sits.
 local BOOK_DIVIDER = { 0, 768 / 1024, 1520 / 2048, 1552 / 2048 }
 local BOOK_RING, RING_OPENING = { 768 / 1024, 864 / 1024, 1616 / 2048, 1712 / 2048 }, 56 / 96
+
+--- A look's caps at `width`: a book's as wide as puts its paper on that width, 4 to 1 as in the
+--- file; the quest parchment's as DialogueUI draws them, at `q` of its size.
+local function CapSize(look, width, q)
+    if look.book then
+        local capWidth = width / BOOK_PAPER
+        return capWidth, capWidth * (look.top[2] - look.top[1]) / 1024
+    end
+    local capWidth, capHeight = Theme:ParchmentSize()
+    return capWidth * (q or 1), capHeight * (q or 1)
+end
+
+--- Three strips in `look`'s art from `file`: its caps, and the middle between them, running on
+--- under the bottom cap, which fades in over it. The caps are placed and sized by the caller.
+local function DressStrips(strips, file, look, capHeight)
+    for index = 1, 3 do strips[index]:SetTexture(file) end
+    strips[1]:SetTexCoord(0, 1, look.top[1] / 2048, look.top[2] / 2048)
+    strips[2]:SetTexCoord(0, 1, look.middle[1] / 2048, look.middle[2] / 2048)
+    strips[3]:SetTexCoord(0, 1, look.bottom[1] / 2048, look.bottom[2] / 2048)
+    strips[2]:ClearAllPoints()
+    strips[2]:SetPoint("TOPLEFT", strips[1], "BOTTOMLEFT", 0, 0)
+    strips[2]:SetPoint("BOTTOMRIGHT", strips[3], "TOPRIGHT", 0, -capHeight * look.under / 256)
+end
 -- Showing and hiding, the paper first and the rest over it (Skin:SetLevel).
 local FADE_IN, FADE_OUT = .18, .2
 -- A new line on a window already showing: its words fade in over LINE_IN, and the window eases to
@@ -196,7 +219,7 @@ function Skin:Initialize()
     frame.spokenBaseScale = 1
     frame:SetSize(300, 400)
     -- RefreshConfig re-runs PlaceDefault until the player drags it.
-    if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
+    self:PlaceHome()
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)
     frame:SetUserPlaced(false)
@@ -401,6 +424,8 @@ end
 
 --- Runs on every refresh, so a theme or size change in DialogueUI lands on the next one.
 function Skin:Layout()
+    -- Fonts and widths change here: the title's tail is laid out afresh (Skin:Count).
+    self.countLaid = nil
     self:Touch()
     local frame, cfg = self.frame, Theme:Config()
     local look = self:Look()
@@ -459,13 +484,7 @@ function Skin:Layout()
     -- adds none: the words keep their place.
     -- Under the progress line, as far to where the paper's light ends as the last line is over it:
     -- the 6 and the header's gap over the line, and the line's own spacing under its letters.
-    -- The caps: the quest parchment's as DialogueUI drew them; a book's as wide as its paper puts
-    -- the paper on the frame's width, 4 to 1 as in the file.
-    local capWidth, capHeight = Theme:ParchmentSize()
-    if look.book then
-        capWidth = width / BOOK_PAPER
-        capHeight = capWidth * (look.top[2] - look.top[1]) / 1024
-    end
+    local capWidth, capHeight = CapSize(look, width)
     local barLift = 0
     if progress then
         local above = 6 + math.max(0, textGap - lineGap) + lineGap
@@ -491,15 +510,9 @@ function Skin:Layout()
     frame:SetSize(width, (self.settling or easing) and frame:GetHeight() or height)
     self.lines = lines
 
-    for index = 1, 3 do self.parchments[index]:SetTexture(parchment) end
-    self.parchments[1]:SetTexCoord(0, 1, look.top[1] / 2048, look.top[2] / 2048)
-    self.parchments[2]:SetTexCoord(0, 1, look.middle[1] / 2048, look.middle[2] / 2048)
-    self.parchments[3]:SetTexCoord(0, 1, look.bottom[1] / 2048, look.bottom[2] / 2048)
+    DressStrips(self.parchments, parchment, look, capHeight)
     self.parchments[1]:SetSize(capWidth, capHeight)
     self.parchments[3]:SetSize(capWidth, capHeight)
-    self.parchments[2]:ClearAllPoints()
-    self.parchments[2]:SetPoint("TOPLEFT", self.parchments[1], "BOTTOMLEFT", 0, 0)
-    self.parchments[2]:SetPoint("BOTTOMRIGHT", self.parchments[3], "TOPRIGHT", 0, -capHeight * look.under / 256)
 
     local content = self.content
     content:ClearAllPoints()
@@ -711,7 +724,7 @@ function Skin:UpdateControls(relayout)
     -- first, a fight).
     self.title.text:SetText(Label(self.clip))
     -- Stopped, said after its name, as the subtitle does.
-    if paused ~= (self.shownStopped or false) then self.shownStopped = paused end
+    self.shownStopped = paused
     self:Count(Waiting())
     local pausable = SoundQueue:CanBePaused()
     for _, button in ipairs(self.buttons) do
@@ -803,7 +816,13 @@ function Skin:Undeafen()
         if entry.wheel then entry.part:EnableMouseWheel(true) end
     end
     self.deafened = nil
-    -- Locked, clicks still pass through (Skin:RefreshConfig).
+    self:ApplyLock()
+end
+
+--- Locked, clicks on the window pass through to the game, as the subtitle's and the small
+--- window's do; its buttons still take theirs. Where the client cannot tell a click from the
+--- pointer passing over, the window keeps both.
+function Skin:ApplyLock()
     local frame = self.frame
     if frame.SetMouseClickEnabled and frame.SetMouseMotionEnabled then
         frame:SetMouseMotionEnabled(true)
@@ -878,6 +897,14 @@ function Skin:Unbuffer()
     self.pending = nil
     if pending == "refresh" then self:RefreshConfig()
     elseif pending == "update" then self:Update() end
+end
+
+--- One image fading: nothing in it may change, so `what` ("update", or "refresh", which runs one)
+--- waits for Skin:Unbuffer. True when it waits.
+function Skin:Defer(what)
+    if not self.buffered then return false end
+    if what == "refresh" or not self.pending then self.pending = what end
+    return true
 end
 
 --- What is on the paper: its share of the window's fade, times a new line's own fade-in.
@@ -978,20 +1005,28 @@ function Skin:Count(waiting)
         self.counted = waiting
         count:SetText(waiting > 0 and "• +" .. waiting or "")
     end
-    local tail = {}
     local stoppedShown = self.shownStopped or self.stoppedAlpha > 0
+    local text, width = self.title.text, self.title:GetWidth() or 0
+    -- Polled while a line plays (Skin:UpdateControls): laid out again only when something moved.
+    local laid = self.countLaid
+    if laid and laid.waiting == waiting and laid.stopped == stoppedShown and laid.text == text:GetText()
+        and laid.width == width then
+        if stoppedShown or waiting > 0 then self:PaintCount() end
+        return
+    end
+    self.countLaid = { waiting = waiting, stopped = stoppedShown, text = text:GetText(), width = width }
+    local tail = {}
     stopped:SetShown(stoppedShown)
     if stoppedShown then table.insert(tail, stopped) end
     count:SetShown(waiting > 0)
     if waiting > 0 then table.insert(tail, count) end
     local room = 0
     for _, part in ipairs(tail) do room = room + (part:GetStringWidth() or 0) + COUNT_GAP end
-    local text = self.title.text
     text:ClearAllPoints()
     text:SetPoint("TOPLEFT")
     text:SetPoint("BOTTOMRIGHT", -room, 0)
     if #tail == 0 then return end
-    local x = math.min(text:GetStringWidth() or 0, math.max(0, (self.title:GetWidth() or 0) - room))
+    local x = math.min(text:GetStringWidth() or 0, math.max(0, width - room))
     for _, part in ipairs(tail) do
         part:ClearAllPoints()
         part:SetPoint("LEFT", text, "LEFT", x + COUNT_GAP, 0)
@@ -1088,6 +1123,11 @@ end
 
 --- The screen's top left, EDGE from the paper: where the window settles when DialogueUI's
 --- window closes on a line that plays on (Skin:Settle), out of the way of the next dialog.
+--- Where it rests: the place the player dragged it to, or the default.
+function Skin:PlaceHome()
+    if not Addon:RestoreLayout("DialogueUI", self.frame) then self:PlaceDefault() end
+end
+
 function Skin:PlaceDefault()
     local frame = self.frame
     -- In the frame's own units: its effective scale is UIParent's times its base scale.
@@ -1122,7 +1162,7 @@ function Skin:Settle(dialog)
     local frame = self.frame
     if not (self:IsEnabled() and PlayerFrame:Current()) or frame:GetParent() ~= UIParent then return end
     -- Fading as one image: it finishes, then shows the line as it does any (Skin:Unbuffer).
-    if self.buffered then self.pending = self.pending or "update"; return end
+    if self:Defer("update") then return end
     self:StopTuck()
     self:StopLanding()
     if self.wordsHidden then self:ShowWords(1) end
@@ -1147,7 +1187,7 @@ function Skin:Settle(dialog)
         self.settling = nil
         if self.wordsHidden then self:ShowWords(1) end
         frame:SetScale(frame.spokenBaseScale or 1)
-        if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
+        self:PlaceHome()
         self:Layout()
         if geterrorhandler then geterrorhandler()(err) end
     end
@@ -1250,7 +1290,7 @@ function Skin:SettleStep(elapsed)
     if u == 1 then
         self.settling = nil
         frame:SetScale(settling.to)
-        if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
+        self:PlaceHome()
         self:Layout()
         self.landing = { time = 0 }
     end
@@ -1738,8 +1778,7 @@ end
 
 function Skin:RefreshConfig(original)
     self:Initialize()
-    -- One image fading: nothing in it may change; this waits for it (Skin:Unbuffer).
-    if self.buffered then self.pending = "refresh"; return end
+    if self:Defer("refresh") then return end
     -- A setting changed as it flies: it lands at once, so the flight does not undo the change.
     self:StopSettle()
     local frame = self.frame
@@ -1748,13 +1787,7 @@ function Skin:RefreshConfig(original)
     frame:SetScale(frame.spokenBaseScale)
     if not Addon:Layout().DialogueUI then self:PlaceDefault() end
     if Addon:IsFrameLocked() then frame:StopMovingOrSizing() end
-    -- Locked, clicks on the window pass through to the game, as the subtitle's and the small
-    -- window's do; its buttons still take theirs. Where the client cannot tell a click from the
-    -- pointer passing over, the window keeps both.
-    if frame.SetMouseClickEnabled and frame.SetMouseMotionEnabled then
-        frame:SetMouseMotionEnabled(true)
-        frame:SetMouseClickEnabled(not Addon:IsFrameLocked())
-    end
+    self:ApplyLock()
     Addon:ApplyHost(frame)
     self:Update()
 end
@@ -1767,8 +1800,7 @@ function Skin:Update()
     -- Nothing to show: an image fading out goes on fading.
     if not clip then self:SetVisible(false); return end
     if self:Covered() then self:SetVisible(false, true); return end
-    -- One image fading: nothing in it may change; this waits for it (Skin:Unbuffer).
-    if self.buffered then self.pending = self.pending or "update"; return end
+    if self:Defer("update") then return end
     self:Touch()
     -- Fading out to turn to the next line: it comes in once faded (Skin:Tick).
     if self.turning and self.frame:IsShown() then return end
