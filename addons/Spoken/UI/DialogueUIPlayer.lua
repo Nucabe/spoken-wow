@@ -29,7 +29,7 @@ local BASE_SCALE = 0.65
 -- SETTLE_LIFT, flown over SETTLE_TIME on a curve bowed SETTLE_BOW of the way to one side (down, so
 -- it stays on the screen), then landing with a little jump, up SETTLE_GIVE and back, over LAND_TIME.
 local EDGE = 16
--- The same lift and flight times as the tuck's page (TUCK_LIFT, TUCK_FLY): one rhythm for both.
+-- The tuck's page lifts, flies and gives on the same rhythm.
 local SETTLE_LIFT, SETTLE_TIME, LAND_TIME = .1, .42, .4
 local SETTLE_GROW, SETTLE_RISE, SETTLE_BOW, SETTLE_GIVE = .03, 4, .16, 7
 -- The dialog's words fading on DialogueUI's window before it closes (Skin:FadeDialogOut), and this
@@ -52,11 +52,11 @@ local JUST_BEFORE = 0.5
 -- from the dialog's own modules this soon after it closed is still the dialog's.
 local JUST_AFTER = 1
 local DIALOG_SOURCES = { DUIQuestFrame = { quests = true, gossip = true }, DUIBookFrame = { books = true } }
--- The tuck, in seconds: the page lifted, flying over, sliding behind; this window giving under it
--- by TUCK_GIVE and back, and its count rippling over TUCK_RIPPLE. The page lands at TUCK_SIZE of
--- the window, TUCK_LOW of its height under its middle, its foot showing under it.
-local TUCK_LIFT, TUCK_FLY, TUCK_SLIDE, TUCK_NUDGE, TUCK_RIPPLE = .1, .42, .18, .4, .35
-local TUCK_GIVE, TUCK_SIZE, TUCK_LOW = 7, .9, .3
+-- The tuck, in seconds: the page lifted and flown over as the window settles (SETTLE_LIFT,
+-- SETTLE_TIME), sliding behind over TUCK_SLIDE; this window giving under it as it lands, and its
+-- count rippling over TUCK_RIPPLE. The page lands at TUCK_SIZE of the window, TUCK_LOW of its
+-- height under its middle, its foot showing under it.
+local TUCK_SLIDE, TUCK_RIPPLE, TUCK_SIZE, TUCK_LOW = .18, .35, .9, .3
 -- The art a line is drawn in (Skin:Look), as DialogueUI draws it: its quest window's parchment
 -- for quests, gossip and places; its book view's paper for books and letters, and its stone for
 -- plaques and tombstones, picked as DialogueUI picks them from the item's material. Each is a
@@ -161,6 +161,17 @@ local parts = MinimalPlayer.parts
 local Font, Label, Clamp, Waiting, BelongsTo = parts.Font, parts.Label, parts.Clamp, parts.Waiting, parts.BelongsTo
 local function Round(n) return math.floor(n + 0.5) end
 local function Smooth(t) return t * t * (3 - 2 * t) end
+local function EaseOut(t) return 1 - (1 - t) * (1 - t) end
+local function Lerp(a, b, t) return a + (b - a) * t end
+-- The little jump a window gives as something lands on or under it: up SETTLE_GIVE and back.
+local function Bounce(t) return SETTLE_GIVE * math.exp(-6 * t) * math.sin(2 * math.pi * t / 0.34) end
+-- A shadow texture or frame under `anchor`, thrown `dx`, `dy` and blurred `blur` past its edges.
+local function PlaceShadow(region, anchor, dx, dy, blur, scale)
+    scale = scale or 1
+    region:ClearAllPoints()
+    region:SetPoint("TOPLEFT", anchor, "TOPLEFT", (dx - blur) / scale, (dy + blur) / scale)
+    region:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", (dx + blur) / scale, (dy - blur) / scale)
+end
 local function EaseInOut(t)
     if t < 0.5 then return 4 * t * t * t end
     local f = 2 - 2 * t
@@ -270,11 +281,8 @@ function Skin:Initialize()
                 -- ShowUI's end would take it for another page and cancel the fade, so it hides now.
                 if self.showingUI == frame then return hide(frame, ...) end
                 local closing = self.closing
-                if closing and closing.dialog == frame then
-                    -- Its words already fading since QUEST_FINISHED: it closes now (Skin:CloseStep).
-                    if not closing.hiding then closing.hiding = true; self:CloseStep(0) end
-                    return
-                end
+                -- Its words already fading: it closes once they have (Skin:CloseStep).
+                if closing and closing.dialog == frame then return end
                 -- Already hidden (DialogueUI hides it again from its own OnHide): nothing to fade.
                 if not frame:IsShown() then return hide(frame, ...) end
                 local ok, fades = pcall(self.FadesOnClose, self, frame)
@@ -633,7 +641,7 @@ end
 
 function Skin:ConfigurePortrait()
     -- One image fading: the face is painted by the update waiting for it (Skin:Unbuffer).
-    if self.buffered then self.pending = self.pending or "update"; return end
+    if self:Defer("update") then return end
     -- A face set or redrawn: it is drawn a moment after.
     self:Touch()
     -- Always the face: the header strip has its socket, which would stand empty without it.
@@ -911,7 +919,7 @@ end
 function Skin:PaintContent()
     local line = self.lineFade and Clamp(self.lineFade / LINE_IN, 0, 1) or 1
     -- Times its words' own fade as it settles out of a dialog (Skin:HideWords).
-    self.content:SetAlpha(Clamp((self.level or 0) * 2 - 1, 0, 1) * (1 - (1 - line) * (1 - line)) * (self.wordsAlpha or 1))
+    self.content:SetAlpha(Clamp((self.level or 0) * 2 - 1, 0, 1) * EaseOut(line) * (self.wordsAlpha or 1))
 end
 
 function Skin:SetVisible(visible, immediate)
@@ -1035,8 +1043,6 @@ function Skin:Count(waiting)
     self:PaintCount()
 end
 
-local function EaseOut(t) return 1 - (1 - t) * (1 - t) end
-
 function Skin:PaintCount()
     self.count:SetAlpha(EaseOut(self.countFade and Clamp(self.countFade / COUNT_IN, 0, 1) or 1))
     self.stopped:SetAlpha(EaseOut(self.stoppedAlpha))
@@ -1051,9 +1057,10 @@ function Skin:Tick(elapsed)
     local preparing = self.preparing
     if preparing then
         preparing.waited = preparing.waited + elapsed
-        if self:Still() or preparing.waited >= PREPARE_MOST then
+        local still = self:Still()
+        if still or preparing.waited >= PREPARE_MOST then
             self.preparing = nil
-            self:StartFade(not self:Still())
+            self:StartFade(not still)
         end
     end
     local arming = self.arming
@@ -1093,7 +1100,7 @@ function Skin:Tick(elapsed)
     if self.fadeTime then
         self.fadeTime = self.fadeTime + elapsed
         local t = Clamp(self.fadeTime / (self.wanted and FADE_IN or FADE_OUT), 0, 1)
-        local eased = t * t * (3 - 2 * t)
+        local eased = Smooth(t)
         self:SetLevel(self.fadeFrom + ((self.wanted and 1 or 0) - self.fadeFrom) * eased)
         if t == 1 then
             self:EndFade()
@@ -1264,11 +1271,10 @@ function Skin:SettleStep(elapsed)
     local lift = Smooth(Clamp(t / SETTLE_LIFT, 0, 1))
     local u = Clamp((t - SETTLE_LIFT) / SETTLE_TIME, 0, 1)
     local eased = EaseInOut(u)
-    local function Toward(a, b) return a + (b - a) * eased end
     local ui = UIParent:GetEffectiveScale()
     -- Grown about its middle as it is lifted, back to size as it lands.
     local grow = 1 + SETTLE_GROW * lift * (1 - eased)
-    local base = Toward(settling.from, settling.to)
+    local base = Lerp(settling.from, settling.to, eased)
     local scale = base * grow
     frame:SetScale(scale)
     -- The round buttons stay as large on screen as they settle at, as the dialog's own are, rather
@@ -1276,7 +1282,7 @@ function Skin:SettleStep(elapsed)
     self:FitControls()
     local pixels = ui * scale
     local toHeight = (self.settledHeight or frame:GetHeight()) * ui * settling.to
-    local height = Toward(settling.height, toHeight)
+    local height = Lerp(settling.height, toHeight, eased)
     local width = (frame:GetWidth() or 0) * ui * base
     local left = Bend(settling.left, settling.bendX or settling.left, settling.toLeft, eased) - (grow - 1) * width / 2
     -- Up a touch as it is lifted, as the tuck's page is, the curve starting from there.
@@ -1327,7 +1333,7 @@ function Skin:LandStep(elapsed)
     local t = landing.time
     if self.wordsHidden then self:ShowWords(Smooth(Clamp(t / CONTENT_IN, 0, 1))) end
     -- The little jump this window gives as the tuck's page goes under it: up and back, settling.
-    self:Give(landing, SETTLE_GIVE * math.exp(-6 * t) * math.sin(2 * math.pi * t / 0.34))
+    self:Give(landing, Bounce(t))
     local shadow = 1 - Smooth(Clamp(t / 0.25, 0, 1))
     self:ShadowUnder(0.3 * shadow, 0.35 * shadow)
     if t >= LAND_TIME then self:StopLanding() end
@@ -1339,9 +1345,9 @@ function Skin:StopSettle()
     local frame = self.frame
     self.settling = nil
     frame:SetScale(frame.spokenBaseScale or 1)
-    if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
+    self:PlaceHome()
     if self.shadow then self.shadow:Hide() end
-    if self.buffered then self.pending = "refresh" else self:Layout() end
+    if not self:Defer("refresh") then self:Layout() end
 end
 
 function Skin:StopLanding()
@@ -1365,15 +1371,15 @@ function Skin:ShadowUnder(reach, alpha)
         self.shadow = shadow
     end
     if alpha <= 0.001 then shadow:Hide(); return end
-    shadow.texture:SetTexture(Theme:TexturePath() .. "Settings-BackgroundShadow.png")
-    shadow:SetFrameStrata(frame:GetFrameStrata())
-    shadow:SetFrameLevel(math.max(0, frame:GetFrameLevel() - 1))
-    local dx, dy, blur = 8 * reach, -12 * reach, 18
-    shadow:ClearAllPoints()
-    shadow:SetPoint("TOPLEFT", frame, "TOPLEFT", dx - blur, dy + blur)
-    shadow:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", dx + blur, dy - blur)
+    -- Its art and place in the window's strata once as it shows; each frame only where and how dark.
+    if not shadow:IsShown() then
+        shadow.texture:SetTexture(Theme:TexturePath() .. "Settings-BackgroundShadow.png")
+        shadow:SetFrameStrata(frame:GetFrameStrata())
+        shadow:SetFrameLevel(math.max(0, frame:GetFrameLevel() - 1))
+        shadow:Show()
+    end
+    PlaceShadow(shadow, frame, 8 * reach, -12 * reach, 18)
     shadow:SetAlpha(alpha)
-    shadow:Show()
 end
 
 --- This window moved `offset` (UIParent's units, up) off where it rests, and back (Skin:Rest).
@@ -1392,7 +1398,7 @@ end
 function Skin:Rest(state)
     if not state.rest then return end
     state.rest = nil
-    if not Addon:RestoreLayout("DialogueUI", self.frame) then self:PlaceDefault() end
+    self:PlaceHome()
 end
 
 ---------------------------------------------------------------- the dialog's words fading first
@@ -1418,14 +1424,14 @@ end
 --- when DialogueUI hides it.
 --- Whether the game still has the player talking to an NPC (gossip or a quest giver), as DialogueUI
 --- asks before it closes its window. False where the client cannot say.
+local function Interacting(manager, types)
+    return manager.IsInteractingWithNpcOfType(types and types.Gossip or 3)
+        or manager.IsInteractingWithNpcOfType(types and types.QuestGiver or 4)
+end
 local function TalkingToNPC()
     local manager = C_PlayerInteractionManager
     if not (manager and manager.IsInteractingWithNpcOfType) then return false end
-    local types = Enum and Enum.PlayerInteractionType
-    local ok, talking = pcall(function()
-        return manager.IsInteractingWithNpcOfType(types and types.Gossip or 3)
-            or manager.IsInteractingWithNpcOfType(types and types.QuestGiver or 4)
-    end)
+    local ok, talking = pcall(Interacting, manager, Enum and Enum.PlayerInteractionType)
     return ok and talking == true
 end
 
@@ -1469,7 +1475,7 @@ end
 --- `dialog` closing: its words fade first, then `hide` (its own Hide) closes it.
 function Skin:FadeDialogOut(dialog, hide)
     -- Another dialog still closing: its words given back, and closed if DialogueUI hid it.
-    if self.closing then self:EndClose(self.closing.hiding) end
+    if self.closing then self:EndClose(true) end
     local paper = {}
     for _, key in ipairs(PAPER_FRAMES) do
         if type(dialog[key]) == "table" then paper[dialog[key]] = true end
@@ -1482,7 +1488,7 @@ function Skin:FadeDialogOut(dialog, hide)
     end
     local footer = type(dialog.Footer) == "table" and dialog.Footer.FooterDivider
     if type(footer) == "table" and footer.GetAlpha then table.insert(parts, { part = footer, alpha = footer:GetAlpha() or 1 }) end
-    self.closing = { dialog = dialog, hide = hide, time = 0, parts = parts, hiding = true }
+    self.closing = { dialog = dialog, hide = hide, time = 0, parts = parts }
     self:DriveClose()
 end
 
@@ -1664,9 +1670,9 @@ end
 
 function Skin:DrawTuck(tuck)
     local card, from, to, t = self.card, tuck.from, tuck.to, tuck.time
-    local landed = TUCK_LIFT + TUCK_FLY
-    local lift = Smooth(Clamp(t / TUCK_LIFT, 0, 1))
-    local fly = EaseInOut(Clamp((t - TUCK_LIFT) / TUCK_FLY, 0, 1))
+    local landed = SETTLE_LIFT + SETTLE_TIME
+    local lift = Smooth(Clamp(t / SETTLE_LIFT, 0, 1))
+    local fly = EaseInOut(Clamp((t - SETTLE_LIFT) / SETTLE_TIME, 0, 1))
     local slide = EaseOutCubic(Clamp((t - landed) / TUCK_SLIDE, 0, 1))
 
     -- Lifted a touch, then the window's shape at TUCK_SIZE of it, so it fits behind it; bending a
@@ -1697,18 +1703,14 @@ function Skin:DrawTuck(tuck)
 
     -- Its shadow: thrown as it is lifted, drawn back in as it comes down.
     local reach = (1 - fly * 0.7) * lift
-    local dx, dy = 7 * reach, -10 * reach
-    local blur = 16
-    card.shadow:ClearAllPoints()
-    card.shadow:SetPoint("TOPLEFT", card, "TOPLEFT", (dx - blur) / scale, (dy + blur) / scale)
-    card.shadow:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", (dx + blur) / scale, (dy - blur) / scale)
+    PlaceShadow(card.shadow, card, 7 * reach, -10 * reach, 16, scale)
     card.shadow:SetAlpha(0.55 * lift * (1 - 0.45 * fly) * (1 - slide))
 
     -- The window giving as the page goes under it: up a little and back, settling.
     local nudge = t - (landed - 0.05)
-    if nudge >= 0 and nudge <= TUCK_NUDGE then
-        self:Give(tuck, TUCK_GIVE * math.exp(-6 * nudge) * math.sin(2 * math.pi * nudge / 0.34))
-    elseif nudge > TUCK_NUDGE then
+    if nudge >= 0 and nudge <= LAND_TIME then
+        self:Give(tuck, Bounce(nudge))
+    elseif nudge > LAND_TIME then
         self:Rest(tuck)
     end
 
@@ -1805,7 +1807,7 @@ function Skin:Update()
     -- Fading out to turn to the next line: it comes in once faded (Skin:Tick).
     if self.turning and self.frame:IsShown() then return end
     -- Not turning after all: the captions held for it go on (Skin:WillTurn).
-    if not self.turning and not self.buffered and not self.arming and Transcript.held and clip == self.clip then
+    if not self.turning and not self.arming and Transcript.held and clip == self.clip then
         Transcript:Release()
     end
     if clip ~= self.clip then
@@ -1813,8 +1815,7 @@ function Skin:Update()
         -- queue ends, and the next fades in from nothing once it has (Skin:Tick), its paper,
         -- height and words all changed unseen. Not while it settles out of a dialog with its
         -- words hidden: there the next simply takes its place.
-        if self.clip and self.wanted and self.frame:IsShown() and (self.level or 0) > 0 and not self.settling
-            and not self.wordsHidden then
+        if self:WillTurn(clip) then
             self.turning = true
             self:SetVisible(false)
             return
