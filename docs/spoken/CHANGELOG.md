@@ -22,6 +22,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Subtitles get the windows' settings, and the windows type by letter.** Subtitles gain Show Name
   and Title, Highlight Words, Auto-Scroll line by line or page by page, Text Size and Hide Portrait.
   Type By sets whether a window types out words or letters. *([Nucabe](https://github.com/Nucabe))*
+- **The large window's words are inside its box, under the speaker's name.** The name heads the
+  box with the line's name after it, then Stopped and a count of the lines waiting in place of the
+  queue's rows, and Stop, Skip and Report at the right. A progress line runs under the words. With
+  Bronze Border on, the window uses the game's Talking Head art. *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
