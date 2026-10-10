@@ -43,14 +43,13 @@ import type { CorpusLine } from "@/lib/corpus";
 import { isGeneratable } from "@/lib/books/tools";
 import { speakPlayerTokens } from "@/lib/player-words";
 import { corpus } from "@/lib/quests/catalogue";
-import { isVoice } from "@/lib/voices/voices";
+import { isVoice, voiceNameFor } from "@/lib/voices/voices";
 
 import type { ContributionStatus } from "./contributions";
 import {
   answersQuestMoment,
   answersQuestMomentSql,
   lineIdentityFor,
-  voiceNameFor,
   type LineIdentity,
 } from "./naming";
 import { recordBroadcast, resolveGossip, type GossipPlan } from "./gossip";
@@ -348,6 +347,24 @@ export async function linesInExplorer(contributions: readonly Contribution[]): P
   if (candidates.length === 0) return books;
   const quests = await questsInExplorer(candidates);
   return new Set([...books, ...quests]);
+}
+
+/**
+ * The translated quests rows whose moment English already has, by id. acceptTranslation copies
+ * English's line for those and asks for no speaker; only the rest need one.
+ */
+export async function englishHasMoment(contributions: readonly Contribution[]): Promise<Set<number>> {
+  const translated = contributions.filter(
+    (c) => c.source === "quests" && c.locale !== BASE_LANG && c.meta.quest && c.meta.event,
+  );
+  if (translated.length === 0) return new Set();
+  const { lines } = await corpus();
+  const found = new Set<number>();
+  for (const c of translated) {
+    const identity = lineIdentityFor(c.meta, c.text ?? "", "", "");
+    if (identity && answering(lines, identity.lineId).length > 0) found.add(c.id);
+  }
+  return found;
 }
 
 /**

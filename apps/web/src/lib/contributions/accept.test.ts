@@ -16,7 +16,7 @@ import { upsertResolution } from "@/lib/npc/store";
 import { corpus, lineIndex } from "@/lib/quests/catalogue";
 import { isGap, matchingLines, NO_CONTEXT } from "@/lib/search";
 
-import { lineIsInExplorer, resolveContribution, resolveContributions } from "./accept";
+import { englishHasMoment, lineIsInExplorer, resolveContribution, resolveContributions } from "./accept";
 import {
   broadcastGossipStem,
   gossipFileName,
@@ -29,6 +29,7 @@ import {
 import {
   createContribution,
   CONTRIBUTION_COLUMNS,
+  listContributions,
   setContributionNpcKind,
   setContributionPage,
   type Contribution,
@@ -487,6 +488,14 @@ describe("resolveContribution: a translation", () => {
     );
     return rows;
   }
+
+  it("says which translations English has the moment for, which accept takes with no speaker", async () => {
+    const id = await translation(String(questId), "accept", "Traga-me seis peles de lobo, $C.");
+    const rows = async () => (await listContributions("new", LOCALE)).filter((row) => row.id === id);
+    expect(await englishHasMoment(await rows())).toEqual(new Set());
+    await englishLine();
+    expect(await englishHasMoment(await rows())).toEqual(new Set([id]));
+  });
 
   it("names the quest and the NPC in the language, as the client showed them", async () => {
     await englishLine();

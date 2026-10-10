@@ -75,15 +75,6 @@ export function gossipStemRank(stem: string): 0 | 1 | 2 {
   return stem.includes("-") ? 2 : 1;
 }
 
-/**
- * The ElevenLabs voice name for a race, gender and flavor -- mirrors flavors.py's voice_name,
- * not naming.py, but kept beside it: the same "this side must agree with the Python" rule
- * applies, just to a name tts_cli/voices.py resolves rather than a file the addon looks up.
- */
-export function voiceNameFor(race: string, gender: string, flavor: string | null): string {
-  return flavor ? `${race}-${gender}-${flavor}` : `${race}-${gender}`;
-}
-
 export type LineIdentity = {
   source: string;
   lineId: string;
