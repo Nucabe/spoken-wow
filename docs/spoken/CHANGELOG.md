@@ -15,6 +15,13 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   of it when it closes. *([Nucabe](https://github.com/Nucabe))*
 - **The DialogueUI window settles into place with animation.** A queued line's page tucks behind the
   window, and the words fade from one line to the next. *([Nucabe](https://github.com/Nucabe))*
+- **The DialogueUI settings are on Spoken's page, with the other narrator styles'.** They show when
+  DialogueUI is the narrator style, and every style's settings come in the same order: Size and
+  Position, Look, Words. Show Sample Subtitle is gone, as Preview shows every style.
+  *([Nucabe](https://github.com/Nucabe))*
+- **Subtitles get the windows' settings, and the windows type by letter.** Subtitles gain Show Name
+  and Title, Highlight Words, Auto-Scroll line by line or page by page, Text Size and Hide Portrait.
+  Type By sets whether a window types out words or letters. *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
