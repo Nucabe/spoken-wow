@@ -408,6 +408,11 @@ def import_corpus(path, verbose=True):
                       """insert into "quest_spawn" ("npcType", "npcId", "map", "x", "y")
                          values %s""")
             _progress("committing")
+        # Until autovacuum gets to the rows just written, a freshly seeded database (CI's, a new
+        # local one) plans the translated catalogue's joins blind and builds it ten times slower.
+        with conn, conn.cursor() as cur:
+            cur.execute("""analyze "quest_line", "quest_line_speaker", "npc", "entity_name",
+                                   "quest_spawn" """)
     finally:
         conn.close()
 
