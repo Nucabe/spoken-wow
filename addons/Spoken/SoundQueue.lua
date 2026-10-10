@@ -466,8 +466,7 @@ local function WatchForCut(clip)
     end
     local handle = clip.handle
     clip.cutWatch = Addon:ScheduleRepeatingTimer(function()
-        if SoundQueue:GetCurrentSound() ~= clip or clip.handle ~= handle or not clip.nextSoundTimer
-            or GetTime() >= clip.spokenAt - CUT_MARGIN then
+        if not SoundQueue:IsPlaying(clip) or GetTime() >= clip.spokenAt - CUT_MARGIN then
             StopWatching(clip)
             return
         end
