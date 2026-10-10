@@ -46,11 +46,6 @@ end
 local function LineGap()
     return Transcript.style and Transcript.style.lineGap or GAP
 end
--- A clip's own font comes first: lore in a script the client's font file cannot draw carries one.
-local function Face(clip)
-    local own = clip and clip.present and clip.present.font
-    return own or Transcript.style and Transcript.style.font or GameFontNormal:GetFont()
-end
 local function CharacterCount(text)
     local _, count = text:gsub(UTF8_CHAR, "")
     return math.max(1, count)
@@ -194,7 +189,8 @@ function Transcript:SetClip(clip)
     self.top, self.topTarget = 1, 1
     self:Tokenize()
     if not self.frame then return end
-    if Face(clip) ~= self.face then self:ApplyFace() end
+    -- Before Reflow, which breaks lines by measuring the text in the face it is drawn in.
+    self:ApplyFont()
     self:Reflow()
 end
 
@@ -577,7 +573,8 @@ function Transcript:RefreshConfig()
     -- A skin's page may be taller than the expanded eight lines; one label more than the
     -- page, for the line sliding in mid-glide.
     for row = #self.labels + 1, LineCount() + 1 do self.labels[row] = Label(self.frame) end
-    self:ApplyFace()
+    self.face = nil -- the labels just made are in the default face
+    self:ApplyFont()
     for row, label in ipairs(self.labels) do
         label:SetTextColor(color[1], color[2], color[3])
         label:SetShadowColor(0, 0, 0, style.shadow == false and 0 or 1)
@@ -588,11 +585,21 @@ function Transcript:RefreshConfig()
     self:Update()
 end
 
-function Transcript:ApplyFace()
-    local face, size = Face(self.clip), FontSize()
-    self.face = face
-    self.measure:SetFont(face, size, "")
+--- A clip's `present.font` wins over a skin's face: the clip names it for glyphs other faces
+--- lack. The size stays the skin's or the player's.
+function Transcript:ApplyFont()
+    local present = self.clip and self.clip.present
+    local own = (self.style or {}).font or GameFontNormal:GetFont()
+    local face, size = present and present.font or own, FontSize()
+    if face == self.face and size == self.faceSize then return end
+    -- A face the client cannot load: false on current clients, no face reported on older ones.
+    if self.measure:SetFont(face, size, "") == false or not self.measure:GetFont() then
+        face = own
+        self.measure:SetFont(face, size, "")
+    end
+    self.face, self.faceSize = face, size
     for _, label in ipairs(self.labels) do label:SetFont(face, size, "") end
+    self.renderedKey = nil
 end
 
 function Label(parent)
