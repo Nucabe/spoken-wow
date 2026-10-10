@@ -447,10 +447,9 @@ local function AfterSpoken(clip)
     end
 end
 
--- With Sound in Background off, the client stops every sound as the game loses focus and never
--- restarts it, and the line's timer and bar would run on in silence. A voice gone before its
--- length is stopped the way Stop stops it, so Replay plays it from the start. The margin keeps a
--- voice a little shorter than its recorded length from reading as a cut.
+-- The client can stop our voice unannounced (alt-tab without Sound in Background, a cinematic),
+-- leaving the timer and bar to run on in silence, so a voice gone early is stopped as Stop does.
+-- The margin keeps a voice slightly shorter than its recorded length from reading as a cut.
 local CUT_POLL, CUT_MARGIN = 0.5, 0.5
 
 local function StopWatching(clip)
