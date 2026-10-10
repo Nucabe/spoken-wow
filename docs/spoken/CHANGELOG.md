@@ -4,8 +4,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## 3.2.1 — 2026-10-10
 
-- Zone Lore no longer raises a Lua error on chat messages the game keeps hidden from addons, as
-  in a dungeon group. *([svengabr](https://github.com/svengabr))*
+- Spoken Zones no longer raises a Lua error on chat messages the game keeps hidden from addons,
+  as in a dungeon group. *([svengabr](https://github.com/svengabr))*
 
 ## 3.2.0 — 2026-10-08
 
