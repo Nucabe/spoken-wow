@@ -12,6 +12,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Fixed: Books and Zones said "Not installed" in Spoken's module list after login**, and a
   module's settings page could show it switched off after it was switched on from Spoken's page.
   *([Nucabe](https://github.com/Nucabe))*
+- **Volume Follows is back.** Choose which volume slider Spoken's voices follow: Master, Effects,
+  Music, Ambience or Dialog. On Dialog, a note says which features stop working there.
+  *([Nucabe](https://github.com/Nucabe))*
 - **Hide Report Buttons hides every Report button.** It sits beside Hide Contribute Buttons and
   also takes Report off the quest log, DialogueUI's window, the lore beside the map and the
   Compendium. *([Nucabe](https://github.com/Nucabe))*
