@@ -917,7 +917,7 @@ a line's English speakers where it has any, otherwise those a language wrote, ea
 A language's explorer lists its own rows, plus English's lines it has no text for, marked
 untranslated; English is joined only to show what a line says in English. Who speaks is
 answered by a moderator with `regenerate` in the contribution's language. The answer is about
-the NPC (`npc_resolution`), so it holds for every language.
+the NPC (`npc`), so it holds for every language.
 
 A gossip row, in any language, is matched in three steps (`apps/web/src/lib/contributions/gossip.ts`):
 
@@ -1005,10 +1005,23 @@ the contribution meant, and that pick is stored on the contribution (`contributi
 migration 0033), never in `meta`, which stays what the client sent. From then on every reader
 treats the row as if its envelope had carried the kind.
 
-The answer is stored once per NPC, keyed on the kind *and* the id for that same reason, so one
-correction fixes every line that NPC speaks. `npc_resolution` also keeps what the client
-reported even when a moderator overrules it — evidence about the NPC is worth more than the
-guess it produced — along with the client build, since model ids are per-build data.
+The answer is stored once per NPC in `npc` (migration 0070), keyed on the kind *and* the id for
+that same reason, and every line reads its voice from it: a speaker row names the NPC, and a
+line speaks in its speakers' race and gender and the flavor most of their NPCs have, as the
+extract has always agreed one file on one voice. So one correction fixes every line that NPC
+speaks, the extract's included, and their audio goes stale. The extract's own answers are the
+`corpus` rows, which `import-corpus` writes from the corpus file's `npcs`: race and gender from
+the display, and flavor from the NPC's greeting sounds. Where the game names none, as for
+Cairne Bloodhoof's hand-made display, the import gives the race-gender's default ("standard",
+or its busiest flavor) and marks the answer doubtful; the export writes it back without one.
+Such an NPC keeps the voice its lines were made in and is listed under Doubtful on
+`/contributions/npcs`, which lists every NPC, for a moderator to confirm or change. A speaker whose NPC nobody knows anything about keeps the voice written with it.
+Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language their
+rights are checked in (English unless the request names another), and the import leaves an
+edited English name alone. `npc` also
+keeps what the client reported even when a moderator overrules it — evidence about the NPC is
+worth more than the guess it produced — along with the client build, since model ids are
+per-build data.
 
 Precedence is enforced in the SQL rather than by whoever calls it: `moderator` outranks
 `corpus`, which outranks `display`, which outranks `client`, which outranks `none`, and a write only lands when it ranks
@@ -1016,8 +1029,8 @@ at least as high as what is already there. A submission carrying less informatio
 erase one carrying more — the case that matters is a player on an older addon, whose envelope
 has no model at all, submitting for an NPC somebody else already resolved.
 
-`corpus` means an *extracted* speaker: `npcVoiceFromCorpus` skips the speakers accepted
-contributions wrote. Those carry the NPC's own resolution at the time it was accepted, often a
+`corpus` means an *extracted* speaker: only the corpus import writes `corpus` rows, never the
+speakers accepted contributions wrote. Those carry the NPC's own resolution at the time it was accepted, often a
 `client` guess, and reading one back as `corpus` confirmed the guess and let it outrank the game's
 own appearance data. Migration 0058 demoted the 71 rows that had been confirmed that way.
 

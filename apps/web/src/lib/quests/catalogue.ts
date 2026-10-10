@@ -27,9 +27,9 @@ import "server-only";
 import { query } from "@/lib/db";
 import { memoByLang } from "@/lib/memo";
 import { nameStamp, versionStamp } from "@/lib/stamp";
-import { npcKey, type Corpus, type CorpusLine } from "@/lib/corpus";
+import type { Corpus, CorpusLine } from "@/lib/corpus";
 import { BASE_LANG, type Lang } from "@/lib/lang";
-import { flavorsOf } from "@/lib/voices/voices";
+import { consensusFlavor, flavorsOf, voiceNameFor } from "@/lib/voices/voices";
 
 
 /**
@@ -63,12 +63,16 @@ export function isCorpusEmpty(error: unknown): boolean {
   return error instanceof Error && error.name === "CorpusEmpty";
 }
 
-/** Speakers have no live flag, so their max id and count are the whole stamp. */
-const SPEAKER_STAMP = `(select coalesce(max("id"), 0) || ':' || count(*) from "quest_line_speaker")`;
+/**
+ * Speakers have no live flag, so their max id and count are the whole stamp; an NPC's answer is
+ * updated in place, so its latest write is. Both voice every catalogue.
+ */
+const SPEAKER_STAMP = `(select coalesce(max("id"), 0) || ':' || count(*) from "quest_line_speaker") || '/' ||
+  (select coalesce(max("updatedAt")::text, '') || ':' || count(*) from "npc")`;
 
 async function stampOf(lang: Lang): Promise<string> {
-  // Speakers are every language's, so every catalogue moves when any of them do, and so do
-  // English NPC names, which name another language's speakers (SPEAKER_NAME). Another language
+  // Speakers and NPCs are every language's, so every catalogue moves when any of them do, and so
+  // do English NPC names, which name another language's speakers (SPEAKER_NAME). Another language
   // also reads English's rows for display, and its own names.
   const english = `${versionStamp("quest_line", `"lang" = '${BASE_LANG}'`)} || '/' || ${SPEAKER_STAMP} || '/' ||
     ${versionStamp("entity_name", `"lang" = '${BASE_LANG}' and "kind" in ('creature', 'gameobject', 'item')`)}`;
@@ -86,31 +90,64 @@ async function stampOf(lang: Lang): Promise<string> {
  * A speaker row keeps the name its client showed, so one another language wrote names the NPC in
  * that language. The NPC's English name stands in for it where English has one.
  */
-const SPEAKER_NAME = `case when "lang" = '${BASE_LANG}' then "npcName" else coalesce(
-    (select n."name" from "entity_name" n
-      where n."kind" = ranked."npcType" and n."entityId" = ranked."npcId"::text
-        and n."lang" = '${BASE_LANG}' and n."isCurrent"), "npcName") end`;
+const SPEAKER_NAME = `case when r."lang" = '${BASE_LANG}' then r."npcName" else coalesce(
+    (select en."name" from "entity_name" en
+      where en."kind" = r."npcType" and en."entityId" = r."npcId"::text
+        and en."lang" = '${BASE_LANG}' and en."isCurrent"), r."npcName") end`;
 
 /**
  * Who speaks each line, whichever language wrote the speaker: a speaker is a fact about the
  * world, not about a language. The extract's English speakers where a line has any; otherwise
- * the ones a language wrote when it accepted the line first, each NPC once however many
- * languages named it.
+ * the ones a language wrote when it accepted the line first, each NPC once.
+ *
+ * Race, gender and flavor are the NPC's (migration 0070), so an answer given for an NPC voices
+ * every line it speaks. A speaker whose NPC nobody knows anything about -- no row, or `none` --
+ * keeps the values written with it, which were an answer once.
  */
 const SPEAKERS = `(
-  select "id", "lineId", "variant", "lang", "ord", "npcType", "npcId", ${SPEAKER_NAME} as "npcName",
-         "race", "gender", "flavor", "voice", "contributionId"
+  select r."id", r."lineId", r."variant", r."lang", r."ord", r."npcType", r."npcId", ${SPEAKER_NAME} as "npcName",
+         r."contributionId",
+         case when n."known" then coalesce(n."race", '') else r."race" end as "race",
+         case when n."known" then coalesce(n."gender", '') else r."gender" end as "gender",
+         case when n."known" then n."flavor" else r."flavor" end as "flavor"
     from (
-    select s.*,
-           bool_or(s."lang" = '${BASE_LANG}') over (partition by s."lineId", s."variant") as "hasEnglish",
-           row_number() over (
-             partition by s."lineId", s."variant", s."npcType", s."npcId", s."lang" = '${BASE_LANG}'
-             order by s."ord", s."id"
-           ) as "nth"
-      from "quest_line_speaker" s
-  ) ranked
-  where case when "hasEnglish" then "lang" = '${BASE_LANG}' else "nth" = 1 end
+      select s.*,
+             bool_or(s."lang" = '${BASE_LANG}') over (partition by s."lineId", s."variant") as "hasEnglish",
+             row_number() over (
+               partition by s."lineId", s."variant", s."npcType", s."npcId", s."lang" = '${BASE_LANG}'
+               order by s."ord", s."id"
+             ) as "nth"
+        from "quest_line_speaker" s
+    ) r
+    left join (select *, "provenance" <> 'none' as "known" from "npc") n
+      on n."npcKind" = r."npcType" and n."npcId" = r."npcId"
+   where case when r."hasEnglish" then r."lang" = '${BASE_LANG}' else r."nth" = 1 end
 )`;
+
+/**
+ * Each line's voice: its speakers' race and gender, in the flavor most of their NPCs have.
+ * Speakers of one line share its one file, so they share one voice, as the extract has always
+ * agreed them (flavors.py's resolve_flavors). A line whose NPCs have no flavor has none, and
+ * outside the race-genders the roster voices bare, no voice to be generated in until somebody
+ * gives its NPC one. Keyed on race and gender too, as the extract's file_key is: a quest given
+ * by a dwarf and a troll is one file in two voices.
+ */
+function voiced<T extends { lineId: string; variant: number; race: string; gender: string; flavor: string | null }>(
+  rows: T[],
+): (T & { voice: string })[] {
+  const groups = new Map<string, (string | null)[]>();
+  const keyOf = (row: T) => `${row.lineId}|${row.variant}|${row.race}|${row.gender}`;
+  for (const row of rows) {
+    const group = groups.get(keyOf(row));
+    if (group) group.push(row.flavor);
+    else groups.set(keyOf(row), [row.flavor]);
+  }
+  const agreed = new Map([...groups].map(([key, flavors]) => [key, consensusFlavor(flavors)]));
+  return rows.map((row) => {
+    const flavor = agreed.get(keyOf(row)) ?? null;
+    return { ...row, flavor, voice: voiceNameFor(row.race, row.gender, flavor) };
+  });
+}
 
 type Row = {
   lineId: string;
@@ -124,7 +161,6 @@ type Row = {
   race: string;
   gender: string;
   flavor: string | null;
-  voice: string;
   playerGender: string | null;
   text: string;
   originalText: string;
@@ -145,7 +181,7 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
   if (lang !== BASE_LANG) return buildTranslated(lang);
   const rows = await query<Row>(
     `select l."lineId", l."variant", l."source", l."questId", l."questTitle",
-            s."npcId", s."npcName", s."npcType", s."race", s."gender", s."flavor", s."voice",
+            s."npcId", s."npcName", s."npcType", s."race", s."gender", s."flavor",
             l."playerGender", l."text", l."originalText", l."fileName",
             l."generatable", l."skipReason", s."contributionId"
        from ${SPEAKERS} s
@@ -158,7 +194,7 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
 
   if (rows.length === 0) throw new CorpusEmpty(lang);
 
-  return rows.map((row) => ({
+  return voiced(rows).map((row) => ({
     ...row,
     npcType: row.npcType as CorpusLine["npcType"],
     source: row.source as CorpusLine["source"],
@@ -196,7 +232,7 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
             coalesce(t."questId", e."questId") as "questId",
             coalesce(qn."name", t."questTitle", e."questTitle") as "questTitle",
             s."npcId", coalesce(nn."name", s."npcName") as "npcName", s."npcType",
-            s."race", s."gender", s."flavor", s."voice",
+            s."race", s."gender", s."flavor",
             coalesce(t."playerGender", e."playerGender") as "playerGender",
             coalesce(t."text", e."text") as "text",
             coalesce(e."originalText", t."originalText") as "originalText",
@@ -228,7 +264,7 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
 
   if (rows.length === 0) throw new CorpusEmpty();
 
-  return rows.map((raw) => {
+  return voiced(rows).map((raw) => {
     const { textMissing, titleMissing, nameMissing, native, englishTitle, englishName, ...row } = raw;
     return {
       ...row,
@@ -281,36 +317,6 @@ export async function lineIndex(lang: Lang = BASE_LANG): Promise<Map<string, Cor
     }
     return index;
   });
-}
-
-/**
- * What the corpus already knows about an NPC, or null for one it has never carried.
- *
- * The corpus is the exact answer where it has one: it was built from the same display data the
- * game uses, including the flavor that no client API exposes.
- *
- * A linear scan, not a new memoised index: lineIndex groups by lineId, and one lineId is shared
- * by every NPC with the same gossip line, so it cannot answer "what does this one NPC carry"
- * without a second index carrying its own cache-invalidation story alongside it. This runs once
- * per contribution resolved, not per request, so the scan is the honest cost here.
- *
- * Extracted speakers only. The catalogue also carries the speakers of accepted contributions,
- * and those were written from this NPC's own resolution at the time -- often an unconfirmed
- * model guess. Reading one back as "the corpus" confirmed the guess and let it outrank every
- * later, better answer: 50 Forever NPCs whose appearances name an exact voice were stuck on
- * the default flavor that way.
- */
-export async function npcVoiceFromCorpus(
-  npcType: string,
-  npcId: number,
-): Promise<{ race: string; gender: string; flavor: string | null; npcName: string } | null> {
-  const wanted = `${npcType}:${npcId}`;
-  for (const line of (await corpus()).lines) {
-    if (line.contributionId === null && npcKey(line) === wanted) {
-      return { race: line.race, gender: line.gender, flavor: line.flavor, npcName: line.npcName };
-    }
-  }
-  return null;
 }
 
 /**
