@@ -130,8 +130,8 @@ end
 --- Whether the player turned every Report button off in Spoken's settings, the player's and
 --- those feature addons draw. Ask before showing one, and again on REPORT_SETTINGS_CHANGED.
 function Spoken:AreReportButtonsHidden()
-    local frame = Addon.db and Addon.db.profile.Frame
-    return frame and frame.HiddenActions and frame.HiddenActions.report and true or false
+    local hidden = Addon:Profile("Frame").HiddenActions
+    return hidden and hidden.report and true or false
 end
 
 --------------------------------------------------------------------------------
@@ -516,6 +516,7 @@ end
 --   QUEUE_EMPTY        ()
 --   SOURCE_REGISTERED  (source)
 --   CONTRIBUTE_SETTINGS_CHANGED ()          the hide-Contribute-buttons setting was toggled
+--   REPORT_SETTINGS_CHANGED     ()          the hide-Report-buttons setting was toggled
 
 function Spoken:RegisterCallback(event, fn)
     return Callbacks:Register(event, fn)
