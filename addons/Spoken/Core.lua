@@ -199,6 +199,10 @@ function Addon:ClipFont(fontString, clip)
     -- the one to go back to.
     if face ~= fontString.spokenClipFace then fontString.spokenOwnFace = face end
     local want = clip and clip.present and clip.present.font or fontString.spokenOwnFace
+    -- Asked for last time and still on: done, also when that face failed and the player's
+    -- own stands in, rather than trying it again on every update.
+    if face == fontString.spokenClipFace and want == fontString.spokenClipWant then return end
+    local asked = want
     -- A face the client cannot load: current clients answer false, older ones nil or nothing, so
     -- the face it reports afterwards is asked too. Back to the player's own rather than a
     -- string with no font.
@@ -206,7 +210,9 @@ function Addon:ClipFont(fontString, clip)
         want = fontString.spokenOwnFace
         fontString:SetFont(want, size, flags or "")
     end
-    fontString.spokenClipFace = want
+    -- The face as the client reports it, since that is what the next call reads back, and the
+    -- client need not spell a path the way it was given.
+    fontString.spokenClipWant, fontString.spokenClipFace = asked, fontString:GetFont() or want
 end
 
 --- Where each player window sits, how wide it is, and whether the captions are expanded.

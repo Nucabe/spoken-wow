@@ -780,6 +780,26 @@ do
     source:Enqueue(broken); Play(.7)
     Check(Face(T.labels[1])=='font.ttf' and Face(M.name)=='font.ttf','...and so does one on an older client, which says nothing')
     Q:RemoveAllSoundsFromQueue(); Play(.6)
+    broken=Clip('retry','Text in a face the client lacks, read for a while.',3)
+    broken.present.font='missing.ttf'
+    local tries,setFont=0,M.title.text.SetFont
+    M.title.text.SetFont=function(text,face,...)
+        if face=='missing.ttf' then tries=tries+1 end
+        return setFont(text,face,...)
+    end
+    source:Enqueue(broken); Play(.2); Play(.7)
+    M.title.text.SetFont=nil
+    Check(tries==1,'...and is not tried again on every update while the clip plays')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    -- The client may report a face in a spelling of its own; that is still the clip's face, not
+    -- one for the next clip to go back to.
+    local spelled=Clip('spelled','Příliš žluťoučký kůň.',3)
+    spelled.present.font='Spelled.ttf'
+    source:Enqueue(spelled); source:Enqueue(Clip('after','Plain English.',2)); Play(.7)
+    Check(Face(M.name)=='spelled.ttf','a clip\'s face reported in the client\'s spelling is drawn')
+    Q:Skip(); Play(.7)
+    Check(Face(M.name)=='font.ttf' and Face(M.title.text)=='font.ttf','...and the next clip, naming none, is in the player\'s face')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
     local style=E.Addon:PlayerStyle()
     E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
     czech=Clip('cz2','Příliš žluťoučký kůň úpěl ďábelské ódy.',4)
