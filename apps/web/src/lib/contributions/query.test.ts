@@ -128,10 +128,11 @@ describe("bucketOf", () => {
     expect(bucketOf(moment, { ...npc, flavor: null })).toBe("blocked");
   });
 
-  it("checks an English greeting's speaker, which its id hashes, and blocks another language's", () => {
+  it("checks a greeting's own speaker, in any language", () => {
     expect(bucketOf({ ...moment, quest: "gossip", hasSpeaker: true }, null)).toBe("blocked");
     expect(bucketOf({ ...moment, quest: "gossip" }, npc)).toBe("ready");
-    expect(bucketOf({ ...moment, quest: "gossip", locale: "deDE" }, npc)).toBe("blocked");
+    expect(bucketOf({ ...moment, quest: "gossip", locale: "deDE" }, npc)).toBe("ready");
+    expect(bucketOf({ ...moment, quest: "gossip", locale: "deDE" }, { ...npc, race: null })).toBe("blocked");
   });
 
   it("is ready for zones and books, which name no NPC", () => {
