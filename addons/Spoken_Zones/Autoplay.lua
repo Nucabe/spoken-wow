@@ -544,10 +544,11 @@ end
 -- The payload is not in the same position across those events: CHAT_MSG_* put the
 -- text first, while UI_*_MESSAGE put a numeric messageType first and the text
 -- second. Rather than encode that per event, take whichever argument is a string.
+-- A secret one is passed over: indexing it from addon code raises a Lua error.
 local function TextFrom(...)
 	for i = 1, select("#", ...) do
 		local value = select(i, ...)
-		if type(value) == "string" then
+		if type(value) == "string" and not (issecretvalue and issecretvalue(value)) then
 			return value
 		end
 	end
