@@ -20,6 +20,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   *([svengabr](https://github.com/svengabr))*
 - **Spoken Zones no longer raises a Lua error on chat messages the game keeps hidden from addons**,
   as in a dungeon group. *([svengabr](https://github.com/svengabr))*
+- **Alt-tabbing no longer loses the line.** With Sound in Background off, the game silences
+  Spoken's voice when you switch away. The line now stops instead of running on in silence, and
+  Replay plays it from the start. *([svengabr](https://github.com/svengabr))*
 
 ## 3.2.0 — 2026-10-08
 
