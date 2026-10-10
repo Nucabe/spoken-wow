@@ -67,7 +67,7 @@ end
 
 --- The pages still to come of `book`, the registry by default.
 local function Coming(book)
-    local entry = B.following[book or 261]
+    local entry = (B.following or {})[book or 261]
     return entry and entry.pages or {}
 end
 
@@ -143,7 +143,7 @@ Expect("...then starts at the head, still one line", Same(QueuedPages(), { 262 }
 Expect("...speaking", stub.world.played[#stub.world.played], B:ClipFor(262).path)
 Expect("...what follows it shorter by that page", Same(Coming(), { 265 }), true)
 Spoken:Skip()
-Expect("Skip skips the rest of the book", #QueuedPages() .. " " .. tostring(B.following[261]), "0 nil")
+Expect("Skip skips the rest of the book", #QueuedPages() .. " " .. tostring((B.following or {})[261]), "0 nil")
 B:PlayFrom(261)
 
 -- Another readable opened while a book is read waits behind it: the book reads on to its end.
