@@ -11,7 +11,6 @@
 import type { ClientFamily } from "./client";
 import type { ContributionStatus } from "./contributions";
 import type { EnvelopeSource } from "./envelope";
-import { BASE_LANG } from "../lang";
 import { isVoice, voiceNameFor } from "../voices/voices";
 import type { Filter } from "../search";
 import type { QuestSummary } from "./triage";
@@ -21,8 +20,6 @@ import type { QuestSummary } from "./triage";
  * - a quest moment that already has a speaker, in any language, needs nothing more;
  * - any other quests row needs a speaker whose race and gender are on file, whoever set them,
  *   in a voice the roster has (accept.ts's speakerFor);
- * - a greeting from another language's client is always refused: its id is a hash of English
- *   text that client never shows;
  * - zones and books rows have no speaker to check.
  */
 export const BUCKETS = ["ready", "blocked"] as const;
@@ -38,7 +35,6 @@ export function bucketOf(
   npc: { race: string | null; gender: string | null; flavor: string | null; conflict: readonly unknown[] } | null,
 ): Bucket {
   if (row.source !== "quests") return "ready";
-  if (row.quest === "gossip" && row.locale !== BASE_LANG) return "blocked";
   if (row.quest !== "gossip" && row.hasSpeaker) return "ready";
   if (!npc || npc.conflict.length > 0 || !npc.race || !npc.gender) return "blocked";
   return isVoice(voiceNameFor(npc.race, npc.gender, npc.flavor)) ? "ready" : "blocked";
