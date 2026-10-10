@@ -67,8 +67,6 @@ end
 --
 -- The player sets id, handle, source and nextSoundTimer; a caller never does.
 
---- A row bullet, registered once by a feature addon so SpokenBooks needs no change to
---- the player to have one of its own.
 --- Declare an action switchable, and what the player's settings should call it. Report has
 --- its own row; the modules still declare it for an older player, which has no such row.
 ---@param id string the action id, as it appears in a clip's presentation
@@ -77,6 +75,8 @@ function Spoken:RegisterOptionalAction(id, label)
     return Actions:RegisterOptional(id, label)
 end
 
+--- A row bullet, registered once by a feature addon so SpokenBooks needs no change to
+--- the player to have one of its own.
 function Spoken:RegisterBullet(id, texture, size)
     Bullets[id] = { texture = texture, size = size }
 end
@@ -441,10 +441,10 @@ function Spoken:StopAll()
     SoundQueue:RemoveAllSoundsFromQueue()
 end
 
---- A gate that applies to every source: fn(clip) -> reason | nil.
 --- Switch a channel off on a source's behalf, e.g. Dialog while a quest line speaks.
 --- Unlike a channel the user disabled, clips on it are still admitted, and the mute is
---- lifted before one plays.
+--- lifted before one plays. A channel the user already has off is left alone: nothing is
+--- held, so nothing switches it back on.
 function Spoken:MuteChannel(channel, muted)
     SoundUtils:MuteChannel(channel, muted)
 end
@@ -456,6 +456,7 @@ function Spoken:MuteGameDialogueAhead(source)
     SoundQueue:MuteGameDialogueAhead(source:GetChannel())
 end
 
+--- A gate that applies to every source: fn(clip) -> reason | nil.
 function Spoken:AddGate(fn)
     SoundQueue:AddGate(fn)
 end

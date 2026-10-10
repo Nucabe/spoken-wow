@@ -25,6 +25,8 @@ local function FakeDialogueUI()
     frame.Parchments = { cap }
     function frame:LoadTheme() end
     function frame:UpdateFrameSize() end
+    -- Showing a page: Spoken hooks it to hear another page shown in a window still open.
+    function frame:ShowUI() end
     -- Closed until a dialog opens.
     frame:Hide()
     _G.DUIQuestFrame = frame
@@ -711,22 +713,73 @@ Expect("...then closes, its words given back unseen, and still there when Dialog
 DUI:SetScript("OnHide", function() end)
 Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
 DUI.BackgroundFrame = nil
--- A quest page closing: its words fade at once, not when DialogueUI gets round to hiding it, but
--- only DialogueUI closes its window. Left open past DialogueUI's wait, the words come back.
+-- A quest page closing where DialogueUI may show another page (it does not say otherwise): the
+-- page stays as it is, words and all, until DialogueUI closes it; fading them first left bare
+-- paper standing for up to a second.
 OpenDialog()
 Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
-Skin:CloseStep(0.05)
-Expect("a quest page closing fades the dialog's words at once, without waiting for DialogueUI",
-    DUI:IsShown() and Skin.closing ~= nil and words.alpha < 1, true)
 for _ = 1, 30 do Skin:CloseStep(0.05) end
-Expect("...and DialogueUI not hiding its window within its wait, it stays open, its words back",
+Expect("a quest page closing that another page may follow keeps its words, for DialogueUI to close",
     tostring(DUI:IsShown()) .. " " .. words.alpha .. " " .. tostring(Skin.closing), "true 1 nil")
-Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
-Skin:CloseStep(0.06); Skin:CloseStep(0.06)
-Expect("...faded, the dialog left for DialogueUI to close", tostring(DUI:IsShown()) .. " " .. words.alpha, "true 0")
 DUI:Hide()
-Expect("...its own Hide closing it at once, the words given back unseen",
+Skin:CloseStep(0.06)
+Expect("...its own Hide then fading the words first", tostring(DUI:IsShown()) .. " " .. tostring(words.alpha < 1), "true true")
+Skin:CloseStep(0.06)
+Expect("...and closing it, the words given back unseen",
     tostring(DUI:IsShown()) .. " " .. words.alpha .. " " .. tostring(Skin.closing), "false 1 nil")
+Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+Spoken:StopAll()
+for _ = 1, 40 do Skin:Tick(0.05) end
+-- The NPC having no other quest, DialogueUI expects no page to follow (GetQuestFinishedDelay under
+-- 0.5): the window closes at once, through DialogueUI's own Hide, or as soon as the game says the
+-- conversation is over. With another quest to offer, it is left to DialogueUI.
+local talking = false
+_G.C_PlayerInteractionManager = { IsInteractingWithNpcOfType = function() return talking end }
+local followDelay = 0.03
+DUI.GetQuestFinishedDelay = function() return followDelay end
+OpenDialog()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "The Hunt Begins", portrait = { kind = "none" } } }))
+Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
+Skin:CloseStep(0.06)
+Expect("a quest page with nothing to follow fades its words at once", tostring(DUI:IsShown()) .. " " .. tostring(words.alpha < 1), "true true")
+Skin:CloseStep(0.06)
+Expect("...and closes, well before DialogueUI's own wait",
+    tostring(DUI:IsShown()) .. " " .. words.alpha .. " " .. tostring(Skin.closing), "false 1 nil")
+Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+Expect("...the window flying out of it as when DialogueUI closes it", Skin.settling ~= nil, true)
+Spoken:StopAll()
+for _ = 1, 40 do Skin:Tick(0.05) end
+OpenDialog()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "The Hunt Begins", portrait = { kind = "none" } } }))
+talking = true
+Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
+for _ = 1, 4 do Skin:CloseStep(0.05) end
+Expect("...but while the game still has the NPC talking, it stays as it is, words and all",
+    tostring(DUI:IsShown()) .. " " .. words.alpha, "true 1")
+talking = false
+Skin:CloseStep(0.02); Skin:CloseStep(0.06); Skin:CloseStep(0.06)
+Expect("...closing once the conversation is over", tostring(DUI:IsShown()) .. " " .. words.alpha, "false 1")
+Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+Spoken:StopAll()
+for _ = 1, 40 do Skin:Tick(0.05) end
+followDelay = 0.5
+OpenDialog()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "The Hunt Begins", portrait = { kind = "none" } } }))
+Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
+for _ = 1, 8 do Skin:CloseStep(0.05) end
+Expect("with another quest to offer, a page may follow: it stays as it is, for DialogueUI to close",
+    tostring(DUI:IsShown()) .. " " .. words.alpha, "true 1")
+DUI:Hide()
+Skin:CloseStep(0.12)
+Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+_G.C_PlayerInteractionManager, DUI.GetQuestFinishedDelay = nil, nil
+Spoken:StopAll()
+for _ = 1, 40 do Skin:Tick(0.05) end
+OpenDialog()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "The Hunt Begins", portrait = { kind = "none" } } }))
+Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
+DUI:Hide()
+Skin:CloseStep(0.12)
 Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
 Expect("the dialog closing on a line starts the window where the dialog was, as large",
     Near(Skin.frame.scale, 0.8) and Near(Skin.frame.anchor.x * 0.8, dialogLeft) and Near(Skin.frame.anchor.y * 0.8, dialogTop)
@@ -930,6 +983,21 @@ Expect("...a dialog opening cuts its flight short", tostring(Skin.tuck) .. " " .
 CloseDialog()
 Expect("...and closing, having queued nothing, sends nothing after it", tostring(Skin.tuck) .. " "
     .. tostring(Skin.settling), "nil nil")
+-- One quest giver's two quests taken one after the other: accepting the first brings its gossip
+-- back in the same window, another page, while the first quest's line plays on. Accepting the
+-- second closes the window on that line, the second's queued behind it: its page goes behind.
+Spoken:StopAll()
+stub.Advance(2)
+OpenDialog()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Baine Bloodhoof", label = "First", portrait = { kind = "none" } } }))
+stub.Advance(2)
+DUI:ShowUI()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Baine Bloodhoof", label = "Second", portrait = { kind = "none" } } }))
+CloseDialog()
+Expect("a giver's second quest accepted while the first's line plays sends its page behind this window",
+    tostring(Skin.settling) .. " " .. tostring(Skin.tuck ~= nil) .. " " .. tostring(card:IsShown()), "nil true true")
+Skin:TuckStep(1)
+Expect("...this window showing the first quest's line as it was", Skin.title.text:GetText(), "First")
 Skin.frame.GetLeft, Skin.frame.GetTop = frameLeft, frameTop
 Spoken:StopAll()
 
