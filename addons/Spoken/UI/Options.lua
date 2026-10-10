@@ -412,8 +412,8 @@ local function Build(canvas)
     end
     -- The report action's switch, which the windows already follow, so a hidden Report stays
     -- hidden; addons that draw their own hear REPORT_SETTINGS_CHANGED.
-    local function ReportRow()
-        layout:Checkbox(L.OPT_HIDE_REPORT, L.OPT_HIDE_REPORT_TIP,
+    local function ReportRow(tip)
+        layout:Checkbox(L.OPT_HIDE_REPORT, tip,
             function() return cfg().HiddenActions.report end,
             function(v) cfg().HiddenActions.report = v or nil end, function()
                 refresh()
@@ -421,8 +421,12 @@ local function Build(canvas)
                 Callbacks:Fire("REPORT_SETTINGS_CHANGED")
             end)
     end
-    -- Where there is no Contribute section to put it beside (the legacy clients), here.
-    if not Spoken.Contribute then ReportRow() end
+    -- Where there is no Contribute section to put it beside (the legacy clients), here. Its tip
+    -- names only what they have: no Small Window, and no subtitles on 1.12.
+    if not Spoken.Contribute then
+        ReportRow(Version.IsLegacyVanilla and L.OPT_HIDE_REPORT_TIP_VANILLA
+            or L.OPT_HIDE_REPORT_TIP_LEGACY)
+    end
     -- No "hide the window" switch: nothing on screen at all is Voice Only, a way of showing
     -- lines like the others, chosen with them above.
 
@@ -624,7 +628,7 @@ local function Build(canvas)
             function() return Addon.db.profile.Contribute.HideButtons end,
             function(v) Addon.db.profile.Contribute.HideButtons = v end,
             function() Callbacks:Fire("CONTRIBUTE_SETTINGS_CHANGED") end)
-        ReportRow()
+        ReportRow(L.OPT_HIDE_REPORT_TIP)
         -- The opt-out the first Contribute click promises. Independent of hiding the buttons:
         -- a player who gathers has no use for them, and hiding them must not stop it.
         if Gather then

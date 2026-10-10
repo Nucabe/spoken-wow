@@ -469,6 +469,8 @@ local function PanelLabelsSetup(client)
     stub.settingsCategories = {}; stub.ldbObjects = {}; stub.dbIcons = {}
     env = stub.LoadSpoken(SPOKEN)
     _G.Spoken:RegisterOptionalAction("report", "Report")
+    -- The legacy clients do not load Contribute.xml, which the stub loads everywhere.
+    if _G.WOW_PROJECT_ID == nil then _G.Spoken.Contribute = nil end
     env.Addon:Enable()
 end
 
@@ -531,12 +533,33 @@ Expect("a current client is offered nothing about the music channel",
 -- 2.4.3 and 3.3.5 route speech through the music channel, because those clients cannot
 -- stop a sound any other way. Those settings existed from the start and had no row at
 -- all: the only way to change one was to edit the saved variables by hand.
+--- The tooltip of the home page's row labelled `label`, as the panel was last built.
+local function RowTip(label)
+    for _, entry in ipairs(_G.SpokenOptionsPanel.layout.entries) do
+        if entry.label == label then
+            _G.GameTooltip.lines = {}
+            _G.this = entry.frame
+            entry.frame.scripts.OnEnter(entry.frame)
+            return table.concat(_G.GameTooltip.lines, "|")
+        end
+    end
+    return ""
+end
+Expect("on a current client, Hide Report Buttons' tip names the Compendium too",
+    RowTip("Hide Report Buttons"):find("Compendium", 1, true) ~= nil, true)
 labels = PanelLabels("3.3.5")
 Expect("a legacy client, with no Contribute section, is offered Hide Report Buttons too", labels["Hide Report Buttons"], true)
+Expect("...its tip naming only the window and the subtitles, all a legacy client has",
+    RowTip("Hide Report Buttons"):find("from the window and the subtitles.", 1, true) ~= nil
+        and RowTip("Hide Report Buttons"):find("Compendium", 1, true) == nil, true)
 Expect("a legacy client can reach the music channel", labels["Play through the music channel"], true)
 Expect("...its volume", labels["Speech volume"], true)
 Expect("...its fade, as a duration and not a percentage", labels["0.5s"], true)
 Expect("...and the HD model patch", labels["HD model patch installed"], true)
+PanelLabels("1.12")
+Expect("on 1.12, which has no subtitles, Hide Report Buttons' tip names only the window",
+    RowTip("Hide Report Buttons"):find("from the window.", 1, true) ~= nil
+        and RowTip("Hide Report Buttons"):find("subtitles", 1, true) == nil, true)
 
 ---------------------------------------------------------------- an action in the corner, and hiding them
 -- A button that only ever says "Report" earns an icon rather than a word, and it belongs
