@@ -28,8 +28,9 @@ local function Row(label)
 end
 
 Expect("1.12 offers no channel to choose", Row(L.OPT_CHANNEL), nil)
--- A profile saved on Dialog before the setting was removed still holds it.
+-- A profile can still hold Dialog from an older version.
 env.Addon.db.profile.Audio.SoundChannel = "Dialog"; Options:UpdateRows()
+Expect("...which playback reads as Master", env.Sources:PlayerChannel(), "Master")
 local silence = Row(L.OPT_MUTE_DIALOGUE)
 Expect("Silence NPC Voices is there", silence ~= nil, true)
 Expect("...and not greyed over a channel playback ignores", silence and silence.layoutReason, nil)
