@@ -7,6 +7,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
   voice among them, and Spoken plays the one for the NPC you are talking to. Until a pack has
   that voice, the quest plays as before.
+- **Abandoning a quest while its voice speaks fades the voice out.** Before, it was cut off
+  mid-word and the quest's next line started for a moment. *([Nucabe](https://github.com/Nucabe))*
+- **Fixed: Books and Zones said "Not installed" in Spoken's module list after login**, and a
+  module's settings page could show it switched off after it was switched on from Spoken's page.
+  *([Nucabe](https://github.com/Nucabe))*
 - **Volume Follows is back.** Choose which volume slider Spoken's voices follow: Master, Effects,
   Music, Ambience or Dialog. On Dialog, a note says which features stop working there.
   *([Nucabe](https://github.com/Nucabe))*
