@@ -7,6 +7,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
   voice among them, and Spoken plays the one for the NPC you are talking to. Until a pack has
   that voice, the quest plays as before.
+- **A book is one entry in the queue.** Skip skips the rest of the book, and a gravestone or
+  letter opened while a book is read waits behind it instead of replacing it. The windows show
+  the readable's kind over its name, such as Book or Gravestone, in place of the page count.
+  *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
