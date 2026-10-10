@@ -127,6 +127,7 @@ L.OPT_LOWER_DIALOG_TIP = "Spoken이 말하는 동안 NPC 고유 음성의 음량
 L.REASON_WORDS = "이 기능을 쓰려면 '텍스트 표시'를 켜세요."
 L.REASON_LOWER = "이 기능을 쓰려면 '다른 소리 줄이기'를 켜세요."
 L.REASON_VOICE_CHANNEL = "Spoken의 음성이 이 소리로 재생되므로 이 소리는 줄어들지 않습니다. 사용하려면 '음량 조절 기준'을 바꾸세요."
+L.REASON_DIALOG_CHANNEL = "Spoken의 음성이 NPC 음성과 같은 소리로 재생되므로 이 기능은 Spoken의 음성도 끕니다. 사용하려면 '음량 조절 기준'을 바꾸세요."
 L.REASON_DIALOG_MUTED = "'NPC 음성 끄기'가 켜져 있어 Spoken이 말하는 동안 NPC 음성은 이미 들리지 않습니다."
 L.OPT_GATHER_SHARE_TIP = "Spoken이 수집한 대사를 보내는 방법을 보여 줍니다."
 L.OPT_MINIMAP_SHOW_TIP = "미니맵 가장자리에 Spoken 버튼을 표시합니다. 클릭하면 Spoken 메뉴가 열립니다."

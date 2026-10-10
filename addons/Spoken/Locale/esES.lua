@@ -116,6 +116,7 @@ L.REASON_NOT_INSTALLED = "No instalado. Instala este módulo de Spoken para usar
 L.REASON_WORDS = "Activa «Mostrar texto» para usar esto."
 L.REASON_LOWER = "Activa «Bajar otros sonidos» para usar esto."
 L.REASON_VOICE_CHANNEL = "Las voces de Spoken suenan por este sonido, así que nunca se baja. Cambia «Volumen controlado por» para usar esto."
+L.REASON_DIALOG_CHANNEL = "Las voces de Spoken suenan por el mismo sonido que las de los PNJ, así que esto las silenciaría también. Cambia «Volumen controlado por» para usar esto."
 L.REASON_DIALOG_MUTED = "«Silenciar voces de PNJ» está activado, así que las voces de los PNJ ya están en silencio mientras Spoken habla."
 L.REASON_TYPEWRITER = "Activa «Ir escribiendo el texto» para usar esto."
 

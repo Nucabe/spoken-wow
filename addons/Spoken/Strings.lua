@@ -44,6 +44,7 @@ L = {
     REASON_WORDS = "Turn on Show Words to use this.",
     REASON_LOWER = "Turn on Turn Other Sounds Down to use this.",
     REASON_VOICE_CHANNEL = "Spoken's voices play through this sound, so it is never turned down. Change Volume Follows to use this.",
+    REASON_DIALOG_CHANNEL = "Spoken's voices play through the same sound as NPC voices, so this would silence them too. Change Volume Follows to use this.",
     REASON_DIALOG_MUTED = "Silence NPC Voices is on, so NPC voices are already silent while Spoken talks.",
     OPT_GATHER_SHARE_TIP = "Shows the steps to send the lines Spoken has collected.",
     OPT_MINIMAP_SHOW_TIP = "Shows Spoken's button on the edge of the minimap. Click it for Spoken's menu.",

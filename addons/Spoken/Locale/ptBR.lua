@@ -127,6 +127,7 @@ L.OPT_LOWER_DIALOG_TIP = "O volume das vozes dos próprios PNJs enquanto o Spoke
 L.REASON_WORDS = "Marque Mostrar palavras para usar isto."
 L.REASON_LOWER = "Marque Baixar outros sons para usar isto."
 L.REASON_VOICE_CHANNEL = "As vozes do Spoken tocam por este som, então ele nunca é abaixado. Mude o Controle de volume para usar isto."
+L.REASON_DIALOG_CHANNEL = "As vozes do Spoken tocam pelo mesmo som que as dos PNJs, então isto as silenciaria também. Mude o Controle de volume para usar isto."
 L.REASON_DIALOG_MUTED = "Silenciar vozes de PNJs está marcado, então as vozes dos PNJs já ficam em silêncio enquanto o Spoken fala."
 L.OPT_GATHER_SHARE_TIP = "Mostra os passos para enviar as falas que o Spoken coletou."
 L.OPT_MINIMAP_SHOW_TIP = "Mostra o botão do Spoken na borda do minimapa. Clique nele para abrir o menu do Spoken."

@@ -127,6 +127,7 @@ L.OPT_LOWER_DIALOG_TIP = "Spoken 说话时 NPC 自带语音的音量，以其平
 L.REASON_WORDS = "开启“显示文字”后才能使用。"
 L.REASON_LOWER = "开启“降低其他声音”后才能使用。"
 L.REASON_VOICE_CHANNEL = "Spoken 的语音通过这个声音播放，因此它永远不会被调低。更改“音量跟随”后才能使用。"
+L.REASON_DIALOG_CHANNEL = "Spoken 的语音与 NPC 语音通过同一个声音播放，因此这也会静音 Spoken 的语音。更改“音量跟随”后才能使用。"
 L.REASON_DIALOG_MUTED = "“静音 NPC 语音”已开启，因此 Spoken 说话时 NPC 语音已经静音。"
 L.OPT_GATHER_SHARE_TIP = "显示发送 Spoken 已收集台词的步骤。"
 L.OPT_MINIMAP_SHOW_TIP = "在小地图边缘显示 Spoken 按钮。点击可打开 Spoken 菜单。"

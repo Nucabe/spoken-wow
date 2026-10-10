@@ -127,6 +127,7 @@ L.OPT_LOWER_DIALOG_TIP = "Wie laut die eigenen Stimmen der NPCs spielen, währen
 L.REASON_WORDS = "Schalte „Text anzeigen“ ein, um dies zu nutzen."
 L.REASON_LOWER = "Schalte „Andere Sounds absenken“ ein, um dies zu nutzen."
 L.REASON_VOICE_CHANNEL = "Die Stimmen von Spoken laufen über diesen Sound, daher wird er nie abgesenkt. Ändere „Lautstärke folgt“, um dies zu nutzen."
+L.REASON_DIALOG_CHANNEL = "Die Stimmen von Spoken laufen über denselben Sound wie die NPC-Stimmen, daher würde dies sie auch stummschalten. Ändere „Lautstärke folgt“, um dies zu nutzen."
 L.REASON_DIALOG_MUTED = "„NPC-Stimmen stummschalten“ ist aktiv, daher sind NPC-Stimmen bereits stumm, während Spoken spricht."
 L.OPT_GATHER_SHARE_TIP = "Zeigt die Schritte, um die von Spoken gesammelten Zeilen zu senden."
 L.OPT_MINIMAP_SHOW_TIP = "Zeigt die Schaltfläche von Spoken am Rand der Minikarte. Klicke darauf, um das Spoken-Menü zu öffnen."

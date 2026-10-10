@@ -552,7 +552,7 @@ local function Build(canvas)
     dialogWarning:SetTextColor(1, 0.5, 0.25)
     layout:ShowWhen(dialogWarning, function() return audio().SoundChannel == "Dialog" end)
     if audio().AutoToggleDialog ~= nil then
-        layout:Checkbox(L.OPT_MUTE_DIALOGUE,
+        local silence = layout:Checkbox(L.OPT_MUTE_DIALOGUE,
             Version.IsLegacyVanilla and L.OPT_MUTE_DIALOGUE_TIP_VANILLA or L.OPT_MUTE_DIALOGUE_TIP,
             function() return audio().AutoToggleDialog end,
             function(v)
@@ -562,6 +562,8 @@ local function Build(canvas)
                     SoundUtils:MuteChannel("Dialog", false)
                 end
             end, function() Options:UpdateRows() end)
+        -- Muting Dialog would mute Spoken's own line, so on Dialog the queue never does.
+        Requires(silence, function() return audio().SoundChannel ~= "Dialog" end, L.REASON_DIALOG_CHANNEL)
     end
     layout:Slider(L.OPT_LINE_GAP, 0, 5, 0.25,
         function() return audio().LineGap or 0 end, function(v) audio().LineGap = v end,

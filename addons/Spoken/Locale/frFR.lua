@@ -202,6 +202,7 @@ L.OPT_FALLBACK_NONE = "Rester silencieux"
 
 -- Sound
 L.REASON_VOICE_CHANNEL = "Les voix de Spoken passent par ce son, il n'est donc jamais baissé. Changez Volume de référence pour utiliser ceci."
+L.REASON_DIALOG_CHANNEL = "Les voix de Spoken passent par le même son que celles des PNJ, ceci les couperait donc aussi. Changez Volume de référence pour utiliser ceci."
 L.REASON_DIALOG_MUTED = "Couper les voix des PNJ est activé, les voix des PNJ sont donc déjà muettes pendant que Spoken parle."
 L.OPT_LOWER_TITLE = "Jeu plus discret quand Spoken parle"
 L.OPT_LOWER_OTHERS = "Baisser les autres sons"
