@@ -27,6 +27,7 @@ import {
   gossipLineId,
   gossipStemRank,
   localizedGossipStem,
+  momentOf,
   type LineIdentity,
 } from "./naming";
 import { voiceNameFor } from "@/lib/voices/voices";
@@ -173,18 +174,20 @@ export function planFor(line: MomentLine, lang: Lang, broadcastTextId: number | 
   const { lineId } = line;
   if (lang === BASE_LANG || line.hasLang) {
     if (lang === BASE_LANG && !line.hasEnglish) {
-      return { kind: "line", identity: identityOf(lineId), broadcastTextId };
+      return { kind: "line", identity: gossipIdentity(lineId), broadcastTextId };
     }
     return line.speaks
       ? { kind: "exists", lineId, broadcastTextId }
       : { kind: "speaker", lineId, lang: line.speakerLang, broadcastTextId };
   }
   if (line.hasEnglish) return { kind: "translation", lineId, addSpeaker: !line.speaks, broadcastTextId };
-  return { kind: "line", identity: identityOf(lineId), broadcastTextId };
+  return { kind: "line", identity: gossipIdentity(lineId), broadcastTextId };
 }
 
-function identityOf(lineId: string): LineIdentity {
-  return { source: "gossip", lineId, fileName: lineId.slice(2).replace(/:[mf]$/, ""), questId: null, questTitle: null };
+/** The moment a greeting's line is one of, under the plain id and file. */
+export function gossipIdentity(lineId: string): LineIdentity {
+  const moment = momentOf(lineId);
+  return { source: "gossip", lineId: moment, fileName: moment.slice(2), questId: null, questTitle: null };
 }
 
 /** A new line's identity: by id when it is known, else by its own text. */

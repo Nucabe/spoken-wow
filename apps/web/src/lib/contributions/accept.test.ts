@@ -898,6 +898,46 @@ describe("resolveContribution: a greeting in any language", { timeout: 20_000 },
     expect(await lineIsInExplorer(portuguese)).toBe(true);
   });
 
+  it("translates English's two player-gender lines as one, its own text having no $g", async () => {
+    await speaker(npcId, "tauren", "male", "warrior");
+    const stem = broadcastGossipStem(bt, VOICE);
+    try {
+      for (const [index, g] of (["m", "f"] as const).entries()) {
+        await db().query(
+          `insert into "quest_line"
+             ("lineId", "variant", "lang", "version", "isCurrent", "origin", "source", "playerGender",
+              "fileName", "text", "originalText", "generatable")
+           values ($1, 0, 'enUS', 1, true, 'extracted', 'gossip', $2, $3, $4, $5, true)`,
+          [`g:${stem}:${g}`, g, `${g}-${stem}`, g === "m" ? "Well met, lad." : "Well met, lass.", "Well met, $glad:lass;."],
+        );
+        await db().query(
+          `insert into "quest_line_speaker"
+             ("lineId", "variant", "lang", "ord", "npcType", "npcId", "npcName", "race", "gender", "flavor", "voice")
+           values ($1, 0, 'enUS', $2, 'creature', $3, 'Test Speaker', 'tauren', 'male', 'warrior', $4)`,
+          [`g:${stem}:${g}`, 1_960_000_000 + (bt % 10_000_000) * 2 + index, npcId, VOICE],
+        );
+        await db().query(
+          `insert into "gossip_broadcast" ("lineId", "broadcastTextId", "matchedBy") values ($1, $2, 'text')`,
+          [`g:${stem}:${g}`, bt],
+        );
+      }
+      await broadcast(LOCALE, bt, PORTUGUESE);
+
+      await accepted(await greeting(LOCALE, PORTUGUESE));
+      const { rows: written } = await db().query(
+        `select "lineId", "playerGender", "fileName", "originalText" from "quest_line"
+          where "lineId" like $1 and "lang" = $2 and "isCurrent"`,
+        [`g:${stem}%`, LOCALE],
+      );
+      expect(written).toEqual([
+        { lineId: `g:${stem}`, playerGender: null, fileName: stem, originalText: "Well met, $glad:lass;." },
+      ]);
+    } finally {
+      await db().query(`delete from "quest_line_speaker" where "lineId" like $1 and "lang" = 'enUS'`, [`g:${stem}:%`]);
+      await db().query(`delete from "quest_line" where "lineId" like $1 and "origin" = 'extracted'`, [`g:${stem}:%`]);
+    }
+  });
+
   it("adds an NPC of the same voice as one more speaker of the moment", async () => {
     await speaker(npcId, "tauren", "male", "warrior");
     await speaker(npcId + 1, "tauren", "male", "warrior");
