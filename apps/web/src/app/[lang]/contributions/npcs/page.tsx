@@ -43,9 +43,9 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
           Every NPC a contribution has named, and who voices them. An answer here settles every
           line that NPC speaks.
         </p>
-        <ContributionsTabs lang={lang} active="npcs" showNpcs />
       </Contained>
       <Wide>
+        <ContributionsTabs lang={lang} section="npcs" showNpcs />
         <NpcEditor initial={npcs} flavorScopes={flavorScopes} />
       </Wide>
     </main>

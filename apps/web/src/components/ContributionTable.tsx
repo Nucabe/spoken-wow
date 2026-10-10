@@ -34,7 +34,6 @@ import SendersButton from "@/components/SendersButton";
 import StatusTabs, { BucketTabs } from "@/components/StatusTabs";
 import { usePendingPush } from "@/components/usePendingPush";
 import { useSearchBox } from "@/components/useSearchBox";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -48,16 +47,16 @@ import { flavorOptionsFor, summaryFromResolution, type FlavorScope } from "@/lib
 import {
   bucketOf,
   contributionsHref,
+  namesSpeaker,
   QUEST_STAGES,
   nextSort,
-  sectionOf,
   type Bucket,
+  type Section,
   type ClientFilter,
   type ContributionSort,
   type FilterChange,
   type QuestStage,
   type SortColumn,
-  type SourceFilter,
   type StageFilter,
 } from "@/lib/contributions/query";
 import type { Contribution } from "@/lib/contributions/store";
@@ -88,6 +87,8 @@ export type ContributionRow = Pick<
   quest: QuestSummary | null;
   /** A books row from another language's client: what it showed, and its English page. */
   book: BookSummary | null;
+  /** A zones or books row's place as the client named it: zone and subzone, or book and page. */
+  place: string | null;
   /**
    * Whether this contribution's line is already in the explorer (accept.ts's lineIsInExplorer).
    * Only meaningful for an accepted quests row -- it is what decides whether "Add to explorer"
@@ -107,18 +108,6 @@ const BOOKS_LIST = "contribution-english-books";
 function bookOption(book: BookChoice): string {
   return `${book.title} #${book.bookId}`;
 }
-
-const SOURCE_LABELS: Record<Contribution["source"] | "gossip", string> = {
-  quests: "Quests",
-  gossip: "Gossip",
-  zones: "Zones",
-  books: "Books",
-};
-
-const SOURCE_CHIP_OPTIONS: ChipOption[] = (["quests", "gossip", "zones", "books"] as const).map((option) => ({
-  value: option,
-  label: SOURCE_LABELS[option],
-}));
 
 const STAGE_LABELS: Record<QuestStage, string> = {
   accept: "Accept",
@@ -217,7 +206,8 @@ export default function ContributionTable({
   bucket: Bucket;
   bucketCounts: Record<Bucket, number>;
   client: ClientFilter;
-  source: SourceFilter;
+  /** The section shown: its rows only, and only the columns and filters that apply to it. */
+  source: Section;
   stage: StageFilter;
   sort: ContributionSort;
   q: string;
@@ -501,7 +491,6 @@ export default function ContributionTable({
     // envelope gave, in its own locale.
     return override ? { ...override, npcName: row.npc?.npcName ?? override.npcName } : row.npc;
   };
-  const bucketNow = (row: ContributionRow): Bucket => bucketOf(row, npcOf(row));
 
   // Only rows still on screen count: a selected row a bulk reject just moved out of this view
   // must not be accepted by the next click on a button that no longer shows it.
@@ -515,7 +504,7 @@ export default function ContributionTable({
     .map((row) => row.id);
   // A row with no speaker would only come back refused.
   const selectedToAccept = changeable(
-    selectedRows.filter((row) => bucketNow(row) === "ready"),
+    selectedRows.filter((row) => bucketOf(row, npcOf(row)) === "ready"),
     "accepted",
   );
   const selectedToReject = changeable(selectedRows, "rejected");
@@ -555,48 +544,47 @@ export default function ContributionTable({
           localeHref(lang, contributionsHref(filters, { status: next }))
         }
       />
-      {status === "new" ? (
+      {status === "new" && namesSpeaker(source) ? (
         <BucketTabs
           active={bucket}
           counts={bucketCounts}
           onGo={push}
           hrefFor={(next) => localeHref(lang, contributionsHref(filters, { bucket: next }))}
-          className="-mt-1"
         />
       ) : null}
       <nav className="mb-4 flex flex-wrap items-center gap-2">
         <Input
           type="search"
           value={query}
-          placeholder="NPC, quest, or what they sent…"
+          placeholder={
+            source === "quests" ? "NPC, quest, or what they sent…" : source === "gossip" ? "NPC, or what they sent…" : "What they sent…"
+          }
           aria-label="Search"
           className="h-8 min-w-0 basis-64"
           onChange={(event) => setQuery(event.target.value)}
         />
-        <FilterChip
-          label="search in"
-          value={searchIn === "any" ? undefined : searchIn}
-          options={SEARCH_IN_OPTIONS}
-          onChange={(next) => go({ searchIn: (next ?? "any") as Filter })}
-        />
+        {namesSpeaker(source) ? (
+          <FilterChip
+            label="search in"
+            value={searchIn === "any" ? undefined : searchIn}
+            options={source === "gossip" ? SEARCH_IN_OPTIONS.filter((option) => option.value !== "quest") : SEARCH_IN_OPTIONS}
+            onChange={(next) => go({ searchIn: (next ?? "any") as Filter })}
+          />
+        ) : null}
         <FilterChip
           label="client"
           value={client === "all" ? undefined : client}
           options={CLIENT_CHIP_OPTIONS}
           onChange={(next) => go({ client: next as ClientFilter | undefined })}
         />
-        <FilterChip
-          label="source"
-          value={source === "all" ? undefined : source}
-          options={SOURCE_CHIP_OPTIONS}
-          onChange={(next) => go({ source: next as SourceFilter | undefined })}
-        />
-        <FilterChip
-          label="stage"
-          value={stage === "all" ? undefined : stage}
-          options={STAGE_CHIP_OPTIONS}
-          onChange={(next) => go({ stage: next as StageFilter | undefined })}
-        />
+        {source === "quests" ? (
+          <FilterChip
+            label="stage"
+            value={stage === "all" ? undefined : stage}
+            options={STAGE_CHIP_OPTIONS}
+            onChange={(next) => go({ stage: next as StageFilter | undefined })}
+          />
+        ) : null}
         {pending && <Refreshing />}
       </nav>
 
@@ -694,11 +682,16 @@ export default function ContributionTable({
               <SortHeader column="filed" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
                 Filed
               </SortHeader>
-              <SortHeader column="source" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
-                Source
-              </SortHeader>
-              <th className="border-b py-2 pr-3 font-normal">NPC</th>
-              <th className="border-b py-2 pr-3 font-normal">Quest / Book</th>
+              {source === "quests" ? (
+                <>
+                  <th className="border-b py-2 pr-3 font-normal">NPC</th>
+                  <th className="border-b py-2 pr-3 font-normal">Quest</th>
+                </>
+              ) : source === "gossip" ? (
+                <th className="border-b py-2 pr-3 font-normal">NPC</th>
+              ) : (
+                <th className="border-b py-2 pr-3 font-normal">{source === "books" ? "Book" : "Place"}</th>
+              )}
               <th className="border-b py-2 pr-3 font-normal">Client</th>
               <SortHeader column="count" sort={sort} onSort={(column) => go({ sort: nextSort(sort, column) })}>
                 Count
@@ -721,8 +714,8 @@ export default function ContributionTable({
                   book={book}
                   current={resolved[row.id] ?? row.status}
                   npc={npc}
-                  acceptable={now === "ready"}
-                  movedTo={status === "new" && now !== bucket ? now : null}
+                  bucket={now}
+                  moved={status === "new" && now !== bucket}
                   found={existing[row.id]}
                   selected={selected.has(row.id)}
                   busy={busy === row.id}
@@ -773,8 +766,8 @@ const ContributionTableRow = memo(function ContributionTableRow({
   book,
   current,
   npc,
-  acceptable,
-  movedTo,
+  bucket,
+  moved,
   found,
   selected,
   busy,
@@ -798,10 +791,10 @@ const ContributionTableRow = memo(function ContributionTableRow({
   /** The row's status, with this session's own changes over the server's. */
   current: ContributionStatus;
   npc: NpcSummary | null;
-  /** Whether accept would take the row as its speaker stands. */
-  acceptable: boolean;
-  /** The New tab's other half, when an answer saved here moved the row into it. */
-  movedTo: Bucket | null;
+  /** Where the row stands now: an answer saved here may have moved it. Only ready rows offer Accept. */
+  bucket: Bucket;
+  /** On the New tab, the row now belongs to the other half. */
+  moved: boolean;
   /** The corpus text the row's key already resolves to, if any. */
   found: string | undefined;
   selected: boolean;
@@ -858,108 +851,99 @@ const ContributionTableRow = memo(function ContributionTableRow({
           {when(row.createdAt)}
         </td>
 
-        <td className="pr-3 text-xs whitespace-nowrap">
-          {/* The raw triage key moved here, as a hover title -- the NPC and Quest
-              columns are what a moderator scans now (finding 1), but the key is still
-              worth having for a zones/books row, where neither column applies. */}
-          <Badge variant="outline" className="py-0 leading-5" title={row.key}>
-            {SOURCE_LABELS[sectionOf(row, row.quest)]}
-          </Badge>
-        </td>
-
         {/* NPC and Speaker, merged: who the NPC is and who voices their lines are the
             same question, and showing them as two columns meant scanning across the
             row to connect an id in one cell with a form three cells later. Name/id/
             links stay on their own line; the voice -- settled text for a corpus NPC,
             the override form for one that isn't -- sits right beneath it. */}
-        <td className="max-w-[20rem] pr-3 text-xs">
-          {npc ? (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1 whitespace-nowrap">
+        {row.source === "quests" ? (
+          <td className="max-w-[20rem] pr-3 text-xs">
+            {npc ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 whitespace-nowrap">
+                  <a
+                    href={localeHref(lang, `/quests?q=${npc.npcId}&filter=npc`)}
+                    className="truncate hover:underline"
+                    title={npc.npcName ?? undefined}
+                  >
+                    {npc.npcName ?? "unnamed"}{" "}
+                    <span className="text-muted-foreground">#{npc.npcId}</span>
+                  </a>
+                  <a
+                    href={
+                      // The corpus's own exact answer means it has this NPC on the branch
+                      // the corpus is built from; anything else -- including a post-vanilla
+                      // NPC like 205729 -- is only ever on the client's own branch. See
+                      // wowhead.ts for why two branches exist rather than one.
+                      //
+                      // A kind-less row (npc.npcKind === null) has no real kind to link
+                      // with yet -- "creature" is a convenience guess for this link only,
+                      // never stored, and every quest/gossip npc field this table has ever
+                      // seen has in fact named one.
+                      npc.provenance === "corpus"
+                        ? wowheadEntityUrl(npc.npcKind ?? "creature", npc.npcId)
+                        : wowheadForeverUrl(npc.npcKind ?? "creature", npc.npcId)
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-muted-foreground shrink-0 hover:underline"
+                  >
+                    wh↗
+                  </a>
+                </div>
+                {npc.conflict.length > 0 ? (
+                  <NpcConflict
+                    npc={npc}
+                    busy={npcBusy}
+                    onPick={(option) => void onPickConflict(row.id, npc, option)}
+                  />
+                ) : (
+                  <SpeakerCell
+                    npc={npc}
+                    flavorScopes={flavorScopes}
+                    readOnly={!canAnswerNpc}
+                    busy={npcBusy}
+                    onSave={(answer) => void onOverrideNpc(row.id, npc, answer)}
+                  />
+                )}
+              </div>
+            ) : (
+              // No NPC named at all: whoever triages it can say who speaks it.
+              <MissingNpcForm busy={npcBusy} onSave={(answer) => void onNameNpc(row.id, answer)} />
+            )}
+          </td>
+        ) : null}
+
+        {row.quest === "gossip" ? null : (
+          <td className="max-w-[14rem] pr-3 text-xs whitespace-nowrap">
+            {book ? (
+              <BookMatchCell
+                book={book}
+                lang={lang}
+                busy={npcBusy}
+                locked={pageWritten || locked}
+                onSave={(answer) => void onMatchPage(row.id, answer)}
+              />
+            ) : row.quest === null ? (
+              <span title={row.key}>{row.place ?? row.key}</span>
+            ) : (
+              <>
+                <span className="truncate">{row.quest.title}</span>{" "}
                 <a
-                  href={localeHref(lang, `/quests?q=${npc.npcId}&filter=npc`)}
-                  className="truncate hover:underline"
-                  title={npc.npcName ?? undefined}
-                >
-                  {npc.npcName ?? "unnamed"}{" "}
-                  <span className="text-muted-foreground">#{npc.npcId}</span>
-                </a>
-                <a
-                  href={
-                    // The corpus's own exact answer means it has this NPC on the branch
-                    // the corpus is built from; anything else -- including a post-vanilla
-                    // NPC like 205729 -- is only ever on the client's own branch. See
-                    // wowhead.ts for why two branches exist rather than one.
-                    //
-                    // A kind-less row (npc.npcKind === null) has no real kind to link
-                    // with yet -- "creature" is a convenience guess for this link only,
-                    // never stored, and every quest/gossip npc field this table has ever
-                    // seen has in fact named one.
-                    npc.provenance === "corpus"
-                      ? wowheadEntityUrl(npc.npcKind ?? "creature", npc.npcId)
-                      : wowheadForeverUrl(npc.npcKind ?? "creature", npc.npcId)
-                  }
+                  href={wowheadQuestUrl(row.quest.questId)}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-muted-foreground shrink-0 hover:underline"
+                  className="text-muted-foreground hover:underline"
                 >
-                  wh↗
+                  #{row.quest.questId}
                 </a>
-              </div>
-              {npc.conflict.length > 0 ? (
-                <NpcConflict
-                  npc={npc}
-                  busy={npcBusy}
-                  onPick={(option) => void onPickConflict(row.id, npc, option)}
-                />
-              ) : (
-                <SpeakerCell
-                  npc={npc}
-                  flavorScopes={flavorScopes}
-                  readOnly={!canAnswerNpc}
-                  busy={npcBusy}
-                  onSave={(answer) => void onOverrideNpc(row.id, npc, answer)}
-                />
-              )}
-            </div>
-          ) : row.source === "quests" ? (
-            // No NPC named at all: whoever triages it can say who speaks it.
-            <MissingNpcForm busy={npcBusy} onSave={(answer) => void onNameNpc(row.id, answer)} />
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          )}
-        </td>
-
-        <td className="max-w-[14rem] pr-3 text-xs whitespace-nowrap">
-          {book ? (
-            <BookMatchCell
-              book={book}
-              lang={lang}
-              busy={npcBusy}
-              locked={pageWritten || locked}
-              onSave={(answer) => void onMatchPage(row.id, answer)}
-            />
-          ) : row.quest === null ? (
-            <span className="text-muted-foreground">—</span>
-          ) : row.quest === "gossip" ? (
-            "Gossip"
-          ) : (
-            <>
-              <span className="truncate">{row.quest.title}</span>{" "}
-              <a
-                href={wowheadQuestUrl(row.quest.questId)}
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted-foreground hover:underline"
-              >
-                #{row.quest.questId}
-              </a>
-              {row.quest.stage ? (
-                <div className="text-muted-foreground">{STAGE_LABELS[row.quest.stage]}</div>
-              ) : null}
-            </>
-          )}
-        </td>
+                {row.quest.stage ? (
+                  <div className="text-muted-foreground">{STAGE_LABELS[row.quest.stage]}</div>
+                ) : null}
+              </>
+            )}
+          </td>
+        )}
 
         {/* Which game, then the locale and the exact build underneath: the version is
             in the label, and the build number is what tells a beta's builds apart. */}
@@ -1015,7 +999,7 @@ const ContributionTableRow = memo(function ContributionTableRow({
 
         <td>
           <div className="flex items-center justify-end gap-1">
-            {current !== "accepted" && acceptable ? (
+            {current !== "accepted" && bucket === "ready" ? (
               <LiteButton
                 variant="accept"
                 disabled={busy || locked}
@@ -1056,9 +1040,9 @@ const ContributionTableRow = memo(function ContributionTableRow({
               </LiteButton>
             ) : null}
           </div>
-          {movedTo ? (
+          {moved ? (
             <p className="text-muted-foreground mt-1 text-right text-xs">
-              {movedTo === "ready" ? "Ready now" : "Needs a speaker now"}
+              {bucket === "ready" ? "Ready now" : "Needs a speaker now"}
             </p>
           ) : null}
           {refusal ? (
