@@ -220,6 +220,12 @@ Expect("...and hides itself if the cursor goes back over the button", tip:IsShow
 stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 stub.ldbObjects.Spoken.OnTooltipShow(tip)
 Expect("with the menu closed it says what the clicks do again", tip:NumLines() > 3, true)
+local playing = env.SoundQueue.GetCurrentSound
+env.SoundQueue.GetCurrentSound = function() return { present = { label = "Azeroth" } } end
+stub.ldbObjects.Spoken.OnTooltipShow(tip)
+Expect("a line with nothing over its name has no empty line over it in the tooltip",
+    tip.lines[1] .. "|" .. tip.lines[2], "Spoken|Azeroth")
+env.SoundQueue.GetCurrentSound = playing
 stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 
 stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
