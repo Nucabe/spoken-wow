@@ -1327,6 +1327,8 @@ end
 --- `wait` (QUEST_FINISHED), its words fade before DialogueUI hides it, and come back if it has not
 --- within `wait`.
 function Skin:FadeDialogOut(dialog, hide, wait)
+    -- Another dialog still closing: its words given back, and closed if DialogueUI hid it.
+    if self.closing then self:EndClose(self.closing.hiding) end
     local paper = {}
     for _, key in ipairs(PAPER_FRAMES) do
         if type(dialog[key]) == "table" then paper[dialog[key]] = true end

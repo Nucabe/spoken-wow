@@ -772,6 +772,22 @@ Skin.frame.GetLeft, Skin.frame.GetTop = frameLeft, frameTop
 Spoken:StopAll()
 CloseDialog()
 Expect("with no line playing on, the dialog closing moves nothing", Skin.settling, nil)
+do
+    -- A dialog closing while another's close still runs (the book view closed as the quest window
+    -- closes): that one gets its words back and is hidden first.
+    local hid = {}
+    local first, second = CreateFrame("Frame"), CreateFrame("Frame")
+    local firstWords = CreateFrame("Frame", nil, first)
+    first:Show(); second:Show()
+    Skin:FadeDialogOut(first, function(dialog) table.insert(hid, "first"); dialog:Hide() end)
+    Skin:CloseStep(0.05)
+    Skin:FadeDialogOut(second, function(dialog) table.insert(hid, "second"); dialog:Hide() end)
+    Expect("a close started while another runs hides that one first, its words given back",
+        table.concat(hid, ",") .. " " .. tostring(firstWords.alpha) .. " " .. tostring(first:IsShown()) .. " "
+        .. tostring(Skin.closing ~= nil and Skin.closing.dialog == second), "first 1 false true")
+    Skin:CloseStep(1)
+    Expect("...then closes the second", table.concat(hid, ","), "first,second")
+end
 
 ---------------------------------------------------------------- books and stones
 -- Spoken Books' pages, in the art DialogueUI's book view draws them in: its paper for books and
