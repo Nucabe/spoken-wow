@@ -121,11 +121,15 @@ strings.__index = function(s, key)
     if s == SECRET then error("attempt to index a secret string value") end
     return index[key]
 end
-local ok, err = pcall(stub.FireEvent, "CHAT_MSG_SYSTEM", SECRET)
+local printed = {}
+Z.Print = function(_, fmt, ...) table.insert(printed, fmt:format(...)) end
+-- The client fills the sender and channel fields after the text, mostly with "".
+local ok, err = pcall(stub.FireEvent, "CHAT_MSG_SYSTEM", SECRET, "", "Common", "")
 strings.__index = index
 _G.issecretvalue = nil
 Expect("a secret system message raises no error", ok or err, true)
 Expect("...and discovers nothing", Spoken:GetQueueSize(), 0)
+Expect("...nor prints a field after it as the message", printed[1], nil)
 stub.FireEvent("CHAT_MSG_SYSTEM", "Discovered Durotar.")
 Expect("the same message, not secret, still discovers", Spoken:IsPlaying(), true)
 
