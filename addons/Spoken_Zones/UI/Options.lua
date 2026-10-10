@@ -309,6 +309,10 @@ function SpokenZones:SetupOptions()
 	layout:RequiresAll(PartOn, L.REASON_PART_OFF, switch)
 	layout:Refresh()
 	content:SetScript("OnShow", refresh)
+	-- Switched on or off from Spoken's page while this one was hidden: drawn again for it.
+	if Spoken and Spoken.RegisterCallback then
+		Spoken:RegisterCallback("PART_SWITCHED", function(part) if part == "zones" then refresh() end end)
+	end
 
 	-- Derived rather than written as a number: a hardcoded height is a number nobody
 	-- updates when a row is added, and the failure it produces is the one this scroller
@@ -318,7 +322,7 @@ function SpokenZones:SetupOptions()
 	-- Under Spoken's own entry when the player can nest it, beside the other parts' pages;
 	-- a top-level entry of its own otherwise, as when the player is not installed.
 	local page = Spoken and Spoken.AddSettingsPage
-		and Spoken:AddSettingsPage(panel, L.OPT_PAGE_TITLE, 3, layout, scroller)
+		and Spoken:AddSettingsPage(panel, L.OPT_PAGE_TITLE, 4, layout, scroller)
 	if page then
 		SpokenZones.optionsPage = page
 	else

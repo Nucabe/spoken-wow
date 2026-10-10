@@ -45,10 +45,12 @@ local BINDINGS = {
 local PARTS = {
     { key = "quests", label = L.OPT_PART_QUESTS, text = L.OPT_PART_QUESTS_TEXT, tip = L.OPT_PART_QUESTS_TIP,
         icon = [[Interface\Icons\INV_Scroll_03]], order = 1 },
+    { key = "gossip", label = L.OPT_PART_GOSSIP, text = L.OPT_PART_GOSSIP_TEXT, tip = L.OPT_PART_GOSSIP_TIP,
+        icon = [[Interface\Icons\UI_Chat]], order = 2 },
     { key = "books", label = L.OPT_PART_BOOKS, text = L.OPT_PART_BOOKS_TEXT, tip = L.OPT_PART_BOOKS_TIP,
-        icon = [[Interface\Icons\INV_Misc_Book_09]], order = 2 },
+        icon = [[Interface\Icons\INV_Misc_Book_09]], order = 3 },
     { key = "zones", label = L.OPT_PART_ZONES, text = L.OPT_PART_ZONES_TEXT, tip = L.OPT_PART_ZONES_TIP,
-        icon = [[Interface\Icons\INV_Misc_Map02]], order = 3 },
+        icon = [[Interface\Icons\INV_Misc_Map02]], order = 4 },
 }
 
 -- Sketches of the ways of showing a line, in flat colour, for their tiles: a portrait in
@@ -398,15 +400,33 @@ local function Build(canvas)
     end
     -- One row per action an addon declared optional, named by that addon. The player is
     -- not told what any of them do. The subtitle shows the corner icon too, so the row is
-    -- there with subtitles as well as with a window.
-    for _, optional in ipairs(Actions.optional) do
-        Only(layout:Checkbox(format(L.OPT_HIDE_ACTION, optional.label), L.OPT_HIDE_ACTION_TIP,
-            function() return cfg().HiddenActions[optional.id] end,
-            function(v) cfg().HiddenActions[optional.id] = v or nil end, function()
+    -- there with subtitles as well as with a window. Report is not the window's alone (the
+    -- quest log, DialogueUI's window and the lore pages show it), so its row is a general one.
+    local function HideActionRow(id, label, tip, changed)
+        return layout:Checkbox(label, tip,
+            function() return cfg().HiddenActions[id] end,
+            function(v) cfg().HiddenActions[id] = v or nil end, function()
                 refresh()
                 if Subtitle then Subtitle:Update() end
-            end),
-            function() return InWindow() or Subtitles() end)
+                if changed then changed() end
+            end)
+    end
+    for _, optional in ipairs(Actions.optional) do
+        if optional.id ~= "report" then
+            Only(HideActionRow(optional.id, format(L.OPT_HIDE_ACTION, optional.label), L.OPT_HIDE_ACTION_TIP),
+                function() return InWindow() or Subtitles() end)
+        end
+    end
+    -- The report action's own key, which the windows already follow: a hidden Report stays hidden.
+    local function ReportRow(tip)
+        return HideActionRow("report", L.OPT_HIDE_REPORT, tip,
+            function() Callbacks:Fire("REPORT_SETTINGS_CHANGED") end)
+    end
+    -- Legacy clients have no Contribute section, and Report only on a window or subtitles. Its tip
+    -- names only what they have: no Small Window, and no subtitles on 1.12.
+    if not Spoken.Contribute then
+        Only(ReportRow(Version.IsLegacyVanilla and L.OPT_HIDE_REPORT_TIP_VANILLA
+            or L.OPT_HIDE_REPORT_TIP_LEGACY), function() return InWindow() or Subtitles() end)
     end
     -- No "hide the window" switch: nothing on screen at all is Voice Only, a way of showing
     -- lines like the others, chosen with them above.
@@ -540,6 +560,12 @@ local function Build(canvas)
                 end
             end, function() Options:UpdateRows() end)
     end
+    layout:Checkbox(L.OPT_GREETING_FIRST, L.OPT_GREETING_FIRST_TIP,
+        function() return audio().GreetingFirst end,
+        function(v)
+            audio().GreetingFirst = v
+            if v then GreetingFirst:SetDialogApart() end
+        end)
     layout:Slider(L.OPT_LINE_GAP, 0, 5, 0.25,
         function() return audio().LineGap or 0 end, function(v) audio().LineGap = v end,
         nil, Layout.Seconds, L.OPT_LINE_GAP_TIP)
@@ -609,6 +635,7 @@ local function Build(canvas)
             function() return Addon.db.profile.Contribute.HideButtons end,
             function(v) Addon.db.profile.Contribute.HideButtons = v end,
             function() Callbacks:Fire("CONTRIBUTE_SETTINGS_CHANGED") end)
+        ReportRow(L.OPT_HIDE_REPORT_TIP)
         -- The opt-out the first Contribute click promises. Independent of hiding the buttons:
         -- a player who gathers has no use for them, and hiding them must not stop it.
         if Gather then
@@ -724,6 +751,9 @@ local function Build(canvas)
         Options:AddLink(link.text, link.onClick)
     end
     pendingLinks = {}
+    -- The modules register on entering the world, after this page is built: drawn again for each,
+    -- or their rows in the module list say "Not installed" until something else redraws them.
+    Callbacks:Register("SOURCE_REGISTERED", function() Options:UpdateRows() end)
     if panel.HookScript then
         panel:HookScript("OnShow", function() Options:UpdateRows() end)
         -- The sample is for placing the subtitle while the settings are open, not after.

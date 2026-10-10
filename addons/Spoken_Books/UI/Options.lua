@@ -218,6 +218,10 @@ function SpokenBooks:SetupOptions()
 	layout:RequiresAll(PartOn, L.REASON_PART_OFF, switch)
 	layout:Refresh()
 	content:SetScript("OnShow", refresh)
+	-- Switched on or off from Spoken's page while this one was hidden: drawn again for it.
+	if Spoken and Spoken.RegisterCallback then
+		Spoken:RegisterCallback("PART_SWITCHED", function(part) if part == "books" then refresh() end end)
+	end
 
 	-- Derived rather than written as a number: a hardcoded height is a number nobody updates
 	-- when a row is added, and what that produces is a section you cannot scroll to.
@@ -226,7 +230,7 @@ function SpokenBooks:SetupOptions()
 	-- Under Spoken's own entry when the player can nest it, named as DialogueUI names the
 	-- same things; a top-level entry of its own otherwise.
 	local page = Spoken and Spoken.AddSettingsPage
-		and Spoken:AddSettingsPage(panel, L.OPT_PAGE_TITLE, 2, layout, scroller)
+		and Spoken:AddSettingsPage(panel, L.OPT_PAGE_TITLE, 3, layout, scroller)
 	if page then
 		SpokenBooks.optionsPage = page
 	else
