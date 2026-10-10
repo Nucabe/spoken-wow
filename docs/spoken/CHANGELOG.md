@@ -7,6 +7,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
   voice among them, and Spoken plays the one for the NPC you are talking to. Until a pack has
   that voice, the quest plays as before.
+- **Hide Report Buttons hides every Report button.** It sits beside Hide Contribute Buttons and
+  also takes Report off the quest log, DialogueUI's window, the lore beside the map and the
+  Compendium. *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
