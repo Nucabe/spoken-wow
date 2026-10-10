@@ -1,6 +1,6 @@
 /**
  * The only module that knows the npc table's column names, as lib/contributions/store.ts is for
- * contributions. One row per NPC, read for every line it speaks (migration 0068); its name is
+ * contributions. One row per NPC, read for every line it speaks (migration 0070); its name is
  * per language, in entity_name.
  *
  * Every read and write takes the kind as well as the id. The pair is the key, because the two
@@ -64,7 +64,7 @@ export async function getResolution(kind: NpcKind, npcId: number): Promise<NpcRe
 // sits between them, because it is the game's own voice set for the appearance the player saw
 // and so beats a model guess, but the corpus is the older authority for every NPC it carries;
 // `client` outranks `none` because a mapped model id is still an observation where a bare
-// envelope is none at all. The ranks are npc_provenance_rank (migration 0068), which must change
+// envelope is none at all. The ranks are npc_provenance_rank (migration 0070), which must change
 // with the npc_provenance_check constraint.
 
 /**

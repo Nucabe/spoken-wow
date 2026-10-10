@@ -25,7 +25,7 @@ from tts_cli.naming import filename_for_row, line_id_for_row
 #: but the number says the file's unmarked rows are all the dump's -- which is what lets
 #: corpus_db's import let them overtake a contribution (see CONTRIBUTIONS_MARKED there).
 #: 4: "npcs", each NPC once with its own race, gender and flavor, which the site voices every
-#: line the NPC speaks in (the npc table, migration 0068).
+#: line the NPC speaks in (the npc table, migration 0070).
 SCHEMA_VERSION = 4
 DEFAULT_CORPUS_PATH = "corpus/corpus.json.gz"
 INVALID_CHARS = "$<>"

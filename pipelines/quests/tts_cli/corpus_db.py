@@ -160,7 +160,7 @@ def npc_answers(npcs) -> list:
 
 
 def _import_npcs(cur, npc_rows):
-    """The extract's NPCs as the npc table's `corpus` answers (apps/web migration 0068).
+    """The extract's NPCs as the npc table's `corpus` answers (apps/web migration 0070).
 
     Over anything ranked below the corpus -- a display read, a client guess, nothing -- and
     never over a moderator's answer. A `corpus` row the file no longer carries goes, so the

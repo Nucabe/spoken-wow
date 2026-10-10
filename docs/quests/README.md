@@ -1005,7 +1005,7 @@ the contribution meant, and that pick is stored on the contribution (`contributi
 migration 0033), never in `meta`, which stays what the client sent. From then on every reader
 treats the row as if its envelope had carried the kind.
 
-The answer is stored once per NPC in `npc` (migration 0068), keyed on the kind *and* the id for
+The answer is stored once per NPC in `npc` (migration 0070), keyed on the kind *and* the id for
 that same reason, and every line reads its voice from it: a speaker row names the NPC, and a
 line speaks in its speakers' race and gender and the flavor most of their NPCs have, as the
 extract has always agreed one file on one voice. So one correction fixes every line that NPC

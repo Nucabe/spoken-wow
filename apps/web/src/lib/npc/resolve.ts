@@ -121,7 +121,7 @@ export async function resolveNpc(observed: Observed, lang: Lang | null): Promise
   // NPC skips the write entirely, rather than arriving back where it started.
   if (existing?.provenance === "moderator") return existing;
 
-  // The extract's answer is the npc table's `corpus` row (migration 0068). Only extracted NPCs
+  // The extract's answer is the npc table's `corpus` row (migration 0070). Only extracted NPCs
   // have one: an NPC a contribution named was answered from its own resolution at the time, and
   // reading that back as the corpus would confirm a guess. Its name is in entity_name already.
   const corpus = existing?.provenance === "corpus" && existing.race && existing.gender ? existing : null;

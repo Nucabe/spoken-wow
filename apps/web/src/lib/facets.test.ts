@@ -11,7 +11,7 @@ describe("facets", () => {
   it("offers every value the corpus actually uses", () => {
     // voices.test.ts keeps the corpus inside the roster; this is the filter bar's side of it.
     // Except a line with no voice chosen yet -- a model slot's (voices.ts isModelVoice), or one
-    // whose NPC the game gives no flavor (migration 0068) -- which is off the roster on purpose.
+    // whose NPC the game gives no flavor (migration 0070) -- which is off the roster on purpose.
     for (const line of corpus.lines) {
       if (!isVoice(line.voice) || isModelVoice(line.voice)) continue;
       expect(facets.races).toContain(line.race);

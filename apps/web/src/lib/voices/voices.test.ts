@@ -22,7 +22,7 @@ describe("VOICES", () => {
   it("covers every voice the corpus speaks in", async () => {
     for (const line of (await corpus()).lines) {
       // An NPC the game gives no flavor speaks in none until somebody picks one (migration
-      // 0068): its race-gender is on the roster, waiting.
+      // 0070): its race-gender is on the roster, waiting.
       const waiting = line.flavor === null && flavorsOf(line.race, line.gender).length > 0;
       expect(isVoice(line.voice) || waiting, line.voice).toBe(true);
     }
