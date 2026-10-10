@@ -82,16 +82,20 @@ theirs alone. A shared variable copied into one of them drifts.
 
 ## Versions and changelogs
 
-A change that players see bumps a version and writes its changelog section in the same PR.
-Tooling, the site, CI and docs bump nothing.
+Only a release PR bumps a version. Any other PR with a change that players see adds its notes
+under `## Unreleased` at the top of the changelog, creating that heading if it is missing.
+Tooling, the site, CI and docs add no notes.
+
+A release PR bumps the version and renames `## Unreleased` to the real version heading with
+its date.
 
 - Spoken, its modules, `SpokenContributions` and the tombstones move together, in every
   `.toc`, all three `Environment.lua` `AddonVersion` literals (Spoken, Spoken_Quests,
   Spoken_Gossip) included. Their notes go in
   `docs/spoken/CHANGELOG.md`, and they release as the `spoken/vX` tag.
 - Sound packs version on their own, with sections in their section's changelog.
-- Release scripts look for the exact `## <version>` heading and fail without it. Write the
-  real version heading with its date, never "Unreleased".
+- Release scripts look for the exact `## <version>` heading and fail without it, so a release
+  must not ship with the notes still under `## Unreleased`.
 
 ## Working agreements
 

@@ -2,7 +2,7 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
-## 3.3.0 — 2026-10-09
+## Unreleased
 
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
   voice among them, and Spoken plays the one for the NPC you are talking to. Until a pack has
@@ -15,13 +15,21 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   of it when it closes. *([Nucabe](https://github.com/Nucabe))*
 - **The DialogueUI window settles into place with animation.** A queued line's page tucks behind the
   window, and the words fade from one line to the next. *([Nucabe](https://github.com/Nucabe))*
-- **What NPCs say is its own module, Spoken Gossip, with its own switch and settings page.**
-  Your gossip settings carry over from Spoken Quests. *([Nucabe](https://github.com/Nucabe))*
 - **Abandoning a quest while its voice speaks fades the voice out.** Before, it was cut off
   mid-word and the quest's next line started for a moment. *([Nucabe](https://github.com/Nucabe))*
 - **Fixed: Books and Zones said "Not installed" in Spoken's module list after login**, and a
   module's settings page could show it switched off after it was switched on from Spoken's page.
   *([Nucabe](https://github.com/Nucabe))*
+- **Hide Report Buttons hides every Report button.** It sits beside Hide Contribute Buttons and
+  also takes Report off the quest log, DialogueUI's window, the lore beside the map and the
+  Compendium. *([Nucabe](https://github.com/Nucabe))*
+- **NPC voices you switched off (the Dialog channel) stay off.** With Spoken on another channel,
+  they came back on after any line it read, from an NPC's window, a zone or a book.
+  *([svengabr](https://github.com/svengabr))*
+- **Spoken Zones no longer raises a Lua error on chat messages the game keeps hidden from addons**,
+  as in a dungeon group. *([svengabr](https://github.com/svengabr))*
+- **What NPCs say is its own module, Spoken Gossip, with its own switch and settings page.**
+  Your gossip settings carry over from Spoken Quests. *([Nucabe](https://github.com/Nucabe))*
 - **A book is one entry in the queue.** Skip skips the rest of the book, and a gravestone or
   letter opened while a book is read waits behind it instead of replacing it. The windows show
   the readable's kind over its name, such as Book or Gravestone, in place of the page count.
