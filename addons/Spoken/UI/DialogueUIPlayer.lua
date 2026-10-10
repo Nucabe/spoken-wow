@@ -1608,27 +1608,14 @@ end
 --- `width` wide in UIParent's units, at `q` of DialogueUI's.
 function Skin:DressCard(card, look, width, q)
     local file = look.file or Theme:TexturePath() .. "Parchment.png"
-    local capWidth, capHeight
-    if look.book then
-        capWidth = width / BOOK_PAPER
-        capHeight = capWidth * (look.top[2] - look.top[1]) / 1024
-    else
-        local paperWidth, paperHeight = Theme:ParchmentSize()
-        capWidth, capHeight = paperWidth * q, paperHeight * q
-    end
+    local capWidth, capHeight = CapSize(look, width, q)
     card.capWidth, card.capHeight, card.look = capWidth, capHeight, look
     local strips = card.strips
-    for index = 1, 3 do strips[index]:SetTexture(file) end
-    strips[1]:SetTexCoord(0, 1, look.top[1] / 2048, look.top[2] / 2048)
-    strips[2]:SetTexCoord(0, 1, look.middle[1] / 2048, look.middle[2] / 2048)
-    strips[3]:SetTexCoord(0, 1, look.bottom[1] / 2048, look.bottom[2] / 2048)
     strips[1]:ClearAllPoints()
     strips[1]:SetPoint("CENTER", card, "TOP", 0, 0)
     strips[3]:ClearAllPoints()
     strips[3]:SetPoint("CENTER", card, "BOTTOM", 0, 0)
-    strips[2]:ClearAllPoints()
-    strips[2]:SetPoint("TOPLEFT", strips[1], "BOTTOMLEFT", 0, 0)
-    strips[2]:SetPoint("BOTTOMRIGHT", strips[3], "TOPRIGHT", 0, -capHeight * look.under / 256)
+    DressStrips(strips, file, look, capHeight)
     card.shadow:SetTexture(Theme:TexturePath() .. "Settings-BackgroundShadow.png")
 end
 
