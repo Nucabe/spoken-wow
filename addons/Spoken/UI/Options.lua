@@ -557,16 +557,19 @@ local function Build(canvas)
         function(code) return code == "none" and L.OPT_FALLBACK_NONE or Native(code) end)
 
     layout:Section(L.OPT_AUDIO_TITLE)
-    layout:Dropdown(L.OPT_CHANNEL, L.OPT_CHANNEL_TIP, CHANNELS,
-        function() return audio().SoundChannel end,
-        function(v) audio().SoundChannel = v end,
-        -- The handle belongs to the old channel, so a line already speaking cannot move.
-        function() SoundQueue:RemoveAllSoundsFromQueue(); Options:UpdateRows() end,
-        function(channel) return CHANNEL_LABELS[channel] or channel end)
-    -- Any channel may be chosen, but on Dialog the NPCs' voices and Spoken's are one sound.
-    local dialogWarning = layout:Note(L.OPT_CHANNEL_DIALOG_WARN, nil, 32)
-    dialogWarning:SetTextColor(1, 0.5, 0.25)
-    layout:ShowWhen(dialogWarning, function() return audio().SoundChannel == "Dialog" end)
+    -- Legacy clients' playback (Compat.lua) ignores the channel, so there is nothing to choose.
+    if not Version.IsAnyLegacy then
+        layout:Dropdown(L.OPT_CHANNEL, L.OPT_CHANNEL_TIP, CHANNELS,
+            function() return audio().SoundChannel end,
+            function(v) audio().SoundChannel = v end,
+            -- The handle belongs to the old channel, so a line already speaking cannot move.
+            function() SoundQueue:RemoveAllSoundsFromQueue(); Options:UpdateRows() end,
+            function(channel) return CHANNEL_LABELS[channel] or channel end)
+        -- Any channel may be chosen, but on Dialog the NPCs' voices and Spoken's are one sound.
+        local dialogWarning = layout:Note(L.OPT_CHANNEL_DIALOG_WARN, nil, 32)
+        dialogWarning:SetTextColor(1, 0.5, 0.25)
+        layout:ShowWhen(dialogWarning, function() return audio().SoundChannel == "Dialog" end)
+    end
     if audio().AutoToggleDialog ~= nil then
         local silence = layout:Checkbox(L.OPT_MUTE_DIALOGUE,
             Version.IsLegacyVanilla and L.OPT_MUTE_DIALOGUE_TIP_VANILLA or L.OPT_MUTE_DIALOGUE_TIP,
@@ -579,7 +582,9 @@ local function Build(canvas)
                 end
             end, function() Options:UpdateRows() end)
         -- Muting Dialog would mute Spoken's own line, so on Dialog the queue never does.
-        Requires(silence, function() return audio().SoundChannel ~= "Dialog" end, L.REASON_DIALOG_CHANNEL)
+        if not Version.IsAnyLegacy then
+            Requires(silence, function() return audio().SoundChannel ~= "Dialog" end, L.REASON_DIALOG_CHANNEL)
+        end
     end
     layout:Slider(L.OPT_LINE_GAP, 0, 5, 0.25,
         function() return audio().LineGap or 0 end, function(v) audio().LineGap = v end,
