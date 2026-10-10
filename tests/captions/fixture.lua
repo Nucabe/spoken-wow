@@ -105,7 +105,13 @@ function Widget:GetTop() return self:GetBottom()+self:GetHeight() end
 function Widget:GetCenter() return self:GetLeft()+self:GetWidth()/2,self:GetBottom()+self:GetHeight()/2 end
 function Widget:SetText(text) self.text=text==nil and '' or tostring(text) end
 function Widget:GetText() return self.text end
-function Widget:SetFont(_,size) self.fontSize=size end
+-- 'missing.ttf' stands for a face the client cannot load, which SetFont answers with false.
+function Widget:SetFont(face,size,flags)
+    if face=='missing.ttf' then return false end
+    self.fontFace,self.fontSize,self.fontFlags=face,size,flags
+    return true
+end
+function Widget:GetFont() return self.fontFace or 'font.ttf',self.fontSize,self.fontFlags end
 function Widget:SetWordWrap(value) self.wordWrap=value end
 function Widget:SetTextColor(...) self.textColor={...} end
 function Widget:SetShadowColor(...) self.shadowColor={...} end

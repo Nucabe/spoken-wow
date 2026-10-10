@@ -613,6 +613,7 @@ function Skin:UpdateControls(relayout)
     end
     local held = not paused and not playing and SoundQueue:GetHeldReason(self.clip)
     self.title.text:SetText(held and format("%s (%s)", Label(self.clip), held) or Label(self.clip))
+    Addon:ClipFont(self.title.text, self.clip)
     local pausable = SoundQueue:CanBePaused()
     for _, button in ipairs(self.buttons) do
         local color = pausable and colors and colors.paragraph or colors and colors.disabled
@@ -667,6 +668,7 @@ function Skin:LayoutQueue()
             button = button or self:CreateQueueRow(index)
             button.clip = SoundQueue.sounds[index + self.offset + 1]
             button.text:SetText(HeldLabel(button.clip))
+            Addon:ClipFont(button.text, button.clip)
             ShowRemove(button, false)
             button:Show()
         elseif button then button:Hide(); button.clip = nil end
@@ -777,6 +779,7 @@ function Skin:Update()
     end
     self:SetVisible(true)
     self.name:SetText(clip.present and clip.present.header or "")
+    Addon:ClipFont(self.name, clip)
     self:ConfigurePortrait()
     self:ConfigureActions()
     self:LayoutQueue()

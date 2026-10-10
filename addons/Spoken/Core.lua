@@ -189,6 +189,25 @@ function Addon:Profile(section)
     return self.db and self.db.profile[section] or Defaults.profile[section]
 end
 
+--- Draws a clip's text in its `present.font`, for a script the game's font has no glyphs for
+--- (Czech on a Western client), and any other clip's in the font string's own face. The size
+--- and flags stay the player's.
+function Addon:ClipFont(fontString, clip)
+    local face, size, flags = fontString:GetFont()
+    if not face then return end
+    -- Anything but the face this set last is the player's own (a skin, a resize), so it is
+    -- the one to go back to.
+    if face ~= fontString.spokenClipFace then fontString.spokenOwnFace = face end
+    local want = clip and clip.present and clip.present.font or fontString.spokenOwnFace
+    -- SetFont answers false for a face the client cannot load; back to the player's own rather
+    -- than a string with no font. 1.12 answers nothing.
+    if want ~= face and fontString:SetFont(want, size, flags or "") == false then
+        want = fontString.spokenOwnFace
+        fontString:SetFont(want, size, flags or "")
+    end
+    fontString.spokenClipFace = want
+end
+
 --- Where each player window sits, how wide it is, and whether the captions are expanded.
 --- Account-wide, in global rather than the profile: AceDB names the profile after
 --- UnitName("player") when its file loads, and the Forever client answers "Unknown" (in

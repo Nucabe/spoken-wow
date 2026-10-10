@@ -753,4 +753,35 @@ do
     Q:RemoveAllSoundsFromQueue(); Play(.6)
     E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
 end
+-- A clip names its own face (present.font) for a script the game's font has no glyphs for. The
+-- captions, the small window and the subtitle draw that clip in it at the player's size, and
+-- the next clip without one in the player's face again.
+do
+    local NOTO='Interface\\AddOns\\Pack\\NotoSerif.ttf'
+    local function Face(text) return (text:GetFont()) end
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    local size=select(2,T.labels[1]:GetFont())
+    local czech=Clip('cz','Příliš žluťoučký kůň úpěl ďábelské ódy.',4)
+    czech.present.font=NOTO
+    source:Enqueue(czech); source:Enqueue(Clip('en','Plain English.',2)); Play(.7)
+    Check(Face(T.labels[1])==NOTO and Face(T.measure)==NOTO,'the captions draw and measure a clip in its own font')
+    Check(select(2,T.labels[1]:GetFont())==size,'...at the size the player set')
+    Check(Face(M.name)==NOTO and Face(M.title.text)==NOTO,"...and the small window names it in that font")
+    Q:Skip(); Play(.7)
+    Check(Face(T.labels[1])=='font.ttf' and Face(M.name)=='font.ttf','the next clip, naming none, is in the player\'s face')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    local broken=Clip('bad','Text in a face the client lacks.',3)
+    broken.present.font='missing.ttf'
+    source:Enqueue(broken); Play(.7)
+    Check(Face(T.labels[1])=='font.ttf' and Face(M.name)=='font.ttf','a face the client cannot load leaves the player\'s own')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    local style=E.Addon:PlayerStyle()
+    E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+    czech=Clip('cz2','Příliš žluťoučký kůň úpěl ďábelské ódy.',4)
+    czech.present.font=NOTO
+    source:Enqueue(czech); Play(.7)
+    Check(Face(S.title)==NOTO and Face(S.lines[1])==NOTO and Face(S.measure)==NOTO,'the subtitle draws, names and measures it in its own font')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    E.Addon:SetPlayerStyle(style); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
+end
 print(string.format('PASS: %d checks using the real queue, both player layouts, captions, commands and quest adapter.',assertions))
