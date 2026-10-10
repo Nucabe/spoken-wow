@@ -432,7 +432,6 @@ function Spoken:StopAll()
     SoundQueue:RemoveAllSoundsFromQueue()
 end
 
---- A gate that applies to every source: fn(clip) -> reason | nil.
 --- Switch a channel off on a source's behalf, e.g. Dialog while a quest line speaks.
 --- Unlike a channel the user disabled, clips on it are still admitted, and the mute is
 --- lifted before one plays. A channel the user already has off is left alone: nothing is
@@ -448,6 +447,7 @@ function Spoken:MuteGameDialogueAhead(source)
     SoundQueue:MuteGameDialogueAhead(source:GetChannel())
 end
 
+--- A gate that applies to every source: fn(clip) -> reason | nil.
 function Spoken:AddGate(fn)
     SoundQueue:AddGate(fn)
 end
