@@ -19,3 +19,4 @@
 
 2.4.3\embeds.xml
 addon.xml
+Gossip\Gossip.xml

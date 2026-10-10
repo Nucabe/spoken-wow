@@ -22,3 +22,4 @@
 
 embeds.xml
 addon.xml
+Gossip\Gossip.xml
