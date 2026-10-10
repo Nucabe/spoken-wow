@@ -6,6 +6,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 - NPC voices you switched off (the Dialog channel) stay off. With Spoken on another channel,
   closing a quest or gossip window switched them back on.
+  *([svengabr](https://github.com/svengabr))*
 
 ## 3.2.0 — 2026-10-08
 
