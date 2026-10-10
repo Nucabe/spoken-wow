@@ -134,11 +134,21 @@ def db():
     conn = _database()
     if conn is None:
         pytest.skip("needs DATABASE_URL, the web migrations and the corpus imported")
-    # A language nothing else writes, cleared either side.
+    # zhTW may hold real text, so a test takes back only what it changed: the rows it wrote
+    # go, and the rows it retired are live again.
+    before = {}
+    with conn, conn.cursor() as cur:
+        for table in ("quest_line", "entity_name"):
+            cur.execute(f"""select coalesce(max("id"), 0) from "{table}" """)
+            highest = cur.fetchone()[0]
+            cur.execute(f"""select "id" from "{table}" where "lang" = 'zhTW' and "isCurrent" """)
+            before[table] = (highest, [r[0] for r in cur.fetchall()])
     yield conn
     with conn, conn.cursor() as cur:
-        cur.execute("""delete from "quest_line" where "lang" = 'zhTW'""")
-        cur.execute("""delete from "entity_name" where "lang" = 'zhTW'""")
+        for table, (highest, live) in before.items():
+            cur.execute(f"""delete from "{table}" where "lang" = 'zhTW' and "id" > %s""", (highest,))
+            cur.execute(f"""update "{table}" set "isCurrent" = true
+                             where "id" = any(%s) and not "isCurrent" """, (live,))
     conn.close()
 
 
