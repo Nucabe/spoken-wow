@@ -25,8 +25,9 @@ local function FakeDialogueUI()
     frame.Parchments = { cap }
     function frame:LoadTheme() end
     function frame:UpdateFrameSize() end
-    -- Showing a page: Spoken hooks it to hear another page shown in a window still open.
-    function frame:ShowUI() end
+    -- Showing a page: Spoken hooks it to hear another page shown in a window still open. A test
+    -- may have it hide the window, as DialogueUI's does during a cutscene.
+    function frame:ShowUI(...) if self.onShowUI then self.onShowUI(self, ...) end end
     -- Closed until a dialog opens.
     frame:Hide()
     _G.DUIQuestFrame = frame
@@ -900,6 +901,55 @@ do
     Skin:CloseStep(1)
     Expect("...then closes the second", table.concat(hid, ","), "first,second")
 end
+
+-- The flight cut short: by the line stopping, by another dialog opening over it, by a setting.
+local function FlyOut()
+    Spoken:StopAll()
+    for _ = 1, 40 do Skin:Tick(0.05) end
+    OpenDialog()
+    quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "The Hunt Begins", portrait = { kind = "none" } } }))
+    Skin.questEvents.scripts.OnEvent(Skin.questEvents, "QUEST_FINISHED")
+    DUI:Hide()
+    Skin:CloseStep(0.12)
+    Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+    Skin:Tick(0.2)
+    return Skin.settling ~= nil
+end
+local function Landed()
+    return Skin.settling == nil and Skin.landing == nil and Near(Skin.frame.scale, Skin.frame.spokenBaseScale)
+end
+Expect("stopped as it flies", FlyOut(), true)
+Spoken:StopAll()
+Expect("...it lands at once, where it rests", Landed() and AtTopLeft(), true)
+local flewBuffered = false
+for _ = 1, 20 do
+    Skin:Tick(0.05)
+    flewBuffered = flewBuffered or (Skin.buffered and (Skin.settling or Skin.landing)) and true or false
+end
+Expect("...and fades out as one image with nothing in it moving", flewBuffered, false)
+Expect("a dialog opening over it as it flies", FlyOut(), true)
+OpenDialog()
+Expect("...ends the flight, so the next show does not fly on from the old dialog", Landed(), true)
+Spoken:StopAll()
+DUI.hooks = {}
+DUI:Hide()
+Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+Expect("a setting changed as it flies", FlyOut(), true)
+env.PlayerFrame:RefreshConfig()
+Expect("...lands it at once, so the flight does not undo the change", Landed() and AtTopLeft(), true)
+Spoken:StopAll()
+for _ = 1, 40 do Skin:Tick(0.05) end
+-- DialogueUI hides its window from ShowUI itself during a cutscene: ShowUI's end must not take that
+-- for another page and keep the window open.
+OpenDialog()
+quests:Enqueue(H.Clip({ length = 30, present = { header = "Grull", label = "The Hunt Begins", portrait = { kind = "none" } } }))
+DUI.onShowUI = function(frame) frame:Hide() end
+DUI:ShowUI("QUEST_DETAIL")
+DUI.onShowUI = nil
+Expect("DialogueUI hiding its window from ShowUI hides it at once", tostring(DUI:IsShown()) .. " " .. tostring(Skin.closing), "false nil")
+Skin.dialogWatches[DUI].scripts.OnHide(Skin.dialogWatches[DUI])
+Spoken:StopAll()
+for _ = 1, 40 do Skin:Tick(0.05) end
 
 ---------------------------------------------------------------- books and stones
 -- Spoken Books' pages, in the art DialogueUI's book view draws them in: its paper for books and

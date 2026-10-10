@@ -243,6 +243,9 @@ function Skin:Initialize()
             self.dialogHides = self.dialogHides or {}
             self.dialogHides[dialog] = hide
             dialog.Hide = function(frame, ...)
+                -- DialogueUI closing it from ShowUI (a cutscene, gossip another addon handles):
+                -- ShowUI's end would take it for another page and cancel the fade, so it hides now.
+                if self.showingUI == frame then return hide(frame, ...) end
                 local closing = self.closing
                 if closing and closing.dialog == frame then
                     -- Its words already fading since QUEST_FINISHED: it closes now (Skin:CloseStep).
@@ -255,14 +258,18 @@ function Skin:Initialize()
                 if not (ok and fades) then return hide(frame, ...) end
                 self:FadeDialogOut(frame, hide)
             end
-            if type(dialog.ShowUI) == "function" then
-                hooksecurefunc(dialog, "ShowUI", function()
+            local showUI = dialog.ShowUI
+            if type(showUI) == "function" then
+                dialog.ShowUI = function(frame, ...)
+                    self.showingUI = frame
+                    showUI(frame, ...)
+                    self.showingUI = nil
                     self:CancelDialogFade(dialog)
                     -- Another page in the quest window, still open (the gossip back after a quest
                     -- is accepted): its lines are this page's, not the last's, so closing on the
                     -- second of a giver's quests sends its page behind the first's line playing on.
                     if dialog == _G.DUIQuestFrame and dialog:IsShown() then self:StartSession(dialog) end
-                end)
+                end
             end
             self.sessions[dialog] = setmetatable({}, { __mode = "k" })
         end
@@ -769,6 +776,7 @@ end
 
 --- Still a while, and nothing in it loading: it may become one image.
 function Skin:Still()
+    if self.settling or self.landing then return false end
     if (self.stillFor or STILL) < STILL then return false end
     local viewport = self.viewport
     return not (Loading(self.picture) or Loading(self.badge)
@@ -885,6 +893,7 @@ function Skin:SetVisible(visible, immediate)
     if immediate then
         self.turning = nil
         self:StopTuck()
+        self:StopSettle()
         self:StopLanding()
         if self.wordsHidden then self:ShowWords(1) end
         self.wanted, self.preparing, self.arming, self.fadeTime, self.pending = false, nil, nil, nil, nil
@@ -897,6 +906,11 @@ function Skin:SetVisible(visible, immediate)
     end
     if self.wanted == visible then return end
     self.wanted = visible
+    -- Going: never still flying or landing, which would change it while it fades as one image.
+    if not visible then
+        self:StopSettle()
+        self:StopLanding()
+    end
     if visible then
         self.arming = nil
         if self.buffered or (self.frame:IsShown() and (self.level or 0) > 0) then
@@ -1277,6 +1291,17 @@ function Skin:LandStep(elapsed)
     local shadow = 1 - Smooth(Clamp(t / 0.25, 0, 1))
     self:ShadowUnder(0.3 * shadow, 0.35 * shadow)
     if t >= LAND_TIME then self:StopLanding() end
+end
+
+--- The flight from the dialog cut short: where it rests at once, at its own size.
+function Skin:StopSettle()
+    if not self.settling then return end
+    local frame = self.frame
+    self.settling = nil
+    frame:SetScale(frame.spokenBaseScale or 1)
+    if not Addon:RestoreLayout("DialogueUI", frame) then self:PlaceDefault() end
+    if self.shadow then self.shadow:Hide() end
+    if self.buffered then self.pending = "refresh" else self:Layout() end
 end
 
 function Skin:StopLanding()
@@ -1715,6 +1740,8 @@ function Skin:RefreshConfig(original)
     self:Initialize()
     -- One image fading: nothing in it may change; this waits for it (Skin:Unbuffer).
     if self.buffered then self.pending = "refresh"; return end
+    -- A setting changed as it flies: it lands at once, so the flight does not undo the change.
+    self:StopSettle()
     local frame = self.frame
     frame:SetFrameStrata(Config().FrameStrata)
     self:Layout()
@@ -1764,10 +1791,11 @@ function Skin:Update()
         self.clip, self.seconds = clip, 0
     end
     -- The line's words decide how tall the panel is (Fit to the Words): a new line, or its words
-    -- arriving late.
+    -- arriving late. Its art too: a stone page after a paper one with as many lines is redrawn.
     local textLines = Transcript.clip == clip and Transcript.lines and #Transcript.lines or 0
     local picture = clip.present and clip.present.picture
     local key = textLines .. ":" .. (picture and picture.file .. ":" .. (picture.pixels or "") or "")
+        .. ":" .. (self:Look().file or "quest")
     if key ~= self.laidOutFor then
         self.laidOutFor = key
         self:Layout()
