@@ -2,6 +2,12 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## 3.2.1 — 2026-10-10
+
+- **Alt-tabbing no longer loses the line.** With Sound in Background off, the game silences
+  Spoken's voice when you switch away. The line now stops instead of running on in silence, and
+  Replay plays it from the start.
+
 ## 3.2.0 — 2026-10-08
 
 - **Lore of Azeroth is now Azeroth's Compendium, with a Books tab.** The Zones tab lists each
