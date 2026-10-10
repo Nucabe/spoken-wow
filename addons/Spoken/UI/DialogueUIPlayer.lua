@@ -50,7 +50,8 @@ local LOOKS = {
         shadow = true },
 }
 local BOOK_PAPER = 768 / 1024
--- DialogueUI's book view: TextureKit 2 (stone) for these materials, 1 (paper) for every other.
+-- DialogueUI's book view: TextureKit 2 (stone) for these materials, 1 (paper) for every other
+-- (MaterialTextureKitID in DialogueUI 1.0.5's Code/Book/BookUI.lua).
 local STONE = { Stone = true, Marble = true, Silver = true, Bronze = true, Progenitor = true }
 -- In the book art: the line under its title, and the ring it draws round an item's icon, whose
 -- opening is 56 of its 96 across, where the face sits.
@@ -167,8 +168,6 @@ function Skin:Initialize()
             self.dialogWatches[dialog] = watch
         end
     end
-    self.dialog = _G.DUIQuestFrame
-    self.dialogWatch = self.dialog and self.dialogWatches[self.dialog]
 
     -- DialogueUI's three parchment strips: caps centred on the frame's ends, the middle
     -- stretched between, all wider than the frame.
