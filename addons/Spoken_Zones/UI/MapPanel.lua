@@ -412,10 +412,6 @@ function SpokenZones:SetupMapPanel()
 		Spoken:RegisterCallback("CONTRIBUTE_SETTINGS_CHANGED", function()
 			Refresh(SpokenZones:GetDisplayedMapID())
 		end)
-		-- Nor does Hide Report Buttons.
-		Spoken:RegisterCallback("REPORT_SETTINGS_CHANGED", function()
-			Refresh(SpokenZones:GetDisplayedMapID())
-		end)
 	end
 
 	Refresh(SpokenZones:GetDisplayedMapID())
