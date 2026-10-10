@@ -1015,13 +1015,27 @@ the display, and flavor from the NPC's greeting sounds. Where the game names non
 Cairne Bloodhoof's hand-made display, the import gives the race-gender's default ("standard",
 or its busiest flavor) and marks the answer doubtful; the export writes it back without one.
 Such an NPC keeps the voice its lines were made in and is listed under Doubtful on
-`/contributions/npcs`, which lists every NPC, for a moderator to confirm or change. A speaker whose NPC nobody knows anything about keeps the voice written with it.
+`/contributions/npcs`, which lists every NPC, for a moderator to confirm or change.
+A speaker whose NPC nobody knows anything about keeps the voice written with it.
+`import-corpus` never replaces a moderator's answer unless a moderator marked it doubtful, even
+with a moderator answer from the file, and lists every answer it kept over a different one.
 Names are per language, in `entity_name`. A moderator can rename an NPC there, in the language their
 rights are checked in (English unless the request names another), and the import leaves an
-edited English name alone. `npc` also
-keeps what the client reported even when a moderator overrules it — evidence about the NPC is
-worth more than the guess it produced — along with the client build, since model ids are
-per-build data.
+edited English name alone.
+
+A quest moment several NPCs give is spoken in each one's own voice. The file already made keeps
+the voice it was made in, the one its speakers were written with; each other voice among them
+is a line of its own, `{lineId}~{voice}` in a file `{fileName}-{voice}` (`naming.py`), listed
+in the explorer and generated like any line. Changing an NPC's voice moves it to its new
+voice's line. A pack points a giver at its voice's file only once that file has audio in the
+store (`tts_cli/voice_files.py`), through `QuestFileLookupByNPCID` and
+`QuestFileLookupByObjectID`, and the addon falls back to the moment's own file when no
+installed pack has it. Greetings and follow-up lines still share one voice per file, in the
+flavor most of their NPCs have.
+
+`npc` also keeps what the client
+reported even when a moderator overrules it — evidence about the NPC is worth more than the
+guess it produced — along with the client build, since model ids are per-build data.
 
 Precedence is enforced in the SQL rather than by whoever calls it: `moderator` outranks
 `corpus`, which outranks `display`, which outranks `client`, which outranks `none`, and a write only lands when it ranks

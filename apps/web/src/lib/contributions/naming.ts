@@ -75,6 +75,24 @@ export function gossipStemRank(stem: string): 0 | 1 | 2 {
   return stem.includes("-") ? 2 : 1;
 }
 
+/**
+ * A line in one more voice than its file was made in, and that voice's file: naming.py's
+ * variant_line_id and variant_file_name. The plain id keeps the voice its file was made in.
+ */
+export function variantLineId(lineId: string, voice: string): string {
+  return `${lineId}~${voice}`;
+}
+
+export function variantFileName(fileName: string, voice: string): string {
+  return `${fileName}-${voice}`;
+}
+
+/** The line a voice's line is of: naming.py's split_voice. Text and ignores are the line's. */
+export function baseLineId(lineId: string): string {
+  const at = lineId.indexOf("~");
+  return at < 0 ? lineId : lineId.slice(0, at);
+}
+
 export type LineIdentity = {
   source: string;
   lineId: string;

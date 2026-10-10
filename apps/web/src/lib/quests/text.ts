@@ -17,6 +17,7 @@ import "server-only";
 
 import { recordActivity } from "@/lib/activity/store";
 import { db, query } from "@/lib/db";
+import { baseLineId } from "@/lib/contributions/naming";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 import { skipReasonFor } from "@/lib/text-gate";
 
@@ -55,6 +56,7 @@ export async function questTextHistory(
   variant: number,
   lang: Lang,
 ): Promise<QuestTextVersion[]> {
+  lineId = baseLineId(lineId);
   const rows = await query<Row>(
     `select ${COLUMNS} from "quest_line"
       where "lineId" = $1 and "variant" = $2 and "lang" = $3
@@ -82,6 +84,7 @@ export async function saveQuestText(args: {
   contribution?: number;
 }): Promise<QuestTextVersion> {
   refuseEnglish(args.lang);
+  args = { ...args, lineId: baseLineId(args.lineId) };
   const text = args.text.trim();
   if (!text) throw new Error("the text cannot be empty");
 

@@ -29,7 +29,8 @@ import { memoByLang } from "@/lib/memo";
 import { nameStamp, versionStamp } from "@/lib/stamp";
 import type { Corpus, CorpusLine } from "@/lib/corpus";
 import { BASE_LANG, type Lang } from "@/lib/lang";
-import { consensusFlavor, flavorsOf, voiceNameFor } from "@/lib/voices/voices";
+import { variantFileName, variantLineId } from "@/lib/contributions/naming";
+import { consensusFlavor, flavorsOf, isVoice, voiceNameFor } from "@/lib/voices/voices";
 
 
 /**
@@ -106,7 +107,7 @@ const SPEAKER_NAME = `case when r."lang" = '${BASE_LANG}' then r."npcName" else 
  */
 const SPEAKERS = `(
   select r."id", r."lineId", r."variant", r."lang", r."ord", r."npcType", r."npcId", ${SPEAKER_NAME} as "npcName",
-         r."contributionId",
+         r."contributionId", r."voice" as "writtenVoice",
          case when n."known" then coalesce(n."race", '') else r."race" end as "race",
          case when n."known" then coalesce(n."gender", '') else r."gender" end as "gender",
          case when n."known" then n."flavor" else r."flavor" end as "flavor"
@@ -119,33 +120,67 @@ const SPEAKERS = `(
              ) as "nth"
         from "quest_line_speaker" s
     ) r
-    left join (select *, "provenance" <> 'none' as "known" from "npc") n
+    left join (select *, "provenance" <> 'none' and "race" is not null and "gender" is not null as "known"
+                 from "npc") n
       on n."npcKind" = r."npcType" and n."npcId" = r."npcId"
    where case when r."hasEnglish" then r."lang" = '${BASE_LANG}' else r."nth" = 1 end
 )`;
 
 /**
- * Each line's voice: its speakers' race and gender, in the flavor most of their NPCs have.
- * Speakers of one line share its one file, so they share one voice, as the extract has always
- * agreed them (flavors.py's resolve_flavors). A line whose NPCs have no flavor has none, and
- * outside the race-genders the roster voices bare, no voice to be generated in until somebody
- * gives its NPC one. Keyed on race and gender too, as the extract's file_key is: a quest given
- * by a dwarf and a troll is one file in two voices.
+ * The quest moments an NPC speaks in its own voice. Where NPCs of different voices share one,
+ * the file already made keeps the voice it was made in -- the one its speakers were written
+ * with -- and each other voice is a line of its own (naming.ts's variantLineId): the same
+ * words, in a file named after the voice. An NPC whose voice changes moves to its new voice's
+ * line, which has no audio until somebody generates it; one with no flavor yet moves to a line
+ * nobody can voice until it gets one. Progress text is never voiced, so it is never split.
  */
-function voiced<T extends { lineId: string; variant: number; race: string; gender: string; flavor: string | null }>(
-  rows: T[],
-): (T & { voice: string })[] {
+const OWN_VOICE_SOURCES: ReadonlySet<string> = new Set(["accept", "complete"]);
+
+type Speaking = {
+  lineId: string;
+  variant: number;
+  source: string;
+  race: string;
+  gender: string;
+  flavor: string | null;
+  writtenVoice: string;
+  fileName: string;
+  generatable: boolean;
+  skipReason: string | null;
+};
+
+/**
+ * Each row's voice. A quest moment's speaker speaks in its NPC's own (OWN_VOICE_SOURCES); a
+ * greeting or a follow-up line is still one voice for all its speakers, in their race and
+ * gender and the flavor most of their NPCs have, as the extract has always agreed one file.
+ */
+function voiced<T extends Speaking>(rows: T[]): (T & { voice: string })[] {
+  const written = new Map<string, string>();
   const groups = new Map<string, (string | null)[]>();
-  const keyOf = (row: T) => `${row.lineId}|${row.variant}|${row.race}|${row.gender}`;
+  const lineOf = (row: T) => `${row.lineId}|${row.variant}`;
+  const keyOf = (row: T) => `${lineOf(row)}|${row.race}|${row.gender}`;
   for (const row of rows) {
+    if (!written.has(lineOf(row))) written.set(lineOf(row), row.writtenVoice);
     const group = groups.get(keyOf(row));
     if (group) group.push(row.flavor);
     else groups.set(keyOf(row), [row.flavor]);
   }
   const agreed = new Map([...groups].map(([key, flavors]) => [key, consensusFlavor(flavors)]));
+
   return rows.map((row) => {
-    const flavor = agreed.get(keyOf(row)) ?? null;
-    return { ...row, flavor, voice: voiceNameFor(row.race, row.gender, flavor) };
+    if (!OWN_VOICE_SOURCES.has(row.source)) {
+      const flavor = agreed.get(keyOf(row)) ?? null;
+      return { ...row, flavor, voice: voiceNameFor(row.race, row.gender, flavor) };
+    }
+    const voice = voiceNameFor(row.race, row.gender, row.flavor);
+    if (voice === written.get(lineOf(row))) return { ...row, voice };
+    return {
+      ...row,
+      voice,
+      lineId: variantLineId(row.lineId, voice),
+      fileName: variantFileName(row.fileName, voice),
+      ...(row.generatable && !isVoice(voice) ? { generatable: false, skipReason: "no-voice" } : {}),
+    };
   });
 }
 
@@ -161,6 +196,8 @@ type Row = {
   race: string;
   gender: string;
   flavor: string | null;
+  /** The voice the speaker row was written with: the one the line's own file was made in. */
+  writtenVoice: string;
   playerGender: string | null;
   text: string;
   originalText: string;
@@ -181,7 +218,7 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
   if (lang !== BASE_LANG) return buildTranslated(lang);
   const rows = await query<Row>(
     `select l."lineId", l."variant", l."source", l."questId", l."questTitle",
-            s."npcId", s."npcName", s."npcType", s."race", s."gender", s."flavor",
+            s."npcId", s."npcName", s."npcType", s."race", s."gender", s."flavor", s."writtenVoice",
             l."playerGender", l."text", l."originalText", l."fileName",
             l."generatable", l."skipReason", s."contributionId"
        from ${SPEAKERS} s
@@ -194,7 +231,7 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
 
   if (rows.length === 0) throw new CorpusEmpty(lang);
 
-  return voiced(rows).map((row) => ({
+  return voiced(rows).map(({ writtenVoice: _written, ...row }) => ({
     ...row,
     npcType: row.npcType as CorpusLine["npcType"],
     source: row.source as CorpusLine["source"],
@@ -232,7 +269,7 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
             coalesce(t."questId", e."questId") as "questId",
             coalesce(qn."name", t."questTitle", e."questTitle") as "questTitle",
             s."npcId", coalesce(nn."name", s."npcName") as "npcName", s."npcType",
-            s."race", s."gender", s."flavor",
+            s."race", s."gender", s."flavor", s."writtenVoice",
             coalesce(t."playerGender", e."playerGender") as "playerGender",
             coalesce(t."text", e."text") as "text",
             coalesce(e."originalText", t."originalText") as "originalText",
@@ -265,7 +302,7 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
   if (rows.length === 0) throw new CorpusEmpty();
 
   return voiced(rows).map((raw) => {
-    const { textMissing, titleMissing, nameMissing, native, englishTitle, englishName, ...row } = raw;
+    const { textMissing, titleMissing, nameMissing, native, englishTitle, englishName, writtenVoice: _written, ...row } = raw;
     return {
       ...row,
       lang,
