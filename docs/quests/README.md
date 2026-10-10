@@ -866,6 +866,9 @@ and left of a close button, the window's text moved down to make room. It report
 page and contributes where a line is missing. The words in that window are marked as they are
 read through `Spoken:WordMarks()`, the captions' matching kept in Spoken (see
 [`DIALOGUEUI-BRIDGE.md`](DIALOGUEUI-BRIDGE.md)).
+**Hide Report Buttons**, in the same settings, takes the icon away with every other Report button,
+the quest log's included, except where it contributes; each addon asks
+`Spoken:AreReportButtonsHidden()` and redraws on the player's `REPORT_SETTINGS_CHANGED` callback.
 
 Clicking it opens the same copy box `ReportButton.lua` uses, holding a plain-text envelope
 instead of an address: the addon, the build, the locale, the quest or NPC, and the text
