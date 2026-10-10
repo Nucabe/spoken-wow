@@ -7,6 +7,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Each quest giver is heard in its own voice.** A quest several NPCs give is recorded once per
   voice among them, and Spoken plays the one for the NPC you are talking to. Until a pack has
   that voice, the quest plays as before.
+- **A zone's story is headed by the place it is in.** It showed its own name twice, as
+  "Mulgore / Mulgore". The narrator now shows a zone's continent over it and a city's zone, and
+  the Compendium's "In ..." line names the same place. *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
