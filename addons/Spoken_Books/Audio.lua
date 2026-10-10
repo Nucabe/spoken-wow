@@ -49,16 +49,26 @@ function SpokenBooks:PagePicture()
 	return { kind = "texture", texture = BOOK_TEXTURE }
 end
 
--- One readable of each kind the Compendium sorts them into (Data/Places.lua), by name.
-local KINDS = { book = "READABLE_BOOK", letter = "READABLE_LETTER", note = "READABLE_NOTE",
-	scroll = "READABLE_SCROLL", tablet = "READABLE_TABLET", plaque = "READABLE_PLAQUE",
-	grave = "READABLE_GRAVE", exhibit = "READABLE_EXHIBIT", other = "READABLE_OTHER" }
+-- What a readable can be (Data/Places.lua's `type`), in the order the Compendium lists them,
+-- and the keys of its names: `one` of it, over its line in the queue, and `all`, the Compendium's.
+SpokenBooks.TYPES = { "book", "letter", "note", "scroll", "tablet", "plaque", "grave", "exhibit", "other" }
+SpokenBooks.TYPE_NAMES = {
+	book = { one = "READABLE_BOOK", all = "TYPE_BOOK" },
+	letter = { one = "READABLE_LETTER", all = "TYPE_LETTER" },
+	note = { one = "READABLE_NOTE", all = "TYPE_NOTE" },
+	scroll = { one = "READABLE_SCROLL", all = "TYPE_SCROLL" },
+	tablet = { one = "READABLE_TABLET", all = "TYPE_TABLET" },
+	plaque = { one = "READABLE_PLAQUE", all = "TYPE_PLAQUE" },
+	grave = { one = "READABLE_GRAVE", all = "TYPE_GRAVE" },
+	exhibit = { one = "READABLE_EXHIBIT", all = "TYPE_EXHIBIT" },
+	other = { one = "READABLE_OTHER", all = "TYPE_OTHER" },
+}
 
 --- What `book` is (a book, a letter, a gravestone...), as the Compendium sorts it.
 function SpokenBooks:KindOf(book)
 	local places = _G.SpokenBooksPlaces and SpokenBooksPlaces.books
 	local place = places and places[book]
-	return L[KINDS[place and place.type] or "READABLE_OTHER"]
+	return L[(self.TYPE_NAMES[place and place.type] or self.TYPE_NAMES.other).one]
 end
 
 --- Every installed pack this version can read, newest format first.
