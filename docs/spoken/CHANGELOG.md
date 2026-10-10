@@ -30,6 +30,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   as in a dungeon group. *([svengabr](https://github.com/svengabr))*
 - **What NPCs say is its own module, Spoken Gossip, with its own switch and settings page.**
   Your gossip settings carry over from Spoken Quests. *([Nucabe](https://github.com/Nucabe))*
+- **A book is one entry in the queue.** Skip skips the rest of the book, and a gravestone or
+  letter opened while a book is read waits behind it instead of replacing it. The windows show
+  the readable's kind over its name, such as Book or Gravestone, in place of the page count.
+  *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.2.0 — 2026-10-08
 
