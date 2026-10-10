@@ -425,7 +425,7 @@ Fresh()
 local long, after = H.Clip({ length = 10 }), H.Clip()
 quests:Enqueue(long); quests:Enqueue(after)
 stub.Advance(2)
-cut[1] = true
+cut[long.handle] = true
 stub.Advance(2)
 Expect("a voice the client cut stops the line", Q:IsPaused(), true)
 Expect("...keeping it at the head", Q:GetCurrentSound(), long)
@@ -442,7 +442,7 @@ cut = {}
 local whole = H.Clip({ length = 3 })
 quests:Enqueue(whole)
 stub.Advance(2.9)
-cut[1] = true
+cut[whole.handle] = true
 stub.Advance(0.5)
 Expect("a voice that ends with its length is not a cut", Q:IsPaused(), false)
 
