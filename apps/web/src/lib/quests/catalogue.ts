@@ -28,7 +28,6 @@ import { query } from "@/lib/db";
 import { memoByLang } from "@/lib/memo";
 import { nameStamp, versionStamp } from "@/lib/stamp";
 import { npcKey, type Corpus, type CorpusLine } from "@/lib/corpus";
-import { answersQuestMomentSql } from "@/lib/contributions/naming";
 import { BASE_LANG, type Lang } from "@/lib/lang";
 import { flavorsOf } from "@/lib/voices/voices";
 
@@ -65,25 +64,53 @@ export function isCorpusEmpty(error: unknown): boolean {
 }
 
 /** Speakers have no live flag, so their max id and count are the whole stamp. */
-function speakerStamp(where: string): string {
-  return `(select coalesce(max("id"), 0) || ':' || count(*) from "quest_line_speaker" where ${where})`;
-}
+const SPEAKER_STAMP = `(select coalesce(max("id"), 0) || ':' || count(*) from "quest_line_speaker")`;
 
 async function stampOf(lang: Lang): Promise<string> {
-  const english = `${versionStamp("quest_line", `"lang" = '${BASE_LANG}'`)} || '/' ||
-    ${speakerStamp(`"lang" = '${BASE_LANG}'`)}`;
-  // Another language is read over the English lines and speakers, so its memo moves when
-  // they do as well as when its own text, speakers or names do -- one statement either way.
+  // Speakers are every language's, so every catalogue moves when any of them do, and so do
+  // English NPC names, which name another language's speakers (SPEAKER_NAME). Another language
+  // also reads English's rows for display, and its own names.
+  const english = `${versionStamp("quest_line", `"lang" = '${BASE_LANG}'`)} || '/' || ${SPEAKER_STAMP} || '/' ||
+    ${versionStamp("entity_name", `"lang" = '${BASE_LANG}' and "kind" in ('creature', 'gameobject', 'item')`)}`;
   const rows = await query<{ stamp: string }>(
     lang === BASE_LANG
       ? `select ${english} as "stamp"`
       : `select ${english} || '|' || ${versionStamp("quest_line", `"lang" = $1`)} || '/' ||
-                ${speakerStamp(`"lang" = $1`)} || '/' ||
                 ${nameStamp(["quest", "creature", "gameobject", "item"])} as "stamp"`,
     lang === BASE_LANG ? [] : [lang],
   );
   return rows[0]?.stamp ?? "";
 }
+
+/**
+ * A speaker row keeps the name its client showed, so one another language wrote names the NPC in
+ * that language. The NPC's English name stands in for it where English has one.
+ */
+const SPEAKER_NAME = `case when "lang" = '${BASE_LANG}' then "npcName" else coalesce(
+    (select n."name" from "entity_name" n
+      where n."kind" = ranked."npcType" and n."entityId" = ranked."npcId"::text
+        and n."lang" = '${BASE_LANG}' and n."isCurrent"), "npcName") end`;
+
+/**
+ * Who speaks each line, whichever language wrote the speaker: a speaker is a fact about the
+ * world, not about a language. The extract's English speakers where a line has any; otherwise
+ * the ones a language wrote when it accepted the line first, each NPC once however many
+ * languages named it.
+ */
+const SPEAKERS = `(
+  select "id", "lineId", "variant", "lang", "ord", "npcType", "npcId", ${SPEAKER_NAME} as "npcName",
+         "race", "gender", "flavor", "voice", "contributionId"
+    from (
+    select s.*,
+           bool_or(s."lang" = '${BASE_LANG}') over (partition by s."lineId", s."variant") as "hasEnglish",
+           row_number() over (
+             partition by s."lineId", s."variant", s."npcType", s."npcId", s."lang" = '${BASE_LANG}'
+             order by s."ord", s."id"
+           ) as "nth"
+      from "quest_line_speaker" s
+  ) ranked
+  where case when "hasEnglish" then "lang" = '${BASE_LANG}' else "nth" = 1 end
+)`;
 
 type Row = {
   lineId: string;
@@ -121,12 +148,11 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
             s."npcId", s."npcName", s."npcType", s."race", s."gender", s."flavor", s."voice",
             l."playerGender", l."text", l."originalText", l."fileName",
             l."generatable", l."skipReason", s."contributionId"
-       from "quest_line_speaker" s
+       from ${SPEAKERS} s
        join "quest_line" l
          on l."lineId" = s."lineId" and l."variant" = s."variant"
-        and l."lang" = s."lang" and l."isCurrent"
-      where s."lang" = $1
-      order by s."ord"`,
+        and l."lang" = $1 and l."isCurrent"
+      order by s."lang" <> $1, s."ord"`,
     [lang],
   );
 
@@ -141,27 +167,18 @@ async function build(lang: Lang): Promise<CorpusLine[]> {
 }
 
 /**
- * Another language's lines: every English line, with this language's text and names where
- * it has them, then the lines only this language has.
+ * Another language's lines: the ones it has, and every English line it has not translated.
  *
- * THE ENGLISH LINES ARE THE SKELETON because they are what exists: which lines the game
- * has, who speaks each, what file each is voiced into. None of that differs by language --
- * line ids and file names are derived from the English text, and the speakers are facts
- * about the world -- so a language contributes only what it says and what it calls things.
+ * A LINE IS THE LANGUAGE'S OWN ROW: its text, file and structure. English is joined only to
+ * show what the line says in English, and to stand in, marked `missing`, for a line this
+ * language has no text for. That is a rendering, never a row: nothing here is written back,
+ * exported or voiced, and a missing line is not generatable, so English cannot be recorded
+ * under the language's name. A line English lacks carries no `english`.
  *
  * ONE ROW PER LINE ID AND SPEAKER, NOT PER VARIANT. A second English variant is the same
  * quest in another content patch -- kept in English for the addon's title lookup -- and it
- * shares the first's file and, on every line in the corpus, its speakers. A language has one
- * text for it (locale_import.py writes it as variant 0), so a second row would be the same
- * line and the same mp3 listed twice.
- *
- * Where it has not said, the English stands in and `missing` says so. That is a rendering,
- * never a row: nothing here is written back, exported or voiced. A line whose text is
- * missing is not generatable, so the English cannot be recorded under the language's name.
- *
- * A LINE ENGLISH DOES NOT HAVE is read from this language's own speakers, which only such a
- * line has, and carries no `english`. Once English has the moment its line and speakers are
- * the skeleton again, and this language's row is its translation: same id, same file.
+ * shares the first's file and its speakers. A language has one text for it
+ * (locale_import.py writes it as variant 0), so a second row would list the same mp3 twice.
  */
 async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
   const rows = await query<
@@ -174,39 +191,37 @@ async function buildTranslated(lang: Lang): Promise<CorpusLine[]> {
       englishName: string;
     }
   >(
-    `select l."lineId", l."variant", l."source", l."questId",
-            coalesce(qn."name", l."questTitle") as "questTitle",
+    `select s."lineId", s."variant",
+            coalesce(t."source", e."source") as "source",
+            coalesce(t."questId", e."questId") as "questId",
+            coalesce(qn."name", t."questTitle", e."questTitle") as "questTitle",
             s."npcId", coalesce(nn."name", s."npcName") as "npcName", s."npcType",
             s."race", s."gender", s."flavor", s."voice",
-            l."playerGender", coalesce(t."text", l."text") as "text",
-            l."originalText", l."fileName",
+            coalesce(t."playerGender", e."playerGender") as "playerGender",
+            coalesce(t."text", e."text") as "text",
+            coalesce(e."originalText", t."originalText") as "originalText",
+            coalesce(t."fileName", e."fileName") as "fileName",
             coalesce(t."generatable", false) as "generatable",
             case when t."id" is null then 'untranslated' else t."skipReason" end as "skipReason",
             s."contributionId",
             t."id" is null as "textMissing",
-            l."questId" is not null and qn."id" is null as "titleMissing",
+            coalesce(t."questId", e."questId") is not null and qn."id" is null as "titleMissing",
             nn."id" is null as "nameMissing",
-            s."lang" <> '${BASE_LANG}' as "native",
-            l."questTitle" as "englishTitle", s."npcName" as "englishName"
-       from "quest_line_speaker" s
-       join "quest_line" l
-         on l."lineId" = s."lineId" and l."variant" = s."variant"
-        and l."lang" = s."lang" and l."isCurrent"
+            e."id" is null as "native",
+            e."questTitle" as "englishTitle", s."npcName" as "englishName"
+       from ${SPEAKERS} s
        left join "quest_line" t
-         on t."lineId" = l."lineId" and t."variant" = l."variant"
-        and t."lang" = $1 and t."isCurrent"
+         on t."lineId" = s."lineId" and t."variant" = 0 and t."lang" = $1 and t."isCurrent"
+       left join "quest_line" e
+         on e."lineId" = s."lineId" and e."variant" = 0
+        and e."lang" = '${BASE_LANG}' and e."isCurrent"
        left join "entity_name" qn
-         on qn."kind" = 'quest' and qn."entityId" = l."questId"::text
+         on qn."kind" = 'quest' and qn."entityId" = coalesce(t."questId", e."questId")::text
         and qn."lang" = $1 and qn."isCurrent"
        left join "entity_name" nn
          on nn."kind" = s."npcType" and nn."entityId" = s."npcId"::text
         and nn."lang" = $1 and nn."isCurrent"
-      where s."variant" = 0
-        and (s."lang" = '${BASE_LANG}'
-             or (s."lang" = $1
-                 and not exists (select 1 from "quest_line" e
-                                  where e."lang" = '${BASE_LANG}' and e."isCurrent"
-                                    and ${answersQuestMomentSql(`e."lineId"`, `s."lineId"`)})))
+      where s."variant" = 0 and (t."id" is not null or e."id" is not null)
       order by s."lang" <> '${BASE_LANG}', s."ord"`,
     [lang],
   );

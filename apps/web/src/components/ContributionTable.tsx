@@ -95,8 +95,8 @@ export type ContributionRow = Pick<
    * is offered: a row accepted before this feature existed has none yet.
    */
   hasLine: boolean;
-  /** A translated quests row whose moment English already has: accepted with no speaker. */
-  englishHas: boolean;
+  /** A quest moment that already has a speaker, in any language: accepted with no speaker answer. */
+  hasSpeaker: boolean;
 };
 
 /** An English book a translated page can be matched to. */

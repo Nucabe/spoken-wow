@@ -16,7 +16,7 @@ import { upsertResolution } from "@/lib/npc/store";
 import { corpus, lineIndex } from "@/lib/quests/catalogue";
 import { isGap, matchingLines, NO_CONTEXT } from "@/lib/search";
 
-import { englishHasMoment, lineIsInExplorer, resolveContribution, resolveContributions } from "./accept";
+import { lineIsInExplorer, momentHasSpeaker, resolveContribution, resolveContributions } from "./accept";
 import {
   broadcastGossipStem,
   gossipFileName,
@@ -489,12 +489,12 @@ describe("resolveContribution: a translation", () => {
     return rows;
   }
 
-  it("says which translations English has the moment for, which accept takes with no speaker", async () => {
+  it("says which moments already have a speaker, in any language, which accept takes with no answer", async () => {
     const id = await translation(String(questId), "accept", "Traga-me seis peles de lobo, $C.");
     const rows = async () => (await listContributions("new", LOCALE)).filter((row) => row.id === id);
-    expect(await englishHasMoment(await rows())).toEqual(new Set());
+    expect(await momentHasSpeaker(await rows())).toEqual(new Set());
     await englishLine();
-    expect(await englishHasMoment(await rows())).toEqual(new Set([id]));
+    expect(await momentHasSpeaker(await rows())).toEqual(new Set([id]));
   });
 
   it("names the quest and the NPC in the language, as the client showed them", async () => {
@@ -645,6 +645,40 @@ describe("resolveContribution: a translation", () => {
         english: { questTitle: "A Test Quest" },
       });
       expect(listed[0].missing?.text).toBeFalsy();
+    });
+
+    it("takes the speaker the language wrote when English sends the moment, writing none of its own", async () => {
+      await speaker(npcId, "tauren", "male", "warrior");
+      await accepted(await native());
+      const english = await accepted(await questContribution());
+
+      expect(await speakersOf(english.id)).toEqual([]);
+      const listed = (await corpus(BASE_LANG)).lines.filter((line) => line.lineId === momentId());
+      expect(listed).toEqual([expect.objectContaining({ npcId, voice: "tauren-male-warrior" })]);
+      expect(await lineIsInExplorer(english)).toBe(true);
+    });
+
+    it("names the language's speaker in English, where English has a name for the NPC", async () => {
+      await speaker(npcId, "tauren", "male", "warrior");
+      await accepted(await native());
+      await db().query(
+        `insert into "entity_name" ("kind", "entityId", "lang", "version", "isCurrent", "origin", "name")
+         values ('creature', $1, 'enUS', 1, true, 'extracted', 'Test Speaker')
+         on conflict do nothing`,
+        [String(npcId)],
+      );
+      await accepted(await questContribution());
+
+      const listed = (await corpus(BASE_LANG)).lines.filter((line) => line.lineId === momentId());
+      expect(listed.map((line) => line.npcName)).toEqual(["Test Speaker"]);
+    });
+
+    it("is one-way once its text is written, even with no speaker row of its own", async () => {
+      await englishLine();
+      const translated = await accepted(await native());
+      expect(await speakersOf(translated.id)).toEqual([]);
+
+      expect(await resolveContribution(translated.id, "new", RESOLVER)).toMatchObject({ ok: false, reason: "one-way" });
     });
 
     it("translates English that landed after the catalogue was read", async () => {

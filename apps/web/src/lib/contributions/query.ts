@@ -17,12 +17,12 @@ import type { Filter } from "../search";
 import type { QuestSummary } from "./triage";
 
 /**
- * Whether a row of the New tab can be accepted as it stands, following resolveContribution's
- * dispatch in accept.ts:
- * - an English quests row needs a speaker whose race and gender are on file, whoever set them,
- *   in a voice the roster has (speakerFor);
- * - a translated quests row whose moment English has copies English's line and needs nothing;
- *   one English lacks needs the speaker check, and a translated greeting is always refused;
+ * Whether a row of the New tab can be accepted as it stands, the same in every language:
+ * - a quest moment that already has a speaker, in any language, needs nothing more;
+ * - any other quests row needs a speaker whose race and gender are on file, whoever set them,
+ *   in a voice the roster has (accept.ts's speakerFor);
+ * - a greeting from another language's client is always refused: its id is a hash of English
+ *   text that client never shows;
  * - zones and books rows have no speaker to check.
  */
 export const BUCKETS = ["ready", "blocked"] as const;
@@ -34,14 +34,12 @@ export function isBucket(value: unknown): value is Bucket {
 }
 
 export function bucketOf(
-  row: { source: EnvelopeSource; locale: string; quest: QuestSummary | null; englishHas: boolean },
+  row: { source: EnvelopeSource; locale: string; quest: QuestSummary | null; hasSpeaker: boolean },
   npc: { race: string | null; gender: string | null; flavor: string | null; conflict: readonly unknown[] } | null,
 ): Bucket {
   if (row.source !== "quests") return "ready";
-  if (row.locale !== BASE_LANG) {
-    if (row.quest === "gossip") return "blocked";
-    if (row.englishHas) return "ready";
-  }
+  if (row.quest === "gossip" && row.locale !== BASE_LANG) return "blocked";
+  if (row.quest !== "gossip" && row.hasSpeaker) return "ready";
   if (!npc || npc.conflict.length > 0 || !npc.race || !npc.gender) return "blocked";
   return isVoice(voiceNameFor(npc.race, npc.gender, npc.flavor)) ? "ready" : "blocked";
 }
