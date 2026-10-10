@@ -184,8 +184,8 @@ _G.Spoken:MuteGameDialogueAhead(quests)
 Expect("turned off, muting ahead does nothing", GetCVar("Sound_EnableDialog"), "1")
 
 ---------------------------------------------------------------- the player's own Dialog off stays off
--- Reported from CurseForge: with NPC voices switched off and Spoken on SFX, closing the
--- dialog switched them back on.
+-- With NPC voices switched off and Spoken on SFX, lifting the mute after the line would switch
+-- them back on.
 env, quests, zones = H.Fresh(stub, SPOKEN)
 env.Addon.db.profile.Audio.AutoToggleDialog = true
 env.Addon.db.profile.Audio.SoundChannel = "SFX"
