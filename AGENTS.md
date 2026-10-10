@@ -97,9 +97,35 @@ Tooling, the site, CI and docs bump nothing.
   creep.
 - The checks above are the verification. Do not stack extra self-review passes or use
   subagents to re-check finished work.
-- PR descriptions are prose for the reviewer and for whoever finds the branch in a year. The
-  title states the outcome. Open with the problem, and include an honest verification section
-  that says what you did not check (for example, "not looked at in-game").
+
+## PR descriptions
+
+A PR description is prose for the reviewer and for whoever finds the branch in a year. Aim for
+about 200 words. The title states the outcome.
+
+Include:
+
+- Why the change exists and what limits it, followable with no prior context.
+- How it works, only where the diff doesn't show it. Say where the risk sits so the reviewer
+  looks there.
+- Deliberate omissions, and why.
+- Verification as facts only: what ran, what passed, what was not checked (for example, "not
+  looked at in-game").
+- A "How to test" section that lets the reviewer check the change themselves. For a bug fix, the
+  steps to reproduce it in game: where to go, what to click, what went wrong before and what
+  happens now. For a new feature, screenshots, or instructions for finding and trying it.
+
+Leave out:
+
+- Per-change or per-file lists. The files tab has them.
+- History: review rounds, fix-ups, what an earlier version got wrong, dropped designs.
+- Why it is a separate PR ("stacked on #X", "part 2 of 4", what it unblocks). The base branch
+  and labels carry ordering.
+- Tool attribution such as "Generated with Claude Code" and session links. Commit trailers
+  stay.
+
+Write plain words in active voice and short sentences. No em dashes, no filler, no bold labels
+that restate the line. Keep identifiers, flags and issue numbers exact.
 
 ## Comments
 
