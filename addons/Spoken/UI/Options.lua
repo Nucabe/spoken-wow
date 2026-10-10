@@ -399,31 +399,28 @@ local function Build(canvas)
     -- not told what any of them do. The subtitle shows the corner icon too, so the row is
     -- there with subtitles as well as with a window. Report is not the window's alone (the
     -- quest log, DialogueUI's window and the lore pages show it), so its row is a general one.
+    local function HideActionRow(id, label, tip, changed)
+        return layout:Checkbox(label, tip,
+            function() return cfg().HiddenActions[id] end,
+            function(v) cfg().HiddenActions[id] = v or nil end, function()
+                refresh()
+                if Subtitle then Subtitle:Update() end
+                if changed then changed() end
+            end)
+    end
     for _, optional in ipairs(Actions.optional) do
         if optional.id ~= "report" then
-            Only(layout:Checkbox(format(L.OPT_HIDE_ACTION, optional.label), L.OPT_HIDE_ACTION_TIP,
-                function() return cfg().HiddenActions[optional.id] end,
-                function(v) cfg().HiddenActions[optional.id] = v or nil end, function()
-                    refresh()
-                    if Subtitle then Subtitle:Update() end
-                end),
+            Only(HideActionRow(optional.id, format(L.OPT_HIDE_ACTION, optional.label), L.OPT_HIDE_ACTION_TIP),
                 function() return InWindow() or Subtitles() end)
         end
     end
-    -- The report action's switch, which the windows already follow, so a hidden Report stays
-    -- hidden; addons that draw their own hear REPORT_SETTINGS_CHANGED.
+    -- The report action's own key, which the windows already follow: a hidden Report stays hidden.
     local function ReportRow(tip)
-        return layout:Checkbox(L.OPT_HIDE_REPORT, tip,
-            function() return cfg().HiddenActions.report end,
-            function(v) cfg().HiddenActions.report = v or nil end, function()
-                refresh()
-                if Subtitle then Subtitle:Update() end
-                Callbacks:Fire("REPORT_SETTINGS_CHANGED")
-            end)
+        return HideActionRow("report", L.OPT_HIDE_REPORT, tip,
+            function() Callbacks:Fire("REPORT_SETTINGS_CHANGED") end)
     end
-    -- Where there is no Contribute section to put it beside (the legacy clients), here. Its tip
-    -- names only what they have: no Small Window, and no subtitles on 1.12. Only with a window or
-    -- subtitles: they are the only Report buttons these clients have.
+    -- Legacy clients have no Contribute section, and Report only on a window or subtitles. Its tip
+    -- names only what they have: no Small Window, and no subtitles on 1.12.
     if not Spoken.Contribute then
         Only(ReportRow(Version.IsLegacyVanilla and L.OPT_HIDE_REPORT_TIP_VANILLA
             or L.OPT_HIDE_REPORT_TIP_LEGACY), function() return InWindow() or Subtitles() end)
