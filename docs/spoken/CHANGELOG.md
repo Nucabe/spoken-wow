@@ -121,6 +121,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   game's other sounds too, and puts your own value back once the last line ends, after a reload or
   at the next login. A change you make to that setting meanwhile is kept. Off by default.
   *([Nucabe](https://github.com/Nucabe))*
+- The Quests, Gossip, Places and Readables pages no longer open with an Enable box. A module is turned
+  on and off in one place, What Spoken Reads on Spoken's page, and a page of a module that is off says
+  so. *([Nucabe](https://github.com/Nucabe))*
 
 ### Battlegrounds
 
