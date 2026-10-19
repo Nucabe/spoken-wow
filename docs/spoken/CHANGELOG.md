@@ -4,6 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Silence NPC Voices no longer lets a moment of an NPC's greeting through.** The game starts
+  the greeting as the window opens, before Spoken can mute it, so now and then its first moment
+  was heard. An NPC whose greeting a pack reads is now muted while you point at or target it,
+  near enough to talk to, and gets its voice back when you move off.
+  *([Nucabe](https://github.com/Nucabe))*
 - **The Spoken Manager can send the lines Spoken collects for you.** Turn on Sharing in the
   manager, and the lines Spoken had no voice for go to the site after each logout or /reload,
   so you no longer upload the file yourself. Collected lines now also say which version of your
