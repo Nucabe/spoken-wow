@@ -10,6 +10,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   voice pack was playing, so the site can tell a line nobody has voiced from a pack that is out
   of date. The note Spoken shows before collecting says so.
   *([rusty-key](https://github.com/rusty-key))*
+- **The AddOns list says what each part reads.** Hovering Spoken now says it reads quests, gossip,
+  places and readables, with one queue, one narrator and one minimap button. The Places and
+  Readables sound packs say what they hold and that they load with the game, and the Vanilla
+  quest packs say they are narrated.
+  *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.5.1 — 2026-10-19
 
