@@ -86,6 +86,7 @@ const EVENTS = new Map([
 // Readables nothing in the DB places, placed by hand where the wiki has them.
 const ZONES_BY_HAND = {
   124: [1434], // Green Hills of Stranglethorn: the cover of Hemet Nesingwary's book, whose pages are found in Stranglethorn Vale
+  11007: [1454], // Advisor Nazgrel's Instructions: Nazgrel hands it over in Grommash Hold, by gossip
 };
 // Types no title, icon or first page gives away, by book id: read off the words or the wiki.
 const TYPE_BY_HAND = {
@@ -105,6 +106,8 @@ const TYPE_BY_HAND = {
   2514: "note", // Brock's List: a list of students
   2807: "journal", // Decoded Tablet Transcription: a diary, "Day 1..."
   2838: "letter", // From the Desk of Lord Victor Nefarius: "To Whom It May Concern, ..."
+  10322: "note", // Bloody Note: three pages, which would make it a book
+  11007: "letter", // Advisor Nazgrel's Instructions: "Elf, As a guest of the Horde, ..."
   // The soldiers' letters from the Scourge invasion, and the reports the Keeper of the Rolls
   // mails back for them.
   2882: "letter", 2883: "letter", 2884: "letter",

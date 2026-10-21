@@ -74,10 +74,16 @@ their title (gravestones, a treatise's `<H1>`) are left alone rather than read i
 another language the title is said only where it is translated, and whether a page can be
 voiced is still judged on the page alone.
 
-Vanilla only. WoW: Forever is a Classic+ fork, so most of its books are vanilla books with
-unchanged text, and the addon matches on the text rather than on an id — those play with no
-extra work. Forever-only books are a known gap, to be measured before anything is built for
-them.
+WoW: Forever is a Classic+ fork, so most of its books are vanilla books with unchanged text,
+and the addon matches on the text rather than on an id — those play with no extra work.
+Forever's own readables, which vmangos has no page of, come from the Forever repack that
+`places.mjs` also reads (`PLACES_MYSQL_*`): the objects and items named in `FOREVER_OBJECTS`
+and `FOREVER_ITEMS` (`tools/lib/world.mjs`), with an item's first page from Forever's client.
+They are named one by one, because the repack also holds retail page chains Forever never
+shows. Today that is the Zephras Isle readables and Advisor Nazgrel's Instructions. Their
+words are the repack's, sniffed from Forever, until a player's contribution says otherwise.
+Where the repack is not running, the extract says so and leaves them out, which removes
+nothing: the import only adds and updates.
 
 ## Pages in any language
 
@@ -101,7 +107,7 @@ plays (`pipelines/books/tools/lib/absorb.mjs`).
 
 | Stage | Input | Output | Who runs it |
 | --- | --- | --- | --- |
-| `extract` | vmangos world DB | `pipelines/books/corpus/extract.json` | a maintainer, after a dump refresh |
+| `extract` | vmangos world DB, and the Forever repack for Forever's own | `pipelines/books/corpus/extract.json` | a maintainer, after a dump refresh |
 | `import` | that file | `book_page` and `book_line` rows | the same maintainer |
 | review | `book_line` | corrected text | anyone, at `/books` |
 | generate | `book_line` | mp3s and `take` rows | anyone with an ElevenLabs key |
