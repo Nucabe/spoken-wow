@@ -31,7 +31,7 @@ same dump `pipelines/quests` already downloads and loads for the quest corpus.
 |---|---|
 | `page_text` | `entry`, `text`, `next_page` — the pages, as a linked list |
 | `locales_page_text` | the same pages in eight other languages, on the same ids |
-| `gameobject_template` | type 9 is a book, plaque or sign; `data0` is its first page |
+| `gameobject_template` | type 9 is a book, plaque or sign; `data0` is its first page. Type 10, a goober (the Ameth'Aran tablets), opens the page in `data7` when used |
 | `item_template` | `page_text`, `page_language`, `page_material` — letters, notes, scrolls |
 
 ## What is in the corpus

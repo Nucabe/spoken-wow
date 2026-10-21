@@ -92,6 +92,7 @@ const TYPE_BY_HAND = {
   15: "letter", // William's Shipment: "Hello Morgan, ..."
   29: "note", // Crate of Horseshoes: "A note is attached to the crate."
   58: "tablet", 62: "tablet", 285: "tablet", 324: "tablet", // the Troll Legends, from stone tablets
+  358: "tablet", 359: "tablet", // The Lay and The Fall of Ameth'Aran, tablets in Darkshore's ruins
   73: "journal", // Book from Sven's Farm: Stalvan's diary
   153: "book", 161: "book", 169: "book", 177: "book", // Green Hills chapters, bound
   336: "letter", // Cloth Request: "To the Schneiders, ..."
@@ -230,8 +231,9 @@ async function spawnZones(spawnTable, ids) {
 }
 
 try {
-  // Standing in the world: text objects whose page is a readable's.
-  const texts = (await q("SELECT entry, name, Data0 AS page FROM gameobject_template WHERE type = 9"))
+  // Standing in the world: text objects, and goobers that open a page when used, whose page is a
+  // readable's.
+  const texts = (await q("SELECT entry, name, IF(type = 9, Data0, Data7) AS page FROM gameobject_template WHERE type = 9 OR (type = 10 AND Data7 > 0)"))
     .filter((r) => pageBook.has(Number(r.page)));
   const textZones = await spawnZones("gameobject", texts.map((r) => Number(r.entry)));
   for (const r of texts) {

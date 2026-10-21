@@ -13,6 +13,11 @@ export const PATCH = 10;
 
 /** GAMEOBJECT_TYPE_TEXT. data0 is the first page_text entry. */
 const GO_TYPE_TEXT = 9;
+/**
+ * GAMEOBJECT_TYPE_GOOBER. data7 is the page it opens when used: the Ameth'Aran tablets in
+ * Darkshore are goobers, and a reader reading only type 9 never saw them.
+ */
+const GO_TYPE_GOOBER = 10;
 
 export async function readWorld(connection, patch = PATCH) {
   const [pageRows] = await connection.query(
@@ -20,13 +25,13 @@ export async function readWorld(connection, patch = PATCH) {
   );
 
   const [objectRows] = await connection.query(
-    `SELECT t1.entry AS id, t1.name AS name, t1.data0 AS firstPage
+    `SELECT t1.entry AS id, t1.name AS name,
+            IF(t1.type = ?, t1.data0, t1.data7) AS firstPage
        FROM gameobject_template t1
-      WHERE t1.type = ?
-        AND t1.data0 > 0
+      WHERE ((t1.type = ? AND t1.data0 > 0) OR (t1.type = ? AND t1.data7 > 0))
         AND t1.patch = (SELECT MAX(t2.patch) FROM gameobject_template t2
                          WHERE t2.entry = t1.entry AND t2.patch <= ?)`,
-    [GO_TYPE_TEXT, patch],
+    [GO_TYPE_TEXT, GO_TYPE_TEXT, GO_TYPE_GOOBER, patch],
   );
 
   const [itemRows] = await connection.query(
