@@ -264,7 +264,10 @@
    24813,
    15847
   ],
-  "notes": "Emeriss (Classic) wowhead ids; Summon Player left out (TEMP icon), Putrid Mushroom 31690 not in the Forever table."
+  "notes": "Emeriss (Classic) wowhead ids; Summon Player left out (TEMP icon), Putrid Mushroom 31690 not in the Forever table.",
+  "drop": [
+   24776
+  ]
  },
  {
   "map": 2832,
@@ -277,7 +280,10 @@
    24813,
    15847
   ],
-  "notes": "Lethon (Classic) wowhead ids; Summon Player left out (TEMP icon)."
+  "notes": "Lethon (Classic) wowhead ids; Summon Player left out (TEMP icon).",
+  "drop": [
+   24776
+  ]
  },
  {
   "map": 2832,
@@ -290,7 +296,10 @@
    24813,
    15847
   ],
-  "notes": "Ysondre (Classic) wowhead ids; the retail Ysondre page (Rejuvenation 80304, Wrath 43619) is not Classic; spirit spells (Curse of Thorns, Silence) left out."
+  "notes": "Ysondre (Classic) wowhead ids; the retail Ysondre page (Rejuvenation 80304, Wrath 43619) is not Classic; spirit spells (Curse of Thorns, Silence) left out. Summon Player 24776 left out: the client draws it with the question-mark icon and no description.",
+  "drop": [
+   24776
+  ]
  },
  {
   "map": 533,
@@ -312,6 +321,16 @@
   "notes": "Fire Nova is 23462; the wiki writes it as 23642, which is Corruption.",
   "drop": [
    23642
+  ]
+ },
+ {
+  "map": 309,
+  "key": "high priestess arlokk",
+  "name": "High Priestess Arlokk",
+  "spells": [],
+  "notes": "Aspect of Arlokk 24690 is Hakkar's spell, cast when she lives; her page lists it.",
+  "drop": [
+   24690
   ]
  },
  {
@@ -435,6 +454,16 @@
   "drop": [
    18351,
    18564
+  ]
+ },
+ {
+  "map": 2832,
+  "key": "taerar",
+  "name": "Taerar",
+  "spells": [],
+  "notes": "Summon Player 24776 left out: the client draws it with the question-mark icon and no description.",
+  "drop": [
+   24776
   ]
  }
 ]
