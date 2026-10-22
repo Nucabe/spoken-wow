@@ -4,6 +4,12 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Collect Missing Lines keeps each quest stage once, and keeps reworded lines.** A quest stage
+  is no longer kept a second time without its NPC as the window closes. A quest or gossip line that
+  plays but whose words in the game differ from the text it was voiced from is now kept too, so it
+  can be corrected. Your character's name no longer goes out with a line or page that writes it in
+  capitals, nor another player's name with a quest they shared, and lines already kept with your
+  name have it taken out when you log in. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

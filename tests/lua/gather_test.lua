@@ -218,6 +218,19 @@ Expect("...in a gossip line too, in capitals, rekeyed on its new words",
     "g:12345:" .. sum(nil, "$N, stay a while.") .. ":f " .. Said("$N, stay a while."))
 Expect("...leaving a longer word alone", _G.SpokenContributionsDB.Lines[3].envelope, Kept("Grimbalorson waits."))
 Expect("...and a line whose words are already kept goes into that one", Gather:Count(), 4)
+
+-- A quest another player shared was kept with their name as its npc, and no id. After login
+-- the name is gone; an NPC's id and name stay.
+local function From(npc)
+    return Spoken.Contribute:Envelope("quests", { { "quest", "3119" }, { "npc", npc } }, "Take this.")
+end
+_G.SpokenContributionsDB.Lines = {
+    { key = "q:3119:accept:", envelope = From("Sharingfriend") },
+    { key = "q:3119:complete:4242", envelope = From("4242 Linnea") },
+}
+stub.FireEvent("PLAYER_LOGIN")
+Expect("login takes another player's name out of a quest they shared", _G.SpokenContributionsDB.Lines[1].envelope, From(""))
+Expect("...and leaves an NPC's as it was", _G.SpokenContributionsDB.Lines[2].envelope, From("4242 Linnea"))
 world.playerName = nil
 Gather:Clear()
 

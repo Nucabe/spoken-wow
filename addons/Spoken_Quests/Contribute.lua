@@ -70,7 +70,17 @@ local function NPCLabel(id, name)
     return id and tostring(id) or name
 end
 
+--- Whether a GUID is a player's. A quest a party member shares opens the window with them as its
+--- "npc", and a player's name never goes with a line.
+local function IsPlayerGUID(guid)
+    local ok, guidType = pcall(Utils.GetGUIDType, Utils, guid)
+    return ok and guidType == Enums.GUID.Player
+end
+
 local function NPCField()
+    if Utils:IsNPCPlayer() or IsPlayerGUID(Utils:GetNPCGUID()) then
+        return nil
+    end
     local name = UnitName and NotSecret(UnitName("npc")) or nil
     if not name then
         name = select(2, QuestItem())
@@ -411,7 +421,7 @@ function Contribute:ReportContext(clip)
         fields[#fields + 1] = { "quest", clip.questID }
         fields[#fields + 1] = { "event", path }
     end
-    local npc = NPCLabel(IDFromGUID(clip.unitGUID), clip.name)
+    local npc = NPCLabel(IDFromGUID(clip.unitGUID), not IsPlayerGUID(clip.unitGUID) and clip.name or nil)
     if npc then
         fields[#fields + 1] = { "npc", npc }
     end
@@ -563,10 +573,19 @@ local function UnnameGathered(gather)
     for i = #lines, 1, -1 do
         local line = lines[i]
         local npc, sex = string.match(line.key, "^g:(%d+):%d+(.*)$")
-        if npc or QuestMoment(line.key) then
+        local stem, speaker = QuestMoment(line.key)
+        if npc or stem then
             local source, fields, text = Spoken.Contribute:Parse(line.envelope)
             local unnamed = text and Spoken.Contribute:Unname(text, name)
-            if source == "quests" and unnamed ~= text then
+            -- A quest kept with a name and no id for its speaker was shared by another player,
+            -- kept before their name stopped going in the npc field (NPCField).
+            local shared = false
+            for _, field in ipairs(stem and speaker == "" and fields or {}) do
+                if field[1] == "npc" and field[2] ~= "" and not string.find(field[2], "^%d") then
+                    field[2], shared = "", true
+                end
+            end
+            if source == "quests" and (unnamed ~= text or shared) then
                 local key = npc and format("g:%s:%d%s", npc, Spoken.Contribute:Checksum(unnamed), sex) or line.key
                 gather:Rekey(line.key, key, Spoken.Contribute:Envelope(source, fields, unnamed))
             end

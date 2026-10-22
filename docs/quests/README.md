@@ -979,7 +979,8 @@ the quest log's included, except where it contributes; each addon asks
 
 Clicking it opens Spoken's contribute box (`UI/ContributeBox.lua`). It holds a link to
 `spoken.rusty.one/contribute` that carries an envelope: the addon, the build, the locale, the
-quest or NPC, and the text itself. Where no link can be built it holds the envelope and the
+quest or NPC (never a player: a quest a party member shares names no one), and the text
+itself. Where no link can be built it holds the envelope and the
 address to paste. The client still cannot open a browser or post anywhere, so the player copies
 it, opens it, sees a field-by-field preview of exactly what is about to be sent, and submits.
 The first click ever asks whether to send just that line or to collect as the player plays:

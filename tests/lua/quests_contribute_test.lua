@@ -47,6 +47,23 @@ Expect("the pack language is carried beside it", envelope:match("\npack=enUS\n")
 Expect("...and the version of the pack speaking it, none without one", envelope:match("\npackVersion=none\n") ~= nil, true)
 Expect("the build is carried", envelope:match("\nbuild=") ~= nil, true)
 Expect("no character name is carried", envelope:match(world.playerName or "Tester") == nil, true)
+
+-- A quest a party member shares opens the window with them as its "npc". Their name is a
+-- player's, and does not go.
+do
+    local isPlayer, guid, name = _G.UnitIsPlayer, world.npcGUID, world.npcName
+    _G.UnitIsPlayer = function() return true end
+    world.npcGUID, world.npcName = "Player-4401-0A1B2C3D", "Sharingfriend"
+    Expect("a quest shared by another player sends no player's name",
+        VoiceOver.Contribute:Capture():find("Sharingfriend", 1, true), nil)
+    _G.UnitIsPlayer = isPlayer
+    stub.HidePanels()
+    Expect("...nor does a report on its line after the window closed",
+        VoiceOver.Contribute:ReportContext({ questID = 9123, event = VoiceOver.Enums.SoundEvent.QuestAccept,
+            unitGUID = world.npcGUID, name = "Sharingfriend", text = "Kill six of them." }):find("Sharingfriend", 1, true), nil)
+    world.npcGUID, world.npcName = guid, name
+    stub.ShowPanel("QuestFrameDetailPanel")
+end
 Expect("the addon field carries the real .toc version, not the \"dev\" fallback",
     envelope:match("\naddon=SpokenQuests/9%.9%.9\n") ~= nil, true)
 
