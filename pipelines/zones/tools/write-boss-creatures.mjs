@@ -3,8 +3,8 @@
 //
 //   node pipelines/zones/tools/write-boss-creatures.mjs <boss_creatures.json> [--abilities <boss-abilities.json>] [--manual <boss-abilities-manual.json>] [--out <file>]
 //
-// The client's tables (wago.tools, Forever's build) drop the spells it has no name for and the
-// passive ones, and repeats of a name (the lowest id of a name stays); the first MOST by id are kept.
+// The client's tables (wago.tools, Forever's build) drop the spells it has no name for, the passive and the
+// hidden ones, and repeats of a name (the first id of a name stays); the first MOST are kept.
 // Where the database gives a boss no model or no spells, the Adventure Guide's (retail JournalEncounter
 // tables) fill in: its creature's model where Forever's client has that model, its abilities that name a spell.
 // boss-creatures-manual.json then sets the creature and model of the bosses the database cannot give, each
@@ -24,6 +24,8 @@ if (!input) throw new Error("usage: write-boss-creatures.mjs <boss_creatures.jso
 
 const MOST = 8;
 const PASSIVE = 0x40;
+// SpellMisc Attributes[0] "do not display": selectors and permanent auras (King Gordok's breath selection).
+const HIDDEN = 0x80;
 const rows = JSON.parse(await readFile(input, "utf8"));
 const names = new Map((await wagoTable("SpellName", { build: FOREVER_BUILD, locale: "enUS" })).map((r) => [Number(r.ID), r.Name_lang]));
 const attributes = new Map((await wagoTable("SpellMisc", { build: FOREVER_BUILD, locale: "enUS" })).map((r) => [Number(r.SpellID), Number(r.Attributes_0)]));
@@ -84,12 +86,15 @@ for (const entry of wiki) {
   row.spells = [...new Set([...entry.spells, ...row.spells])];
   filledWiki++;
 }
-// Spell ids chosen by hand for bosses whose article lists abilities without ids: ahead of the rest.
+// Spell ids chosen by hand for bosses whose article lists abilities without ids: ahead of the rest. `drop`: ids
+// a source gives the boss that are not its own (an add's, a wrong wiki id, a visual).
 const manual = args.includes("--manual") ? JSON.parse(await readFile(args[args.indexOf("--manual") + 1], "utf8")) : [];
 let filledManual = 0;
 for (const entry of manual) {
-  if (!entry.spells?.length) continue;
+  if (!entry.spells?.length && !entry.drop?.length) continue;
   const row = rowFor(entry.map, entry.key);
+  row.drop = new Set(entry.drop ?? []);
+  if (!entry.spells?.length) continue;
   row.spells = [...new Set([...entry.spells, ...row.spells])];
   filledManual++;
 }
@@ -116,8 +121,8 @@ for (const row of rows) {
   const spells = [];
   for (const id of row.spells) {
     const name = names.get(id);
-    if (!name || junk.test(name) || seen.has(name)) continue;
-    if ((attributes.get(id) ?? 0) & PASSIVE) continue;
+    if (!name || junk.test(name) || seen.has(name) || row.drop?.has(id)) continue;
+    if ((attributes.get(id) ?? 0) & (PASSIVE | HIDDEN)) continue;
     seen.add(name);
     spells.push(id);
   }

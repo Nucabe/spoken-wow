@@ -291,5 +291,128 @@
    15847
   ],
   "notes": "Ysondre (Classic) wowhead ids; the retail Ysondre page (Rejuvenation 80304, Wrath 43619) is not Classic; spirit spells (Curse of Thorns, Silence) left out."
+ },
+ {
+  "map": 289,
+  "key": "darkmaster gandling",
+  "name": "Darkmaster Gandling",
+  "spells": [],
+  "notes": "Christmas Darkmaster Gandling 26200 is a Winter Veil costume the database casts on spawn.",
+  "drop": [
+   26200
+  ]
+ },
+ {
+  "map": 90,
+  "key": "grubbis",
+  "name": "Grubbis",
+  "spells": [],
+  "notes": "Dazed 1604 is the daze every creature gives from behind.",
+  "drop": [
+   1604
+  ]
+ },
+ {
+  "map": 329,
+  "key": "balnazzar",
+  "name": "Balnazzar",
+  "spells": [],
+  "notes": "Dazed 1604 is the daze every creature gives from behind.",
+  "drop": [
+   1604
+  ]
+ },
+ {
+  "map": 329,
+  "key": "black guard swordsmith",
+  "name": "Black Guard Swordsmith",
+  "spells": [],
+  "notes": "Dazed 1604 is the daze every creature gives from behind.",
+  "drop": [
+   1604
+  ]
+ },
+ {
+  "map": 209,
+  "key": "antusul",
+  "name": "Antu'sul",
+  "spells": [],
+  "notes": "Warder Despawn 11893 removes the summoned warders.",
+  "drop": [
+   11893
+  ]
+ },
+ {
+  "map": 229,
+  "key": "pyroguard emberseer",
+  "name": "Pyroguard Emberseer",
+  "spells": [],
+  "notes": "Freeze Anim, Emberseer Full Strength and Emberseer Growing are the visuals of the event before the fight.",
+  "drop": [
+   16245,
+   16047,
+   16048
+  ]
+ },
+ {
+  "map": 109,
+  "key": "jammalan the prophet",
+  "name": "Jammal'an the Prophet",
+  "spells": [],
+  "notes": "Green Channeling 13540 is a visual out of combat.",
+  "drop": [
+   13540
+  ]
+ },
+ {
+  "map": 43,
+  "key": "lady anacondra",
+  "name": "Lady Anacondra",
+  "spells": [],
+  "notes": "Nature Channeling 13236 is a visual out of combat.",
+  "drop": [
+   13236
+  ]
+ },
+ {
+  "map": 2804,
+  "key": "prince thunderaan",
+  "name": "Prince Thunderaan",
+  "spells": [],
+  "notes": "Tears of the Wind Seeker 23011 is the visual of his summoning.",
+  "drop": [
+   23011
+  ]
+ },
+ {
+  "map": 309,
+  "key": "gahzranka",
+  "name": "Gahz'ranka",
+  "spells": [],
+  "notes": "Water 22422 is the damage of Massive Geyser, which has its own card.",
+  "drop": [
+   22422
+  ]
+ },
+ {
+  "map": 429,
+  "key": "prince tortheldrin",
+  "name": "Prince Tortheldrin",
+  "spells": [],
+  "notes": "Summon 22995 has no description in the client.",
+  "drop": [
+   22995
+  ]
+ },
+ {
+  "map": 249,
+  "key": "onyxia",
+  "name": "Onyxia",
+  "spells": [],
+  "notes": "Breath 18351 and 18564 are Deep Breath stubs with no description in the client.",
+  "drop": [
+   18351,
+   18564
+  ]
  }
 ]
