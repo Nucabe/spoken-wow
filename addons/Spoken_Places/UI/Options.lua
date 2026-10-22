@@ -227,11 +227,14 @@ function SpokenZones:SetupOptions()
 	layout:Button(W.MODULE_TEST_LINE, 200, function() SpokenZones:PlayTestLine() end)
 
 	-- What this character has heard, as on the other pages: forgotten, every place is new again.
+	-- Greyed without Include Places Found Before: outside a dungeon, only it reads the list, and
+	-- the game announces a discovery once per character, so forgetting would read nothing again.
 	layout:Section(W.MODULE_HISTORY)
-	layout:Button(L.OPT_FORGET_PLACES, 200, function()
+	local forget = layout:Button(L.OPT_FORGET_PLACES, 200, function()
 		if SpokenZones.ForgetAutoplayHistory then SpokenZones:ForgetAutoplayHistory() end
 		SpokenZones:Print(L.OPT_FORGET_PLACES_DONE)
 	end)
+	layout:Requires(forget, Get("autoplayExplored"), L.REASON_EXPLORED)
 
 	-- The page's Defaults, as Spoken's has.
 	layout:Defaults(function()

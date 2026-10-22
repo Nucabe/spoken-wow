@@ -115,6 +115,15 @@ do
     Expect("...and off, Read Automatically greys out, saying why", discovery and discovery.layoutReason, Z.L.REASON_VOICE)
     Z:Set("voiceEnabled", true); layout:Refresh()
     Expect("...and comes back with it", discovery and discovery.layoutReason, nil)
+
+    -- The game announces a discovery once per character, so only Include Places Found Before
+    -- reads a place again once it is forgotten.
+    local forget = Row(Z.L.OPT_FORGET_PLACES)
+    Z:Set("autoplayExplored", false); layout:Refresh()
+    Expect("Forget Places Heard greys out while Include Places Found Before is off, saying why",
+        forget and forget.layoutReason, "Turn on Include Places Found Before to use this.")
+    Z:Set("autoplayExplored", true); layout:Refresh()
+    Expect("...and is live with it on", forget and forget.layoutReason, nil)
 end
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

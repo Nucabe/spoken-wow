@@ -141,6 +141,7 @@ L.MAP_LORE_FOR_FMT = "story for %1$s"
 --------------------------------------------------------------------------------
 
 L.REASON_DISCOVERY = "Turn on Read Automatically to use this."
+L.REASON_EXPLORED = "Turn on Include Places Found Before to use this."
 L.REASON_MAP_PANEL = "Turn on Show Story Beside Map to use this."
 L.OPT_RESET_PAGE_CONFIRM = "Reset every Places setting to its default?"
 L.OPT_RELOAD_NOW = "Reload Now"
