@@ -172,7 +172,7 @@ SpokenBossCreatures = {
 		["vectus"] = { creature = 10432, display = 2606, spells = { 16046, 18399 } },
 	},
 	[309] = {
-		["bloodlord mandokir"] = { creature = 11382, display = 11288, spells = { 24408, 24318, 7160, 19134, 24312, 16856, 24407, 24314 } },
+		["bloodlord mandokir"] = { creature = 11382, display = 11288, spells = { 24314, 24316, 13736, 24312, 16856, 19134, 7160, 24318 } },
 		["edge of madness"] = { creature = 15082, display = 8390, spells = { 24646, 24648, 24649, 24699, 24680, 24683, 24664, 6524 } },
 		["gahzranka"] = { creature = 15114, display = 15288, spells = { 16099, 24326, 22421, 3391 } },
 		["hakkar"] = { creature = 14834, display = 15295, spells = { 24328, 24327, 24178, 24687, 24688, 24686, 24689, 24324 } },
@@ -288,7 +288,7 @@ SpokenBossCreatures = {
 		["gothik the harvester"] = { creature = 16060, display = 16279, spells = { 28679, 29317 } },
 		["grand widow faerlina"] = { creature = 15953, display = 15940, spells = { 28796, 28794, 28798 } },
 		["grobbulus"] = { creature = 15931, display = 16035, spells = { 28169, 28157, 28240 } },
-		["heigan the unclean"] = { creature = 15936, display = 16309, spells = { 29998 } },
+		["heigan the unclean"] = { creature = 15936, display = 16309, spells = { 29371, 29310, 29998 } },
 		["instructor razuvious"] = { creature = 16061, display = 16582, spells = { 29107, 26613 } },
 		["kelthuzad"] = { creature = 15990, display = 15945, spells = { 28478, 28410, 27819, 27810, 27812, 27808 } },
 		["loatheb"] = { creature = 16011, display = 16110, spells = { 29201, 29204, 29232, 29865 } },
@@ -297,7 +297,7 @@ SpokenBossCreatures = {
 		["patchwerk"] = { creature = 16028, display = 16174, spells = { 26662, 28131, 32309 } },
 		["sapphiron"] = { creature = 15989, display = 16033, spells = { 28531, 28547, 19983, 28542, 15847, 28522, 28524 } },
 		["thaddius"] = { creature = 15928, display = 16137, spells = { 28089, 28084, 28059, 28299, 27680, 28167 } },
-		["the four horsemen"] = { creature = 16062, display = 16139, spells = { 8599, 29061, 28834, 28832, 28835, 28884, 28883, 26446 } },
+		["the four horsemen"] = { creature = 16062, display = 16139, spells = { 28834, 28832, 28835, 28833, 28882, 28884, 28883, 28863 } },
 	},
 	[2784] = {
 		["azgaloth"] = { creature = nil, display = nil, spells = { 470457, 20812, 470535, 469990, 470280, 470031 } },

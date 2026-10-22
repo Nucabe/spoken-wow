@@ -478,6 +478,48 @@
   ]
  },
  {
+  "map": 533,
+  "key": "the four horsemen",
+  "name": "The Four Horsemen",
+  "spells": [
+   28834,
+   28832,
+   28835,
+   28833,
+   28882,
+   28884,
+   28883,
+   28863
+  ],
+  "notes": "Four Horsemen (Classic) wiki ids: the four marks, then Mograine's Righteous Fire, Korth'azz's Meteor, Zeliek's Holy Wrath and Blaumeux's Void Zone; the shared Enrage, Shield Wall and Summon Player left out for the limit."
+ },
+ {
+  "map": 533,
+  "key": "heigan the unclean",
+  "name": "Heigan the Unclean",
+  "spells": [
+   29371,
+   29310
+  ],
+  "notes": "His page has no ability ids; Eruption 29371 and Mana Burn 29310 are the spells of his script in the repack (spell_script_names spell_heigan_eruption, classic_spell_heigan_mana_burn)."
+ },
+ {
+  "map": 309,
+  "key": "bloodlord mandokir",
+  "name": "Bloodlord Mandokir",
+  "spells": [
+   24314,
+   24316,
+   13736,
+   24312,
+   16856,
+   19134,
+   7160,
+   24318
+  ],
+  "notes": "Bloodlord Mandokir (Classic) wiki ids: Threatening Gaze, Guillotine, Whirlwind, Level Up, Mortal Strike, Intimidating Shout, Execute, Enrage; Charge and Overpower left out for the limit, Ohgan's and the Chained Spirits' spells are theirs."
+ },
+ {
   "map": 2832,
   "key": "taerar",
   "name": "Taerar",
