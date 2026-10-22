@@ -5,8 +5,8 @@
 
 A boss is its `creature_template` of the same name that is spawned on the boss's map; one with no such
 creature has none (the maps only Forever has hold no spawns, and a creature of the same name elsewhere
-may be a namesake). Its first model is its portrait. Spells are the ones its smart scripts cast and its template lists,
-and those of the other members of a fight of several (`members` in
+may be a namesake). Its first model is its portrait. Spells are the ones its smart scripts cast (with the actionlists
+they call) and its template lists, and those of the other members of a fight of several (`members` in
 boss-sources.json); the rest are cast by code the database does not hold, so the list is never the whole fight.
 `live` is what Efficient Games recorded the creature casting in players' Forever clients (EG Link, CC BY 4.0), also
 for a boss only Forever has, whose creature is in boss-creatures-manual.json.
@@ -45,12 +45,35 @@ for data in ec.eg_datasets("creatures").values():
         live_casts.setdefault(int(creature), set()).update(int(s) for s in record.get("combatLog", {}).get("casts", {}))
 
 cursor = ec.connect(ec.parse_args([])).cursor()
+SMART = "SELECT action_type, action_param1, action_param2, action_param3, action_param4, action_param5, action_param6 FROM smart_scripts"
+
+
 def casts(entry):
     """The spells `entry` casts in the database, in id order."""
-    cursor.execute("SELECT DISTINCT action_param1 FROM smart_scripts WHERE source_type=0 AND entryorguid=%s AND action_type IN (11, 85)", (entry,))
-    spells = {row[0] for row in cursor.fetchall()}
+    spells = set()
+    cursor.execute(SMART + " WHERE source_type=0 AND entryorguid=%s", (entry,))
+    rows, seen = cursor.fetchall(), set()
+    while rows:
+        # Actionlists (Antu'sul's totems, Thekal's transform): called by id (80), one of several (87) or of a range (88).
+        lists = set()
+        for action, *params in rows:
+            if action in (11, 85):
+                spells.add(params[0])
+            elif action == 80:
+                lists.add(params[0])
+            elif action == 87:
+                lists.update(p for p in params if p)
+            elif action == 88 and 0 <= params[1] - params[0] < 100:
+                lists.update(range(params[0], params[1] + 1))
+        lists -= seen
+        seen |= lists
+        if not lists:
+            break
+        cursor.execute(SMART + " WHERE source_type=9 AND entryorguid IN (%s)" % ",".join(["%s"] * len(lists)), sorted(lists))
+        rows = cursor.fetchall()
     cursor.execute("SELECT DISTINCT Spell FROM creature_template_spell WHERE CreatureID=%s", (entry,))
     spells.update(row[0] for row in cursor.fetchall())
+    spells.discard(0)
     return sorted(spells)
 
 

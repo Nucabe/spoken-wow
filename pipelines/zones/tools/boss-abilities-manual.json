@@ -67,9 +67,9 @@
    24680,
    24683,
    24664,
-   24684
+   6524
   ],
-  "notes": "Classic pages of Gri'lek, Renataki, Wushoolay (wiki ids); Hazza'rah (Classic) has no ids, so Sleep 24664 and Chain Burn 24684 matched by name and id range (medium confidence); left out Forked Lightning, Ground Tremor, Gouge, Enrage, Thrash, Stun, Sweeping Strikes."
+  "notes": "Classic pages of Gri'lek, Renataki, Wushoolay (wiki ids); Hazza'rah (Classic) has no ids, so Sleep 24664 matched by name and id range (medium confidence); Gri'lek's Ground Tremor 6524 is from the repack; left out Chain Burn 24684, Forked Lightning, Gouge, Enrage, Thrash, Stun, Sweeping Strikes."
  },
  {
   "map": 309,
@@ -420,9 +420,10 @@
   "key": "prince thunderaan",
   "name": "Prince Thunderaan",
   "spells": [],
-  "notes": "Tears of the Wind Seeker 23011 is the visual of his summoning.",
+  "notes": "Tears of the Wind Seeker 23011 and Ragnaros Emerge 20568 are the visuals of his summoning.",
   "drop": [
-   23011
+   23011,
+   20568
   ]
  },
  {
@@ -457,6 +458,16 @@
   ]
  },
  {
+  "map": 309,
+  "key": "high priest thekal",
+  "name": "High Priest Thekal",
+  "spells": [],
+  "notes": "Resurrection Impact Visual 24171 is the visual of his resurrection.",
+  "drop": [
+   24171
+  ]
+ },
+ {
   "map": 48,
   "key": "gelihast",
   "name": "Gelihast",
@@ -475,5 +486,16 @@
   "drop": [
    24776
   ]
+ },
+ {
+  "map": 429,
+  "key": "chorush the observer",
+  "name": "Cho'Rush the Observer",
+  "spells": [
+   16170,
+   17139,
+   22884
+  ],
+  "notes": "Cho'Rush the Observer page names Bloodlust, Power Word: Shield and Psychic Scream without ids; 16170, 17139 and 22884 are the ones the repack has him cast. Ahead of his other repack spells, which fill the limit."
  }
 ]

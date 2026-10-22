@@ -107,7 +107,7 @@ SpokenBossCreatures = {
 		["interrogator vishas"] = { creature = 3983, display = 2044, spells = { 9034, 14032 } },
 	},
 	[209] = {
-		["antusul"] = { creature = 8127, display = 7353, spells = { 10413, 10915, 11894, 11895 } },
+		["antusul"] = { creature = 8127, display = 7353, spells = { 8376, 10413, 10915, 11894, 11895, 11899 } },
 		["chief ukorz sandscalp"] = { creature = 7267, display = 6439, spells = { 15496, 8269, 11837, 7366 } },
 		["gahzrilla"] = { creature = 7273, display = 7271, spells = { 11131, 11836, 11902 } },
 		["hydromancer velratha"] = { creature = 7795, display = 6685, spells = { 11086, 12491, 12739, 15245 } },
@@ -173,10 +173,10 @@ SpokenBossCreatures = {
 	},
 	[309] = {
 		["bloodlord mandokir"] = { creature = 11382, display = 11288, spells = { 24408, 24318, 7160, 19134, 24312, 16856, 24407, 24314 } },
-		["edge of madness"] = { creature = 15082, display = 8390, spells = { 24646, 24648, 24649, 24699, 24680, 24683, 24664, 24684 } },
+		["edge of madness"] = { creature = 15082, display = 8390, spells = { 24646, 24648, 24649, 24699, 24680, 24683, 24664, 6524 } },
 		["gahzranka"] = { creature = 15114, display = 15288, spells = { 16099, 24326, 22421, 3391 } },
-		["hakkar"] = { creature = 14834, display = 15295, spells = { 24328, 24327, 24178, 24687, 24688, 24686, 24689, 24690 } },
-		["high priest thekal"] = { creature = 14509, display = 15216, spells = { 24185, 22859, 22666, 24193, 8269, 24189, 24192, 24183 } },
+		["hakkar"] = { creature = 14834, display = 15295, spells = { 24328, 24327, 24178, 24687, 24688, 24686, 24689, 24324 } },
+		["high priest thekal"] = { creature = 14509, display = 15216, spells = { 24185, 22859, 22666, 24193, 8269, 24189, 24192, 24169 } },
 		["high priest venoxis"] = { creature = 14507, display = 15217, spells = { 23859, 23860, 23858, 23979, 23895, 23861, 23862, 22412 } },
 		["high priestess arlokk"] = { creature = 14515, display = 15218, spells = { 12540, 24210, 24213, 24236 } },
 		["high priestess jeklik"] = { creature = 14517, display = 15219, spells = { 23918, 23919, 12097, 23954, 23953, 23952, 22884, 23970 } },
@@ -235,7 +235,7 @@ SpokenBossCreatures = {
 	[429] = {
 		["alzzin the wildshaper"] = { creature = 11492, display = 14416, spells = { 22661, 22662, 22128, 22691, 10101, 7948, 22660, 22689 } },
 		["captain kromcrush"] = { creature = 14325, display = 11564, spells = { 5246, 8599, 22857, 22859, 22860 } },
-		["chorush the observer"] = { creature = 14324, display = 11537, spells = { 133, 8092, 8376, 13745, 15234, 15305, 15531, 15982 } },
+		["chorush the observer"] = { creature = 14324, display = 11537, spells = { 16170, 17139, 22884, 133, 8092, 8376, 13745, 15234 } },
 		["guard fengus"] = { creature = 14321, display = 11561, spells = { 8269, 10101, 11972, 15580, 15655, 15749, 20691, 22572 } },
 		["guard moldar"] = { creature = 14326, display = 11561, spells = { 11972, 14516, 8269, 10101, 15655, 15749, 20691 } },
 		["guard slipkik"] = { creature = 14323, display = 11561, spells = { 11972, 14516, 8269, 10101, 15749, 17307, 20691 } },
@@ -297,7 +297,7 @@ SpokenBossCreatures = {
 		["patchwerk"] = { creature = 16028, display = 16174, spells = { 26662, 28131, 32309 } },
 		["sapphiron"] = { creature = 15989, display = 16033, spells = { 28531, 28547, 19983, 28542, 15847, 28522, 28524 } },
 		["thaddius"] = { creature = 15928, display = 16137, spells = { 28089, 28084, 28059, 28299, 27680, 28167 } },
-		["the four horsemen"] = { creature = 16062, display = 16139, spells = { 8599, 29061, 28834, 28832, 28835, 28833, 28882, 28884 } },
+		["the four horsemen"] = { creature = 16062, display = 16139, spells = { 8599, 29061, 28834, 28832, 28835, 28884, 28883, 26446 } },
 	},
 	[2784] = {
 		["azgaloth"] = { creature = nil, display = nil, spells = { 470457, 20812, 470535, 469990, 470280, 470031 } },

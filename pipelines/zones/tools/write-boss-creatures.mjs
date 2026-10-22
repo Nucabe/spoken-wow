@@ -4,7 +4,8 @@
 //   node pipelines/zones/tools/write-boss-creatures.mjs <boss_creatures.json> [--abilities <boss-abilities.json>] [--manual <boss-abilities-manual.json>] [--out <file>]
 //
 // The client's tables (wago.tools, Forever's build) drop the spells it has no name for, the passive and the
-// hidden ones, and repeats of a name (the first id of a name stays); the first MOST are kept.
+// hidden ones, and repeats of a name (the first id of a name stays). Of more than MOST, the ones chosen by hand
+// and the ones the database or Efficient Games has the boss cast are kept before the rest.
 // Where the database gives a boss no model or no spells, the Adventure Guide's (retail JournalEncounter
 // tables) fill in: its creature's model where Forever's client has that model, its abilities that name a spell.
 // boss-creatures-manual.json then sets the creature and model of the bosses the database cannot give, each
@@ -29,7 +30,8 @@ const HIDDEN = 0x80;
 const rows = JSON.parse(await readFile(input, "utf8"));
 const names = new Map((await wagoTable("SpellName", { build: FOREVER_BUILD, locale: "enUS" })).map((r) => [Number(r.ID), r.Name_lang]));
 const attributes = new Map((await wagoTable("SpellMisc", { build: FOREVER_BUILD, locale: "enUS" })).map((r) => [Number(r.SpellID), Number(r.Attributes_0)]));
-const junk = /^(DNT|zz|\[|OLD|DEPRECATED|TEST|Test|\(OLD\))|\(OLD\)|\(DND\)|\(DNT\)/;
+// The Dire Maul guards' "Zul'Gurub Talisman PAL R1 DND" is a quest's, called from their actionlists.
+const junk = /^(DNT|zz|\[|OLD|DEPRECATED|TEST|Test|\(OLD\))|\(OLD\)|\(DND\)|\(DNT\)| DND$/;
 
 
 const guideEncounters = await wagoTable("JournalEncounter", { build: RETAIL_BUILD, locale: "enUS" });
@@ -40,7 +42,10 @@ const guideOf = guideFinder(guideEncounters);
 const inOrder = (list) => [...list].sort((a, b) => Number(a.OrderIndex) - Number(b.OrderIndex));
 
 // What the database has the boss cast, and what Efficient Games recorded it casting in Forever, after it.
-for (const row of rows) row.spells = [...new Set([...row.spells, ...(row.live ?? [])])];
+for (const row of rows) {
+  row.spells = [...new Set([...row.spells, ...(row.live ?? [])])];
+  row.cast = new Set(row.spells);
+}
 const have = new Map(rows.map((r) => [`${r.map}\t${r.key}`, r]));
 /** The row of the boss `key` of `map`, a new empty one where there is none. */
 function rowFor(map, key) {
@@ -98,6 +103,7 @@ for (const entry of manual) {
   row.drop = new Set(entry.drop ?? []);
   if (!entry.spells?.length) continue;
   row.spells = [...new Set([...entry.spells, ...row.spells])];
+  row.chosen = new Set(entry.spells);
   filledManual++;
 }
 // Creatures only Forever has, known from Efficient Games' records of the fight, are not in the database, and a
@@ -128,8 +134,12 @@ for (const row of rows) {
     seen.add(name);
     spells.push(id);
   }
+  // By name: the wiki's id of a name often stands for the one the database casts.
+  const cast = new Set([...(row.cast ?? [])].map((id) => names.get(id)));
+  const sure = spells.filter((id) => row.chosen?.has(id) || cast.has(names.get(id)));
+  const kept = new Set([...sure, ...spells.filter((id) => !sure.includes(id))].slice(0, MOST));
   withSpells += spells.length > 0;
-  (maps[row.map] ??= []).push({ key: row.key, creature: row.creature, display: row.display, spells: spells.slice(0, MOST) });
+  (maps[row.map] ??= []).push({ key: row.key, creature: row.creature, display: row.display, spells: spells.filter((id) => kept.has(id)) });
 }
 
 const lines = [
