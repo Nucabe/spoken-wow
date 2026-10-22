@@ -56,12 +56,15 @@ local function Seed(newCharacters)
         profileKeys = { ["Alice - Realm"] = "Alice - Realm", ["Bob - Realm"] = "Shared" },
         profiles = { ["Alice - Realm"] = Profile(20), Shared = Profile(12) },
         global = { NewCharacterProfile = newCharacters },
+        -- Both have logged in since the voice language moved from the quests page to Spoken's.
+        char = { ["Alice - Realm"] = { voiceLanguageFromQuests = true }, ["Bob - Realm"] = { voiceLanguageFromQuests = true } },
     }
     _G.SpokenQuestsSettings = {
         profileKeys = { ["Alice - Realm"] = "Alice - Realm", ["Bob - Realm"] = "Shared" },
         profiles = {
             ["Alice - Realm"] = { Audio = { Autoplay = false } },
-            Shared = { Audio = { GreetingFirst = true } },
+            -- Left from before the voice language was Spoken's, which Shared has never set.
+            Shared = { Audio = { GreetingFirst = true, VoiceLanguage = "deDE" } },
         },
     }
 end
@@ -75,6 +78,7 @@ local function Play(name)
     RealLibraries(name)
     VO, env = stub.LoadQuests(QUESTS, SPOKEN)
     VO.Addon:OnInitialize()
+    env.Addon:TakeVoiceLanguageFromQuests()
     local spoken, quests = env.Addon.db:GetCurrentProfile(), VO.Addon.db:GetCurrentProfile()
     local fontSize = env.Addon.db.profile.Transcript.FontSize
     local autoplay = VO.Addon.db.profile.Audio.Autoplay

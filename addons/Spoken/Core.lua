@@ -144,7 +144,16 @@ function Addon:InitDB()
     end
     -- AceDB uses the third argument only for a character with no entry in profileKeys, that is one
     -- logging in with Spoken for the first time: every other character keeps the profile it has.
-    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults, NewCharacterProfile())
+    local newProfile, known = NewCharacterProfile(), {}
+    if newProfile then
+        for key in pairs(rawget(_G, "SpokenSettings").profileKeys or {}) do known[key] = true end
+    end
+    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults, newProfile)
+    -- A character put on that profile has nothing to carry over from the quests page, and the copy
+    -- would write into a profile other characters are on.
+    if newProfile and not known[self.db.keys.char] then
+        self.db.char.voiceLanguageFromQuests = true
+    end
     -- A saved AutoScroll = false predates ScrollMode: carry it over as "off", in every profile.
     for _, profile in pairs(self.db.sv and self.db.sv.profiles or {}) do
         local transcript = type(profile) == "table" and profile.Transcript
