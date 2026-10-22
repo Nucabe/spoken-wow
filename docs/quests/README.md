@@ -1773,7 +1773,9 @@ there: that title wraps into a height the layout has already decided, and a pref
 inside a row too short to hold the extra line. So the button is anchored instead — left of the
 title, in the inset the row leaves at its left, and beside the tracking checkbox at the other
 end of the row when "Quest objectives" is on and the client is drawing its own icon in that
-inset. The objective icons are how that is detected: they are pooled beside the rows rather
+inset. There it goes left of whatever the row draws before the checkbox: Forever writes an
+elite, dungeon, PvP or raid quest's type in words (`TagText`, "(Elite)"), which the button
+must not cover. The objective icons are how that is detected: they are pooled beside the rows rather
 than parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID
 that is not the play button.
 

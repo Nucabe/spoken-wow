@@ -1256,7 +1256,7 @@ end
 
 --- The quest log of a client that draws the modern map-attached one: no QuestLogFrame, no
 --- QuestLog_Update and no GetQuestLogTitle, rows out of an unnamed frame pool, and one
---- global function that redraws the list. `quests` is a list of { questID, title, level }.
+--- global function that redraws the list. `quests` is a list of { questID, title, level, tag }.
 function M.SetModernQuestLog(quests)
     local scroll = _G.CreateFrame("ScrollFrame", "QuestScrollFrame")
     scroll.Contents = _G.CreateFrame("Frame", nil, scroll)
@@ -1282,6 +1282,15 @@ function M.SetModernQuestLog(quests)
         -- The row's own text carries the level prefix the quest log draws with it.
         row.Text:SetText(format("[%d] %s", quest.level or 1, quest.title))
         row.Checkbox = _G.CreateFrame("Frame", nil, row)
+        -- Left of the checkbox: the quest's type in words, shown on Forever for an elite,
+        -- dungeon, PvP or raid quest (`tag`), and the storyline and type icons, hidden there.
+        row.TagText = row:CreateFontString()
+        row.TagText:SetText(quest.tag)
+        row.TagText:SetShown(quest.tag ~= nil)
+        row.StorylineTexture = row:CreateTexture()
+        row.StorylineTexture:Hide()
+        row.TagTexture = row:CreateTexture()
+        row.TagTexture:Hide()
         table.insert(active, row)
         titles[quest.questID] = quest.title
         descriptions[getn(active)] = quest.description

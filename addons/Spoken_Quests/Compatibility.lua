@@ -123,11 +123,25 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
         end
     end
 
+    --- What the row draws left of its tracking checkbox: the quest's type as words ("(Elite)",
+    --- "(Dungeon)", on Forever), the storyline icon and the type icon, in that order from the
+    --- left. The leftmost one shown, or the checkbox when there is none.
+    local function RightEndOf(row)
+        for _, key in ipairs({ "TagText", "StorylineTexture", "TagTexture" }) do
+            local region = row[key]
+            if type(region) == "table" and region.IsShown and region:IsShown() then
+                return region
+            end
+        end
+        return row.Checkbox
+    end
+
     -- Left of the title, in the inset the row leaves at its left - unless "Quest objectives"
     -- is on, when that inset is the client's own icon and the button goes to the other end of
-    -- the row instead, beside the tracking checkbox. Not the blank prefix the old quest log's
-    -- buttons indent a title with, either: this title wraps into a height the layout has
-    -- already decided, and a prefix re-wraps it inside a row too short to hold the extra line.
+    -- the row instead, left of the quest's type and the tracking checkbox. Not the blank prefix
+    -- the old quest log's buttons indent a title with, either: this title wraps into a height
+    -- the layout has already decided, and a prefix re-wraps it inside a row too short to hold
+    -- the extra line.
     function QuestOverlayUI:UpdateQuestTitle(questLogTitleFrame, playButton)
         playButton:ClearAllPoints()
         if playButton.MatchBox and questLogTitleFrame.Checkbox then
@@ -136,7 +150,7 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
         end
         local poiButton = QuestPOIButton(questLogTitleFrame)
         if poiButton and questLogTitleFrame.Checkbox then
-            playButton:SetPoint("RIGHT", questLogTitleFrame.Checkbox, "LEFT", -3, 0)
+            playButton:SetPoint("RIGHT", RightEndOf(questLogTitleFrame), "LEFT", -3, 0)
         elseif poiButton then
             playButton:SetPoint("TOPRIGHT", questLogTitleFrame, "TOPRIGHT", -4, -2)
         else

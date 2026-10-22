@@ -12,7 +12,8 @@ stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers()
 -- Two quests in the log: one the sound pack has a line for, one it does not.
 stub.SetModernQuestLog({
     { questID = 748, title = "Poison Water", level = 8 },
-    { questID = 96130, title = "Chakuyak", level = 9, description = "Bring me the tusks, and be quick about it." },
+    { questID = 96130, title = "Chakuyak", level = 9, tag = "(Elite)",
+        description = "Bring me the tusks, and be quick about it." },
 })
 
 local VO = stub.LoadQuestsOverlay(here .. "/../../addons/Spoken_Quests/", here .. "/../../addons/Spoken/")
@@ -107,6 +108,19 @@ anchor = buttons[748].anchor
 Expect("the objective icon takes the left of the row", anchor and anchor.relativeTo == row.Checkbox, true)
 Expect("...and the play button moves beside the checkbox", anchor and anchor.point, "RIGHT")
 Expect("...against its left edge", anchor and anchor.relativePoint, "LEFT")
+-- An elite, dungeon or raid quest says so in words between the title and the checkbox, and the
+-- button stays left of them, so "(Elite)" can still be read.
+local eliteRow = stub.questLogRows[2]
+anchor = buttons[96130].anchor
+Expect("an elite quest's button sits left of its (Elite)", anchor and anchor.relativeTo == eliteRow.TagText, true)
+Expect("...against its left edge", anchor and anchor.point .. " " .. anchor.relativePoint, "RIGHT LEFT")
+-- A row whose client draws no type in words keeps the button beside the checkbox.
+local tagText = eliteRow.TagText
+eliteRow.TagText = nil
+QuestLogQuests_Update()
+Expect("a row with no type text keeps it beside the checkbox",
+    buttons[96130].anchor and buttons[96130].anchor.relativeTo == eliteRow.Checkbox, true)
+eliteRow.TagText = tagText
 
 stub.SetQuestLogPOIIcons(false)
 QuestLogQuests_Update()
