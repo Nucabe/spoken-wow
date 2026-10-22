@@ -238,13 +238,23 @@ end
 -- own: the strips softening the text's cut edges showed through the parchment under them in
 -- darker bands, so there they are off until the panel is clear again. The one way to fade a frame
 -- as a whole (SetIsFrameBuffer) crashes the Forever client.
+local followed
 local function FollowAlpha()
 	local alpha = WorldMapFrame:GetAlpha() or 1
 	local inMap = InMap()
 	local own = inMap and 1 or alpha
+	followed = alpha
 	toggle:SetAlpha(own)
 	panel:SetAlpha(own)
 	page.body:SetFadeShown(inMap or alpha >= CLEAR)
+end
+
+-- Beside the map, read from the panel's and the button's own OnUpdate: one of them is shown
+-- whenever the map is. Not a hook on the map's SetAlpha, which the fader calls every frame: on the
+-- Forever client that hooked call raised "attempt to call a nil value" each time.
+local function FollowAlphaEachFrame()
+	if InMap() or WorldMapFrame:GetAlpha() == followed then return end
+	FollowAlpha()
 end
 
 -- Into the map, or out of it under the gamepad UI. Asked on every refresh, as the player can
@@ -433,7 +443,8 @@ function SpokenZones:SetupMapPanel()
 	BuildPanel()
 	BuildToggle()
 	ApplyAnchors()
-	if hooksecurefunc then hooksecurefunc(WorldMapFrame, "SetAlpha", FollowAlpha) end
+	panel:HookScript("OnUpdate", FollowAlphaEachFrame)
+	toggle:HookScript("OnUpdate", FollowAlphaEachFrame)
 
 	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both
 	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside

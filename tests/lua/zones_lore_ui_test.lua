@@ -467,9 +467,21 @@ search.hooks.OnTextChanged[1](search)
 Expect("...open again unsearched", Shown(), "Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 
 ---------------------------------------------------------------- beside the map
+local mapSetAlpha = WorldMapFrame.SetAlpha
 Z:SetupMapPanel()
 local panel = Z.panel
 Expect("the story beside the map wears the quest log's frame", panel ~= nil, true)
+-- The game's movement fader calls the map's SetAlpha every frame; hooked, it raised errors there
+-- on the Forever client.
+Expect("...and leaves the map's SetAlpha unhooked", WorldMapFrame.SetAlpha == mapSetAlpha, true)
+-- A frame drawn: the OnUpdate of whichever of the panel and its button is shown.
+local function NextFrame()
+    for _, frame in ipairs({ panel, _G.SpokenZonesPanelToggle }) do
+        if frame:IsShown() then
+            for _, hook in ipairs(frame.hooks.OnUpdate or {}) do hook(frame, 0.016) end
+        end
+    end
+end
 -- Inside the map, so the game fades, scales and hides it with the map.
 Z:RefreshPanel()
 Expect("...and is the map's", panel.parent, WorldMapFrame)
@@ -502,10 +514,12 @@ Z:RefreshPanel()
 -- fade with it, and the strips softening the text's cut edges are off while they do.
 Expect("the text's cut edges soften into the parchment", strip:IsShown(), true)
 WorldMapFrame:SetAlpha(0.5)
-Expect("the panel fades with the map as the player walks", panel:GetAlpha(), 0.5)
+NextFrame()
+Expect("the panel fades with the map as the player walks, on the next frame", panel:GetAlpha(), 0.5)
 Expect("...and the button that reopens it", _G.SpokenZonesPanelToggle:GetAlpha(), 0.5)
 Expect("...the text's soft edges off while it is faded", strip:IsShown(), false)
 WorldMapFrame:SetAlpha(1)
+NextFrame()
 Expect("...and clear again when the player stops", panel:GetAlpha(), 1)
 Expect("...the button too", _G.SpokenZonesPanelToggle:GetAlpha(), 1)
 Expect("...and the soft edges back", strip:IsShown(), true)
