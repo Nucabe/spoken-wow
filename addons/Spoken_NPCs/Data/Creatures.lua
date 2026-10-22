@@ -261,7 +261,7 @@ SpokenBossCreatures = {
 		["flamegor"] = { creature = 11981, display = 6377, spells = { 23342, 22539, 20279, 3391, 23339, 368521 } },
 		["nefarian"] = { creature = 11583, display = 11380, spells = { 22686, 19983, 22539, 23364, 22687 } },
 		["razorgore the untamed"] = { creature = 12435, display = 10115, spells = { 19873, 19872, 19632, 22425, 23023, 23040, 24375 } },
-		["vaelastrasz the corrupt"] = { creature = 13020, display = 13992, spells = { 23513, 23642, 23461, 18173, 19983, 15847 } },
+		["vaelastrasz the corrupt"] = { creature = 13020, display = 13992, spells = { 23462, 23513, 23461, 18173, 19983, 15847 } },
 	},
 	[509] = {
 		["ayamiss the hunter"] = { creature = 15369, display = 15431, spells = { 25749, 25748, 25725 } },
@@ -296,7 +296,7 @@ SpokenBossCreatures = {
 		["noth the plaguebringer"] = { creature = 15954, display = 16590, spells = { 29213, 29214, 29211, 29212 } },
 		["patchwerk"] = { creature = 16028, display = 16174, spells = { 26662, 28131, 32309 } },
 		["sapphiron"] = { creature = 15989, display = 16033, spells = { 28531, 28547, 19983, 28542, 15847 } },
-		["thaddius"] = { creature = 15928, display = 16137, spells = { 28169, 28089, 28084, 28059, 28299, 27680, 28167 } },
+		["thaddius"] = { creature = 15928, display = 16137, spells = { 28089, 28084, 28059, 28299, 27680, 28167 } },
 		["the four horsemen"] = { creature = 16062, display = 16139, spells = { 26446, 29061 } },
 	},
 	[2784] = {
