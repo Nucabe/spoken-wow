@@ -4,8 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **Walking with the world map open no longer floods the game with Lua errors** on WoW Forever.
-  *([Nucabe](https://github.com/Nucabe))*
+- **Walking with the world map open no longer floods the game with Lua errors** on WoW Forever. The
+  Place Story panel and the tab that reopens it make room for Adventure Guide Forever's tabs on the
+  quest log's edge instead of sitting under them. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

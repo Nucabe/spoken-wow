@@ -88,6 +88,10 @@ local TOGGLE_TUCK = 2
 local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map02]]
 -- Where the side tab sits down the map's right edge, as the character frame's first one does.
 local SIDE_TAB_TOP = 30
+-- Space between side tabs stacked down an edge, as the game and Adventure Guide Forever leave.
+local TAB_GAP = 3
+-- Where the button sits against the map's edge when no other side tab is there (BuildToggle).
+local toggleX, toggleY
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -188,7 +192,7 @@ local function BuildToggle()
 		if toggle.SetChecked then toggle:SetChecked(false) end
 		toggle:SetCustomOnMouseUpHandler(function() SpokenZones:SetMapPanelCollapsed(false) end)
 		toggle:EnableMouse(true)
-		toggle:SetPoint("TOPLEFT", MapEdge(), "TOPRIGHT", 0, -SIDE_TAB_TOP)
+		toggleX, toggleY = 0, -SIDE_TAB_TOP
 		toggle:SetScript("OnHide", function(self)
 			if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
 		end)
@@ -207,7 +211,7 @@ local function BuildToggle()
 	border:SetPoint("CENTER")
 	toggle:SetPushedTexture([[Interface\Buttons\UI-Quickslot-Depress]])
 	toggle:SetHighlightTexture([[Interface\Buttons\ButtonHilight-Square]], "ADD")
-	toggle:SetPoint("TOPLEFT", MapEdge(), "TOPRIGHT", -TOGGLE_TUCK, -ICON_SIZE)
+	toggleX, toggleY = -TOGGLE_TUCK, -ICON_SIZE
 	toggle:SetScript("OnClick", function()
 		SpokenZones:SetMapPanelCollapsed(false)
 	end)
@@ -283,12 +287,41 @@ local function FollowMap()
 	FollowAlpha()
 end
 
--- Always on the map's right, beside the quest log as the game lays its own panels out.
+-- The lowest side tab shown down the quest log's right edge, from top to bottom: the game's own,
+-- which Forever hides until the gamepad UI is switched off, and Adventure Guide Forever's. They
+-- show only with the quest log.
+local function LastSideTab()
+	local log = QuestMapFrame
+	local last
+	for _, tab in ipairs({ log and log.QuestsTab or false, log and log.MapLegendTab or false,
+		_G.AdventureGuideForeverQuestsTab or false, _G.AdventureGuideForeverTab or false }) do
+		if type(tab) == "table" and tab.IsVisible and tab:IsVisible() then last = tab end
+	end
+	return last
+end
+
+-- How far a side tab reaches past the map's edge; its width while it has not been laid out yet.
+local function TabReach(tab, mapEdge)
+	local right, edgeRight = tab:GetRight(), mapEdge:GetRight()
+	if right and edgeRight then return math.max(0, right - edgeRight) end
+	return tab:GetWidth() or 0
+end
+
+-- Always on the map's right, beside the quest log as the game lays its own panels out, past any
+-- side tabs there. The button that reopens it goes under those tabs.
 local function ApplyAnchors()
-	local gap = GAP
+	local mapEdge = MapEdge()
+	local tab = LastSideTab()
+	local gap = GAP + (tab and TabReach(tab, mapEdge) or 0)
 	panel:ClearAllPoints()
-	panel:SetPoint("TOPLEFT", MapEdge(), "TOPRIGHT", gap, 0)
-	panel:SetPoint("BOTTOMLEFT", MapEdge(), "BOTTOMRIGHT", gap, 0)
+	panel:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", gap, 0)
+	panel:SetPoint("BOTTOMLEFT", mapEdge, "BOTTOMRIGHT", gap, 0)
+	toggle:ClearAllPoints()
+	if tab then
+		toggle:SetPoint("TOPLEFT", tab, "BOTTOMLEFT", 0, -TAB_GAP)
+	else
+		toggle:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", toggleX, toggleY)
+	end
 end
 
 -- Maximised, the map fills the screen and a side panel would sit off-screen, so
@@ -329,6 +362,8 @@ local function Refresh(mapID)
 	end
 
 	FollowMap()
+	-- Another addon's side tabs may have been made since the last time.
+	ApplyAnchors()
 	local collapsed = SpokenZones:Get("mapPanelCollapsed")
 	toggle:SetShown(collapsed)
 	panel:SetShown(not collapsed)
@@ -457,6 +492,11 @@ function SpokenZones:SetupMapPanel()
 		panel:Hide()
 		toggle:Hide()
 	end)
+	-- The side tabs on the quest log's edge come and go with it.
+	if QuestMapFrame and QuestMapFrame.HookScript then
+		QuestMapFrame:HookScript("OnShow", ApplyAnchors)
+		QuestMapFrame:HookScript("OnHide", ApplyAnchors)
+	end
 
 	SpokenZones:OnMapChanged(function(mapID)
 		Refresh(mapID)
