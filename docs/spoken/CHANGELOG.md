@@ -4,6 +4,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Spoken's keys have their own Spoken category in Key Bindings**, instead of sitting under
+  Other. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

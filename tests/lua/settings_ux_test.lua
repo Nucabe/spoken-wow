@@ -287,8 +287,10 @@ local bindings = assert(io.open(SPOKEN .. "Bindings.xml")):read("*a")
 for _, name in ipairs({ "SPOKEN_PLAYPAUSE", "SPOKEN_SKIP", "SPOKEN_STOP", "SPOKEN_COMPENDIUM" }) do
     Expect(name .. " is a key binding", bindings:find('name="' .. name .. '"', 1, true) ~= nil, true)
     Expect("...named in the game's key bindings list", type(_G["BINDING_NAME_" .. name]), "string")
+    -- A binding with no category is filed under Other, among every other addon's.
+    Expect("...in the key bindings' own Spoken category",
+        bindings:find('name="' .. name .. '" category="Spoken"', 1, true) ~= nil, true)
 end
-Expect("...under a Spoken heading", _G.BINDING_HEADER_SPOKEN, "Spoken")
 Expect("the keys section sets the Compendium's key too", Row(home, L.BIND_COMPENDIUM) ~= nil, true)
 
 ---------------------------------------------------------------- /sp in the settings' words
