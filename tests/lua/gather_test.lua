@@ -120,6 +120,48 @@ Expect("...and replaced, not added to, once the model is in", Gather:Count(), 1)
 Expect("...now carrying it", _G.SpokenContributionsDB.Lines[1].envelope:match("\nmodel=123456\n") ~= nil, true)
 world.questID, world.npcGUID, world.modelFileID = 9123, "Creature-0-0-0-0-12345-0", nil
 
+-- The window closing: QUEST_FINISHED refreshes while the panel's text still reads and the NPC
+-- is already gone. That is the line just kept, less its speaker, and it is not kept again.
+Gather:Clear()
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+Expect("a quest line is kept with its speaker", Gather:Count(), 1)
+world.npcGUID, world.npcName = nil, nil
+stub.FireEvent("QUEST_FINISHED")
+Expect("the window closing does not keep it a second time without its speaker", Gather:Count(), 1)
+Expect("...the one kept names the speaker", _G.SpokenContributionsDB.Lines[1].key, "q:9123:accept:12345")
+
+local function Keys()
+    local keys = {}
+    for _, line in ipairs(_G.SpokenContributionsDB.Lines) do
+        keys[#keys + 1] = line.key
+    end
+    return table.concat(keys, " ")
+end
+world.questID = 9126
+stub.FireEvent("QUEST_DETAIL")
+Expect("a quest line with no speaker on screen at all is still kept", Keys(), "q:9123:accept:12345 q:9126:accept:")
+world.npcGUID, world.npcName = "Creature-0-0-0-0-12345-0", "Deathguard Linnea"
+stub.FireEvent("QUEST_DETAIL")
+Expect("...and its speaker's copy, once seen, takes its place", Keys(), "q:9123:accept:12345 q:9126:accept:12345")
+world.questID = 9123
+
+-- Copies kept before this was fixed go at login. A speakerless copy saying something else, or
+-- with no copy from a speaker beside it, stays: it is the only record of those words.
+local function Kept(text)
+    return Spoken.Contribute:Envelope("quests", { { "quest", "3117" } }, text)
+end
+_G.SpokenContributionsDB.Lines = {
+    { key = "q:3117:progress:3596", envelope = Kept("You've arrived, $N.") },
+    { key = "q:3117:progress:", envelope = Kept("You've arrived, $N.") },
+    { key = "q:3117:complete:", envelope = Kept("Well done.") },
+    { key = "q:3118:accept:", envelope = Kept("Other words.") },
+    { key = "q:3118:accept:77", envelope = Kept("Different words.") },
+}
+stub.FireEvent("PLAYER_LOGIN")
+Expect("login drops a speakerless copy of a line kept with its speaker, and nothing else", Keys(),
+    "q:3117:progress:3596 q:3117:complete: q:3118:accept: q:3118:accept:77")
+
 -------------------------------------------------------------------- the first click
 Gather:Clear()
 Gather:SetEnabled(false)

@@ -203,4 +203,21 @@ if os.getenv("SPOKEN_WRITE_FIXTURES") then
     }, "We'll need to work on your stealth skills, druid."))
 end
 
+------------------------------------------------------------------------------- reading one back
+-- Parse gives back what Envelope was built from, so a kept line can be rewritten and built
+-- again byte for byte: fences, escapes, an empty field and a value with "=" in it.
+local function RoundTrip(source, fields, text)
+    local built = C:Envelope(source, fields, text)
+    local readSource, readFields, readText = C:Parse(built)
+    return readSource == source and C:Envelope(readSource, readFields, readText) == built, readFields, readText
+end
+local same, readFields, readText = RoundTrip("quests",
+    { { "quest", "3117" }, { "npc", "" }, { "title", "a=b" } }, "before\n>>\n\\>>\n>>trailer\nafter")
+Expect("Parse reads an envelope back into the same envelope", same, true)
+Expect("...its text unescaped", readText, "before\n>>\n\\>>\n>>trailer\nafter")
+Expect("...an empty field kept", readFields[2][1] .. "=" .. readFields[2][2], "npc=")
+Expect("...a value keeping its =", readFields[3][2], "a=b")
+Expect("an envelope with no text reads back with none", select(3, C:Parse(C:Envelope("zones", { { "map", "1" } }, nil))), nil)
+Expect("anything else is not an envelope", C:Parse("hello"), nil)
+
 os.exit(Failures() == 0 and 0 or 1)

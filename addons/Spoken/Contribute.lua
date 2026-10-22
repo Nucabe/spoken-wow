@@ -195,3 +195,50 @@ function Contribute:Envelope(source, fields, text)
     local body = table.concat(out, "\n") .. "\n"
     return body .. format("sum=%d\n", self:Checksum(body))
 end
+
+--- An envelope read back: its source, its fields in order and its text, so a feature addon can
+--- rewrite a line Gather kept and build it again with Envelope. Nil for anything Envelope did
+--- not write.
+---@param envelope string
+---@return string|nil source
+---@return table|nil  fields  array of { key, value }
+---@return string|nil text
+function Contribute:Parse(envelope)
+    if type(envelope) ~= "string" then
+        return nil
+    end
+    local source, body = string.match(envelope, "^!SPOKEN%d+ (%a+)\n(.-)sum=%d+\n$")
+    if not source then
+        return nil
+    end
+    local fields, text = {}, nil
+    local pos = 1
+    while pos <= len(body) do
+        local nl = string.find(body, "\n", pos, true)
+        if not nl then
+            return nil
+        end
+        local line = string.sub(body, pos, nl - 1)
+        if line == "text<<" then
+            -- The fence is the first line that is exactly ">>": Fence escaped every other.
+            local close = string.find(body, "\n>>\n", nl, true)
+            if not close then
+                return nil
+            end
+            local lines = {}
+            for each in string.gmatch(string.sub(body, nl + 1, close - 1) .. "\n", "(.-)\n") do
+                lines[#lines + 1] = string.match(each, "^\\(\\*>>)$") or each
+            end
+            text = table.concat(lines, "\n")
+            pos = close + 4
+        else
+            local key, value = string.match(line, "^([^=]*)=(.*)$")
+            if not key then
+                return nil
+            end
+            fields[#fields + 1] = { key, value }
+            pos = nl + 1
+        end
+    end
+    return source, fields, text
+end

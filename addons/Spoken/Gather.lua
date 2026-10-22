@@ -85,6 +85,26 @@ function Gather:Count()
     return #Store().Lines
 end
 
+--- Every line kept, oldest first, each `{ key = ..., envelope = ... }`: the store itself, for a
+--- feature addon tidying the lines it kept. Read whether or not gathering is on, since lines kept
+--- before the player opted out still go out with the file.
+function Gather:Lines()
+    return Store().Lines
+end
+
+--- Forget the line kept under `key`.
+---@return boolean removed
+function Gather:Remove(key)
+    local lines = Store().Lines
+    for i = 1, #lines do
+        if lines[i].key == key then
+            table.remove(lines, i)
+            return true
+        end
+    end
+    return false
+end
+
 --- Forget everything gathered. The addon cannot see the upload happen, so this is the
 --- player's to press once they have sent the file.
 function Gather:Clear()

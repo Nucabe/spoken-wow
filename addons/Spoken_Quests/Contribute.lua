@@ -498,6 +498,28 @@ local function IsMissing()
     return HasSomethingToSend() and not HasSoundForCurrent()
 end
 
+-- A quest line is kept as "q:<quest>:<moment>:<speaker>". The speaker is empty when the window
+-- closes under a capture (QUEST_FINISHED, the frame's OnHide): its text still reads, and the
+-- unit is already gone. That copy is the line just kept with its speaker, less the speaker.
+local function QuestMoment(key)
+    return string.match(key, "^(q:[^:]*:[^:]*:)(.*)$")
+end
+
+local function TextOf(envelope)
+    return (select(3, Spoken.Contribute:Parse(envelope)))
+end
+
+--- Whether `lines` hold the quest moment `stem` from a known speaker, saying `text`.
+local function KeptWithSpeaker(lines, stem, text)
+    for _, line in ipairs(lines) do
+        local each, speaker = QuestMoment(line.key)
+        if each == stem and speaker ~= "" and TextOf(line.envelope) == text then
+            return true
+        end
+    end
+    return false
+end
+
 --- Keep the line on screen for later. Only reached once a caller has established it is
 --- missing (HasGap), or when its model has just arrived (NPCModel.onLoaded) -- so it re-checks
 --- only what the latter cannot know: that the line is still a gap.
@@ -506,7 +528,46 @@ local function GatherLine()
         return false
     end
     local envelope, key = Contribute:Capture()
-    return envelope and Spoken.Gather:Add(key, envelope) or false
+    if not envelope then
+        return false
+    end
+    -- A quest no one on screen speaks is still kept, without a speaker, until a copy with one
+    -- comes in to take its place.
+    local stem, speaker = QuestMoment(key)
+    if stem and speaker == "" and KeptWithSpeaker(Spoken.Gather:Lines(), stem, TextOf(envelope)) then
+        return false
+    end
+    local stored = Spoken.Gather:Add(key, envelope)
+    if stored and stem and speaker ~= "" then
+        Contribute:TidyGathered()
+    end
+    return stored
+end
+
+--- Drop each quest line kept without a speaker where the same moment is kept with one, saying
+--- the same words. Run at login too, for the copies kept before the window's closing stopped
+--- making them. A speakerless line saying anything else stays.
+function Contribute:TidyGathered()
+    local gather = _G.Spoken and Spoken.Gather
+    if not (gather and gather.Lines and Spoken.Contribute and Spoken.Contribute.Parse) then
+        return
+    end
+    local lines = gather:Lines()
+    for i = #lines, 1, -1 do
+        local line = lines[i]
+        local stem, speaker = QuestMoment(line.key)
+        if stem and speaker == "" and KeptWithSpeaker(lines, stem, TextOf(line.envelope)) then
+            gather:Remove(line.key)
+        end
+    end
+end
+
+if CreateFrame then
+    local tidier = CreateFrame("Frame")
+    tidier:RegisterEvent("PLAYER_LOGIN")
+    tidier:SetScript("OnEvent", function()
+        pcall(Contribute.TidyGathered, Contribute)
+    end)
 end
 
 -- Once a model is in, if the same NPC is still on screen: a line gathered while it was loading
