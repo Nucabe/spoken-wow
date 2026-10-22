@@ -397,8 +397,8 @@ export default function VoiceSlotList({
                           <span className="w-36 shrink-0 text-right">
                             {tab === "fish" ? (
                               references[slot.name] ? (
-                                <Badge variant="outline" className="text-sky-400">
-                                  {references[slot.name].pinned ? "reference · pinned" : "reference"}
+                                <Badge variant="outline" className="text-primary-ink">
+                                  reference
                                 </Badge>
                               ) : (
                                 <span className="text-muted-foreground text-xs">no reference</span>
