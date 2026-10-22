@@ -126,9 +126,11 @@ function SpokenZones:IsLanguageReady(code)
 	return (entry and entry.ready) and true or false
 end
 
--- A missing glyph draws as nothing or as a box, so `text` is measured against as many private-use
--- characters, which no font has: the same width means none of it drew. The pages set font files,
--- which lack the font object's fallbacks, so the text must draw in the file itself.
+-- A missing glyph draws as nothing or as a box, so `text` is measured against as many U+0378, a
+-- code point Unicode has never assigned and so no font has: the same width means none of it drew.
+-- Not a private-use character: a Traditional Chinese font can carry glyphs there as wide as its
+-- Han ones, and would read as drawing nothing. The pages set font files, which lack the font
+-- object's fallbacks, so the text must draw in the file itself.
 local probe
 local function draws(text, path)
 	probe:SetFont(path, 12, "")
@@ -138,7 +140,7 @@ local function draws(text, path)
 	for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do
 		count = count + 1
 	end
-	probe:SetText(string.rep("\238\128\128", count))
+	probe:SetText(string.rep("\205\184", count))
 	local missing = probe:GetStringWidth() or 0
 	probe:SetText("")
 	return width > 0 and math.abs(width - missing) > 0.5
@@ -161,7 +163,8 @@ local SCRIPT_FONTS = {
 	cyrillic = "Fonts\\FRIZQT___CYR.TTF",
 	korean = "Fonts\\2002.TTF",
 	simplifiedchinese = "Fonts\\ARKai_T.ttf",
-	traditionalchinese = "Fonts\\blei00d.TTF",
+	-- The one the game's own font objects draw Traditional Chinese with.
+	traditionalchinese = "Fonts\\bKAI00M.ttf",
 	-- Not a font for the script, only the stock one most likely to draw ệ and ữ.
 	vietnamese = "Fonts\\ARIALN.TTF",
 }

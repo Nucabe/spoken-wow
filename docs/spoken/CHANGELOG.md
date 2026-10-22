@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Text Language on the Places page offers Traditional Chinese (繁體中文)** on clients in other
+  languages, as it does Simplified Chinese, Korean and Russian. Its stories are written in the font
+  the game uses for Traditional Chinese. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

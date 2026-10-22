@@ -190,7 +190,9 @@ local fontHas = {   -- the lead bytes each file draws
     ["Fonts\\FRIZQT___CYR.TTF"] = CYRILLIC,
     ["Fonts\\2002.TTF"] = HANGUL,
     ["Fonts\\ARKai_T.ttf"] = HAN,
-    ["Fonts\\blei00d.TTF"] = HAN,
+    -- Han, and private-use glyphs as wide as them, as a Big5 font can have.
+    ["Fonts\\bKAI00M.ttf"] = { [228] = true, [229] = true, [230] = true, [231] = true, [232] = true,
+        [233] = true, [238] = true },
     ["Fonts\\ARIALN.TTF"] = VIETNAMESE,
 }
 local realParent = _G.UIParent.CreateFontString
@@ -225,7 +227,9 @@ Expect("H. it offers Korean, which its font cannot draw, in the client's Korean 
     tostring(Z:CanRenderLanguage("koKR")) .. " " .. Font(_G.GameFontHighlight, "koKR"),
     "true Fonts\\2002.TTF")
 Expect("H. ...and Chinese in its Chinese fonts", Font(_G.QuestFont, "zhCN") .. " "
-    .. Font(_G.QuestFont, "zhTW"), "Fonts\\ARKai_T.ttf Fonts\\blei00d.TTF")
+    .. Font(_G.QuestFont, "zhTW"), "Fonts\\ARKai_T.ttf Fonts\\bKAI00M.ttf")
+Expect("H. Traditional Chinese is offered though its font has private-use glyphs as wide as its Han",
+    Z:CanRenderLanguage("zhTW"), true)
 Expect("H. a Latin language needs no asking", Z:CanRenderLanguage("frFR"), true)
 Expect("H. ...and keeps the page's font", Font(_G.GameFontHighlight, "frFR"), "Fonts\\FRIZQT__.TTF")
 Expect("H. Vietnamese, which the page's font cannot draw, is written in Arial Narrow",
