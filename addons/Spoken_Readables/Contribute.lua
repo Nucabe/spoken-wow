@@ -77,16 +77,8 @@ function SpokenBooks:Detemplate(text)
 		end
 	end
 
-	local name = UnitName and UnitName("player")
-	add(name, "$N")
-	-- A name with a surname is greeted by one part of it.
-	if type(name) == "string" then
-		for part in string.gmatch(name, "%S+") do
-			if part ~= name then
-				add(part, "$N")
-			end
-		end
-	end
+	-- Whole or by one part of it, as written or in capitals: a page greets its reader "GRIMBALOR,".
+	text = Spoken.Contribute:Unname(text, UnitName and UnitName("player"))
 	if UnitClass then
 		local localized, classFile = UnitClass("player")
 		addCased(localized, "$C", "$c")
@@ -187,6 +179,36 @@ function SpokenBooks:GatherContribution()
 	end
 	local envelope, key = self:CaptureContribution()
 	return envelope and Spoken.Gather:Add(key, envelope) or false
+end
+
+--- The pages kept with this character's name in them, rewritten with $N: those kept before a
+--- page went out with tokens at all, and those that had it in capitals. Each keeps its place,
+--- under the checksum of its new words, and goes where those words are already kept. Run at
+--- login. Only the name: the class and race words of whoever kept a page are not this
+--- character's to know.
+function SpokenBooks:TidyGathered()
+	local gather = _G.Spoken and Spoken.Gather
+	if not (gather and gather.Lines and Spoken.Contribute and Spoken.Contribute.Parse) then
+		return
+	end
+	local name = UnitName and UnitName("player")
+	local lines = gather:Lines()
+	for i = #lines, 1, -1 do
+		local line = lines[i]
+		if string.match(line.key, "^b:%d+$") then
+			local source, fields, text = Spoken.Contribute:Parse(line.envelope)
+			local unnamed = text and Spoken.Contribute:Unname(text, name)
+			if source == "books" and unnamed ~= text then
+				local sum = self:ChecksumOf(unnamed)
+				for _, field in ipairs(fields) do
+					if field[1] == "page" then
+						field[2] = sum
+					end
+				end
+				gather:Rekey(line.key, format("b:%d", sum), Spoken.Contribute:Envelope(source, fields, unnamed))
+			end
+		end
+	end
 end
 
 --- Whether the contribute button belongs on the page: text to send, and no page id for it.

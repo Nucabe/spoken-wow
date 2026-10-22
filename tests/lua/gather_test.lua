@@ -196,6 +196,31 @@ stub.FireEvent("PLAYER_LOGIN")
 Expect("login drops a speakerless copy of a line kept with its speaker, and nothing else", Keys(),
     "q:3117:progress:3596 q:3117:complete: q:3118:accept: q:3118:accept:77")
 
+-- Lines kept with this character's name in them, as written or in capitals, have it as $N after
+-- login, and nothing else changes: a class word may be the line's own.
+world.playerName = "Grimbalor"
+local sum = Spoken.Contribute.Checksum
+local function Said(text)
+    return Spoken.Contribute:Envelope("quests", { { "npc", "12345 Linnea" } }, text)
+end
+_G.SpokenContributionsDB.Lines = {
+    { key = "q:3117:accept:3596", envelope = Kept("Welcome, Grimbalor. A warrior's road.") },
+    { key = "g:12345:" .. sum(nil, "GRIMBALOR, stay a while.") .. ":f", envelope = Said("GRIMBALOR, stay a while.") },
+    { key = "q:3118:accept:77", envelope = Kept("Grimbalorson waits.") },
+    { key = "g:12345:" .. sum(nil, "$N, sit.") .. ":f", envelope = Said("$N, sit.") },
+    { key = "g:12345:" .. sum(nil, "Grimbalor, sit.") .. ":f", envelope = Said("Grimbalor, sit.") },
+}
+stub.FireEvent("PLAYER_LOGIN")
+Expect("login puts the name in a kept quest line back as its token",
+    _G.SpokenContributionsDB.Lines[1].envelope, Kept("Welcome, $N. A warrior's road."))
+Expect("...in a gossip line too, in capitals, rekeyed on its new words",
+    _G.SpokenContributionsDB.Lines[2].key .. " " .. _G.SpokenContributionsDB.Lines[2].envelope,
+    "g:12345:" .. sum(nil, "$N, stay a while.") .. ":f " .. Said("$N, stay a while."))
+Expect("...leaving a longer word alone", _G.SpokenContributionsDB.Lines[3].envelope, Kept("Grimbalorson waits."))
+Expect("...and a line whose words are already kept goes into that one", Gather:Count(), 4)
+world.playerName = nil
+Gather:Clear()
+
 -------------------------------------------------------------------- the first click
 Gather:Clear()
 Gather:SetEnabled(false)

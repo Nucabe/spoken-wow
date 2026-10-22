@@ -270,7 +270,12 @@ envelope and the address to paste. The player copies it, opens it, and sees exac
 about to be sent before it goes — the same page, submitted again by the same or another
 reader, bumps a count on one row at `/contributions` rather than filing a second. The first
 click ever also offers Spoken's **Collect Missing Lines**, which keeps such pages in
-`SpokenContributions.lua` for the player to upload at `/contribute`.
+`SpokenContributions.lua` for the player to upload at `/contribute`. The page goes with the
+reader's name, class and race as `$N`, `$C` and `$R` (`Detemplate`); the name is matched as
+written and in capitals, as the client writes it into some pages ("GRIMBALOR,"). At login, pages
+already kept with the name of the character logging in have it put back as `$N` and are rekeyed
+on their new words. The file is the account's, so a page another character kept keeps that
+character's name until they log in.
 
 ### The Readables tab
 

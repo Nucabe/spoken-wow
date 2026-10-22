@@ -278,18 +278,10 @@ function Contribute:Detemplate(text, questID)
         end
     end
 
-    local name = UnitName and UnitName("player")
-    add(name, "$N")
     -- A character with a surname (the Classic beta gives Skybourne elves one) is named whole by
     -- UnitName -- "Valaas Dawnsight" -- while a line greets them by one part: "Greetings, young
-    -- Valaas". Each part is the player too.
-    if type(name) == "string" then
-        for part in string.gmatch(name, "%S+") do
-            if part ~= name then
-                add(part, "$N")
-            end
-        end
-    end
+    -- Valaas". Each part is the player too, as written or in capitals.
+    text = Spoken.Contribute:Unname(text, UnitName and UnitName("player"))
     local localized, classFile, classID
     if UnitClass then
         localized, classFile, classID = UnitClass("player")
@@ -561,13 +553,38 @@ local function GatherLine()
     return stored
 end
 
+--- The quest and gossip lines kept with this character's name in them, rewritten with $N. The
+--- lines keep their place; a gossip line is rekeyed, as its key is its words' checksum, and goes
+--- where the same words are already kept. Only the name: the class and race words of whoever
+--- kept a line are not this character's to know.
+local function UnnameGathered(gather)
+    local name = UnitName and UnitName("player")
+    local lines = gather:Lines()
+    for i = #lines, 1, -1 do
+        local line = lines[i]
+        local npc, sex = string.match(line.key, "^g:(%d+):%d+(.*)$")
+        if npc or QuestMoment(line.key) then
+            local source, fields, text = Spoken.Contribute:Parse(line.envelope)
+            local unnamed = text and Spoken.Contribute:Unname(text, name)
+            if source == "quests" and unnamed ~= text then
+                local key = npc and format("g:%s:%d%s", npc, Spoken.Contribute:Checksum(unnamed), sex) or line.key
+                gather:Rekey(line.key, key, Spoken.Contribute:Envelope(source, fields, unnamed))
+            end
+        end
+    end
+end
+
 --- Drop each quest line kept without a speaker where the same moment is kept with one, saying
 --- the same words. Run at login too, for the copies kept before the window's closing stopped
---- making them. A speakerless line saying anything else stays.
-function Contribute:TidyGathered()
+--- making them, after the lines kept with this character's name have it as $N. A speakerless
+--- line saying anything else stays.
+function Contribute:TidyGathered(atLogin)
     local gather = _G.Spoken and Spoken.Gather
     if not (gather and gather.Lines and Spoken.Contribute and Spoken.Contribute.Parse) then
         return
+    end
+    if atLogin then
+        UnnameGathered(gather)
     end
     local lines = gather:Lines()
     for i = #lines, 1, -1 do
@@ -583,7 +600,7 @@ if CreateFrame then
     local tidier = CreateFrame("Frame")
     tidier:RegisterEvent("PLAYER_LOGIN")
     tidier:SetScript("OnEvent", function()
-        pcall(Contribute.TidyGathered, Contribute)
+        pcall(Contribute.TidyGathered, Contribute, true)
     end)
 end
 

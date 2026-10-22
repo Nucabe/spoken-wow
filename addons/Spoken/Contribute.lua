@@ -196,6 +196,72 @@ function Contribute:Envelope(source, fields, text)
     return body .. format("sum=%d\n", self:Checksum(body))
 end
 
+-- A letter, a digit, or any byte of a multi-byte UTF-8 character, as in Spoken_Quests'
+-- Contribute.lua: a name next to an accented or Cyrillic letter is part of a longer word.
+local function IsWordByte(b)
+    return b ~= nil and (b >= 128 or (b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122))
+end
+
+--- `text` in capitals: ASCII, the accented Latin letters (à to þ) and Cyrillic (а to я, ѐ to џ).
+--- string.upper alone knows only ASCII, and a name the client writes in capitals is "ZÖPF".
+local function Upper(text)
+    text = gsub(string.upper(text), "\195([\160-\190])", function(c)
+        local b = byte(c)
+        return b ~= 183 and "\195" .. string.char(b - 32) or nil
+    end)
+    text = gsub(text, "\208([\176-\191])", function(c)
+        return "\208" .. string.char(byte(c) - 32)
+    end)
+    text = gsub(text, "\209([\128-\159])", function(c)
+        local b = byte(c)
+        return b < 144 and "\208" .. string.char(b + 32) or "\208" .. string.char(b - 16)
+    end)
+    return text
+end
+
+--- `text` with the player's name as $N: whole or any one part of it ("Valaas Dawnsight" is
+--- greeted "Valaas"), as written or in capitals, as the client writes it into some pages
+--- ("GRIMBALOR,"). Whole words only, so a player called Mist leaves "Mistwood" alone. A plain
+--- find, as a name is the player's own input and no pattern.
+---@param text string
+---@param name string|nil  UnitName("player")
+---@return string
+function Contribute:Unname(text, name)
+    if type(text) ~= "string" or type(name) ~= "string" or name == "" then
+        return text
+    end
+    local words = {}
+    for _, form in ipairs({ name, Upper(name) }) do
+        words[#words + 1] = form
+        for part in string.gmatch(form, "%S+") do
+            if part ~= form then
+                words[#words + 1] = part
+            end
+        end
+    end
+    -- Longest first, so the whole name goes before a part of it.
+    table.sort(words, function(a, b) return len(a) > len(b) end)
+    for _, word in ipairs(words) do
+        local out, pos = {}, 1
+        while true do
+            local first, last = string.find(text, word, pos, true)
+            if not first then
+                break
+            end
+            if IsWordByte(byte(text, first - 1)) or IsWordByte(byte(text, last + 1)) then
+                out[#out + 1] = string.sub(text, pos, last)
+            else
+                out[#out + 1] = string.sub(text, pos, first - 1)
+                out[#out + 1] = "$N"
+            end
+            pos = last + 1
+        end
+        out[#out + 1] = string.sub(text, pos)
+        text = table.concat(out)
+    end
+    return text
+end
+
 --- An envelope read back: its source, its fields in order and its text, so a feature addon can
 --- rewrite a line Gather kept and build it again with Envelope. Nil for anything Envelope did
 --- not write.

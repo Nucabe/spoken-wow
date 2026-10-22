@@ -92,6 +92,25 @@ function Gather:Lines()
     return Store().Lines
 end
 
+--- Put `envelope` under `newKey` in place of the line kept under `key`, where it stands. Where
+--- another line already holds `newKey`, that one stays and this one goes: the two are one line.
+---@return boolean replaced
+function Gather:Rekey(key, newKey, envelope)
+    local lines = Store().Lines
+    for i = 1, #lines do
+        if lines[i].key == newKey and newKey ~= key then
+            return self:Remove(key)
+        end
+    end
+    for i = 1, #lines do
+        if lines[i].key == key then
+            lines[i].key, lines[i].envelope = newKey, envelope
+            return true
+        end
+    end
+    return false
+end
+
 --- Forget the line kept under `key`.
 ---@return boolean removed
 function Gather:Remove(key)

@@ -59,6 +59,37 @@ stub.ShowPage({ title = "Proof of Deed", number = 1, text = "This proof of deed 
 local report = B:ReportContext(1231)
 Expect("a report on a page with the reader's name in it sends the token",
     report ~= nil and report:find("verify that $N slew", 1, true) ~= nil and report:find("Valaas", 1, true) == nil, true)
+-- The client writes the name in capitals into some pages ("GRIMBALOR,"), and that is the name too.
+stub.ShowPage({ title = "Ledger of Nothing", number = 4, text = "VALAAS DAWNSIGHT,\n\nVALAAS, keep this. VALAASWOOD waits." })
+local shouted = B:CaptureContribution()
+Expect("a page's name in capitals goes back as a token",
+    shouted:find("\n$N,\n\n$N, keep this. VALAASWOOD waits.\n", 1, true) ~= nil, true)
+Expect("...and no name goes with it", shouted:find("VALAAS ", 1, true) or shouted:find("VALAAS,", 1, true), nil)
+
+-- Pages kept before that, with the name in them, have it as a token after login, under the
+-- checksum of their new words; one whose new words are already kept goes into that one. A page
+-- naming nobody stays as it was.
+local Gather = env.Spoken.Gather
+local function Page(text)
+    local sum = B:ChecksumOf(text)
+    return { key = "b:" .. sum, envelope = env.Spoken.Contribute:Envelope("books",
+        { { "addon", "Spoken_Readables/3.4.0" }, { "page", sum }, { "book", "Ledger" } }, text) }
+end
+_G.SpokenContributionsDB = { Lines = {
+    Page("GRIMBALOR,\n\nThe Light keeps you."),
+    Page("A page naming nobody."),
+    Page("Grimbalor,\n\nRest well."),
+    Page("$N,\n\nRest well."),
+} }
+stub.world.playerName = "Grimbalor"
+assert(loadfile(BOOKS .. "Events.lua"))("Spoken_Readables", B)
+stub.FireEvent("PLAYER_LOGIN")
+local kept = _G.SpokenContributionsDB.Lines
+Expect("login puts the name in a kept page back as its token, keyed on its new words",
+    kept[1].key .. " " .. kept[1].envelope, Page("$N,\n\nThe Light keeps you.").key .. " " .. Page("$N,\n\nThe Light keeps you.").envelope)
+Expect("...leaving a page naming nobody as it was", kept[2].envelope, Page("A page naming nobody.").envelope)
+Expect("...and folding one whose words are already kept into that one", Gather:Count(), 3)
+Gather:Clear()
 stub.world.playerName, stub.world.playerClass, stub.world.playerRace = nil, nil, nil
 
 -- A page the corpus already has is not a gap: the complaint there is a report, not a payload.

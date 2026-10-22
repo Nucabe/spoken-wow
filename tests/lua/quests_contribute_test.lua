@@ -119,6 +119,14 @@ world.questText = "Greetings, young Valaas. The Dawnsight name is known, Valaas 
 local surnamed = VoiceOver.Contribute:Capture()
 Expect("a surnamed character is swapped whole and by either part",
     surnamed:match("\nGreetings, young %$N%. The %$N name is known, %$N%.\n") ~= nil, true)
+world.questText = "VALAAS DAWNSIGHT! Valaas. VALAASWOOD stays."
+Expect("...and in capitals, as some pages write it",
+    VoiceOver.Contribute:Capture():match("\n([^\n]*stays%.)\n"), "$N! $N. VALAASWOOD stays.")
+world.playerName = "Zöpf"
+Expect("an accented name in capitals is the name too",
+    VoiceOver.Contribute:Detemplate("ZÖPF, Zöpf, Zöpfe."), "$N, $N, Zöpfe.")
+world.playerName = "Гримбалор"
+Expect("...as is a Cyrillic one", VoiceOver.Contribute:Detemplate("ГРИМБАЛОР."), "$N.")
 world.playerName = nil
 
 stub.HidePanels()
