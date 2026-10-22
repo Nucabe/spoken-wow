@@ -984,7 +984,12 @@ address to paste. The client still cannot open a browser or post anywhere, so th
 it, opens it, sees a field-by-field preview of exactly what is about to be sent, and submits.
 The first click ever asks whether to send just that line or to collect as the player plays:
 **Collect Missing Lines** (`Gather.lua`, `/sp collect`) keeps every line Spoken is missing in
-`SpokenContributions.lua`, which the player uploads at `/contribute` (`/sp send` says how).
+`SpokenContributions.lua`, which the player uploads at `/contribute` (`/sp send` says how). It
+also keeps a line that plays but whose words on screen are not the ones its text has, tokens,
+case and spacing aside (`DataModules:IsTextKnown`), so the site can correct it: gossip against
+the speaker's lines in the client's language, a quest moment against its wordings, or for one
+wording against the Compendium's English accept and complete text. Progress text, and a quest
+moment of one wording in another language, have nothing to compare with and are not checked.
 
 The same text pasted again — by the same player or a different one — bumps a count on the
 existing row rather than filing a second one; different text under the same key stays its own

@@ -498,6 +498,23 @@ local function IsMissing()
     return HasSomethingToSend() and not HasSoundForCurrent()
 end
 
+--- Whether the line on screen is one the corpus has in other words (DataModules:IsTextKnown):
+--- Blizzard changed it, or the corpus copy came from a client that wrote a player's name into
+--- it. It may well play, so it offers no button; it is only gathered, for the site to correct.
+local function IsChanged()
+    local event, text = EventOnScreen()
+    if event and text and text ~= "" then
+        return DataModules:IsTextKnown({ event = event, questID = GetQuestID and NotSecret(GetQuestID()) or 0,
+            text = text }) == false
+    end
+    local gossip = GossipOnScreen()
+    if gossip and gossip ~= "" and NPCID() then
+        return DataModules:IsTextKnown({ event = Enums.SoundEvent.Gossip, unitGUID = Utils:GetNPCGUID(),
+            name = Utils:GetNPCName(), unitIsObjectOrItem = Utils:IsNPCObjectOrItem(), text = gossip }) == false
+    end
+    return false
+end
+
 -- A quest line is kept as "q:<quest>:<moment>:<speaker>". The speaker is empty when the window
 -- closes under a capture (QUEST_FINISHED, the frame's OnHide): its text still reads, and the
 -- unit is already gone. That copy is the line just kept with its speaker, less the speaker.
@@ -521,10 +538,10 @@ local function KeptWithSpeaker(lines, stem, text)
 end
 
 --- Keep the line on screen for later. Only reached once a caller has established it is
---- missing (HasGap), or when its model has just arrived (NPCModel.onLoaded) -- so it re-checks
---- only what the latter cannot know: that the line is still a gap.
+--- missing or changed (HasGap), or when its model has just arrived (NPCModel.onLoaded) -- so it
+--- re-checks only what the latter cannot know: that the line is still one of those.
 local function GatherLine()
-    if not (Spoken.Gather and Spoken.Gather:IsEnabled()) or not IsMissing() then
+    if not (Spoken.Gather and Spoken.Gather:IsEnabled()) or not (IsMissing() or IsChanged()) then
         return false
     end
     local envelope, key = Contribute:Capture()
@@ -624,6 +641,13 @@ function Contribute:HasGap()
         -- gossip event through ContributeButton's refresh, which is what drives gathering.
         if gathering then
             GatherLine()
+        end
+    elseif gathering and IsChanged() then
+        -- A line that plays in other words, kept for the site to correct. No model is loaded
+        -- for it: the site already knows who speaks a line it has, and a load is kept for gaps.
+        GatherLine()
+        if NPCModel:IsLoading() and not readBody then
+            NPCModel:Abandon()
         end
     elseif NPCModel:IsLoading() and not readBody then
         -- No gap, but a load is still in flight for whatever NPC started it: the player closed

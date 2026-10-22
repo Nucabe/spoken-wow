@@ -698,6 +698,57 @@ function DataModules:GetNPCGossipTextHash(soundData)
     return file
 end
 
+--- A line's words with the spacing gone, so two texts that sound the same compare equal.
+local function Said(text)
+    return (string.gsub(string.gsub(Words(text), "%s+", " "), "^ ?(.-) ?$", "%1"))
+end
+
+--- Whether the text on screen is word for word one this speaker's lines are made from, with its
+--- tokens filled in for this player. False where the speaker has lines in the client's language
+--- and none says this: Blizzard changed the words, or the corpus line was taken from a client
+--- that wrote a player's name into it. Nil where there is nothing in the client's language to
+--- compare with. A quest moment of one wording is compared with the Compendium's text
+--- (SpokenQuestsText), which is English and holds accept and complete only.
+---@param soundData SoundData its event, text and speaker, with questID for a quest line
+---@return boolean|nil
+function DataModules:IsTextKnown(soundData)
+    local shown = soundData.text
+    if type(shown) ~= "string" or shown == "" then
+        return nil
+    end
+    local texts = {}
+    if Enums.SoundEvent:IsQuestEvent(soundData.event) then
+        local moment = ({
+            [Enums.SoundEvent.QuestAccept] = "accept",
+            [Enums.SoundEvent.QuestProgress] = "progress",
+            [Enums.SoundEvent.QuestComplete] = "complete",
+        })[soundData.event]
+        CollectTexts("QuestWordingLookup", format("%d-%s", soundData.questID or 0, moment), true, texts)
+        if next(texts) == nil and Language:GetClientLanguage() == "enUS" then
+            local quest = SpokenQuestsText and SpokenQuestsText[soundData.questID]
+            if quest and type(quest[moment]) == "string" then
+                texts[quest[moment]] = true
+            end
+        end
+    else
+        local table, npc = GossipLookupKey(soundData)
+        if not table or npc == nil then
+            return nil
+        end
+        CollectTexts(table, npc, true, texts)
+    end
+    if next(texts) == nil then
+        return nil
+    end
+    shown = Said(shown)
+    for text in pairs(texts) do
+        if Said(Utils:FillPlayerTokens(text)) == shown then
+            return true
+        end
+    end
+    return false
+end
+
 local function getFirstNWords(text, n)
     local firstNWords = {}
     local count = 0

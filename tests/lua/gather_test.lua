@@ -100,7 +100,41 @@ world.questID = 9124
 stub.ShowPanel("QuestFrameDetailPanel")
 stub.FireEvent("QUEST_DETAIL")
 Expect("a line some pack voices is not gathered", Gather:Count(), 3)
+
+-- A line that plays in words other than the ones its corpus text has is kept, for the site to
+-- correct: Blizzard changed it, or the corpus copy carries some player's name. Tokens, breaks,
+-- case and spacing are not a difference.
+local pack = VoiceOver.DataModules.registeredModules.TestPack
+local questText = _G.SpokenQuestsText
+_G.SpokenQuestsText = { [9124] = { accept = "Kill six of them, $N.  $B$BThen come $gback:back;." } }
+world.questText = "Kill six of them, Tester.\n\nThen come back."
+stub.FireEvent("QUEST_DETAIL")
+Expect("a voiced line saying what its text says is not gathered", Gather:Count(), 3)
+world.questText = "Kill seven of them, Tester.\n\nThen come back."
+stub.FireEvent("QUEST_DETAIL")
+Expect("a voiced line in other words is gathered", Gather:Count(), 4)
+Expect("...with the reader's name as its token",
+    ((_G.SpokenContributionsDB.Lines[4] or {}).envelope or ""):find("Kill seven of them, $N.", 1, true) ~= nil, true)
+Expect("...and offers no Contribute button, since it plays", VoiceOver.ContributeButton.button:IsShown(), false)
+world.questText = "Kill six of them.\nThen come back."
 world.questID = 9123
+_G.SpokenQuestsText = questText
+
+stub.HidePanels()
+local before = Gather:Count()
+pack.SoundLengthLookupByFileName["gossip-roads"] = 1
+pack.GossipLookupByNPCID = { [12345] = { ["Well met, $N. The roads are safe tonight."] = "gossip-roads" } }
+stub.ShowGossip("Well met, Tester. The roads are safe tonight.")
+stub.FireEvent("GOSSIP_SHOW")
+Expect("gossip saying what its text says is not gathered", Gather:Count(), before)
+stub.ShowGossip("Well met, Tester. The roads are not safe tonight.")
+local reworded = { event = VoiceOver.Enums.SoundEvent.Gossip, unitGUID = world.npcGUID, name = world.npcName,
+    text = "Well met, Tester. The roads are not safe tonight." }
+Expect("(the reworded gossip plays the old line)",
+    VoiceOver.DataModules:PrepareSound(reworded) and reworded.fileName, "gossip-roads")
+stub.FireEvent("GOSSIP_SHOW")
+Expect("gossip in other words, close enough to play the old line, is gathered", Gather:Count(), before + 1)
+pack.GossipLookupByNPCID = nil
 
 -- The NPC's model loads after the panel opens. The line is kept at once, without it, and
 -- taken again under the same key the moment the load finishes.
