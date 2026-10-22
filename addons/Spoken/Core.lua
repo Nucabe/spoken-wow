@@ -126,12 +126,25 @@ Defaults = {
     },
 }
 
+--- The profile chosen for new characters, read from the saved table because AceDB needs it before
+--- it loads that table. Nil where none is chosen or that profile has been deleted, so a new
+--- character gets a profile of its own as before.
+local function NewCharacterProfile()
+    local sv = rawget(_G, "SpokenSettings")
+    if type(sv) ~= "table" or type(sv.global) ~= "table" or type(sv.profiles) ~= "table" then return nil end
+    local name = sv.global.NewCharacterProfile
+    if type(name) == "string" and type(sv.profiles[name]) == "table" then return name end
+    return nil
+end
+
 --- Idempotent, so the test harness and ADDON_LOADED can both call it.
 function Addon:InitDB()
     if self.db then
         return
     end
-    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
+    -- AceDB uses the third argument only for a character with no entry in profileKeys, that is one
+    -- logging in with Spoken for the first time: every other character keeps the profile it has.
+    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults, NewCharacterProfile())
     -- A saved AutoScroll = false predates ScrollMode: carry it over as "off", in every profile.
     for _, profile in pairs(self.db.sv and self.db.sv.profiles or {}) do
         local transcript = type(profile) == "table" and profile.Transcript

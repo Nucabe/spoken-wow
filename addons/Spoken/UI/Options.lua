@@ -974,6 +974,21 @@ function Options:DeleteProfile(name)
     for _, db in ipairs(self:ProfileDBs()) do
         if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then db:DeleteProfile(name) end
     end
+    -- Left set, the next new character would get a fresh profile under the deleted one's name.
+    if Addon.db and Addon.db.global.NewCharacterProfile == name and not Has(Addon.db, name) then
+        Addon.db.global.NewCharacterProfile = nil
+    end
+end
+
+--- The profile a character logging in with Spoken for the first time starts on: one of Spoken's
+--- profiles, or false for a profile of its own. Account-wide, and read before the profiles load.
+function Options:NewCharacterProfile()
+    local name = Addon.db and Addon.db.global.NewCharacterProfile
+    return type(name) == "string" and Has(Addon.db, name) and name or false
+end
+
+function Options:SetNewCharacterProfile(name)
+    if Addon.db then Addon.db.global.NewCharacterProfile = name or nil end
 end
 
 function Options:AddProfiles(layout)
@@ -1017,6 +1032,18 @@ function Options:AddProfiles(layout)
             end,
         }
         layout:Button(L.OPT_PROFILE_NEW, 200, function() StaticPopup_Show("SPOKEN_NEW_PROFILE") end)
+    end
+    if Addon.db then
+        layout:Dropdown(L.OPT_NEW_CHARACTER_PROFILE, L.OPT_NEW_CHARACTER_PROFILE_TIP,
+            function()
+                local names = Addon.db:GetProfiles()
+                table.sort(names)
+                table.insert(names, 1, false)
+                return names
+            end,
+            function() return self:NewCharacterProfile() end,
+            function(name) self:SetNewCharacterProfile(name) end,
+            nil, function(name) return name or L.OPT_PROFILE_OWN end)
     end
 end
 

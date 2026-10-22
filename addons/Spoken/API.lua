@@ -491,6 +491,13 @@ function Spoken:BindModuleSettings(name, legacy, bind, skip)
     return Addon:BindModuleSettings(name, legacy, bind, skip)
 end
 
+--- The name of the profile Spoken's settings are on, nil before they load. A feature addon that keeps
+--- its own AceDB settings passes it as AceDB's default profile, so a character it has not seen
+--- starts on the profile Spoken gave it.
+function Spoken:CurrentProfile()
+    return Addon.db and Addon.db:GetCurrentProfile() or nil
+end
+
 --- Whether Spoken's page and minimap menu open Azeroth's Compendium and hold its Unlock switches,
 --- so the parts leave theirs off their own pages.
 function Spoken:ShowsCompendium()

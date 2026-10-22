@@ -4,6 +4,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Choose the profile new characters start on.** Profile for New Characters, under Profiles on
+  Spoken's page, puts each character you make from then on straight onto that profile, quests
+  settings included. Characters you already have stay on the profile they use, with every setting
+  as it was. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

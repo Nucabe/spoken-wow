@@ -124,6 +124,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/books_options_test.lua
 	@$(LUA) tests/lua/module_settings_test.lua
 	@$(LUA) tests/lua/module_profiles_test.lua
+	@$(LUA) tests/lua/new_character_profile_test.lua
 	@$(LUA) tests/lua/locale_parity_test.lua
 	@$(LUA) tests/lua/books_reader_test.lua
 	@$(LUA) tests/lua/books_playlist_test.lua
