@@ -1,4 +1,6 @@
 """The addon's translated quest-giver names, which export-giver-names writes."""
+import os
+
 from tts_cli.giver_names import (givers, localized_names, lua_string, render,
                                  write_giver_names, write_names_xml)
 
@@ -76,6 +78,30 @@ def test_names_xml_loads_exactly_the_files_written(tmp_path):
 
     assert '<Script file="deDE.lua"/>' in text and '<Script file="ruRU.lua"/>' in text
     assert text.count("<Script") == 2
+
+
+ADDON = os.path.join(os.path.dirname(__file__), "../../../addons/Spoken_Quests")
+
+
+def toc(name):
+    with open(os.path.join(ADDON, name), encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+
+def test_forever_loads_only_its_own_names_file_and_the_classic_clients_load_every_one():
+    # Every file the export wrote: a language it gains and Forever's .toc does not list is a
+    # client that names its givers in English.
+    langs = sorted(os.path.splitext(name)[0]
+                   for name in os.listdir(os.path.join(ADDON, "Locale", "Names")) if name.endswith(".lua"))
+    assert langs
+    lines = toc("Spoken_Quests.toc")
+    assert "Locale\\Names\\Names.xml" not in lines
+    for lang in langs:
+        assert f"Locale\\Names\\{lang}.lua [AllowLoadTextLocale {lang}]" in lines
+    for name in ("Spoken_Quests_Vanilla.toc", "Spoken_Quests_TBC.toc"):
+        assert "Locale\\Names\\Names.xml" in toc(name), name
+    with open(os.path.join(ADDON, "addon.xml"), encoding="utf-8") as f:
+        assert "Names" not in f.read()
 
 
 def test_a_giver_named_only_by_a_placeholder_has_no_english_name():
