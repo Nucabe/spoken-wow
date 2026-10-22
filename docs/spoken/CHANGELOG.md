@@ -65,8 +65,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Fixed: closing DialogueUI on a giver's greeting after taking a quest showed the queue's
   animation with no window.** The quest's page went behind a window that was not on screen.
   Now the window flies out of the dialog with the greeting, the quest counted after its title. *([Nucabe](https://github.com/Nucabe))*
-- **The Compendium's minimise arrow sits in the middle of its button.** It was drawn off to one side of the
-  frame the template gives it. *([Nucabe](https://github.com/Nucabe))*
+- **The Compendium's minimise arrow sits in the middle of its button, beside Close and on its row.** It
+  was drawn off to one side of the frame the template gives it. *([Nucabe](https://github.com/Nucabe))*
 - **The AddOns list shows Spoken and each module's name in colour, with new icons.** Spoken, Quests,
   Places, Readables, Contributions and Developer each have a new icon, the voice packs show Spoken in
   colour too, and the minimap button shows the mark at its size, centred. *([Nucabe](https://github.com/Nucabe))*

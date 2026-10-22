@@ -24,14 +24,19 @@ _G.C_Texture = { GetAtlasInfo = function(name) return stub.ListAtlas(name) or AT
 
 -- The game's portrait frame: its title, portrait and close button, as PortraitFrameMixin has them.
 local createFrame = _G.CreateFrame
+local maxMin
 _G.CreateFrame = function(kind, name, parent, template)
     local frame = createFrame(kind, name, parent, template)
     if template == "PortraitFrameTemplate" then
         function frame:SetTitle(text) self.title = text end
         function frame:SetPortraitToAsset(path) self.portrait = path end
         frame.CloseButton = createFrame("Button", nil, frame)
+        -- Forever's shared templates size Close and the arrows' frame 28 by 28.
+        frame.CloseButton:SetSize(28, 28)
     elseif template == "MaximizeMinimizeButtonFrameTemplate" then
         frame.MinimizeButton, frame.MaximizeButton = createFrame("Button", nil, frame), createFrame("Button", nil, frame)
+        frame:SetSize(28, 28)
+        maxMin = frame
     end
     frame.template = template
     -- A colour painted on a texture, kept to be read back: a page with no art is one.
@@ -122,6 +127,20 @@ Expect("the places are a tab of Azeroth's Compendium, the game's portrait frame"
 Expect("...titled, with the Compendium's tome in its portrait", compendium.title .. "|" .. tostring(compendium.portrait),
     SpokenEnv.L.OPT_COMPENDIUM_TITLE .. "|5341597")
 Expect("...closed by Escape", _G.UISpecialFrames[#_G.UISpecialFrames], "SpokenCompendiumWindow")
+-- Close is cut 2 smaller than the template's 28; the arrows' frame must follow it, or the arrow centred
+-- in it sits off Close's row.
+do
+    local close = compendium.CloseButton
+    local point, relativeTo, relativePoint, x, y = maxMin:GetPoint()
+    Expect("...its minimise arrow's frame the size of Close, beside it on its top edge",
+        maxMin:GetWidth() .. "x" .. maxMin:GetHeight() .. " " .. point .. " " .. tostring(relativeTo == close) .. " "
+            .. relativePoint .. " " .. x .. "," .. y,
+        close:GetWidth() .. "x" .. close:GetHeight() .. " TOPRIGHT true TOPLEFT 0,0")
+    Expect("...and the arrows Close's size, centred in it",
+        maxMin.MinimizeButton:GetWidth() .. "x" .. maxMin.MinimizeButton:GetHeight() .. " "
+            .. (select(1, maxMin.MinimizeButton:GetPoint())) .. " " .. tostring(select(2, maxMin.MinimizeButton:GetPoint()) == maxMin),
+        close:GetWidth() .. "x" .. close:GetHeight() .. " CENTER true")
+end
 local page = window.page
 Expect("its story is on the spellbook's parchment", page.parchment, "spellbook-Page-Right-C60")
 Expect("...in an inset of its own, as the list is, so their borders part them", window.pageInset.template, "InsetFrameTemplate")
