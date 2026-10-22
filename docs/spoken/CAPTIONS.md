@@ -76,8 +76,9 @@ German, Spanish (EU and Latin America), French, Brazilian Portuguese, Russian,
 Korean, Simplified Chinese and Traditional Chinese. English is the fallback.
 A place's caption text is in the Text Language chosen on the Places page, whatever the voice,
 and in the voice's language only where that Text Language has no words for the place. On a client in another language than English, a
-readable's caption is in the client's language where a pack in that language has the page's
-words or the page was opened this session, whatever the voice. Other caption text follows the
+readable's caption is in the client's language where that language's Readables pack has the
+page's words, or, with an older pack that has none, the page was opened this session, whatever
+the voice. Other caption text follows the
 recording language.
 
 ## Timing and text

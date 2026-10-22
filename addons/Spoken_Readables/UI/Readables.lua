@@ -389,11 +389,12 @@ local function AsLeft(named, build)
 	return rows
 end
 
--- each(text) for every page of a readable that has words, in order, until it returns true.
+-- each(text) for every page of a readable that has words, in order, until it returns true. A page
+-- is in this client's language where Spoken has its words, else in the corpus's English.
 local function EachText(id, each)
 	local data = SpokenBooks:Data()
 	for _, pageId in ipairs(Books()[id].pages) do
-		local text = data.pages[pageId] and data.pages[pageId].text
+		local text = SpokenBooks:ClientPageText(pageId) or (data.pages[pageId] and data.pages[pageId].text)
 		if text and text ~= "" and each(text) then return true end
 	end
 	return false

@@ -4,6 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Captions are in the language you read, not the voice's.** A place's story is captioned in the
+  Places page's Text Language, so French text with an English voice shows French words. On a client
+  in another language than English, a book or letter is captioned and shown in Azeroth's Compendium
+  in the client's language where that language's Readables pack has its words, or, with an older
+  pack that has none, once you open the page. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*
