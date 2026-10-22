@@ -39,6 +39,8 @@ const models = new Set((await wagoTable("CreatureDisplayInfo", { build: FOREVER_
 const guideOf = guideFinder(guideEncounters);
 const inOrder = (list) => [...list].sort((a, b) => Number(a.OrderIndex) - Number(b.OrderIndex));
 
+// What the database has the boss cast, and what Efficient Games recorded it casting in Forever, after it.
+for (const row of rows) row.spells = [...new Set([...row.spells, ...(row.live ?? [])])];
 const have = new Map(rows.map((r) => [`${r.map}\t${r.key}`, r]));
 /** The row of the boss `key` of `map`, a new empty one where there is none. */
 function rowFor(map, key) {
@@ -136,8 +138,8 @@ const lines = [
   "--",
   "-- SpokenBossCreatures[instance map][boss key] = { creature = the boss's creature id (nil where only the guide",
   "-- knows the boss), display = its first model's display id (nil where there is none), spells = { spell ids } }:",
-  "-- its portrait, and what the database says it casts. A boss with no creature here has no portrait; one with",
-  "-- no spells has none listed. Never the whole fight: the rest is cast by code the database does not hold.",
+  "-- its portrait, and what its wiki article, the database and Efficient Games' records of Forever say it casts. A",
+  "-- boss with no creature here has no portrait; one with no spells has none listed. Never the whole fight.",
   "",
   "SpokenBossCreatures = {",
 ];

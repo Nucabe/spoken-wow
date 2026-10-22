@@ -3,14 +3,14 @@
 --
 -- SpokenBossCreatures[instance map][boss key] = { creature = the boss's creature id (nil where only the guide
 -- knows the boss), display = its first model's display id (nil where there is none), spells = { spell ids } }:
--- its portrait, and what the database says it casts. A boss with no creature here has no portrait; one with
--- no spells has none listed. Never the whole fight: the rest is cast by code the database does not hold.
+-- its portrait, and what its wiki article, the database and Efficient Games' records of Forever say it casts. A
+-- boss with no creature here has no portrait; one with no spells has none listed. Never the whole fight.
 
 SpokenBossCreatures = {
 	[33] = {
 		["archmage arugal"] = { creature = 4275, display = 2353, spells = { 7588, 7803, 7621, 7136 } },
 		["baron silverlaine"] = { creature = 3887, display = 3222, spells = { 7068 } },
-		["commander springvale"] = { creature = 4278, display = 3223, spells = { 5588, 1026, 498 } },
+		["commander springvale"] = { creature = 4278, display = 3223, spells = { 5588, 1026, 498, 642 } },
 		["fenrus the devourer"] = { creature = 4274, display = 2352, spells = { 7125 } },
 		["odo the blindwatcher"] = { creature = 4279, display = 522, spells = { 7481 } },
 		["razorclaw the butcher"] = { creature = 3886, display = 524, spells = { 7485 } },
@@ -339,19 +339,19 @@ SpokenBossCreatures = {
 		["unkomon"] = { creature = nil, display = nil, spells = { 1221576, 1221577, 1221578, 1220515 } },
 	},
 	[2959] = {
-		["arcane anomaly"] = { creature = 245999, display = 129891, spells = {  } },
-		["atrexis the grave knight"] = { creature = 247126, display = 145787, spells = {  } },
-		["fel ancient"] = { creature = 246003, display = 129894, spells = {  } },
-		["lyn the ignored"] = { creature = 247032, display = 130235, spells = {  } },
-		["mana devourer"] = { creature = 246008, display = 129895, spells = {  } },
-		["shade of the archmage"] = { creature = 246020, display = 130061, spells = {  } },
-		["unstable sentinel"] = { creature = 246017, display = 129954, spells = {  } },
+		["arcane anomaly"] = { creature = 245999, display = 129891, spells = { 1240682, 1241501 } },
+		["atrexis the grave knight"] = { creature = 247126, display = 145787, spells = { 3391, 6713, 12057, 1303264, 1303266 } },
+		["fel ancient"] = { creature = 246003, display = 129894, spells = { 1240687, 1240688, 1240692 } },
+		["lyn the ignored"] = { creature = 247032, display = 130235, spells = { 17228, 1303266, 1304473 } },
+		["mana devourer"] = { creature = 246008, display = 129895, spells = { 1240738, 1240750 } },
+		["shade of the archmage"] = { creature = 246020, display = 130061, spells = { 1241506, 1241515, 1303350, 1303598, 1303599, 1304398 } },
+		["unstable sentinel"] = { creature = 246017, display = 129954, spells = { 16169, 1241329 } },
 	},
 	[2998] = {
 		["highland horror"] = { creature = 260808, display = 9010, spells = { 1316480, 9616 } },
-		["relic guardian"] = { creature = 260326, display = 144224, spells = {  } },
-		["saltspine"] = { creature = 260322, display = 144209, spells = {  } },
-		["shadetooth"] = { creature = 260325, display = 144210, spells = {  } },
+		["relic guardian"] = { creature = 260326, display = 144224, spells = { 8078, 8374, 10101, 11876 } },
+		["saltspine"] = { creature = 260322, display = 144209, spells = { 3604, 1316382 } },
+		["shadetooth"] = { creature = 260325, display = 144210, spells = { 13445, 14100, 1284435 } },
 	},
 	[2999] = {
 		["bjork"] = { creature = 256097, display = 144170, spells = { 14099, 1301635 } },

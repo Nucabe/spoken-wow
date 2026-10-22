@@ -457,6 +457,16 @@
   ]
  },
  {
+  "map": 48,
+  "key": "gelihast",
+  "name": "Gelihast",
+  "spells": [],
+  "notes": "Battle Stance 7165 (Efficient Games) is a warrior's stance; the card describes the player's.",
+  "drop": [
+   7165
+  ]
+ },
+ {
   "map": 2832,
   "key": "taerar",
   "name": "Taerar",

@@ -7,6 +7,8 @@ A boss is its `creature_template` of the same name that is spawned on the boss's
 creature has none (the maps only Forever has hold no spawns, and a creature of the same name elsewhere
 may be a namesake). Its first model is its portrait. Spells are the ones its smart scripts cast and its template lists; the rest are
 cast by code the database does not hold, so the list is never the whole fight.
+`live` is what Efficient Games recorded the creature casting in players' Forever clients (EG Link, CC BY 4.0), also
+for a boss only Forever has, whose creature is in boss-creatures-manual.json.
 """
 import json
 import os
@@ -33,6 +35,14 @@ for line in text.splitlines():
 # boss-sources.json: the creature ids the research found for each boss on its wiki page.
 hints = {(h["map"], h["key"]): h for h in json.loads((ROOT / "pipelines" / "zones" / "tools" / "boss-sources.json").read_text(encoding="utf8"))}
 
+# The creatures only Forever has, which the database does not hold.
+manual = {(e["map"], e["key"]): e["creature"] for e in json.loads((ROOT / "pipelines" / "zones" / "tools" / "boss-creatures-manual.json").read_text(encoding="utf8")) if e.get("creature")}
+
+live_casts = {}
+for data in ec.eg_datasets("creatures").values():
+    for creature, record in data.get("creatures", {}).items():
+        live_casts.setdefault(int(creature), set()).update(int(s) for s in record.get("combatLog", {}).get("casts", {}))
+
 cursor = ec.connect(ec.parse_args([])).cursor()
 out = []
 for map_id, key, name in bosses:
@@ -52,9 +62,7 @@ for map_id, key, name in bosses:
                 break
     # The same name can be another creature (Diathorus of Season of Discovery is not the old world elite): the
     # boss then has what the guide and the wiki list, and no portrait.
-    if chosen is None and hints.get((map_id, key), {}).get("noNameMatch"):
-        continue
-    if chosen is None:
+    if chosen is None and not hints.get((map_id, key), {}).get("noNameMatch"):
         # Spawned by a script (Ragnaros, the dragons of the world), so with no spawn on the map: the
         # Classic creature of that name, the lowest id under CLASSIC_MAX, and a name that continues the boss's
         # ("Kirtonos" for Kirtonos the Herald) when only one creature does.
@@ -68,6 +76,9 @@ for map_id, key, name in bosses:
             if len(rows) == 1:
                 chosen = rows[0][0]
     if chosen is None:
+        creature = manual.get((map_id, key))
+        if creature:
+            out.append({"map": map_id, "key": key, "creature": creature, "display": None, "spells": [], "live": sorted(live_casts.get(creature, ()))})
         continue
     spells = []
     cursor.execute("SELECT DISTINCT action_param1 FROM smart_scripts WHERE source_type=0 AND entryorguid=%s AND action_type IN (11, 85)", (chosen,))
@@ -76,7 +87,7 @@ for map_id, key, name in bosses:
     spells += [row[0] for row in cursor.fetchall()]
     cursor.execute("SELECT CreatureDisplayID FROM creature_template_model WHERE CreatureID=%s ORDER BY Idx LIMIT 1", (chosen,))
     model = cursor.fetchone()
-    out.append({"map": map_id, "key": key, "creature": chosen, "display": model[0] if model else None, "spells": sorted(set(spells))})
+    out.append({"map": map_id, "key": key, "creature": chosen, "display": model[0] if model else None, "spells": sorted(set(spells)), "live": sorted(live_casts.get(chosen, ()))})
 
 path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.environ.get("TEMP", "."), "boss_creatures.json")
 Path(path).write_text(json.dumps(out, indent=1), encoding="utf8")
