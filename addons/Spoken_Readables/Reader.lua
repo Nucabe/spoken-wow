@@ -245,6 +245,26 @@ function SpokenBooks:RememberPageText(pageId, language, text, title)
 	end
 end
 
+--- A page's words in this client's language, from a pack in that language or from the page as
+--- the client showed it, or nil. Nil on an English client: Books.lua is its words.
+function SpokenBooks:ClientPageText(pageId)
+	local client = self:GetClientLanguage()
+	if client == self.BASE_LANGUAGE then
+		return nil
+	end
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		local entry = self:PackLanguage(pack) == client and pack.pages[pageId]
+		if entry and type(entry.text) == "string" and entry.text ~= "" then
+			return entry.text
+		end
+	end
+	local kept = self.pageText and self.pageText[client] and self.pageText[client][pageId]
+	if type(kept) == "string" and kept ~= "" then
+		return kept
+	end
+	return nil
+end
+
 --- Where a page sits: its book and its number. The corpus module's place, or a pack's for a
 --- page only it has. Nil for a page nothing carries.
 function SpokenBooks:PlaceOf(pageId)

@@ -199,17 +199,25 @@ function SpokenBooks:ClipFor(pageId)
 			if entry then
 				local book = self:BookOf(pageId)
 				local oneLine = self:OneLine()
-				local text = entry.text
-				-- The caption keeps the page's tokens; the subtitle shows what the clip says.
-				if not text and language == self.BASE_LANGUAGE and place.text then
-					text = self:SaidTokens(place.text)
-				end
-				if not text and self.pageText and self.pageText[language] then
-					text = self.pageText[language][pageId]
+				-- On a client in another language the words are the client's, as the game shows
+				-- the page, whatever the voice: French words under an English voice. The voice's
+				-- own where this client's are not known, and on an English client, where a voice
+				-- no client speaks (Italian) is read along in its own words. The caption keeps the
+				-- page's tokens; the subtitle shows what the clip says.
+				local text, shown = self:ClientPageText(pageId), self:GetClientLanguage()
+				if not text then
+					shown = language
+					text = entry.text
+					if not text and language == self.BASE_LANGUAGE and place.text then
+						text = self:SaidTokens(place.text)
+					end
+					if not text and self.pageText and self.pageText[language] then
+						text = self.pageText[language][pageId]
+					end
 				end
 				-- The title the client showed, in the language of the words below it; the
 				-- corpus's own is English.
-				local title = self.bookTitle and self.bookTitle[language] and self.bookTitle[language][place.book]
+				local title = self.bookTitle and self.bookTitle[shown] and self.bookTitle[shown][place.book]
 					or (book and book.title) or ""
 				local length = (entry.len and entry.len > 0) and entry.len or nil
 				return {

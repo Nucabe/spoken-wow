@@ -92,8 +92,9 @@ Expect("D. older translated packs can caption the page opened in the client",
 Expect("D. a fallback page uses English captions rather than the open German page",
     B:ClipFor(ONLY_ENGLISH).present.transcript, "English second page.")
 SpokenBooksSettings.voiceLanguage = "enUS"
-Expect("D. choosing an English voice uses the saved English words",
-    B:ClipFor(PAGE).present.transcript, "English first page.")
+Expect("D. an English voice on a German client keeps the German words the client showed",
+    B:ClipFor(PAGE).present.transcript, GERMAN_TEXT)
+Expect("D. ...under the title the client showed", B:ClipFor(PAGE).present.label, "Stadtregister")
 B = Install({ ENGLISH, INDEXED }, "enUS")
 stub.ShowPage({ title = "Stadtregister", number = 1, text = GERMAN_TEXT })
 Expect("D. ...and only on a German client", B:PageOnScreen(), nil)
@@ -113,6 +114,16 @@ Expect("E. a translated page with no text never shows English under German audio
 SpokenBooksAudioPacks.SpokenBooksAudio_deDE.pages = { [PAGE] = {
     file = "15", len = 2, text = "Gespeicherte deutsche Seite." } }
 Expect("E. new packs provide captions before a page is opened",
+    B:ClipFor(PAGE).present.transcript, "Gespeicherte deutsche Seite.")
+SpokenBooksSettings.voiceLanguage = "enUS"
+Expect("E. ...and the German pack's words caption the English voice on a German client",
+    tostring(B:ClipFor(PAGE).language) .. " " .. tostring(B:ClipFor(PAGE).present.transcript),
+    "enUS Gespeicherte deutsche Seite.")
+B = Install({ ENGLISH, GERMAN }, "enUS")
+SpokenBooksAudioPacks.SpokenBooksAudio_deDE.pages = { [PAGE] = {
+    file = "15", len = 2, text = "Gespeicherte deutsche Seite." } }
+SpokenBooksSettings.voiceLanguage = "deDE"
+Expect("E. a German voice on an English client is read along in German",
     B:ClipFor(PAGE).present.transcript, "Gespeicherte deutsche Seite.")
 B = Install({ ENGLISH })
 Expect("E. with no Spoken there is nothing to report to", B:ReportURL(PAGE), nil)
