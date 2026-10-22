@@ -399,6 +399,8 @@ local selectedGossipOption
 -- Set by picking any option, even one whose label could not be found, until the window closes:
 -- every page after the greeting was asked for.
 local gossipOptionPicked
+-- The NPC a gossip or greeting window was muted for as it opened, until the next window.
+local mutedAheadFor
 local currentQuestSoundData
 local currentGossipSoundData
 
@@ -1129,6 +1131,7 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
+    mutedAheadFor = nil
     if not Spoken.MuteGameDialogueAhead or not self:IsPageOn(event) or not self:IsAutoplayOn() or self.dataModulesPending
         or not Player.source then
         return
@@ -1150,8 +1153,20 @@ function Addon:MuteGreetingAhead(event)
     -- ID is not known yet is muted too: its greeting starts now, and with no line the mute lifts.
     local questID = quest and CurrentQuestID()
     if (quest and (not questID or questID == 0)) or self:ExpectedLine(event) then
+        mutedAheadFor = not quest and Utils:GetNPCGUID() or nil
         Spoken:MuteGameDialogueAhead(self:PartOfPage(event) == "gossip" and Player.gossipSource or Player.source)
     end
+end
+
+--- Whether a read that found no line leaves the mute taken as its window opened. On a first talk
+--- to an NPC the client has not shown before, the window's text may not be there yet when it is read,
+--- so the lookup misses for an NPC a pack voices. The mute then holds to its deadline, by which
+--- the line has started or nothing is coming.
+---@param soundData SoundData
+---@return boolean
+function Addon:KeepsMuteAhead(soundData)
+    return mutedAheadFor ~= nil and soundData.unitGUID == mutedAheadFor
+        and (soundData.event == Enums.SoundEvent.Gossip or soundData.event == Enums.SoundEvent.QuestGreeting)
 end
 
 --- The text autoplay will read for the dialog that just opened, or nil. Asked before the line is
@@ -1308,6 +1323,7 @@ function Addon:QUEST_FINISHED()
         end
     end
     currentQuestSoundData = nil
+    mutedAheadFor = nil
     local pending = pendingRead
     pendingRead = nil
     if pending then
@@ -1322,6 +1338,7 @@ function Addon:GOSSIP_CLOSED()
         Player:Remove(currentGossipSoundData)
     end
     currentGossipSoundData = nil
+    mutedAheadFor = nil
 
     selectedGossipOption = nil
     gossipOptionPicked = nil

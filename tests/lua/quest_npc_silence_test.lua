@@ -13,9 +13,11 @@ stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames
 _G.SpokenQuestsSettings = nil
 local VO = stub.LoadQuests(QUESTS, SPOKEN)
 VO.Addon:OnInitialize()
+local GREETING_HASH = "0123456789abcdef0123456789abcdef"
 VO.DataModules:Register("TestPack", {
-    SoundLengthLookupByFileName = {},
+    SoundLengthLookupByFileName = { [GREETING_HASH] = 3 },
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
+    GossipLookupByNPCID = { [23456] = { ["Welcome to the inn."] = GREETING_HASH } },
 })
 stub.Advance(2)
 _G.SpokenEnv.Addon.db.profile.Audio.AutoToggleDialog = true
@@ -62,6 +64,41 @@ stub.Advance(2)
 Expect("...and gives its voice back when no line comes", GetCVar("Sound_EnableDialog"), "1")
 stub.ShowPanel(nil)
 stub.FireEvent("QUEST_FINISHED")
+
+-- A first talk: the client has not shown this NPC's text before, so the window opens without it
+-- and the read 0.1s later finds no line. A pack voices the NPC, so the mute holds for the line.
+quests.available, quests.active = 0, 0
+local function Talk(guid, text)
+    stub.world.npcGUID = guid
+    stub.ShowGossip(text)
+    stub.FireEvent("GOSSIP_SHOW")
+    return GetCVar("Sound_EnableDialog")
+end
+local VOICED, PLAIN = "Creature-0-0-0-0-23456-0", "Creature-0-0-0-0-12345-0"
+
+Expect("a first talk to a voiced NPC mutes it as its window opens, its text not there yet", Talk(VOICED, ""), "0")
+stub.Advance(0.15)
+Expect("...and stays muted when the read finds no line yet", GetCVar("Sound_EnableDialog"), "0")
+stub.world.gossipText = "Welcome to the inn."
+stub.FireEvent("GOSSIP_SHOW")
+stub.Advance(0.15)
+local current = _G.Spoken:GetCurrent()
+Expect("...the line is read once its text arrives", current and current.fileName, GREETING_HASH)
+Expect("...with the NPC still silent", GetCVar("Sound_EnableDialog"), "0")
+Close()
+
+Expect("an NPC with no voice data is never muted", Talk(PLAIN, "Well met."), "1")
+stub.Advance(0.15)
+Expect("...not after the read either", GetCVar("Sound_EnableDialog"), "1")
+Close()
+
+Expect("a voiced NPC whose line never comes is muted as its window opens", Talk(VOICED, "Not a line any pack has."), "0")
+stub.Advance(0.15)
+Expect("...still while the window may yet get its text", GetCVar("Sound_EnableDialog"), "0")
+stub.Advance(1.5)
+Expect("...and given its voice back at the mute's deadline, nothing having played", GetCVar("Sound_EnableDialog"), "1")
+Expect("...with nothing queued", _G.Spoken:GetQueueSize(), 0)
+Close()
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quest NPC silence tests passed")
