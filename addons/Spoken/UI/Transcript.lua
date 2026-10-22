@@ -702,15 +702,19 @@ function Transcript:Initialize()
         self:TurnPage(delta)
     end)
     frame:SetScript("OnClick", function(_, button)
-        if button == "RightButton" then
+        if button == "RightButton" and IsShiftKeyDown and IsShiftKeyDown() then
             if MinimalPlayer:IsEnabled() then MinimalPlayer:ToggleMenu()
             else Options:Open() end
+        elseif button == "RightButton" then
+            SoundQueue:Skip()
         else self:Follow() end
     end)
     frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
         GameTooltip:SetText(L.TRANSCRIPT)
         GameTooltip:AddLine(L.TRANSCRIPT_HINT, 1, .82, 0, true)
+        GameTooltip:AddLine(MinimalPlayer:IsEnabled() and L.TRANSCRIPT_MENU_HINT or L.TRANSCRIPT_SETTINGS_HINT,
+            1, .82, 0, true)
         GameTooltip:Show()
     end)
     local function HideTooltip() Actions.HideTipFor(frame) end

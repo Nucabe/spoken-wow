@@ -949,5 +949,35 @@ preview:Click()
 W.frame:GetScript("OnHide")(W.frame)
 Expect("closing the welcome turns preview mode off", env.Options.previewing or env.Addon.previewStyle ~= nil or F:IsShowingSample(), false)
 
+---------------------------------------------------------------- a click on the words
+-- A right-click on the words skips the line, a target larger than Skip (#606); Shift-right-click
+-- opens the window's menu or the settings.
+env, quests = Boot()
+local words = env.Transcript.frame
+local opened = 0
+env.Options.Open = function() opened = opened + 1 end
+quests:Enqueue(H.Clip({ key = "q:1:accept", present = { header = "Thrall", label = "Warchief", portrait = { kind = "none" } } }))
+quests:Enqueue(H.Clip({ key = "q:2:accept", present = { header = "Cairne", label = "Bloodhoof", portrait = { kind = "none" } } }))
+local hadShift, shift = _G.IsShiftKeyDown, false
+_G.IsShiftKeyDown = function() return shift end
+local function Head() return opened .. " " .. env.SoundQueue:GetCurrentSound().present.header end
+shift = true
+ExpectOf("a Shift-right-click on the words opens the settings, the line playing on", function()
+    words.scripts.OnClick(words, "RightButton")
+    return Head()
+end, "1 Thrall")
+shift = false
+ExpectOf("a right-click on the words skips the line", function()
+    words.scripts.OnClick(words, "RightButton")
+    return Head()
+end, "1 Cairne")
+ExpectOf("...and the words' tooltip says what each right-click does", function()
+    words.scripts.OnEnter(words)
+    return table.concat(GameTooltip.lines, "|")
+end, table.concat({ env.L.TRANSCRIPT, env.L.TRANSCRIPT_HINT, env.L.TRANSCRIPT_SETTINGS_HINT }, "|"))
+env.SoundQueue:RemoveAllSoundsFromQueue()
+Expect("...and does nothing with no line playing", (pcall(words.scripts.OnClick, words, "RightButton")), true)
+_G.IsShiftKeyDown = hadShift
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll player frame tests passed")
