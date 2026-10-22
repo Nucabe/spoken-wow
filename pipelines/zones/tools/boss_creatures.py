@@ -5,8 +5,9 @@
 
 A boss is its `creature_template` of the same name that is spawned on the boss's map; one with no such
 creature has none (the maps only Forever has hold no spawns, and a creature of the same name elsewhere
-may be a namesake). Its first model is its portrait. Spells are the ones its smart scripts cast and its template lists; the rest are
-cast by code the database does not hold, so the list is never the whole fight.
+may be a namesake). Its first model is its portrait. Spells are the ones its smart scripts cast and its template lists,
+and those of the other members of a fight of several (`members` in
+boss-sources.json); the rest are cast by code the database does not hold, so the list is never the whole fight.
 `live` is what Efficient Games recorded the creature casting in players' Forever clients (EG Link, CC BY 4.0), also
 for a boss only Forever has, whose creature is in boss-creatures-manual.json.
 """
@@ -44,6 +45,25 @@ for data in ec.eg_datasets("creatures").values():
         live_casts.setdefault(int(creature), set()).update(int(s) for s in record.get("combatLog", {}).get("casts", {}))
 
 cursor = ec.connect(ec.parse_args([])).cursor()
+def casts(entry):
+    """The spells `entry` casts in the database, in id order."""
+    cursor.execute("SELECT DISTINCT action_param1 FROM smart_scripts WHERE source_type=0 AND entryorguid=%s AND action_type IN (11, 85)", (entry,))
+    spells = {row[0] for row in cursor.fetchall()}
+    cursor.execute("SELECT DISTINCT Spell FROM creature_template_spell WHERE CreatureID=%s", (entry,))
+    spells.update(row[0] for row in cursor.fetchall())
+    return sorted(spells)
+
+
+def in_turn(lists):
+    """One of each list in turn, each once: the cap on a boss's spells then leaves no member of a fight out."""
+    out = []
+    for k in range(max(map(len, lists), default=0)):
+        for spells in lists:
+            if k < len(spells) and spells[k] not in out:
+                out.append(spells[k])
+    return out
+
+
 out = []
 for map_id, key, name in bosses:
     chosen = None
@@ -80,14 +100,12 @@ for map_id, key, name in bosses:
         if creature:
             out.append({"map": map_id, "key": key, "creature": creature, "display": None, "spells": [], "live": sorted(live_casts.get(creature, ()))})
         continue
-    spells = []
-    cursor.execute("SELECT DISTINCT action_param1 FROM smart_scripts WHERE source_type=0 AND entryorguid=%s AND action_type IN (11, 85)", (chosen,))
-    spells += [row[0] for row in cursor.fetchall()]
-    cursor.execute("SELECT DISTINCT Spell FROM creature_template_spell WHERE CreatureID=%s", (chosen,))
-    spells += [row[0] for row in cursor.fetchall()]
+    members = [chosen] + hints.get((map_id, key), {}).get("members", [])
+    spells = in_turn([casts(c) for c in members])
+    live = in_turn([sorted(live_casts.get(c, ())) for c in members])
     cursor.execute("SELECT CreatureDisplayID FROM creature_template_model WHERE CreatureID=%s ORDER BY Idx LIMIT 1", (chosen,))
     model = cursor.fetchone()
-    out.append({"map": map_id, "key": key, "creature": chosen, "display": model[0] if model else None, "spells": sorted(set(spells)), "live": sorted(live_casts.get(chosen, ()))})
+    out.append({"map": map_id, "key": key, "creature": chosen, "display": model[0] if model else None, "spells": spells, "live": live})
 
 path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.environ.get("TEMP", "."), "boss_creatures.json")
 Path(path).write_text(json.dumps(out, indent=1), encoding="utf8")

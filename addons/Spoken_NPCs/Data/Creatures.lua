@@ -70,7 +70,7 @@ SpokenBossCreatures = {
 		["ironaya"] = { creature = 7228, display = 6089, spells = { 8374, 11876 } },
 		["obsidian sentinel"] = { creature = 7023, display = 5285, spells = { 10072, 10061 } },
 		["revelosh"] = { creature = 6910, display = 5945, spells = { 16006, 15801 } },
-		["the lost dwarves"] = { creature = 6906, display = 5710, spells = { 14516, 15620 } },
+		["the lost dwarves"] = { creature = 6906, display = 5710, spells = { 14516, 6268, 8242, 15620 } },
 	},
 	[90] = {
 		["crowd pummeler 9 60"] = { creature = 6229, display = 6774, spells = { 8374, 10887, 5568 } },
@@ -148,8 +148,8 @@ SpokenBossCreatures = {
 		["phalanx"] = { creature = 9502, display = 8177, spells = { 14099, 15588, 15285 } },
 		["princess moira bronzebeard"] = { creature = 8929, display = 8705, spells = { 15586, 15587, 8362, 15537, 15654 } },
 		["pyromancer loregrain"] = { creature = 9024, display = 8762, spells = { 15038, 15616, 15095, 15041 } },
-		["ring of law"] = { creature = 10096, display = 9329, spells = {  } },
-		["the seven"] = { creature = 9034, display = 8690, spells = { 12040, 14033, 15232, 15580 } },
+		["ring of law"] = { creature = 10096, display = 9329, spells = { 13736, 6524, 7121, 13323, 8994, 3609, 15708, 8269 } },
+		["the seven"] = { creature = 9034, display = 8690, spells = { 12040, 11971, 11974, 9080, 8364, 12493, 12540, 14033 } },
 		["warder stilgiss"] = { creature = 9041, display = 9089, spells = { 12674, 12675, 12544, 6136, 15044 } },
 	},
 	[249] = {
@@ -279,7 +279,7 @@ SpokenBossCreatures = {
 		["princess huhuran"] = { creature = 15509, display = 15739, spells = { 26050, 26051, 26053, 26180 } },
 		["silithid royalty"] = { creature = 15511, display = 15656, spells = { 25812, 26590, 26350, 26580, 25807, 26561, 18670 } },
 		["the prophet skeram"] = { creature = 15263, display = 15345, spells = { 26192, 26194, 785, 747, 13810 } },
-		["twin emperors"] = { creature = 15275, display = 15761, spells = { 7393, 26007, 26613, 27680 } },
+		["twin emperors"] = { creature = 15275, display = 15761, spells = { 7393, 568, 26007, 26613, 26006, 27680, 26607 } },
 		["viscidus"] = { creature = 15299, display = 15686, spells = { 25991, 25993 } },
 	},
 	[533] = {
