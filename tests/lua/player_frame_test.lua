@@ -49,13 +49,27 @@ local a = H.Clip({ present = { header = "Eagan Peltskinner", label = "Wolves Acr
 quests:Enqueue(a)
 Expect("shown once something is queued", F.frame:IsShown(), true)
 Expect("the header is the clip's", F.frame.container.name:GetText(), "Eagan Peltskinner")
-Expect("...the speaker's name alone, as the Talking Head shows: the line's name is left off",
-    F.frame.container.label, nil)
+ExpectOf("...and the line's name after it and a dot, as the other windows show both", function()
+    local label = F.frame.container.label
+    return tostring(label:IsShown()) .. "|" .. label:GetText() .. "|" .. tostring(label.anchor.relativeTo == F.frame.container.name)
+end, "true|• Wolves Across the Border|true")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 Expect("hidden again when the queue empties", F.frame:IsShown(), false)
 quests:Enqueue(H.Clip({ key = "b:1", present = { header = "A Letter Home", portrait = { kind = "none" } } }))
 Expect("a line with no label is named by its header, never by its key",
     F.frame.container.name:GetText(), "A Letter Home")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+ExpectOf("...said once: nothing after it", function() return F.frame.container.label:IsShown() end, false)
+-- A place's story: the zone, then the subzone whose story it is (#543).
+zones:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Westfall", label = "Moonbrook", bullet = "zone",
+    portrait = { kind = "none" } } }))
+ExpectOf("a subzone's story names the zone, then the subzone", function()
+    return F.frame.container.name:GetText() .. " " .. F.frame.container.label:GetText()
+end, "Westfall • Moonbrook")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+zones:Enqueue(H.Clip({ key = "z:1436", present = { header = "Westfall", label = "Westfall", bullet = "zone",
+    portrait = { kind = "none" } } }))
+ExpectOf("...a place named twice is named once", function() return F.frame.container.label:IsShown() end, false)
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 env.Addon:SetPlayerStyle("none")
@@ -144,6 +158,10 @@ ExpectOf("a waiting line gets no row: the header counts it after the name, as th
     return tostring(F.frame.container.buttons) .. " " .. tostring(F.count:IsShown()) .. " " .. F.count:GetText()
         .. " " .. tostring(F.count.anchor.relativeTo == F.frame.container.name)
 end, "nil true • +1 true")
+ExpectOf("...past the line's name", function()
+    local label = F.frame.container.label
+    return F.count.anchor.x > label.anchor.x + label.width
+end, true)
 ExpectOf("...fading in as the line is added", function() return F.count:GetAlpha() < 1 end, true)
 pcall(F.Tick, F, 0.3)
 ExpectOf("...all the way", function() return F.count:GetAlpha() end, 1)

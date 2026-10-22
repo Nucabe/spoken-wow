@@ -49,6 +49,9 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local NAME_COLOR = { 1, .82, .02 }
 local WORDS_COLOR = { 1, 1, 1 }
 local TAIL_COLOR = { .6, .6, .6 }
+-- The line's name after the speaker's, in the Small Window's colour for it.
+local LABEL_COLOR = { .88, .84, .76 }
+local LABEL_GAP = 6
 
 do
     local font = CreateFont("SpokenNameFont")
@@ -67,8 +70,7 @@ do
     font:SetJustifyV("MIDDLE")
 end
 
-local function Label(clip) return clip and (clip.present and clip.present.label or clip.key) or "" end
-local Waiting = Actions.Waiting
+local Label, Speaker, Waiting = Actions.Label, Actions.Speaker, Actions.Waiting
 
 local function FirstAtlas(names)
     for _, name in ipairs(names) do
@@ -149,6 +151,10 @@ function PlayerFrame:InitHeader()
     container.name:SetShadowColor(0, 0, 0, 1)
     container.name:SetShadowOffset(1, -1)
     container.name:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
+    container.label = container:CreateFontString(nil, "ARTWORK", "SpokenLabelFont")
+    container.label:SetWordWrap(false)
+    container.label:SetTextColor(LABEL_COLOR[1], LABEL_COLOR[2], LABEL_COLOR[3])
+    container.label:Hide()
     local function TailText()
         local text = container:CreateFontString(nil, "ARTWORK", "SpokenLabelFont")
         text:SetWordWrap(false)
@@ -341,10 +347,11 @@ function PlayerFrame:Layout()
     self.laying = nil
 end
 
---- The name in full where it fits, then the tail, all short of the controls.
+--- The name in full where it fits, then the line's name and the tail, all short of the controls.
+--- The line's name is cut short first, then the speaker's.
 function PlayerFrame:LayoutHeader()
     local container = self.frame.container
-    local name, tail = container.name, self.tail
+    local name, label, tail = container.name, container.label, self.tail
     local left = Left()
     local room = math.max(1, FRAME_WIDTH - CORNER_X - self.controls:GetWidth() - NAME_GAP - left)
     local tailRoom = tail:Room()
@@ -353,8 +360,22 @@ function PlayerFrame:LayoutHeader()
     name:SetText(name:GetText())
     local nameWidth = math.min((name:GetStringWidth() or 0) + 1, math.max(1, room - tailRoom))
     name:SetWidth(nameWidth)
+    local x = nameWidth
+    label:SetWidth(0)
+    label:SetText(label:GetText())
+    local labelRoom = room - tailRoom - nameWidth - LABEL_GAP
+    if label:IsShown() and labelRoom > 0 then
+        local labelWidth = math.min((label:GetStringWidth() or 0) + 1, labelRoom)
+        label:SetWidth(labelWidth)
+        label:ClearAllPoints()
+        label:SetPoint("LEFT", name, "LEFT", nameWidth + LABEL_GAP, 0)
+        label:SetAlpha(1)
+        x = nameWidth + LABEL_GAP + labelWidth
+    else
+        label:SetAlpha(0)
+    end
     if tailRoom > 0 then
-        tail:Place(name, nameWidth)
+        tail:Place(name, x)
         tail:Paint()
     end
 end
@@ -465,10 +486,14 @@ function PlayerFrame:Update()
     self.shown = head
     self.fader:Set(true)
 
-    -- The speaker, or the line's name where nobody speaks.
-    local header = head.present and head.present.header
-    self.frame.container.name:SetText((header and header ~= "") and header or Label(head))
-    Addon:ClipFont(self.frame.container.name, head)
+    -- The speaker, or the line's name where nobody speaks; then the line's name, said once.
+    local container = self.frame.container
+    local speaker = Speaker(head)
+    container.name:SetText(speaker ~= "" and speaker or Label(head))
+    container.label:SetText(speaker ~= "" and "• " .. Label(head) or "")
+    container.label:SetShown(speaker ~= "")
+    Addon:ClipFont(container.name, head)
+    Addon:ClipFont(container.label, head)
 
     Portrait:Configure(self.frame.portrait, head)
     self:ConfigureActions(head)
