@@ -17,9 +17,11 @@
 -- installing SpokenZones already spent every discovery it will ever get, and so is
 -- narrated nothing at all. The `autoplayExplored` option answers that by keeping
 -- the record here instead -- see "Per-character record" below -- and narrating on
--- zone change rather than on discovery. It is off by default, and on a fresh
--- character it changes nothing observable: the discovery message still arrives
--- first and marks the area heard, leaving the override with nothing to say.
+-- zone change rather than on discovery. It is on by default. On a fresh character a
+-- zone change and its discovery name the same place, which the queue takes once; the
+-- one difference is at login, where the starting zone is read after the greeting
+-- rather than when the character walks out into it, and its discovery then reads
+-- nothing.
 
 local ADDON_NAME, SpokenZones = ...
 
@@ -532,8 +534,20 @@ function SpokenZones:OnAreaDiscovered(areaName)
 		return
 	end
 
+	-- Include Places Found Before may have read the place already: at login it reads a new
+	-- character's zone, which the game announces only when the character walks out into it.
+	local function Heard(storyMapID, key)
+		if self:Get("autoplayExplored") and self:HasHeard(storyMapID, key) then
+			if debugOn then
+				self:Print('discovered "%s" -- heard already', areaName)
+			end
+			return true
+		end
+		return false
+	end
+
 	if IsZoneDiscovery(areaName, mapID) then
-		if self:GetLore(mapID) then
+		if self:GetLore(mapID) and not Heard(mapID, nil) then
 			if debugOn then
 				self:Print('discovered zone "%s" -- queued', areaName)
 			end
@@ -550,7 +564,9 @@ function SpokenZones:OnAreaDiscovered(areaName)
 	end
 
 	local entry, key, storyMapID = self:GetSubzoneLore(mapID, areaName)
-	if entry and key then
+	if entry and key and Heard(storyMapID, key) then
+		return
+	elseif entry and key then
 		if debugOn then
 			self:Print('discovered subzone "%s" -> key "%s" -- queued', areaName, key)
 		end

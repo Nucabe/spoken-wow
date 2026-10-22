@@ -45,6 +45,21 @@ Z:ResetOptions()
 Expect("a reset brings the voice back on", _G.SpokenZonesSettings.voiceEnabled, true)
 Expect("...and the play buttons hear the voice is on again", notified, 1)
 
+-- Include Places Found Before is on by default: a character that explored before installing hears
+-- each place once, and Forget Places Heard has something to read again. A stored choice stays.
+Expect("a reset turns Include Places Found Before on", _G.SpokenZonesSettings.autoplayExplored, true)
+local saved = _G.SpokenZonesSettings
+_G.SpokenZonesSettings = {}
+Z.db = _G.SpokenZonesSettings
+Z:OnSettingsBound()
+Expect("a profile with no value of its own takes it on", _G.SpokenZonesSettings.autoplayExplored, true)
+_G.SpokenZonesSettings = { autoplayExplored = false }
+Z.db = _G.SpokenZonesSettings
+Z:OnSettingsBound()
+Expect("...and one that stored it off keeps it off", _G.SpokenZonesSettings.autoplayExplored, false)
+_G.SpokenZonesSettings = saved
+Z.db = saved
+
 ---------------------------------------------------------------- Text Size
 -- Azeroth's Compendium's, on Spoken's page. Until it is set there, the size the Zones page had.
 local Spoken = _G.Spoken

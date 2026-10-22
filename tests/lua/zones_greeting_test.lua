@@ -42,6 +42,9 @@ local function Boot(where, level, record)
     stub.SetZone(where)
     stub.FireEvent("ADDON_LOADED", "Spoken_Places")
     Z:SetupAudio()
+    -- Include Places Found Before also reads where the character stands, on login and on a
+    -- zone change: off, so only the greeting is measured.
+    Z:Set("autoplayExplored", false)
     Z:SetupAutoplay()
     return Z
 end
@@ -83,6 +86,19 @@ stub.SetZone(VALLEY)
 stub.Advance(2)
 Expect("once the map settles on the valley, it is greeted", Spoken:IsPlaying(), true)
 C_Map.GetMapInfo = getMapInfo
+
+-- With Include Places Found Before on, a new character's zone is read after its valley at login,
+-- and the game's discovery of the zone, when the character walks out into it, reads nothing.
+local Z = Boot(VALLEY, 1, nil)
+Z:Set("autoplayExplored", true)
+stub.Advance(2)
+local current = Spoken:GetCurrent()
+Expect("with Include Places Found Before on, the valley is read first",
+    current and current.key, "s:1411:valley of trials")
+Expect("...and the zone after it", Spoken:GetQueueSize(), 2)
+stub.Advance(200)
+Z:OnAreaDiscovered("Durotar")
+Expect("...so the zone's discovery does not read it again", Spoken:GetQueueSize(), 0)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll zones greeting tests passed")

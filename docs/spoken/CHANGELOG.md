@@ -4,9 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **Forget Places Heard is greyed while Include Places Found Before is off.** The game announces
-  each discovery once per character, so only that setting reads a forgotten place again; the button
-  now says so instead of appearing to do nothing. *([Nucabe](https://github.com/Nucabe))*
+- **Include Places Found Before is on for new installs, and Forget Places Heard is greyed while it is
+  off.** The game announces each discovery once per character, so a character who explored before
+  installing heard nothing in those places, and forgetting read nothing again. With the setting on,
+  each place is read once per character the first time you stand in it. If you already use Spoken,
+  your setting is kept: turn it on under Places, When to Read. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

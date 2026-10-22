@@ -47,10 +47,10 @@ local defaults = {
 	voiceEnabled = true,
 	autoplay = true,
 	autoplaySubzones = true,
-	-- Off, because it replaces the client's own record of what a character has
-	-- discovered with one SpokenZones keeps itself. Only a character who explored
-	-- before installing the addon needs that; see Autoplay.lua.
-	autoplayExplored = false,
+	-- On, because the game announces a discovery once per character: off, a character who
+	-- explored before installing hears nothing there, and Forget Places Heard reads nothing again.
+	-- On a new character it changes nothing; see Autoplay.lua.
+	autoplayExplored = true,
 	-- Off, so a player cannot end up reading an unfinished translation without
 	-- having asked for one (Spoken > Developer). See Language.lua.
 	languagePreview = false,

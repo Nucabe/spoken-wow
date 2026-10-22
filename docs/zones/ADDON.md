@@ -26,7 +26,7 @@ One page, Game Menu, Options, AddOns, Spoken, Places:
 | --- | --- | --- | --- |
 | When to Read | Read Automatically | `autoplay` | on |
 | | Include Smaller Areas | `autoplaySubzones` | on |
-| | Include Places Found Before | `autoplayExplored` | off |
+| | Include Places Found Before | `autoplayExplored` | on |
 | Stories | Show Story Beside Map | `showMapPanel` | on |
 | | Story Panel Width | `panelWidth` | 360 |
 | | Show Pictures | `showPictures` | on |
@@ -166,9 +166,11 @@ The game announces a discovery once per character, and Places reads that message
   `SpokenZonesCharacter` makes it happen once, and `/spp forget` clears it.
 - Include Places Found Before also reads on zone change, once per place, for a character that
   explored before installing. `heard` records places when a clip starts, not when it is queued.
-  Forget Places Heard (and `/spp forget`) clears `heard` and `greeted`, never `visited`. The
-  button is greyed while Include Places Found Before is off, because a forgotten place is read
-  again only by it: the game does not announce a discovery twice.
+  With it on, a discovery of a place already heard reads nothing: at login a new character hears
+  its valley and then its zone, which the game announces only later. Forget Places Heard (and
+  `/spp forget`) clears `heard` and `greeted`, never `visited`. The button is greyed while
+  Include Places Found Before is off, because a forgotten place is read again only by it: the
+  game does not announce a discovery twice.
 - Entering a dungeon or raid reads its story, once per character (`heard`), with Read
   Automatically and Include Smaller Areas on. Inside an instance the client gives no map for the
   player and announces no discovery, so on every loading screen, zone change and two seconds
