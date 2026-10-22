@@ -35,12 +35,14 @@ local function Expect(scenario, expected)
 end
 
 local function StartScenario()
-    for i = #played, 1, -1 do played[i] = nil end
     Spoken:StopAll()
     world.questID = 0
     stub.ShowPanel(nil)
     stub.FireEvent("QUEST_FINISHED")
     stub.Advance(10)
+    -- Cleared last, so a line the previous scenario left behind cannot pass for this one's.
+    Spoken:StopAll()
+    for i = #played, 1, -1 do played[i] = nil end
 end
 
 local quests = { 101, 102, 103 }
@@ -150,6 +152,122 @@ world.questID = 0
 stub.FireEvent("QUEST_FINISHED")
 stub.Advance(3)
 Expect("auto-turned-in quest still reads complete", string.format("%d-complete", quest))
+
+-- The rest use quests with every line, progress included, and the events that say what became
+-- of the quest: QUEST_ACCEPTED (Classic's questLogIndex, questID) and QUEST_TURNED_IN.
+local full, followUp = 104, 105
+lookup[string.format("%d-accept", full)] = 1
+lookup[string.format("%d-progress", full)] = 1
+lookup[string.format("%d-complete", full)] = 1
+lookup[string.format("%d-accept", followUp)] = 1
+
+-- An auto-accept addon whose handler runs before Spoken's: the dialog is closed, and its globals
+-- cleared, before Spoken hears of the offer. Only the accept event says which quest it was.
+StartScenario()
+world.questID = 0
+world.title = ""
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_DETAIL")
+stub.Advance(0.3)
+world.title = "Test Quest"
+stub.FireEvent("QUEST_ACCEPTED", 1, full)
+stub.Advance(3)
+Expect("auto-accept that closes the window before Spoken sees the offer still reads accept",
+    string.format("%d-accept", full))
+
+-- Auto-accept closing the window at once, followed by the server's accept event: one read.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_DETAIL")
+world.questID = 0
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_ACCEPTED", 1, full)
+stub.Advance(3)
+Expect("auto-accept closing the window at once reads accept once", string.format("%d-accept", full))
+
+-- The same on a client that keeps reporting the quest ID after the window has closed: the ID
+-- never drops to 0, so the accept event is what says the window closed on an accepted quest.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_DETAIL")
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_ACCEPTED", 1, full)
+stub.Advance(3)
+Expect("auto-accept with a quest ID left set after the window closes reads accept once",
+    string.format("%d-accept", full))
+
+-- A player who reads the offer and accepts it: the watcher reads it, the accept event adds nothing.
+StartScenario()
+world.questID = full
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+stub.Advance(3)
+world.questID = 0
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_ACCEPTED", 1, full)
+stub.Advance(3)
+Expect("normal accept reads accept once", string.format("%d-accept", full))
+
+-- A player who declines: no accept event comes, and nothing is read beyond what the open window read.
+StartScenario()
+world.questID = full
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+stub.Advance(3)
+world.questID = 0
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(15)
+Expect("declined quest reads its offer once and nothing more", string.format("%d-accept", full))
+
+-- Auto turn-in: CompleteQuest answers the progress page, the server sends the reward page a moment
+-- later and GetQuestReward closes it. Each page is read, in order, as a player clicking through hears them.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_PROGRESS")
+stub.Advance(0.1)
+stub.FireEvent("QUEST_COMPLETE")
+world.questID = 0
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.1)
+stub.FireEvent("QUEST_TURNED_IN", full, 0, 0)
+stub.Advance(5)
+Expect("auto turn-in reads progress then complete",
+    string.format("%d-progress, %d-complete", full, full))
+
+-- An auto turn-in addon whose handler runs before Spoken's: the reward page is gone before Spoken
+-- hears of it, and the turn-in event names the quest.
+StartScenario()
+world.questID = 0
+world.title = ""
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_COMPLETE")
+stub.Advance(0.3)
+world.title = "Test Quest"
+stub.FireEvent("QUEST_TURNED_IN", full, 0, 0)
+stub.Advance(3)
+Expect("auto turn-in that closes the window before Spoken sees the reward page still reads complete",
+    string.format("%d-complete", full))
+
+-- Auto turn-in and the follow-up's auto-accept within one poll of the watcher: no page is lost to the next.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_PROGRESS")
+stub.FireEvent("QUEST_COMPLETE")
+world.questID = 0
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_TURNED_IN", full, 0, 0)
+world.questID = followUp
+stub.FireEvent("QUEST_DETAIL")
+world.questID = 0
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_ACCEPTED", 1, followUp)
+stub.Advance(5)
+Expect("auto turn-in then the follow-up's auto-accept reads all three pages",
+    string.format("%d-progress, %d-complete, %d-accept", full, full, followUp))
 
 if failures > 0 then
     print(string.format("\n%d scenario(s) failed", failures))

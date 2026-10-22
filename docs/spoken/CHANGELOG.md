@@ -4,6 +4,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Quests are read with auto-accept and auto turn-in addons.** With Enhance QoL, RestedXP, Zygor or
+  Leatrix Plus accepting or handing in quests for you, the quest's offer is read, and a turn-in reads
+  both the progress and the reward lines, where before some or all of them were skipped. A quest you
+  decline reads as it did. *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

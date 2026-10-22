@@ -59,13 +59,20 @@ local lastQuestEvent
 -- Defined with the handlers below, and asked by functions above them.
 local ResolveQuestID, NoteGossipPage
 
--- The quest globals as they stood when the client fired a quest event. An addon that
--- accepts or turns in the quest from its own handler - Leatrix Plus, and the auto-turn-in
--- addons beside it - closes the dialog in the same frame the event arrived in, so GetQuestID
+-- The quest globals as they stood when the client fired each quest event, oldest first. An
+-- addon that accepts or turns in the quest from its own handler - Leatrix Plus, Enhance QoL,
+-- RestedXP, Zygor - closes the dialog in the same frame the event arrived in, so GetQuestID
 -- is back to 0 by the time the 10 Hz watcher first polls and the interaction would never be
--- read at all. The watcher still owns dispatch: it replays this record only once the dialog
--- has closed with nothing dispatched for it.
-local questSnapshot
+-- read at all. An auto turn-in shows two pages before the watcher can read either, so each
+-- page keeps its own record. The watcher still owns dispatch: a page is replayed from here
+-- only once the dialog has closed, or the quest was accepted or turned in, with nothing read
+-- for it. A record is `blind` when the dialog was already gone as its event arrived, and only
+-- QUEST_ACCEPTED or QUEST_TURNED_IN can then say which quest it was.
+local questSnapshots = {}
+
+-- Long enough for the server to answer an accept or a turn-in, short enough that a quest
+-- accepted later some other way (an escort a party member starts) does not read an old offer.
+local SNAPSHOT_LIFETIME = 10
 
 -- Set while a handler is being replayed from a snapshot, so it reads that instead of globals
 -- the client has already cleared.
@@ -87,27 +94,62 @@ local function CurrentQuestID()
     return NotSecret(GetQuestID()) or 0
 end
 
+local EVENT_OF_SOUND = {}
+for event, quest in pairs(QUEST_EVENTS) do
+    EVENT_OF_SOUND[quest.sound] = event
+end
+
+local function PruneQuestSnapshots()
+    local now = GetTime()
+    for i = #questSnapshots, 1, -1 do
+        if now - questSnapshots[i].at > SNAPSHOT_LIFETIME then
+            table.remove(questSnapshots, i)
+        end
+    end
+end
+
 local function CaptureQuestSnapshot(event)
     local quest = QUEST_EVENTS[event]
     if not quest then
         return
     end
+    PruneQuestSnapshots()
     local readText = quest.text
     local questID = CurrentQuestID()
     local questTitle = QuestTitle()
-    -- Nothing to replay, and nothing to identify a quest by either.
-    if (not questID or questID == 0) and questTitle == "" then
-        return
-    end
-    questSnapshot = {
+    local snapshot = {
         event = event,
+        at = GetTime(),
         questID = questID,
         title = questTitle,
+        blind = questID == 0 and questTitle == "",
         text = readText(),
         guid = Utils:GetNPCGUID(),
         targetName = Utils:GetNPCName(),
         isObjectOrItem = Utils:IsNPCObjectOrItem(),
     }
+    -- The same page shown again replaces its record, so it is not read twice.
+    for i = #questSnapshots, 1, -1 do
+        local old = questSnapshots[i]
+        if old.event == event and old.questID == questID and old.title == questTitle then
+            table.remove(questSnapshots, i)
+        end
+    end
+    table.insert(questSnapshots, snapshot)
+end
+
+--- A page was read while its dialog was open. The pages recorded before it were passed over
+--- by the player, as they always were, so they are not replayed after it either.
+local function MarkQuestSnapshotRead(event, questID)
+    for i = #questSnapshots, 1, -1 do
+        local snapshot = questSnapshots[i]
+        if snapshot.event == event and (snapshot.questID == questID or snapshot.questID == 0) then
+            for j = 1, i do
+                questSnapshots[j].dispatched = true
+            end
+            return
+        end
+    end
 end
 
 -- Where a quest handler's fields come from: the live globals, or the snapshot being replayed.
@@ -531,6 +573,41 @@ function Addon:OnInitialize()
         state.completedKey = nil
     end
 
+    --- Reads the recorded pages nothing has read yet, oldest first. With `questID` (from
+    --- QUEST_ACCEPTED or QUEST_TURNED_IN) only that quest's pages of `events`, blind ones
+    --- included; without it, every page whose dialog has closed.
+    local function ReplayQuestSnapshots(source, questID, events)
+        local state = self.autoQuestState
+        PruneQuestSnapshots()
+        for _, snapshot in ipairs(questSnapshots) do
+            local wanted
+            if questID then
+                wanted = events[snapshot.event] and (snapshot.blind or snapshot.questID == questID)
+            else
+                wanted = not snapshot.blind
+            end
+            if wanted and not snapshot.dispatched then
+                snapshot.dispatched = true
+                if snapshot.blind then
+                    snapshot.questID = questID
+                    snapshot.title = C_QuestLog and C_QuestLog.GetTitleForQuestID
+                        and NotSecret(C_QuestLog.GetTitleForQuestID(questID)) or ""
+                end
+                local key = format("%s:%s:%s", snapshot.event, tostring(snapshot.questID), snapshot.title or "")
+                if key ~= state.lastHandledKey or GetTime() - state.lastHandledAt >= 5 then
+                    state.lastHandledKey = key
+                    state.lastHandledAt = GetTime()
+                    Debug:Record("auto-watcher-snapshot", format(
+                        "Reading %s quest %s from its event snapshot: %s",
+                        snapshot.event, tostring(snapshot.questID), source))
+                    questSnapshotInUse = snapshot
+                    self:InvokeQuestHandler(snapshot.event, "event snapshot", false)
+                    questSnapshotInUse = nil
+                end
+            end
+        end
+    end
+
     local function PollAutomaticQuest()
         local state = self.autoQuestState
         if self.dataModulesPending then
@@ -538,9 +615,9 @@ function Addon:OnInitialize()
             return
         end
         if not self:IsAutoplayOn() then
-            -- Nothing to poll for: InvokeQuestHandler would refuse every read. The snapshot is
+            -- Nothing to poll for: InvokeQuestHandler would refuse every read. The snapshots are
             -- dropped too, so turning autoplay back on does not replay a dialog long closed.
-            questSnapshot = nil
+            questSnapshots = {}
             ResetCandidate(state)
             -- Said once for each quest opened meanwhile, which is the question a player asks.
             local open = CurrentQuestID()
@@ -552,24 +629,9 @@ function Addon:OnInitialize()
         end
         local questID = CurrentQuestID()
         if questID == 0 then
-            -- The dialog is gone. If it closed with nothing dispatched for it, the event
-            -- snapshot is the whole record of the interaction, so read that before the
-            -- candidate state is cleared.
-            local snapshot = questSnapshot
-            questSnapshot = nil
-            if snapshot and not snapshot.dispatched then
-                local key = format("%s:%s:%s", snapshot.event, tostring(snapshot.questID), snapshot.title or "")
-                if key ~= state.lastHandledKey or GetTime() - state.lastHandledAt >= 5 then
-                    state.lastHandledKey = key
-                    state.lastHandledAt = GetTime()
-                    Debug:Record("auto-watcher-snapshot", format(
-                        "Reading %s quest %s from its event snapshot: the dialog closed before it could stabilize",
-                        snapshot.event, tostring(snapshot.questID)))
-                    questSnapshotInUse = snapshot
-                    self:InvokeQuestHandler(snapshot.event, "closed dialog event snapshot", false)
-                    questSnapshotInUse = nil
-                end
-            end
+            -- The dialog is gone. Pages it closed on with nothing dispatched for them are the
+            -- whole record of the interaction, so read them before the candidate state is cleared.
+            ReplayQuestSnapshots("the dialog closed before it could stabilize")
             ResetCandidate(state)
             return
         end
@@ -611,9 +673,7 @@ function Addon:OnInitialize()
                 state.completedKey = key
                 state.lastHandledKey = key
                 state.lastHandledAt = GetTime()
-                if questSnapshot then
-                    questSnapshot.dispatched = true
-                end
+                MarkQuestSnapshotRead(event, questID)
                 return
             end
         end
@@ -636,8 +696,10 @@ function Addon:OnInitialize()
                 state.completedKey = key
                 state.lastHandledKey = key
                 state.lastHandledAt = GetTime()
-                if questSnapshot then
-                    questSnapshot.dispatched = true
+                -- With no page to read, the stage is an earlier line's, and the snapshot is
+                -- still the only record of this one.
+                if visibleEvent then
+                    MarkQuestSnapshotRead(visibleEvent, questID)
                 end
             end
         end
@@ -682,13 +744,32 @@ function Addon:OnInitialize()
     -- trustworthy the moment it arrives.
     -- QUEST_FINISHED is here to clear the record, so that a quest ID the client keeps
     -- reporting after the dialog closed cannot be read as a fresh interaction.
+    -- QUEST_ACCEPTED and QUEST_TURNED_IN say the dialog closed on an accepted or handed-in quest,
+    -- not a declined one, on a client that keeps reporting the quest ID after the dialog closed,
+    -- and name the quest when the dialog was gone before its page could be recorded.
     self.questEventRecorderFrame = CreateFrame("Frame")
-    for _, event in ipairs({ "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_FINISHED" }) do
+    for _, event in ipairs({ "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_FINISHED",
+        "QUEST_ACCEPTED", "QUEST_TURNED_IN" }) do
         pcall(self.questEventRecorderFrame.RegisterEvent, self.questEventRecorderFrame, event)
     end
-    self.questEventRecorderFrame:SetScript("OnEvent", function(_, event)
+    self.questEventRecorderFrame:SetScript("OnEvent", function(_, event, a1, a2)
         if event == "QUEST_FINISHED" then
             lastQuestEvent = nil
+        elseif event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" then
+            if self.dataModulesPending then
+                return
+            end
+            -- Classic sends QUEST_ACCEPTED (questLogIndex, questID); mainline sends the questID alone.
+            local questID = event == "QUEST_ACCEPTED" and (NotSecret(a2) or NotSecret(a1)) or NotSecret(a1)
+            if type(questID) ~= "number" or questID == 0 then
+                return
+            end
+            local events = event == "QUEST_ACCEPTED" and { QUEST_DETAIL = true }
+                or { QUEST_PROGRESS = true, QUEST_COMPLETE = true }
+            local succeeded, replayError = pcall(ReplayQuestSnapshots, event, questID, events)
+            if not succeeded then
+                Debug:Record("auto-watcher-error", tostring(replayError))
+            end
         else
             lastQuestEvent = event
             -- Through pcall because a snapshot is a fallback, and a client that refuses one
@@ -955,7 +1036,7 @@ local function QueueRead(soundData, manual)
     if not manual and Addon.db.profile.Audio.ReadAfterClose and not questSnapshotInUse then
         pendingRead = soundData
         -- Held counts as handled for the watcher, or it would read the quest again once the window closes.
-        if questSnapshot then questSnapshot.dispatched = true end
+        MarkQuestSnapshotRead(EVENT_OF_SOUND[soundData.event], soundData.questID)
         local state = Addon.autoQuestState
         if state then
             state.completedKey, state.lastHandledKey, state.lastHandledAt = state.candidateKey, state.candidateKey, GetTime()

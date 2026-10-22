@@ -1753,11 +1753,17 @@ The second class is the opposite problem: an addon that answers the quest event 
 Plus calls `AcceptQuest` from its own `QUEST_DETAIL` handler, and the auto-turn-in addons do
 the same with `CompleteQuest` and `GetQuestReward`, so the dialog is over in the frame it
 opened in — `GetQuestID` is back to 0 before the watcher's first poll, and the interaction was
-never read at all. The quest globals are therefore snapshotted when the client fires the event,
-which is the last moment they still describe it, and the watcher replays that snapshot when the
-quest ID drops to 0 with nothing dispatched for the dialog. It is a fallback, not a second
-dispatcher: a dialog the player clicks through is dispatched by the watcher as before and its
-snapshot is discarded.
+never read at all. The quest globals are therefore snapshotted when the client fires each quest
+event, which is the last moment they still describe it, one record per page: an auto turn-in
+shows the progress and the reward page before the watcher can read either, and both are read,
+in order. The watcher replays the pages nothing read when the quest ID drops to 0. Two events
+replay them too: `QUEST_ACCEPTED` replays the quest's offer and `QUEST_TURNED_IN` its progress
+and reward pages. They cover a client that keeps reporting the quest ID after the dialog closed,
+and an addon whose handler ran before Spoken's and closed the dialog first: that page's record
+is blind, with no quest ID or title, and the event's quest ID fills them. A declined quest sends
+neither event, so a decline reads what it did before. Records live ten seconds. It is a fallback,
+not a second dispatcher: a page the player reads in the open dialog is dispatched by the watcher
+as before, and it and the pages before it are never replayed.
 
 `tests/lua/quest_overlay_test.lua` covers the other thing the quest UI owes a player: the play
 button beside each quest in the quest log. There are two quest logs to draw it in. The old one
