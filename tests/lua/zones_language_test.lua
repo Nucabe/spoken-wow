@@ -64,10 +64,15 @@ Expect("A. unrelated languages do not allocate caption tables", Z:ShouldLoadLang
 Expect("A. registering captions leaves the lore browser's language alone", Z:GetLore(MAP).full, "English zone lore.")
 Expect("A. zones carry their full text", Z:NewLoreSound(MAP, nil).present.transcript, "English zone lore.")
 Voice("deDE")
-Expect("A. captions match the chosen voice, even when reading another language",
-    Z:NewLoreSound(MAP, BOTH).present.transcript, "Deutsche Geschichte.")
-Expect("A. fallback captions match the English audio",
+Expect("A. captions are in the Text Language, not the voice's: English words under a German voice",
+    Z:NewLoreSound(MAP, BOTH).present.transcript, "English valley lore.")
+Expect("A. ...and under the English fallback",
     Z:NewLoreSound(MAP, ONLY_ENGLISH).present.transcript, "English village lore.")
+local valley = Z.CaptionLore.enUS.subzones[MAP][BOTH]
+Z.CaptionLore.enUS.subzones[MAP][BOTH] = nil
+Expect("A. a place the Text Language has no words for is captioned in the voice's",
+    Z:NewLoreSound(MAP, BOTH).present.transcript, "Deutsche Geschichte.")
+Z.CaptionLore.enUS.subzones[MAP][BOTH] = valley
 local _, _, pack = Z:GetAudioClip(MAP, BOTH)
 Expect("A. the active pack answers what it has", pack and pack.addon, "SpokenZonesAudio_deDE")
 _, _, pack = Z:GetAudioClip(MAP, ONLY_ENGLISH)

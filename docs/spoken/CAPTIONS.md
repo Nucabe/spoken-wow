@@ -74,7 +74,9 @@ pointing at "+N" lists them (see [`PLAYER-STYLES.md`](PLAYER-STYLES.md)).
 Caption settings and tooltips follow the game client language. Translations cover
 German, Spanish (EU and Latin America), French, Brazilian Portuguese, Russian,
 Korean, Simplified Chinese and Traditional Chinese. English is the fallback.
-The caption text itself follows the recording language.
+A place's caption text is in the Text Language chosen on the Places page, whatever the voice,
+and in the voice's language only where that Text Language has no words for the place. Other
+caption text follows the recording language.
 
 ## Timing and text
 
