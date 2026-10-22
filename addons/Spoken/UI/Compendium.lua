@@ -1652,13 +1652,16 @@ local SPELLBOOK_PAGE = { file = ZONES_ART .. "spellbook-Page-Right-C60", coords 
 --- `look`, where given, changes the page's art from the spellbook's for the Compendium:
 --- { art = { file, coords } the parchment; top, right, the heading's room from the page's top and
 --- its right edge; titleSize; oneLine, a title cut short at one line rather than two; backplate = { full,
---- height } }. Spoken Places' page beside the map is the quest log's details page this way.
+--- height }; noFace, no round picture by the title }. Spoken Places' page beside the map is the quest
+--- log's details page this way.
 function C.NewPage(parent, addon, play, report, look)
 	look = look or {}
 	local top, right = look.top or TOP, look.right or RIGHT
 	local titleSize = look.titleSize or 26
 	local self = setmetatable({ playing = play, reporting = report, top = top, right = right,
 		titleSize = titleSize, extra = {}, shift = 0 }, Page)
+	-- False is a face never made.
+	if look.noFace then self.headFace = false end
 	local frame = CreateFrame("Frame", nil, parent)
 	frame:SetAllPoints()
 	self.frame = frame
@@ -1993,7 +1996,7 @@ end
 
 --- entry = { title, subtitle, onSubtitle, text, target = what Play and Report act on, or nil for
 --- none, icon = the round portrait left of the title (a Spoken:CreateSpeakerFace speaker table), the
---- Compendium's tome without it, picture = { file, mask } above the words, parts = { { heading, text, buttons } } in place
+--- Compendium's tome without it, and none on a page made with `noFace`, picture = { file, mask } above the words, parts = { { heading, text, buttons } } in place
 --- of `text`: words in parts, each under its heading with its own buttons (TextView:SetParts) }. With no text, parts, target or unwritten the page is a group's or a place's: no
 --- Play, and its mark in the middle where it has no picture.
 --- onSubtitle(), where given, is what a click on the line under the title does (the map panel's

@@ -82,8 +82,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   *([rusty-key](https://github.com/rusty-key))*
 - **Every Compendium page has a round picture beside its title, and the lists are plain lines.** A place shows its
   picture with the world, a quest a scroll with the exclamation or question mark, a readable its kind with the
-  training book. Zones and dungeons in the lists are lines with their count, as the groups are. A title
-  is always one line. *([Nucabe](https://github.com/Nucabe))*
+  training book. The story beside the map has none: its Open button already shows the Compendium's
+  tome. Zones and dungeons in the lists are lines with their count, as the groups are. A title is always
+  one line. *([Nucabe](https://github.com/Nucabe))*
 - **A readable's page is its text only.** The where-to-find-it lines are gone. *([Nucabe](https://github.com/Nucabe))*
 - **A page with nothing to read shows your faction's wax seal in its middle.** Where the client has no seal
   it shows a faint lattice. It replaces the line telling you to choose something on the left, on the
