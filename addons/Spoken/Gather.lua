@@ -94,8 +94,12 @@ end
 
 --- Put `envelope` under `newKey` in place of the line kept under `key`, where it stands. Where
 --- another line already holds `newKey`, that one stays and this one goes: the two are one line.
+--- Without an envelope nothing changes: a kept line is never written over with nothing.
 ---@return boolean replaced
 function Gather:Rekey(key, newKey, envelope)
+    if type(envelope) ~= "string" or envelope == "" then
+        return false
+    end
     local lines = Store().Lines
     for i = 1, #lines do
         if lines[i].key == newKey and newKey ~= key then
