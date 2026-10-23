@@ -44,7 +44,7 @@ const PARTS: Part[] = [
   {
     id: "places",
     title: "Places",
-    href: "/zones",
+    href: "/places",
     icon: "/landing/icons/game-places.png",
     summary: "A narrator tells the lore of each zone and area as you enter it.",
     facts: [
@@ -56,7 +56,7 @@ const PARTS: Part[] = [
   {
     id: "readables",
     title: "Readables",
-    href: "/books",
+    href: "/readables",
     icon: "/landing/icons/game-readables.png",
     summary: "Books, letters, notes and plaques you open in the world are read aloud.",
     facts: ["Has its own on/off switch in Spoken's settings", "Stop and Replay work on every line", "Book pages with no voice yet can be contributed"],

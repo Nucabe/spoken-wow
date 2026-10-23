@@ -58,8 +58,8 @@ const github = (release: string) => `${RELEASES}?q=${encodeURIComponent(release)
 
 const SECTIONS: { section: Section; name: string; note: string }[] = [
   { section: "quests", name: "Quests and Gossip", note: "Quest dialogue and what NPCs say" },
-  { section: "zones", name: "Zones", note: "Lore of each zone" },
-  { section: "books", name: "Writings", note: "Books, letters and notes" },
+  { section: "places", name: "Places", note: "Lore of each zone" },
+  { section: "readables", name: "Readables", note: "Books, letters and notes" },
 ];
 
 function installRows(lang: Lang): InstallRow[] {
