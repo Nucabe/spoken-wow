@@ -49,8 +49,7 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local NAME_COLOR = { 1, .82, .02 }
 local WORDS_COLOR = { 1, 1, 1 }
 local TAIL_COLOR = { .6, .6, .6 }
--- The line's name after the speaker's, in the Small Window's colour for it.
-local LABEL_COLOR = { .88, .84, .76 }
+local LABEL_COLOR = Actions.TITLE_COLOR
 local LABEL_GAP = 6
 local LABEL_LEAST = "• ..."
 

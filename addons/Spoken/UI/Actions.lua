@@ -386,6 +386,9 @@ end
 -- The Small Window and the DialogueUI window name a line, count what waits and take the pointer
 -- alike.
 
+--- A line's title on a dark window.
+Actions.TITLE_COLOR = { .88, .84, .76 }
+
 --- A line's own label; nil where it has none, an empty one included.
 local function OwnLabel(present)
     local label = present and present.label
