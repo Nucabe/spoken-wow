@@ -11,10 +11,12 @@ local print = stub.print
 local SPOKEN = here .. "/../../addons/Spoken/"
 local QUESTS = here .. "/../../addons/Spoken_Quests/"
 local Expect, Failures = H.Expecter(print)
+local Copy = stub.DeepCopy
 
 _G.UnitFactionGroup = _G.UnitFactionGroup or function() return "Alliance", "Alliance" end
 _G.GetCurrentRegion = _G.GetCurrentRegion or function() return 3 end
 _G.GetCurrentRegionName = _G.GetCurrentRegionName or function() return "EU" end
+_G.UNKNOWNOBJECT = "Unknown"
 
 -- The real libraries over the stub's: LibStub hands back the stub's table, emptied here so the file
 -- fills it as a first load would. AceDB reads the character's name as its file loads, so each login
@@ -28,13 +30,7 @@ local function RealLibraries(name)
     end
 end
 
-local function Copy(value)
-    if type(value) ~= "table" then return value end
-    local out = {}
-    for key, inner in pairs(value) do out[key] = Copy(inner) end
-    return out
-end
-
+-- Equal all the way down.
 local function Same(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then return a == b end
     for key, value in pairs(a) do if not Same(value, rawget(b, key)) then return false end end
@@ -87,6 +83,11 @@ local function Play(name)
     return spoken, quests, fontSize, autoplay
 end
 
+local function Voice(profile)
+    local language = SpokenSettings.profiles[profile] and SpokenSettings.profiles[profile].Language
+    return language and language.Voice
+end
+
 ---------------------------------------------------------------- a profile chosen for new characters
 Seed("Shared")
 local spokenBefore, questsBefore = Copy(SpokenSettings), Copy(SpokenQuestsSettings)
@@ -112,7 +113,8 @@ Expect("...with that profile's settings", fontSize, 12)
 Expect("...and stays on it", SpokenSettings.profileKeys["Carol - Realm"], "Shared")
 Expect("no profile is made for the new character", SpokenSettings.profiles["Carol - Realm"], nil)
 Expect("...in the quests module either", SpokenQuestsSettings.profiles["Carol - Realm"], nil)
-Expect("the shared profile is as it was", Same(SpokenSettings.profiles.Shared, spokenBefore.profiles.Shared), true)
+Expect("the shared profile is as it was, the quests page's language not copied into it",
+    Same(SpokenSettings.profiles.Shared, spokenBefore.profiles.Shared), true)
 Expect("...and its quests settings", Same(SpokenQuestsSettings.profiles.Shared, questsBefore.profiles.Shared), true)
 Expect("Alice's profile is as it was", Same(SpokenSettings.profiles["Alice - Realm"], spokenBefore.profiles["Alice - Realm"]), true)
 
@@ -134,20 +136,102 @@ Expect("a chosen profile that no longer exists gives a new character a profile o
 Expect("...in the quests module too", quests, "Erin - Realm")
 Expect("...and is not made again", SpokenSettings.profiles.Gone, nil)
 
+---------------------------------------------------------------- a character's profile deleted
+-- Bob is on Raid, with nothing of his own saved, and Alice deletes Raid. AceDB clears the profile
+-- of every character on it, which would make Bob look new.
+Seed("Shared")
+SpokenSettings.profileKeys["Bob - Realm"], SpokenQuestsSettings.profileKeys["Bob - Realm"] = "Raid", "Raid"
+SpokenSettings.profiles.Raid, SpokenQuestsSettings.profiles.Raid = Profile(14), { Audio = { Autoplay = false } }
+SpokenSettings.char["Bob - Realm"] = nil
+spokenBefore = Copy(SpokenSettings)
+Play("Alice")
+env.Options:DeleteProfile("Raid")
+Expect("deleting a profile puts its characters back on their own", SpokenSettings.profileKeys["Bob - Realm"], "Bob - Realm")
+spoken, quests, fontSize = Play("Bob")
+Expect("...so a character whose profile was deleted gets its own, not the one for new characters", spoken, "Bob - Realm")
+Expect("...in the quests module too", quests, "Bob - Realm")
+Expect("...starting from the defaults", fontSize, 16)
+Expect("...and Shared is as it was", Same(SpokenSettings.profiles.Shared, spokenBefore.profiles.Shared), true)
+
+-- A deletion before this version cleared the key and left it cleared: settings of its own saved
+-- show the character has been here.
+Seed("Shared")
+SpokenSettings.profileKeys["Bob - Realm"] = nil
+spoken = Play("Bob")
+Expect("a character with no profile but saved settings of its own gets its own profile", spoken, "Bob - Realm")
+Expect("...and keeps it", SpokenSettings.profileKeys["Bob - Realm"], "Bob - Realm")
+
+---------------------------------------------------------------- "Unknown" logins
+-- The Forever client answers "Unknown" for the player's name on some logins, so AceDB keys any
+-- character that logs in then as "Unknown - Realm".
+Seed("Shared")
+spoken, quests = Play("Unknown")
+Expect("a login AceDB keys as Unknown is not taken for a new character", spoken, "Unknown - Realm")
+Expect("...in the quests module either", quests, "Unknown - Realm")
+Expect("...and is not tied to the profile for new characters", SpokenSettings.profileKeys["Unknown - Realm"], "Unknown - Realm")
+
+---------------------------------------------------------------- the voice language from the quests page
+-- Bob has played on Shared, but not with the quests module on, so it has no profile for him and
+-- he has not had the voice language copied yet. Others on Shared in the quests module left deDE.
+Seed("Shared")
+SpokenQuestsSettings.profileKeys["Bob - Realm"] = nil
+SpokenSettings.char["Bob - Realm"] = nil
+SpokenSettings.profileKeys["Frank - Realm"] = "Shared"
+spoken, quests = Play("Bob")
+Expect("a character the quests module has not seen keeps Spoken's profile", spoken, "Shared")
+Expect("...and gets a profile of its own there, not the one Spoken is on", quests, "Bob - Realm")
+Expect("...and no voice language is copied into the profile others are on", Voice("Shared"), nil)
+Expect("...and the copy is done with", SpokenSettings.char["Bob - Realm"].voiceLanguageFromQuests, true)
+
+-- Shared by name in both addons, as the page keeps them, but another character is on it.
+Seed(nil)
+SpokenSettings.char["Bob - Realm"] = nil
+SpokenSettings.profileKeys["Frank - Realm"] = "Shared"
+Play("Bob")
+Expect("a character on a profile others are on does not copy the quests page's language into it", Voice("Shared"), nil)
+
+-- Alone on its own profile, the copy is made as before.
+Seed(nil)
+SpokenSettings.char["Alice - Realm"] = nil
+SpokenQuestsSettings.profiles["Alice - Realm"].Audio.VoiceLanguage = "frFR"
+Play("Alice")
+Expect("a character alone on its profile takes the voice language from the quests page", Voice("Alice - Realm"), "frFR")
+
 ---------------------------------------------------------------- the choice on Spoken's page
 Seed(nil)
 Play("Alice")
-local Options = env.Options
+local Options, L = env.Options, env.L
 Expect("with none chosen, the page shows a profile of their own", Options:NewCharacterProfile(), false)
 Options:SetNewCharacterProfile("Shared")
 Expect("choosing a profile keeps it for every character", SpokenSettings.global.NewCharacterProfile, "Shared")
 Expect("...and the page shows it", Options:NewCharacterProfile(), "Shared")
 Expect("...and the character choosing stays on its own", env.Addon.db:GetCurrentProfile(), "Alice - Realm")
 Options:DeleteProfile("Shared")
-Expect("deleting the chosen profile goes back to a profile of their own", SpokenSettings.global.NewCharacterProfile, nil)
+Expect("deleting the chosen profile shows a profile of their own", Options:NewCharacterProfile(), false)
+spoken = Play("Gina")
+Expect("...and gives the next new character one", spoken, "Gina - Realm")
+Options = env.Options
 Options:SetNewCharacterProfile("Alice - Realm")
 Options:SetNewCharacterProfile(false)
 Expect("choosing a profile of their own clears the choice", SpokenSettings.global.NewCharacterProfile, nil)
+
+-- The dropdown: a profile of their own, then Spoken's saved profiles.
+Seed(nil)
+SpokenSettings.profiles[L.OPT_PROFILE_OWN] = Profile(12)
+SpokenQuestsSettings.profiles.QuestsOnly = { Audio = {} }
+Play("Alice")
+local menu
+for _, entry in ipairs(_G.SpokenOptionsPanel.layout.entries) do
+    if entry.label == env.L.OPT_NEW_CHARACTER_PROFILE then menu = entry.frame end
+end
+local entries, offered, checked = menu and stub.OpenDropdown(menu) or {}, {}, 0
+for _, entry in ipairs(entries) do
+    table.insert(offered, entry.text)
+    if entry.checked then checked = checked + 1 end
+end
+Expect("the dropdown offers a profile of their own and Spoken's saved profiles", table.concat(offered, ", "),
+    table.concat({ env.L.OPT_PROFILE_OWN, "Alice - Realm", "Shared", env.L.OPT_PROFILE_OWN }, ", "))
+
 
 stub.world.playerName = nil
 if Failures() > 0 then print(Failures() .. " failure(s)"); os.exit(1) end

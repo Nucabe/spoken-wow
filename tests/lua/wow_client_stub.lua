@@ -1104,6 +1104,7 @@ local function DeepCopy(value)
     for key, item in pairs(value) do copy[key] = DeepCopy(item) end
     return copy
 end
+M.DeepCopy = DeepCopy
 
 -- Enough of AceDB for migrations to be testable: an existing saved table named `name`
 -- is read the way AceDB reads it -- profiles.Default over the defaults, the first char

@@ -403,9 +403,9 @@ local currentQuestSoundData
 local currentGossipSoundData
 
 function Addon:OnInitialize()
-    -- A character these settings have not seen starts on the profile Spoken's are on, so the two
-    -- stay one profile when Spoken puts a new character on the one chosen for new characters.
-    local profile = Spoken and Spoken.CurrentProfile and Spoken:CurrentProfile()
+    -- A character Spoken put on the profile chosen for new characters starts on it here too, so the
+    -- two stay one profile. AceDB uses it only where these settings have not seen the character.
+    local profile = Spoken and Spoken.NewCharacterStartProfile and Spoken:NewCharacterStartProfile()
     self.db = LibStub("AceDB-3.0"):New("SpokenQuestsSettings", defaults, profile)
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
     self.db.RegisterCallback(self, "OnProfileReset", "RefreshConfig")

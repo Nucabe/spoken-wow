@@ -938,12 +938,12 @@ local function Has(db, name)
     return false
 end
 
---- Every profile any of them has, sorted, each once.
-function Options:ProfileNames()
+--- Every profile any of them has, sorted, each once; only those `keep` accepts, where given.
+function Options:ProfileNames(keep)
     local seen, names = {}, {}
     for _, db in ipairs(self:ProfileDBs()) do
         for _, name in ipairs(db:GetProfiles()) do
-            if not seen[name] then
+            if not seen[name] and (not keep or keep(name)) then
                 seen[name] = true
                 table.insert(names, name)
             end
@@ -970,21 +970,28 @@ function Options:CopyProfile(name)
     end
 end
 
+--- Delete `name` where it is not in use. AceDB clears the profile of each character that was on
+--- it; each is put back on its own profile here, where AceDB would put it at its next login, so
+--- it is not taken for a new character and put on the one chosen for new characters.
 function Options:DeleteProfile(name)
     for _, db in ipairs(self:ProfileDBs()) do
-        if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then db:DeleteProfile(name) end
-    end
-    -- Left set, the next new character would get a fresh profile under the deleted one's name.
-    if Addon.db and Addon.db.global.NewCharacterProfile == name and not Has(Addon.db, name) then
-        Addon.db.global.NewCharacterProfile = nil
+        if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then
+            local keys, moved = db.sv and db.sv.profileKeys, {}
+            for key, profile in pairs(keys or {}) do
+                if profile == name then table.insert(moved, key) end
+            end
+            db:DeleteProfile(name)
+            for _, key in ipairs(moved) do
+                if keys[key] == nil then keys[key] = key end
+            end
+        end
     end
 end
 
 --- The profile a character logging in with Spoken for the first time starts on: one of Spoken's
---- profiles, or false for a profile of its own. Account-wide, and read before the profiles load.
+--- saved profiles, or false for a profile of its own.
 function Options:NewCharacterProfile()
-    local name = Addon.db and Addon.db.global.NewCharacterProfile
-    return type(name) == "string" and Has(Addon.db, name) and name or false
+    return Addon:NewCharacterProfile() or false
 end
 
 function Options:SetNewCharacterProfile(name)
@@ -1035,9 +1042,9 @@ function Options:AddProfiles(layout)
     end
     if Addon.db then
         layout:Dropdown(L.OPT_NEW_CHARACTER_PROFILE, L.OPT_NEW_CHARACTER_PROFILE_TIP,
+            -- Only Spoken's saved profiles: it reads the choice before any other settings load.
             function()
-                local names = Addon.db:GetProfiles()
-                table.sort(names)
+                local names = self:ProfileNames(function(name) return Addon:SavedProfile(name) end)
                 table.insert(names, 1, false)
                 return names
             end,
