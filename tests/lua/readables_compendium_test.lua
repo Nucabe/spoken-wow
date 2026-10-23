@@ -544,6 +544,28 @@ do
     stub.world.playerName, stub.world.playerClass, stub.world.unitSex = nil, nil, 2
     B:ShowReadables(KURDRAN)
 end
+-- On a client in another language, a page is in that language where Spoken has its words: a pack in
+-- the client's language, or the page as the client showed it.
+do
+    local first = SpokenReadablesData.books[KURDRAN].pages[1]
+    local packs, locale, kept, titles = _G.SpokenReadablesAudioPacks, _G.GetLocale, B.pageText, B.bookTitle
+    _G.GetLocale = function() return "esES" end
+    _G.SpokenReadablesAudioPacks = { SpokenReadablesAudio_esES = { version = 1, language = "esES",
+        pages = { [first] = { file = tostring(first), len = 2, text = "Palabras de Kurdran." } },
+        index = { ["Saludo de Kurdran"] = { [1] = { x = first } } } } }
+    B:ShowReadables(KURDRAN)
+    Expect("...on a Spanish client, a page a Spanish pack has words for is in Spanish",
+        page.body.text.text:sub(1, 20), "Palabras de Kurdran.")
+    Expect("...under the title the pack's index gives it", page.title.text, "Saludo de Kurdran")
+    _G.SpokenReadablesAudioPacks = {}
+    B:RememberPageText(first, "esES", "Palabras vistas.", "Kurdran visto")
+    B:ShowReadables(KURDRAN)
+    Expect("...and a page the client showed is in the words it showed", page.body.text.text:sub(1, 16),
+        "Palabras vistas.")
+    Expect("...under the title it showed", page.title.text, "Kurdran visto")
+    _G.SpokenReadablesAudioPacks, _G.GetLocale, B.pageText, B.bookTitle = packs, locale, kept, titles
+    B:ShowReadables(KURDRAN)
+end
 -- Opened on a writing from elsewhere (Open in Azeroth's Compendium): chosen, with what holds it
 -- opened, though the zone and its kind were closed.
 Click("Stormwind City")

@@ -98,6 +98,31 @@ for i = 2, #(timings or {}) do rising = rising and timings[i] > timings[i - 1] e
 Expect("...each word after the last, all within the recording", rising and timings[#timings] < letter.length, true)
 Expect("a first page opening with its own title starts its words at once", clip.present.timings, nil)
 Expect("...and a later page, read without its title, too", B:ClipFor(262).present.timings, nil)
+-- On a German client, an English voice reads its own words and the captions are the client's: the
+-- title's share of the recording says nothing about words of another length.
+stub.SetLocale("deDE")
+_G.SpokenReadablesSettings.voiceLanguage = "enUS"
+B:RememberPageText(15, "deDE", "Ein Brief an William, der eine ganze Weile dauert.", "Williams Lieferung")
+local german = B:ClipFor(15)
+Expect("...a German client's captions of the English recording read the German page",
+    german.present.transcript, "Ein Brief an William, der eine ganze Weile dauert.")
+Expect("...are not timed by the English title lead", german.present.timings, nil)
+-- A German recording, captioned with the page as this client showed it: the client filled in the
+-- player's name, so the words are not quite the ones recorded, and are not timed.
+_G.SpokenReadablesSettings.voiceLanguage = "deDE"
+_G.SpokenReadablesAudioPacks.SpokenReadablesAudio_deDE = { version = 1, addon = "SpokenReadablesAudio_deDE",
+    language = "deDE", pages = { [15] = { file = "15", len = letter.length } } }
+local shown = B:ClipFor(15)
+Expect("...a German recording with no words of its own reads the page the client showed",
+    shown.language .. " " .. shown.present.transcript, "deDE Ein Brief an William, der eine ganze Weile dauert.")
+Expect("...untimed, those words not being the recording's", shown.present.timings, nil)
+_G.SpokenReadablesAudioPacks.SpokenReadablesAudio_deDE.pages[15].text = "Ein Brief an William, aufgenommen."
+Expect("...and its own words, once its pack has them, timed after the title",
+    B:ClipFor(15).present.timings ~= nil, true)
+_G.SpokenReadablesAudioPacks.SpokenReadablesAudio_deDE = nil
+_G.SpokenReadablesSettings.voiceLanguage = nil
+B.pageText, B.bookTitle = nil, nil
+stub.SetLocale("enUS")
 Expect("a one-page letter is named by its title, under what it is", letter.present.label .. " " .. tostring(letter.present.header ~= letter.present.label),
     "William's Shipment true")
 

@@ -4,6 +4,16 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Captions are in the language you read, not the voice's.** A place's story is captioned in the
+  Places page's Text Language, so French text with an English voice shows French words. Books and
+  letters follow your client's language the same way, whichever voice or fallback recording plays:
+  on a client in another language than English they are captioned and shown in Azeroth's Compendium
+  in that language where its Readables pack has the words, or, with an older pack that has none,
+  once you open the page, under the title the pack's index gives. On an English client they are in
+  English, so a German voice no longer reads along in its own words where English has them. An
+  Italian or Vietnamese voice, which no client runs in, still reads along in its own words where its
+  pack has them. A book can show some pages in your language and the rest in English.
+  *([Nucabe](https://github.com/Nucabe))*
 - **Choose the profile new characters start on.** Profile for New Characters, under Profiles on
   Spoken's page, puts each character you make from then on straight onto that profile, quests
   settings included. Characters you already have stay on the profile they use, with every setting

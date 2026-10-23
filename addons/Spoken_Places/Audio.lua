@@ -492,11 +492,20 @@ function SpokenPlaces:NewLoreSound(mapID, areaKey)
 	-- The place's picture and its frayed edge, for a window that shows one over the words.
 	local picture, mask
 	if self.Picture then picture, mask = self:Picture(mapID, areaKey) end
-	local language = pack.language or "enUS"
-	local data = self.CaptionLore and self.CaptionLore[language]
-	local entries = data and (areaKey and data.subzones or data.zones)
-	local entry = entries and entries[mapID]
-	if areaKey then entry = entry and entry[areaKey] end
+	-- The words are in the Text Language the player picked, whatever the voice: French words under
+	-- an English voice. The pack's own language only where the Text Language has no such entry.
+	local language, entry
+	for _, code in ipairs({ self:GetLanguage(), pack.language or "enUS" }) do
+		local data = self.CaptionLore and self.CaptionLore[code]
+		local entries = data and (areaKey and data.subzones or data.zones)
+		local found = entries and entries[mapID]
+		if areaKey then found = found and found[areaKey] end
+		if found and found.full then
+			language, entry = code, found
+			break
+		end
+	end
+	language = language or pack.language or "enUS"
 	-- Captions set a font file, which has none of the font object's fallbacks: lore in a script
 	-- the client's file cannot draw names the file that can. Otherwise the window's own is kept.
 	local font = self.FontFor and self:FontFor(GameFontNormal, language)

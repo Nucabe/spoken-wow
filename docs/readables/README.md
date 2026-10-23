@@ -296,7 +296,14 @@ every book, letter, note, scroll, tablet, plaque, gravestone, exhibit and pictur
 reads, found or not, with the words of each on the right, on the spellbook's parchment, to read
 and to listen to wherever you are. Which readables exist and where they are comes from
 `Data/Places.lua` (`pipelines/readables/tools/places.mjs`); what this character has found, from
-`SpokenReadablesCharacter` (`Core.lua`); the words, from `Data/Books.lua`. `make readables-places` reads
+`SpokenReadablesCharacter` (`Core.lua`); the words, from `Data/Books.lua`. On a client in another
+language, a page is in that language where a pack in it has the page's words, or where the client
+showed the page this session (`SpokenReadables:ClientPageText`), and in English otherwise. That is
+decided page by page, so one readable can be in two languages. Its title follows the same way
+(`SpokenReadables:TitleIn`). A caption is in the same words whatever the voice, English on an
+English client, and in the recording's language only where the client's has none
+(`SpokenReadables:CaptionText`). An Italian or Vietnamese voice, which no client runs in, is
+captioned in its own words first. `make readables-places` reads
 the repack's world DB (`PLACES_MYSQL_*`) and its map files (`PLACES_MAPS`, the repack's `data/maps`
 folder; it stops without them). A quest places a readable only when the quests corpus or the
 client's QuestV2 has it: the repack also carries Cataclysm's quest rows.
