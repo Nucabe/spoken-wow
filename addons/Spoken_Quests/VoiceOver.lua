@@ -629,7 +629,6 @@ function Addon:OnInitialize()
                 if not questID and newest[snapshot.event] ~= i then
                     snapshot.passed = true
                 else
-                    snapshot.dispatched = true
                     local stale = false
                     if not questID and snapshot.event == "QUEST_DETAIL" then
                         for j = 1, i - 1 do
@@ -637,6 +636,12 @@ function Addon:OnInitialize()
                                 stale = true
                             end
                         end
+                    end
+                    -- A stale offer is passed over, not spent: its own QUEST_ACCEPTED still reads it.
+                    if stale then
+                        snapshot.passed = true
+                    else
+                        snapshot.dispatched = true
                     end
                     local key = PageKey(snapshot.event, snapshot.questID, snapshot.title)
                     if not stale and not HandledRecently(state, key) then
