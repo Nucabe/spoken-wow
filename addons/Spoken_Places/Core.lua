@@ -49,7 +49,8 @@ local defaults = {
 	autoplaySubzones = true,
 	-- On, because the game announces a discovery once per character: off, a character who
 	-- explored before installing hears nothing there, and Forget Places Heard reads nothing again.
-	-- On a new character it changes nothing; see Autoplay.lua.
+	-- A new character hears its zone right after its valley at login, and a place it has heard,
+	-- from the Play button too, is not read again when the game announces its discovery.
 	autoplayExplored = true,
 	-- Off, so a player cannot end up reading an unfinished translation without
 	-- having asked for one (Spoken > Developer). See Language.lua.
