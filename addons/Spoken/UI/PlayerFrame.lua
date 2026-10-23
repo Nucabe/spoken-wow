@@ -533,6 +533,9 @@ function PlayerFrame:Describe()
     Say(format("container shown=%s w=%.0f h=%.0f header=%q count=%q", tostring(container:IsShown()),
         container:GetWidth() or 0, container:GetHeight() or 0, container.name:GetText() or "",
         self.count:GetText() or ""))
+    local label = container.label
+    Say(format("label=%q shown=%s alpha=%.2f w=%.0f of %.0f", label:GetText() or "", tostring(label:IsShown()),
+        label:GetAlpha() or 0, label:GetWidth() or 0, self.labelWidth or 0))
     Say(format("portrait kind=%s", tostring(self.frame.portrait.active)))
     for _, button in ipairs(self.row or {}) do
         Say(format("  control %s shown=%s", button.action and button.action.id or (button == self.play

@@ -899,6 +899,8 @@ quests:Enqueue(H.Clip({ present = { header = "Gornek", label = "Cutting Teeth", 
 env.PlayerFrame:Update()
 local report = table.concat(env.PlayerFrame:Describe(), "\n")
 Expect("it reports the header it drew", string.find(report, 'header="Gornek"', 1, true) ~= nil, true)
+Expect("...the line's name after it, and whether it is drawn",
+    string.find(report, 'label="• Cutting Teeth" shown=true alpha=1.00', 1, true) ~= nil, true)
 Expect("...which portrait renderer is in use", string.find(report, "portrait kind=none", 1, true) ~= nil, true)
 Expect("...and how much is queued", string.find(report, "queue=1", 1, true) ~= nil, true)
 
