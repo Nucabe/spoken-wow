@@ -342,7 +342,7 @@ else the continent's banner.
 **The page.** A readable's page has its name, the places it is in under it (its first two zones, and
 how many more; a click goes up to its kind in its place, then the zone and the continent), and
 then its words, all its pages one after another. A zone's, city's, continent's
-or dungeon's page has its count and Places' picture of the place above it; the other lines (a kind,
+or dungeon's page has its count and the faction's seal; the other lines (a kind,
 a banner) show their count alone. Play starts the readable from its first page with a recording and becomes Stop and then
 Replay while it is read, as every Play of the Compendium's; browsing here does not count as hearing
 it in the world (Read Only Once), nor as finding it. Report is there on every page, voiced or

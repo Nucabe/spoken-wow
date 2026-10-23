@@ -419,8 +419,7 @@ local function ShowEntry()
 	if selection.dungeon then
 		page:Show({ title = DungeonName(selection.dungeon),
 			subtitle = CountLine(MapName(selection.mapID), TallyOf(selection.dungeon)),
-			icon = C.PlaceIcon(nil, selection.dungeon),
-			picture = C.PlacePicture({ mapID = selection.mapID, dungeon = selection.dungeon }) })
+			icon = C.PlaceIcon(nil, selection.dungeon) })
 		return
 	end
 	if selection.lands then
@@ -434,7 +433,7 @@ local function ShowEntry()
 	end
 	page:Show({ title = MapName(selection.mapID),
 		subtitle = CountLine(MapName(ContinentOf(selection.mapID) or C.WORLD), Tally({ selection.mapID })),
-		icon = C.PlaceIcon(selection.mapID), picture = C.PlacePicture({ mapID = selection.mapID }) })
+		icon = C.PlaceIcon(selection.mapID) })
 end
 
 --------------------------------------------------------------------------------

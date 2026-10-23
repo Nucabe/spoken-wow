@@ -678,8 +678,6 @@ do
     page.title.IsTruncated = nil
     page:Show({ title = "Nothing Written", empty = true })
     Expect("an empty page shows its mark", page.mark:IsShown(), true)
-    page:Show({ title = "Nothing Written", empty = true, picture = { file = "Interface\\Elwynn" } })
-    Expect("...but not under a place's picture", page.mark:IsShown(), false)
     ClickChain("Lost Necklace")
     ClickChain("Lost Necklace")
 end
@@ -1217,12 +1215,8 @@ Expect("...a dungeon's page in the zone of its entrance, counting its quests", p
 do
     list = Shown()
     Click("Searing Gorge")
-    -- Places' picture of the place above its page, where Places has one.
-    Expect("a place's page has no picture while Places has none", page.body.picture:IsShown(), false)
-    _G.Spoken.PlacePicture = function(_, mapID, key) return "pic" .. mapID .. (key or ""), "mask" end
-    Tab:Refresh()
-    Expect("...and Places' picture of the place when it has", page.body.picture:IsShown() and page.body.picture:GetTexture(), "pic1427")
-    _G.Spoken.PlacePicture = nil
+    -- Nothing to read there: the faction's seal, and no picture, as on the other tabs.
+    Expect("a place's page has the seal and no picture", page.mark:IsShown() and not page.body.picture:IsShown(), true)
     list = Shown()
     Click("Searing Gorge")
     list = Shown()

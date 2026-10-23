@@ -1406,8 +1406,7 @@ local function ShowEntry()
     if selection.dungeon then
         -- In the zone of its entrance, whose line holds it.
         local zone = tonumber(selection.dungeon:match("^d(%d+)"))
-        local place = zone and selection.map and { mapID = zone, dungeon = selection.map } or nil
-        page:Show({ title = selection.label, subtitle = Line(SetOf(selection.ids), zone and C.MapName(zone), true), icon = C.PlaceIcon(zone, selection.map), picture = place and C.PlacePicture(place) or nil })
+        page:Show({ title = selection.label, subtitle = Line(SetOf(selection.ids), zone and C.MapName(zone), true), icon = C.PlaceIcon(zone, selection.map) })
         return
     end
     local banner = selection.section and ZONE_BANNERS[selection.section]
@@ -1446,7 +1445,7 @@ local function ShowEntry()
     else
         QuestsIn(selection.mapID, set)
     end
-    page:Show({ title = C.MapName(selection.mapID), subtitle = Line(set, ZoneHolderName(up), true), icon = C.PlaceIcon(selection.mapID), picture = C.PlacePicture({ mapID = selection.mapID }) })
+    page:Show({ title = C.MapName(selection.mapID), subtitle = Line(set, ZoneHolderName(up), true), icon = C.PlaceIcon(selection.mapID) })
 end
 
 --------------------------------------------------------------------------------

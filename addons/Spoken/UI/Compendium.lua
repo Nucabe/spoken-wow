@@ -1486,23 +1486,6 @@ function C.PlayerContinent(listed)
 	return listed[1]
 end
 
---- The picture of a place's story (Spoken Places'), for Page:Show's `picture` on another tab's page of
---- the place: { file, mask }, or nil where Places is not there, has none or has pictures off.
---- `place` is { mapID = a zone, a city or a continent } or { mapID = the zone of a dungeon's entrance,
---- dungeon = its instance map }.
-function C.PlacePicture(place)
-	local spoken = _G.Spoken
-	if not (spoken and spoken.PlacePicture) then return nil end
-	local mapID, key = place.mapID, nil
-	if place.dungeon then
-		local dungeon = C.Dungeon(place.dungeon)
-		if not (dungeon and dungeon.story) then return nil end
-		mapID, key = dungeon.story[1], dungeon.story[2]
-	end
-	local file, mask = spoken:PlacePicture(mapID, key)
-	return file and { file = file, mask = mask } or nil
-end
-
 --- The page's side of a tab: an inset beside `list` down the rest of `panel`, as the game's split
 --- windows frame each pane (the professions window), so list and page are parted by their borders.
 --- Returns the frame the page fills; `panel.pageInset` is folded away with the window.
@@ -1999,7 +1982,7 @@ end
 --- none, icon = the round portrait left of the title (a Spoken:CreateSpeakerFace speaker table), the
 --- Compendium's tome without it, and none on a page made with `noFace`, picture = { file, mask } above the words, parts = { { heading, text, buttons } } in place
 --- of `text`: words in parts, each under its heading with its own buttons (TextView:SetParts) }. With no text, parts, target or unwritten the page is a group's or a place's: no
---- Play, and its mark in the middle where it has no picture.
+--- Play, and its mark in the middle.
 --- onSubtitle(), where given, is what a click on the line under the title does (the map panel's
 --- area story returns to its zone's with it); without it the line is plain words.
 function Page:Show(entry)
@@ -2045,7 +2028,7 @@ function Page:Show(entry)
 		local words = entry.unwritten and C.NotWritten()
 		self.body:SetText(words or entry.text or "")
 	end
-	self:PaintMark(empty and not entry.picture)
+	self:PaintMark(empty)
 	self.empty = empty
 	self.target = entry.target
 	self:RefreshContribute()

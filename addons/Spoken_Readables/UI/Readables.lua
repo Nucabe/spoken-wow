@@ -898,8 +898,7 @@ local function ShowEntry()
 	if selection.dungeon then
 		DungeonReadables(selection.mapID, selection.dungeon, set)
 		page:Show({ title = DungeonName(selection.dungeon), subtitle = InAndCount(MapName(selection.mapID), Tally(set)),
-			icon = C.PlaceIcon(nil, selection.dungeon),
-			picture = C.PlacePicture({ mapID = selection.mapID, dungeon = selection.dungeon }) })
+			icon = C.PlaceIcon(nil, selection.dungeon) })
 		return
 	end
 	if selection.dungeons then
@@ -941,8 +940,7 @@ local function ShowEntry()
 		ReadablesIn(selection.mapID, set)
 	end
 	page:Show({ title = MapName(selection.mapID), subtitle = InAndCount(MapName(Above(selection.mapID)), Tally(set)),
-		icon = C.PlaceIcon(selection.mapID),
-		picture = C.PlacePicture({ mapID = selection.mapID }) })
+		icon = C.PlaceIcon(selection.mapID) })
 end
 
 --------------------------------------------------------------------------------
