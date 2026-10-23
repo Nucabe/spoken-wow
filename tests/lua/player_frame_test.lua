@@ -985,15 +985,23 @@ end, "1 Cairne")
 env.Transcript:Release()
 local hadCursor, cursor = _G.GetCursorPosition, { 100, 100 }
 _G.GetCursorPosition = function() return cursor[1], cursor[2] end
-local function RightClick(dx)
+local function RightClick(dx, dy)
     cursor = { 100, 100 }
     words.scripts.OnMouseDown(words, "RightButton")
-    cursor = { 100 + dx, 100 }
+    cursor = { 100 + dx, 100 + (dy or 0) }
     words.scripts.OnClick(words, "RightButton")
     return Head()
 end
 ExpectOf("...nor at the end of a right-drag begun on the words, as to turn the camera",
     function() return RightClick(60) end, "1 Cairne")
+ExpectOf("...whichever way it travels, up and down too", function() return RightClick(0, 60) end, "1 Cairne")
+local playing = env.Transcript.clip
+env.Transcript.clip = {}
+ExpectOf("...nor a click on words that are not the line playing, though the window is not fading out", function()
+    words.scripts.OnClick(words, "RightButton")
+    return Head()
+end, "1 Cairne")
+env.Transcript.clip = playing
 ExpectOf("...where a right-click that barely moves still skips", function() return RightClick(3) end, "1 Baine")
 _G.GetCursorPosition = hadCursor
 ExpectOf("...and the words' tooltip says what each right-click does", function()
@@ -1026,6 +1034,25 @@ ExpectOf("...and a Shift-right-click opens its menu, the line playing on", funct
 end, "1 Cairne true")
 shift = false
 M.menu:Hide()
+ExpectOf("...and the words' tooltip names the menu there", function()
+    words.scripts.OnEnter(words)
+    return table.concat(GameTooltip.lines, "|")
+end, table.concat({ env.L.TRANSCRIPT, env.L.TRANSCRIPT_HINT, env.L.TRANSCRIPT_MENU_HINT }, "|"))
+env.SoundQueue:RemoveAllSoundsFromQueue()
+quests:Enqueue(H.Clip({ key = "q:6:accept", present = { header = "Thrall", label = "Warchief", portrait = { kind = "none" } } }))
+quests:Enqueue(H.Clip({ key = "q:7:accept", present = { header = "Cairne", label = "Bloodhoof", portrait = { kind = "none" } } }))
+local skipButton = env.Actions.SkipButton(CreateFrame("Frame"))
+local before = #world.kitSounds
+ExpectOf("the Skip button skips the line with the click's sound", function()
+    skipButton.scripts.OnClick(skipButton)
+    return Head() .. " " .. (#world.kitSounds - before)
+end, "1 Cairne 1")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+before = #world.kitSounds
+ExpectOf("...and with no line to skip makes no sound", function()
+    skipButton.scripts.OnClick(skipButton)
+    return #world.kitSounds - before
+end, 0)
 env.SoundQueue:RemoveAllSoundsFromQueue()
 env.Addon:SetPlayerStyle("classic")
 _G.IsShiftKeyDown = hadShift
