@@ -35,8 +35,8 @@ GitHub Releases of `rusty-key/spoken-wow` (public, no token). Product tags, from
 | Quests voices, English, all | `quests-audio/vX` | `SpokenQuestsAudioAll-X.zip` (1.4 GB) | the four split folders |
 | Quests voices, English, split | `quests-audio-{alliance,horde,shared,gossip}/vX` | | `SpokenQuestsAudio<Side>` |
 | Quests voices, a language | `quests-audio-<lang>/vX` | | `SpokenQuestsAudio_<lang>` |
-| Places voices | `zones-audio[-<lang>]/vX` | `SpokenZonesAudio[_<lang>]-X.zip` | `SpokenZonesAudio[_<lang>]` |
-| Readables voices | `books-audio[-<lang>]/vX` | | `SpokenBooksAudio[_<lang>]` |
+| Places voices | `places-audio[-<lang>]/vX` (`zones-audio[-<lang>]/vX` before the rename) | `SpokenPlacesAudio[_<lang>]-X.zip` | `SpokenPlacesAudio[_<lang>]` |
+| Readables voices | `readables-audio[-<lang>]/vX` (`books-audio[-<lang>]/vX` before) | | `SpokenReadablesAudio[_<lang>]` |
 
 A pre-release (`-alpha`, `-beta`) is offered only when "Include pre-releases" is on. The manager
 reads the installed version from each folder's `.toc` (`## Version:`) and keeps its own record of
@@ -55,8 +55,7 @@ installs on Classic Era (`_classic_era_`) and Anniversary (`_anniversary_`). Tho
 flavor folder (Retail, Classic, PTRs, betas) is not listed; adding one by hand is refused with
 "Spoken runs on WoW: Forever, Classic Era and Anniversary. <folder> is not one of them.", and a
 saved game of such a flavor from an earlier run is dropped on load (nothing on disk is touched).
-The service keeps a cheap refusal as a second check. The 1.12, 2.4.3 and 3.3.5 clients have no Blizzard folders and
-are out of scope: they take Spoken Quests' own zips from Releases.
+The service keeps a cheap refusal as a second check.
 
 ## Community voice packs
 

@@ -1,5 +1,5 @@
--- The player's UI, as far as it can be seen without a client: the frame loads on a
--- current client and on 1.12, shows and hides with the queue, names the head and lists
+-- The player's UI, as far as it can be seen without a client: the frame loads, shows and
+-- hides with the queue, names the head and lists
 -- the rows with their held reason, picks a portrait renderer and falls back, lays out the
 -- actions a clip brings, owns the one minimap button, and registers its settings.
 -- Run with `make test-player`. Layout and pixels are checked in game.
@@ -24,50 +24,14 @@ local function Boot(client)
     local env = stub.LoadSpoken(SPOKEN)
     env.Addon:Enable()   -- what PLAYER_LOGIN does: builds the frame, the button, the panel
     local quests = env.Sources:Register("quests", { title = "Quests", addon = "Spoken_Quests", order = 1 })
-    local zones = env.Sources:Register("zones", { title = "Zones", addon = "Spoken_Places", order = 2 })
-    return env, quests, zones
+    local places = env.Sources:Register("places", { title = "Places", addon = "Spoken_Places", order = 2 })
+    return env, quests, places
 end
 
----------------------------------------------------------------- a settings link registered before the panel exists
--- Feature addons register their link from ADDON_LOADED; the panel is built at PLAYER_LOGIN.
-stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers()
-stub.settingsCategories = {}; stub.ldbObjects = {}; stub.dbIcons = {}
-local early = stub.LoadSpoken(SPOKEN)
-_G.Spoken:AddSettingsLink("Quests settings", function() end)
-early.Addon:Enable()
--- On a client that nests each part's page under Spoken's, the settings list is the way there.
-Expect("no link buttons where the parts' pages are nested", #_G.SpokenOptionsPanel.links, 0)
--- The legacy clients have no settings list, only Spoken's own window, and keep the links.
-stub.SetClient("1.12"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames()
-_G.SpokenOptionsPanel = nil
-early = stub.LoadSpoken(SPOKEN)
-_G.Spoken:AddSettingsLink("Quests settings", function() end)
-early.Addon:Enable()
-Expect("a link registered before the panel is built with it", #_G.SpokenOptionsPanel.links, 1)
-Expect("...with its text", _G.SpokenOptionsPanel.links[1]:GetText(), "Quests settings")
-
--- 1.12 hands a script nothing: the frame is in `this` and its arguments in `arg1`. UI/Layout.lua
--- has no environment, so no Compat wrapper, and its controls read them from there themselves.
+---------------------------------------------------------------- loads, shows, hides
+local env, quests, places = Boot()
+-- Refresh greys a slider out with SetEnabled, and without it where a slider has none.
 do
-    local layout = _G.SpokenOptionsPanel.layout
-    local function Row(label)
-        for _, entry in ipairs(layout.entries) do if entry.label == label then return entry.frame end end
-    end
-    local L, profile = early.L, early.Addon.db.profile
-    local locked, scaled = profile.Frame.LockFrame, profile.Frame.FrameScale
-    local lock = Row(L.OPT_LOCK_FRAME)
-    lock:SetChecked(true)
-    _G.this, _G.arg1 = lock, "LeftButton"
-    lock.scripts.OnClick()
-    Expect("on 1.12 a settings checkbox finds itself in `this`", profile.Frame.LockFrame, true)
-    local scale = Row(L.OPT_SCALE)
-    _G.this, _G.arg1 = scale.layoutSlider, 1.5
-    scale.layoutSlider.scripts.OnValueChanged()
-    Expect("...and a slider its value in `arg1`", profile.Frame.FrameScale, 1.5)
-    _G.this, _G.arg1 = nil, nil
-    -- Put back: the saved variables outlive this load, and later scenarios read them.
-    profile.Frame.LockFrame, profile.Frame.FrameScale = locked, scaled
-    -- 2.4.3's and 3.3.5's sliders have no SetEnabled, and Refresh greys a slider out with it.
     local test = _G.SpokenLayout.New(CreateFrame("Frame"), 25, -16)
     local live = false
     local slider = test:Slider("Test", 0, 1, 0.1, function() return 0.5 end, function() end)
@@ -75,11 +39,8 @@ do
     stub.absentAPI.SetEnabled = true
     local ok = pcall(test.Refresh, test)
     stub.absentAPI.SetEnabled = nil
-    Expect("...a slider greys out where sliders have no SetEnabled", ok and slider.layoutSlider.enabled, false)
+    Expect("a slider greys out where sliders have no SetEnabled", ok and slider.layoutSlider.enabled, false)
 end
-
----------------------------------------------------------------- loads, shows, hides
-local env, quests, zones = Boot()
 local F = env.PlayerFrame
 Expect("the frame exists after Enable", F.frame ~= nil, true)
 Expect("hidden while the queue is empty", F.frame:IsShown(), false)
@@ -106,7 +67,7 @@ env.SoundQueue:RemoveAllSoundsFromQueue()
 ---------------------------------------------------------------- fading in and out
 -- The window fades in as a line starts and out when the queue empties, its 3D portrait with it (a
 -- model takes no alpha from its parent), the words staying until it has gone.
-env, quests, zones = Boot(); F = env.PlayerFrame
+env, quests, places = Boot(); F = env.PlayerFrame
 quests:Enqueue(H.Clip({ present = { header = "Thrall", transcript = "Lok'tar ogar.",
     portrait = { kind = "model", creatureID = 4949 } } }))
 Expect("a line starting: the window shown, from clear", tostring(F.frame:IsShown()) .. " " .. F.frame:GetAlpha(), "true 0")
@@ -130,7 +91,7 @@ end, "false nil")
 
 -- From one line to the next: the window fades out whole with the first line's name and words,
 -- and fades in with the next's.
-env, quests, zones = Boot(); F = env.PlayerFrame
+env, quests, places = Boot(); F = env.PlayerFrame
 local first = H.Clip({ present = { header = "Thrall", transcript = "Lok'tar ogar.", portrait = { kind = "none" } } })
 local second = H.Clip({ present = { header = "Cairne", transcript = "Walk with the Earth Mother.", portrait = { kind = "none" } } })
 quests:Enqueue(first); quests:Enqueue(second)
@@ -153,7 +114,7 @@ env.SoundQueue:RemoveAllSoundsFromQueue()
 -- 3D portrait: the whole window goes, and comes back when the dialog closes on a line playing on.
 _G.DUIQuestFrame = CreateFrame("Frame")
 _G.DUIQuestFrame:Hide()
-env, quests, zones = Boot(); F = env.PlayerFrame
+env, quests, places = Boot(); F = env.PlayerFrame
 quests:Enqueue(H.Clip({ present = { header = "Thrall", portrait = { kind = "none" } } }))
 F.fader:Step(1)
 _G.DUIQuestFrame:Show()
@@ -173,11 +134,11 @@ _G.DUIQuestFrame = nil
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 ---------------------------------------------------------------- the lines waiting are counted, not listed
-env, quests, zones = Boot(); F = env.PlayerFrame
-zones:AddGate(function() return "in combat" end)
+env, quests, places = Boot(); F = env.PlayerFrame
+places:AddGate(function() return "in combat" end)
 local held = H.Clip({ present = { header = "Durotar", label = "Valley of Trials", bullet = "zone", portrait = { kind = "none" } } })
 local free = H.Clip({ present = { header = "Thrall", label = "Warchief", bullet = "quest-accept", portrait = { kind = "none" } } })
-zones:Enqueue(held); quests:Enqueue(free)
+places:Enqueue(held); quests:Enqueue(free)
 Expect("the speaking clip heads the window even if queued second", F.frame.container.name:GetText(), "Thrall")
 ExpectOf("a waiting line gets no row: the header counts it after the name, as the DialogueUI window does", function()
     return tostring(F.frame.container.buttons) .. " " .. tostring(F.count:IsShown()) .. " " .. F.count:GetText()
@@ -191,9 +152,9 @@ F:Update()
 ExpectOf("...and gone with no line waiting", function() return F.count:IsShown() end, false)
 
 -- A line held at the head says why after its name, or it looks like narration that failed.
-env, quests, zones = Boot(); F = env.PlayerFrame
-zones:AddGate(function() return "in combat" end)
-zones:Enqueue(H.Clip({ present = { header = "Durotar", bullet = "zone", portrait = { kind = "none" } } }))
+env, quests, places = Boot(); F = env.PlayerFrame
+places:AddGate(function() return "in combat" end)
+places:Enqueue(H.Clip({ present = { header = "Durotar", bullet = "zone", portrait = { kind = "none" } } }))
 ExpectOf("a held line says why after its name", function()
     return tostring(F.held:IsShown()) .. " " .. F.held:GetText()
 end, "true • (in combat)")
@@ -205,9 +166,9 @@ F:RefreshConfig()
 Expect("...and on shows it", F.progress.track:IsShown(), true)
 
 ---------------------------------------------------------------- portrait dispatch
-env, quests, zones = Boot(); F = env.PlayerFrame
+env, quests, places = Boot(); F = env.PlayerFrame
 local P = env.Portrait
-zones:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b",
+places:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b",
     portrait = { kind = "texture", texture = [[Interface\AddOns\Spoken\Textures\Book]] } } }))
 Expect("kind=texture shows a texture", F.frame.portrait.active, "texture")
 Expect("...the one asked for", F.frame.portrait.texture:GetTexture(), [[Interface\AddOns\Spoken\Textures\Book]])
@@ -245,9 +206,9 @@ env.Addon.db.profile.Frame.HidePortrait = false
 F:RefreshConfig()
 
 ---------------------------------------------------------------- actions
-env, quests, zones = Boot(); F = env.PlayerFrame
+env, quests, places = Boot(); F = env.PlayerFrame
 local clicked
-zones:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b", portrait = { kind = "none" },
+places:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b", portrait = { kind = "none" },
     actions = {
         { id = "read", icon = "Read", onClick = function(clip) clicked = "read:" .. clip.key end },
         { id = "report", icon = "Report", onClick = function() clicked = "report" end },
@@ -270,7 +231,7 @@ ExpectOf("no actions, Stop and Skip alone", function() return #F.frame.actions.b
 -- portrait 21 in from the top left, the name beside it, the words 3 under the name ending 42 from
 -- the right and 12 from the foot, and the round controls 12 in from the top right corner, where
 -- the Talking Head has its close button.
-env, quests, zones = Boot(); F = env.PlayerFrame
+env, quests, places = Boot(); F = env.PlayerFrame
 local T = env.Transcript
 local words = "One two three four five six seven eight nine ten eleven twelve thirteen fourteen."
 quests:Enqueue(H.Clip({ length = 10, present = { header = "Thrall", label = "Warchief",
@@ -402,20 +363,20 @@ Expect("...in the Talking Head's size", F.frame:GetWidth() .. "x" .. F.frame:Get
 _G.C_Texture = nil
 
 ---------------------------------------------------------------- one minimap button
-env, quests, zones = Boot()
+env, quests, places = Boot()
 Expect("exactly one LDB object, named Spoken", stub.ldbObjects.Spoken ~= nil and stub.dbIcons.Spoken ~= nil, true)
 Expect("...registered against the player's saved position", stub.dbIcons.Spoken.db, env.Addon.db.profile.Minimap.LibDBIcon)
 -- The frame the lib keeps for the addon; the lib's clicks pass it, and it is the anchor
 -- the addon holds for the compartment's clicks too.
 local mmButton = stub.dbIcons.Spoken.button
-env.Minimap:AddEntry("zones", { id = "lore", text = "Open lore window", order = 1, onClick = function() end })
+env.Minimap:AddEntry("places", { id = "lore", text = "Open lore window", order = 1, onClick = function() end })
 env.Minimap:AddEntry("quests", { id = "opts", text = "Quest settings", order = 1, onClick = function() end })
 local menu = env.Minimap:BuildMenu()
 local labels = {}
 for _, entry in ipairs(menu) do table.insert(labels, entry.text) end
 Expect("the menu is the player's entries then each source's in order", table.concat(labels, "|"),
     "Stop or Replay|Skip Line|Stop All|Settings|Quest settings|Open lore window")
-env.Minimap:RemoveEntry("zones", "lore")
+env.Minimap:RemoveEntry("places", "lore")
 Expect("RemoveEntry", getn(env.Minimap:BuildMenu()), 5)
 
 -- A click on the icon opens the settings at once; the menu is a right-click away.
@@ -482,9 +443,10 @@ Expect("choosing an entry runs it", chose, true)
 Expect("...and the menu closes itself", stub.openDropDown, nil)
 
 ---------------------------------------------------------------- the menu where there is no menu API
--- The three legacy clients have no UIDropDownMenu worth the name, so the player
--- draws its own: a background, a highlight, a catcher for the click that dismisses it.
-env, quests, zones = Boot("1.12")
+-- Without UIDropDownMenu the player draws its own: a background, a highlight, a catcher for
+-- the click that dismisses it.
+env, quests, places = Boot()
+stub.SetMenuAPI(false)
 mmButton = stub.dbIcons.Spoken.button
 env.Minimap:AddEntry("quests", { id = "opts", text = "Quest settings", order = 1, onClick = function() end })
 stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
@@ -502,6 +464,7 @@ stub.ldbObjects.Spoken.OnClick(mmButton, "RightButton")
 Expect("something catches a click outside", _G.SpokenMinimapMenuCatcher:IsShown(), true)
 _G.SpokenMinimapMenuCatcher:Click()
 Expect("...and that click closes the menu", frame:IsShown(), false)
+stub.SetMenuAPI(true)
 
 ---------------------------------------------------------------- settings
 env = Boot()
@@ -510,13 +473,6 @@ env = Boot()
 Expect("a Settings category is registered, named for the whole family",
     stub.settingsCategories[1] and stub.settingsCategories[1].name, "Spoken")
 Expect("...and exposed for feature addons to nest under", _G.Spoken:GetSettingsCategory(), stub.settingsCategories[1])
-
----------------------------------------------------------------- 1.12 loads too
-env, quests, zones = Boot("1.12"); F = env.PlayerFrame
-quests:Enqueue(H.Clip({ present = { header = "h", label = "l", bullet = "b", portrait = { kind = "none" } } }))
-Expect("1.12: the frame builds and shows", F.frame:IsShown(), true)
-Expect("1.12: no Settings API, so no category", getn(stub.settingsCategories), 0)
-Expect("1.12: GetSettingsCategory is nil rather than an error", _G.Spoken:GetSettingsCategory(), nil)
 
 ---------------------------------------------------------------- the panel keeps one rhythm
 -- Every row used to place itself by adding a hand-tuned fudge to a running offset, so no
@@ -673,8 +629,6 @@ local function PanelLabelsSetup(client)
     stub.settingsCategories = {}; stub.ldbObjects = {}; stub.dbIcons = {}
     env = stub.LoadSpoken(SPOKEN)
     _G.Spoken:RegisterOptionalAction("report", "Report")
-    -- The legacy clients do not load Contribute.xml, which the stub loads everywhere.
-    if _G.WOW_PROJECT_ID == nil then _G.Spoken.Contribute = nil end
     env.Addon:Enable()
 end
 
@@ -703,7 +657,7 @@ Expect("the finer settings are in sections named for what they hold",
     tostring(labels["Look"] and labels["Words"] and labels["Playback"]), "true")
 Expect("...not the queue's title", labels["Up next"], nil)
 -- The scale slider was built with no height and no orientation, so it drew nothing: the
--- setting sat on the panel invisible, with a gap where it should have been. The zones
+-- setting sat on the panel invisible, with a gap where it should have been. The Places
 -- addon's own sliders, which do render, set both.
 -- Label on the left, control on the right, value beside it: one row, not two.
 Expect("the scale slider is labelled", labels["Window Size"], true)
@@ -735,39 +689,6 @@ Expect("the channel is chosen here", labels["Volume Follows"], true)
 Expect("...and the voice language, once for every module", labels["Voice Language"], true)
 Expect("...and so is silencing the game's own dialogue",
     labels["Silence NPC Voices"], true)
-Expect("a current client is offered nothing about the music channel",
-    labels["Play through the music channel"], nil)
-
--- 2.4.3 and 3.3.5 route speech through the music channel, because those clients cannot
--- stop a sound any other way. Those settings existed from the start and had no row at
--- all: the only way to change one was to edit the saved variables by hand.
---- The tooltip of the home page's row labelled `label`, as the panel was last built.
-local function RowTip(label)
-    for _, entry in ipairs(_G.SpokenOptionsPanel.layout.entries) do
-        if entry.label == label then
-            _G.GameTooltip.lines = {}
-            _G.this = entry.frame
-            entry.frame.scripts.OnEnter(entry.frame)
-            return table.concat(_G.GameTooltip.lines, "|")
-        end
-    end
-    return ""
-end
-Expect("on a current client, Hide Report Buttons says nothing more than its name: it hides them all",
-    RowTip("Hide Report Buttons"), "")
-labels = PanelLabels("3.3.5")
-Expect("a legacy client, with no Contribute section, is offered Hide Report Buttons too", labels["Hide Report Buttons"], true)
-local reportTip = RowTip("Hide Report Buttons")
-Expect("...its tip naming only the window and the subtitles, all a legacy client has",
-    reportTip:find("from the window and the subtitles.", 1, true) ~= nil and reportTip:find("Compendium", 1, true) == nil, true)
-Expect("a legacy client can reach the music channel", labels["Play through the music channel"], true)
-Expect("...its volume", labels["Speech volume"], true)
-Expect("...its fade, as a duration and not a percentage", labels["0.5s"], true)
-Expect("...and the HD model patch", labels["HD model patch installed"], true)
-PanelLabels("1.12")
-reportTip = RowTip("Hide Report Buttons")
-Expect("on 1.12, which has no subtitles, Hide Report Buttons' tip names only the window",
-    reportTip:find("from the window.", 1, true) ~= nil and reportTip:find("subtitles", 1, true) == nil, true)
 
 ---------------------------------------------------------------- an action in the corner, and hiding them
 -- A button that only ever says "Report" earns an icon rather than a word, and it belongs
@@ -777,12 +698,12 @@ local reported = 0
 local function CornerClip()
     return H.Clip({ present = { header = "h", label = "l", bullet = "b",
         portrait = { kind = "none" }, actions = {
-            { id = "report", icon = ICON, text = "R", anchor = "topright",
+            { id = "report", icon = ICON, anchor = "topright",
               onClick = function() reported = reported + 1 end },
         } } })
 end
 
-env, quests, zones = Boot("16001")
+env, quests, places = Boot("16001")
 quests:Enqueue(CornerClip())
 env.PlayerFrame:Update()
 local corner = env.PlayerFrame.frame.actions.buttons[1]
@@ -801,21 +722,7 @@ ExpectOf("...as large as Stop and Skip", function()
 end, "0 0")
 Expect("...and it still does what it is for", (corner:Click() or reported), 1)
 
--- The art this uses postdates the three legacy clients, where the icon would be a
--- blank square. There the action falls back to the letter it carries for the purpose.
-env, quests, zones = Boot("1.12")
-quests:Enqueue(CornerClip())
-env.PlayerFrame:Update()
-local legacy = env.PlayerFrame.frame.actions.buttons[1]
-Expect("an old client gets a letter instead", legacy:GetText(), "R")
-Expect("...and no icon at all", legacy:GetNormalTexture():GetTexture(), nil)
-ExpectOf("...still in the header after Skip", function()
-    return legacy:GetParent() == env.PlayerFrame.controls and env.PlayerFrame.row[3] == legacy
-end, true)
-legacy:Click()
-Expect("...and it still reports", reported, 2)
-
-env, quests, zones = Boot("16001")
+env, quests, places = Boot("16001")
 quests:Enqueue(CornerClip())
 env.PlayerFrame:Update()
 corner = env.PlayerFrame.frame.actions.buttons[1]
@@ -833,20 +740,20 @@ Expect("...and back", corner:IsShown(), true)
 -- Both shipped addons call their action "report". Keyed by id alone they are one button,
 -- so whichever addon created it first owns its click: reporting a quest line would file a
 -- zone. Keyed by source they are two, and the other addon's are hidden when the head moves.
-env, quests, zones = Boot()
+env, quests, places = Boot()
 local zoneClicks, questClicks = 0, 0
 local function Clip(source, label, actions)
     return H.Clip({ present = { header = "h", label = label, bullet = "b",
         portrait = { kind = "none" }, actions = actions } })
 end
-local zoneClip = Clip(zones, "Durotar", {
+local zoneClip = Clip(places, "Durotar", {
     { id = "read", icon = "ZoneRead", onClick = function() end },
     { id = "report", icon = "ZoneReport", onClick = function() zoneClicks = zoneClicks + 1 end },
 })
 local questClip = Clip(quests, "Cutting Teeth", {
     { id = "report", icon = "QuestReport", onClick = function() questClicks = questClicks + 1 end },
 })
-zones:Enqueue(zoneClip)
+places:Enqueue(zoneClip)
 env.PlayerFrame:Update()
 Expect("the zone line brings two actions", #env.PlayerFrame.frame.actions.buttons, 2)
 env.SoundQueue:RemoveSoundFromQueue(zoneClip)
@@ -864,7 +771,7 @@ Expect("...not to the other one", zoneClicks, 0)
 
 -- An addon may build its own button, and such a button keeps its own click handler. Shared
 -- under one id, the first addon to build one would answer for both.
-env, quests, zones = Boot()
+env, quests, places = Boot()
 local built = 0
 local ownClip = Clip(quests, "Cutting Teeth", {
     { id = "report", create = function(parent)
@@ -874,13 +781,13 @@ local ownClip = Clip(quests, "Cutting Teeth", {
         return button
     end },
 })
-local plainClip = Clip(zones, "Durotar", {
+local plainClip = Clip(places, "Durotar", {
     { id = "report", text = "Report", onClick = function() zoneClicks = zoneClicks + 1 end },
 })
 quests:Enqueue(ownClip)
 env.PlayerFrame:Update()
 env.SoundQueue:RemoveSoundFromQueue(ownClip)
-zones:Enqueue(plainClip)
+places:Enqueue(plainClip)
 env.PlayerFrame:Update()
 Expect("the other addon does not inherit a button built by this one",
     env.PlayerFrame.frame.actions.buttons[1].builtBy, nil)
@@ -889,11 +796,8 @@ Expect("the other addon does not inherit a button built by this one",
 -- The portrait is configured before the rows, so an error raised while resolving it
 -- abandons the rest of the update: the header, every row and the actions. The frame then
 -- shows a portrait over an empty band, which reads as an empty queue.
---
--- Model:GetModel returned a path and was removed from the current clients, which answer
--- GetModelFileID instead. Asking for the one this client lacks is an error, not a nil.
-for _, client in ipairs({ "16001", "1.12" }) do
-    env, quests, zones = Boot(client)
+for _, client in ipairs({ "16001", "11509" }) do
+    env, quests, places = Boot(client)
     local clip = H.Clip({ present = { header = "Gornek", label = "Cutting Teeth", bullet = "b",
         portrait = { kind = "model", creatureID = 3143, animation = 60,
             fallback = { kind = "texture", texture = "Book" } } } })
@@ -915,7 +819,7 @@ Expect("...and so is the word that reaches it", rawget(_G, "SLASH_SPOKEN1"), "/s
 ---------------------------------------------------------------- what the frame reports
 -- A header that is set but drawn nowhere looks, from outside, exactly like one that was never
 -- set. /spoken diagnostics tells the two apart.
-env, quests, zones = Boot()
+env, quests, places = Boot()
 quests:Enqueue(H.Clip({ present = { header = "Gornek", label = "Cutting Teeth", bullet = "b",
     portrait = { kind = "none" } } }))
 env.PlayerFrame:Update()

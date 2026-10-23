@@ -4,14 +4,13 @@ setfenv(1, SpokenEnv)
 -- one file. Everything above this deals in clips; only this file calls PlaySoundFile.
 --
 -- The audibility check looks at the volumes as well as the toggles, and Master bypasses the
--- per-channel toggles. Compat.lua replaces the four playback functions wholesale on 1.12,
--- 2.4.3 and 3.3.5.
+-- per-channel toggles.
 SoundUtils = {}
 
 -- A channel this player switched off on a source's behalf: the quests addon mutes
 -- Dialog while its line speaks so the NPC's bark does not talk over it. The queue
 -- treats such a channel as audible at admission and lifts the mute before playing on
--- it -- the alternative is refusing every zones clip that arrives during a quest line.
+-- it -- the alternative is refusing every places clip that arrives during a quest line.
 local CHANNEL_CVARS = { SFX = "Sound_EnableSFX", Music = "Sound_EnableMusic", Ambience = "Sound_EnableAmbience", Dialog = "Sound_EnableDialog" }
 local mutedByPlayer = {}
 
@@ -146,8 +145,7 @@ end
 
 ---@param clip { handle: number? }
 --- `fadeMs`, where given, fades the voice out over that many milliseconds rather than cutting
---- it: the client's StopSound takes one. The legacy clients stop their own way (Compat.lua),
---- which takes no fade.
+--- it: the client's StopSound takes one.
 function SoundUtils:StopSound(clip, fadeMs)
     if clip.handle then
         if fadeMs then StopSound(clip.handle, fadeMs) else StopSound(clip.handle) end

@@ -69,10 +69,6 @@ API="https://wow.curseforge.com/api"
 # Era, the 2.5.6 Anniversary client and the 1.60.1 Forever client (CurseForge's name for the
 # one whose TOC suffix is _Camelot). Nothing here has been run on any other client, and a file
 # offered to a client it misbehaves on is worse than one that is simply absent there.
-#
-# The 1.12, 2.4.3 and 3.3.5 zips package.sh also builds are deliberately not uploaded here:
-# CurseForge has no game version to file them against. They go out on the GitHub release that
-# .github/workflows/release-addons.yaml publishes from a tag.
 GAME_VERSION_ERA="${GAME_VERSION_ERA:-1.15.9}"
 GAME_VERSION_ANNIVERSARY="${GAME_VERSION_ANNIVERSARY:-2.5.6}"
 GAME_VERSION_FOREVER="${GAME_VERSION_FOREVER:-1.60.1}"
@@ -132,7 +128,7 @@ esac; }
 #
 # The packs were VoiceOverReduxHQAudio* until the rename and moved with it. A pack's folder can
 # be renamed because nothing stores a path built from it: DataModules composes one from the
-# folder the client reports at play time, and the zones packs read their own name out of the
+# folder the client reports at play time, and the places packs read their own name out of the
 # loader. The cost is that every player re-downloads the pack, which the next release makes them
 # do regardless.
 target_zip_name() { case "$1" in
@@ -188,7 +184,7 @@ esac; }
 # being approved, above all - is truest after they have just been uploaded. It costs nothing to
 # order it this way and it removes a class of first-release surprise.
 ALL_TARGETS="spoken audio-alliance audio-horde audio-shared audio-gossip audio-all"
-# Accepted by name, never in a bare run: it depends on the zones and books projects too, which
+# Accepted by name, never in a bare run: it depends on the places and readables projects too, which
 # this script does not release, and its version moves on its own schedule.
 EXTRA_TARGETS="spoken-all"
 
@@ -209,7 +205,7 @@ done
 
 # A language has no addon project of its own -- spoken and audio-all are each
 # one project for every language -- so --lang refuses anything but the four packs, the same way
-# books' and zones' release.sh do, and the language's meta addon, spoken-all, which is.
+# readables' and places' release.sh do, and the language's meta addon, spoken-all, which is.
 if ! english; then
   # Checked once, before the per-target validation below: an unregistered language has no
   # pack pages at all, and letting each of the four audio-* targets discover that separately

@@ -2,9 +2,7 @@ setfenv(1, VoiceOver)
 
 -- Gossip's page in the game's settings, under Spoken's, beside Quests': laid out by Spoken's
 -- UI/Layout.lua so the pages read alike. What an NPC says when you start talking to them is a part
--- of its own on Spoken's page, with its own switch; the settings that only it has are here. Absent
--- on the three legacy clients, which have no Settings API: the window and /spq are the interface
--- there.
+-- of its own on Spoken's page, with its own switch; the settings that only it has are here.
 
 GossipSettingsPanel = {}
 
@@ -28,7 +26,7 @@ local function GossipName()
 end
 
 function GossipSettingsPanel:Setup()
-    if panel or not (Settings and Settings.RegisterCanvasLayoutCategory) then
+    if panel then
         return
     end
     panel = CreateFrame("Frame", "SpokenGossipOptionsPanel", UIParent)
@@ -67,7 +65,7 @@ function GossipSettingsPanel:Setup()
         refresh,
         function(name) return GOSSIP_LABELS[name] or name end)
     layout:Requires(greetings, AutoplayOn, L.REASON_AUTOPLAY_ON_QUESTS)
-    layout:Checkbox(L.OPT_OG_THRALL, L.OPT_OG_THRALL_TIP,
+    layout:Checkbox(L.OPT_OG_THRALL, nil,
         function() return audio().OGThrall end,
         function(value) audio().OGThrall = value end)
 
