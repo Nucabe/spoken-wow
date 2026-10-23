@@ -4,6 +4,12 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **The tab that reopens the Place Story panel no longer covers the map's own side tabs**, such as
+  Map Legend on WoW Forever. It goes under whatever tabs hang down the map's edge, whichever addon
+  made them. *([rusty-key](https://github.com/rusty-key))*
+- **Walking with the world map open no longer floods the game with Lua errors** on WoW Forever. The
+  Place Story panel and the tab that reopens it make room for Adventure Guide Forever's tabs on the
+  quest log's edge instead of sitting under them. *([Nucabe](https://github.com/Nucabe))*
 - **Quests are read with auto-accept and auto turn-in addons.** When Enhance QoL, RestedXP, Zygor or
   Leatrix Plus accepts or hands in a quest for you, the quest's offer is read, and a turn-in reads
   both the progress and the reward lines, where before some or all of them were skipped. This holds

@@ -486,13 +486,31 @@ search.hooks.OnTextChanged[1](search)
 Expect("...open again unsearched", Shown(), "Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
 
 ---------------------------------------------------------------- beside the map
+local mapSetAlpha = WorldMapFrame.SetAlpha
+-- The quest log beside the map, shown.
+_G.QuestMapFrame = CreateFrame("Frame", "QuestMapFrame", WorldMapFrame)
+QuestMapFrame:Show()
 Z:SetupMapPanel()
 local panel = Z.panel
 Expect("the story beside the map wears the quest log's frame", panel ~= nil, true)
+-- The game's movement fader calls the map's SetAlpha every frame; hooked, it raised errors there
+-- on the Forever client.
+Expect("...and leaves the map's SetAlpha unhooked", WorldMapFrame.SetAlpha == mapSetAlpha, true)
+-- A frame drawn: the OnUpdate of whichever of the panel and its button is shown.
+local function NextFrame()
+    for _, frame in ipairs({ panel, _G.SpokenPlacesPanelToggle }) do
+        if frame:IsShown() then
+            local onUpdate = frame:GetScript("OnUpdate")
+            if onUpdate then onUpdate(frame, 0.016) end
+        end
+    end
+end
 -- Inside the map, so the game fades, scales and hides it with the map.
 Z:RefreshPanel()
 Expect("...and is the map's", panel.parent, WorldMapFrame)
 Expect("...as is the button that reopens it", _G.SpokenPlacesPanelToggle.parent, WorldMapFrame)
+Expect("...so neither reads the map's alpha each frame",
+    panel:GetScript("OnUpdate") == nil and _G.SpokenPlacesPanelToggle:GetScript("OnUpdate") == nil, true)
 local strip = panel.page.body.strips[1]
 WorldMapFrame:Show()
 Z:RefreshPanel()
@@ -521,16 +539,86 @@ Z:RefreshPanel()
 -- fade with it, and the strips softening the text's cut edges are off while they do.
 Expect("the text's cut edges soften into the parchment", strip:IsShown(), true)
 WorldMapFrame:SetAlpha(0.5)
-Expect("the panel fades with the map as the player walks", panel:GetAlpha(), 0.5)
+NextFrame()
+Expect("the panel fades with the map as the player walks, on the next frame", panel:GetAlpha(), 0.5)
 Expect("...and the button that reopens it", _G.SpokenPlacesPanelToggle:GetAlpha(), 0.5)
 Expect("...the text's soft edges off while it is faded", strip:IsShown(), false)
 WorldMapFrame:SetAlpha(1)
+NextFrame()
 Expect("...and clear again when the player stops", panel:GetAlpha(), 1)
 Expect("...the button too", _G.SpokenPlacesPanelToggle:GetAlpha(), 1)
 Expect("...and the soft edges back", strip:IsShown(), true)
 SetCVar("InputDeviceInterfaceStyle", "0")
 Z:RefreshPanel()
 Expect("with the gamepad UI off again, the panel goes back into the map", panel.parent, WorldMapFrame)
+Expect("...and stops reading the map's alpha each frame", panel:GetScript("OnUpdate"), nil)
+-- Side tabs hang down the quest log's right edge, the game's own and other addons' alike, with no
+-- name Spoken knows: here two unnamed ones, as Adventure Guide Forever hangs its own, the upper one
+-- reaching 60 past the map's edge and the lower one 50. The map is 300 wide and 100 high.
+local toggle = _G.SpokenPlacesPanelToggle
+-- A child of the quest log as the game has it: closing the log hides it without touching its own
+-- shown flag, so IsShown stays true under a closed log and only IsVisible says it is gone.
+local function SideTab(top, bottom, reach)
+    local tab = CreateFrame("Frame", nil, QuestMapFrame)
+    function tab:GetLeft() return WorldMapFrame:GetRight() + 5 end
+    function tab:GetRight() return not self.unplaced and WorldMapFrame:GetRight() + reach or nil end
+    function tab:GetTop() return top end
+    function tab:GetBottom() return bottom end
+    function tab:IsShown() return self.shown end
+    function tab:IsVisible() return self.shown and QuestMapFrame:IsVisible() end
+    return tab
+end
+-- The lower one made first: which is lowest is where it hangs, not the order they were made in.
+local guideTab = SideTab(72, 52, 50)
+local questsTab = SideTab(95, 75, 60)
+-- A panel standing beside the map from top to bottom, as tall as the map: no tab.
+local besidePanel = SideTab(100, 0, 200)
+questsTab:Show()
+guideTab:Show()
+besidePanel:Show()
+Z:SetMapPanelCollapsed(true)
+Expect("folded, its button goes under the lowest side tab on the map's edge",
+    toggle.anchor.relativeTo == guideTab and (toggle.anchor.relativePoint .. " " .. toggle.anchor.y), "BOTTOMLEFT -3")
+Z:SetMapPanelCollapsed(false)
+Expect("...and open, the panel stands clear of the widest, though not of a panel beside the map",
+    panel.anchor.x, 62)
+besidePanel:Hide()
+-- The tabs are the quest log's and go with it. Closing or opening it refreshes nothing else.
+local function CloseQuestLog()
+    QuestMapFrame:Hide()
+    for _, hook in ipairs(QuestMapFrame.hooks.OnHide or {}) do hook(QuestMapFrame) end
+end
+Z:SetMapPanelCollapsed(true)
+CloseQuestLog()
+Expect("with the quest log closed, the button is back on the map's edge",
+    toggle.anchor.relativeTo == WorldMapFrame and toggle.anchor.relativePoint, "TOPRIGHT")
+Expect("...and the panel against the map", panel.anchor.x, 2)
+QuestMapFrame:Show()
+Expect("opening the quest log puts the button back under its tabs", toggle.anchor.relativeTo == guideTab, true)
+Expect("...and the panel past them", panel.anchor.x, 62)
+-- The game's own tabs show and hide on their own: switching the gamepad UI off shows them under the
+-- open log, and the log checking its tabs hides them again, neither through the log's show or hide.
+-- Here one hangs lowest of all, reaching 80, and has not been laid out when first seen.
+local gameTab = SideTab(49, 29, 80)
+gameTab.unplaced, gameTab.shown = true, false
+Z:RefreshPanel()
+Expect("a side tab that is not shown moves nothing", panel.anchor.x, 62)
+gameTab.unplaced = nil
+gameTab:Show()
+stub.Advance(0.1)
+Expect("a side tab shown by itself puts the panel past it on the next frame", panel.anchor.x, 82)
+gameTab.shown = false
+for _, hook in ipairs(gameTab.hooks.OnHide or {}) do hook(gameTab) end
+stub.Advance(0.1)
+Expect("...and hidden again, back past the others", panel.anchor.x, 62)
+-- Made after the quest log opened, by an addon whose hook on it ran after Spoken's.
+local lateTab = SideTab(26, 6, 70)
+lateTab:Show()
+Z:RefreshPanel()
+Expect("a side tab made later is found on the next refresh", panel.anchor.x, 72)
+lateTab:Hide()
+CloseQuestLog()
+Z:SetMapPanelCollapsed(false)
 local mapPage = panel.page
 Expect("...round the quest details' parchment", mapPage.parchment, "QuestDetailsBackgrounds")
 -- The frame is nine-sliced, as the game draws it: stretched whole, its corners grew with the panel.
