@@ -52,6 +52,7 @@ local TAIL_COLOR = { .6, .6, .6 }
 -- The line's name after the speaker's, in the Small Window's colour for it.
 local LABEL_COLOR = { .88, .84, .76 }
 local LABEL_GAP = 6
+local LABEL_LEAST = "• ..."
 
 do
     local font = CreateFont("SpokenNameFont")
@@ -362,7 +363,7 @@ function PlayerFrame:LayoutHeader()
     name:SetWidth(nameWidth)
     local x = nameWidth
     local labelRoom = room - tailRoom - nameWidth - LABEL_GAP
-    if label:IsShown() and labelRoom > 0 then
+    if label:IsShown() and labelRoom >= math.min(self.labelWidth or 0, self.labelLeast or 0) then
         local labelWidth = math.min(self.labelWidth or 0, labelRoom)
         label:SetWidth(labelWidth)
         label:ClearAllPoints()
@@ -489,11 +490,14 @@ function PlayerFrame:Update()
     local speaker = Speaker(head)
     container.name:SetText(speaker ~= "" and speaker or Label(head))
     container.label:SetWidth(0)
-    container.label:SetText(speaker ~= "" and "• " .. Label(head) or "")
-    container.label:SetShown(speaker ~= "")
     Addon:ClipFont(container.name, head)
     Addon:ClipFont(container.label, head)
     -- Measured once a line, unbounded, so the width is the text's own; the row is laid out often.
+    -- Less room than a dot and an ellipsis would draw only a stray fragment.
+    container.label:SetText(LABEL_LEAST)
+    self.labelLeast = (container.label:GetStringWidth() or 0) + 1
+    container.label:SetText(speaker ~= "" and "• " .. Label(head) or "")
+    container.label:SetShown(speaker ~= "")
     self.labelWidth = (container.label:GetStringWidth() or 0) + 1
 
     Portrait:Configure(self.frame.portrait, head)

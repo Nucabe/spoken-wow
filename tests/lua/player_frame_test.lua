@@ -90,6 +90,31 @@ places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Moonbroo
 ExpectOf("...a place named twice is named once", function() return F.frame.container.label:IsShown() end, false)
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
+-- A short row: the line's name gives way first, then the speaker's.
+local function Row(header, label)
+    quests:Enqueue(H.Clip({ present = { header = header, label = label, portrait = { kind = "none" } } }))
+    local name, title = F.frame.container.name, F.frame.container.label
+    return name, title
+end
+local long = string.rep("The Defias Brotherhood ", 6)
+local name, title = Row("Gryan Stoutmantle", long)
+ExpectOf("a long line's name is cut to the room left, past the speaker's name in full", function()
+    return tostring(name.width == #"Gryan Stoutmantle" * 7 + 1) .. " " .. tostring(title:GetAlpha())
+        .. " " .. tostring(title.width < #("• " .. long) * 7 + 1) .. " " .. tostring(title.anchor.x == name.width + 6)
+end, "true 1 true true")
+local room = name.width + 6 + title.width
+env.SoundQueue:RemoveAllSoundsFromQueue()
+name, title = Row(string.rep("W", math.floor((room - 27) / 7)), long)
+ExpectOf("...not drawn at all where only a fragment of it would fit", function()
+    return tostring(title:IsShown()) .. " " .. tostring(title:GetAlpha())
+end, "true 0")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+name, title = Row(string.rep("W", 200), long)
+ExpectOf("...nor where the speaker's name takes the whole row, which is cut to it", function()
+    return tostring(title:GetAlpha()) .. " " .. tostring(name.width == room)
+end, "0 true")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+
 env.Addon:SetPlayerStyle("none")
 quests:Enqueue(H.Clip())
 Expect("Voice Only keeps it hidden with a queue", F.frame:IsShown(), false)
