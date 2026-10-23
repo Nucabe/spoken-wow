@@ -401,10 +401,10 @@ local function OwnLabel(present)
 end
 
 --- A line's title. A line with no label (a one-page letter, a quest event with no title) goes by
---- its header: its key means nothing to a player.
+--- its header, and one with neither has no title: its key means nothing to a player.
 function Actions.Label(clip)
     local present = clip and clip.present
-    return clip and (present and (OwnLabel(present) or present.header) or clip.key) or ""
+    return present and (OwnLabel(present) or present.header) or ""
 end
 
 --- The speaker's name over the title: the header, unless it is already the title (a line with no
