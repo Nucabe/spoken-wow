@@ -46,9 +46,6 @@ export default function LoginPanel() {
     }
   }
 
-  // Until the session is known the card holds its place, without a form that is about to be replaced.
-  if (loading) return <div className="bn-login" aria-busy="true" />;
-
   if (session) {
     return (
       <div className="bn-login">
@@ -81,7 +78,7 @@ export default function LoginPanel() {
   }
 
   return (
-    <form className="bn-login" onSubmit={onSubmit}>
+    <form className={loading ? "bn-login bn-login-wait" : "bn-login"} onSubmit={onSubmit} aria-busy={loading} inert={loading}>
       <h3 className="bn-display">Sign in</h3>
       <p>Use your Spoken account.</p>
       <label className="bn-field">

@@ -981,8 +981,8 @@ html:has(.bn) {
   background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
 }
-.bn-login[aria-busy="true"] {
-  min-height: 452px;
+.bn-login-wait {
+  visibility: hidden;
 }
 .bn-login h3 {
   margin-bottom: 4px;

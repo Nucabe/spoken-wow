@@ -22,7 +22,10 @@ export default function Gallery() {
   const measure = useCallback(() => {
     const el = row.current;
     if (!el) return;
-    setEdges({ start: el.scrollLeft > 4, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+    const start = el.scrollLeft > 4;
+    const end = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+    // Scrolling fires many events; keep the same object so a row that did not change does not render.
+    setEdges((now) => (now.start === start && now.end === end ? now : { start, end }));
   }, []);
 
   useEffect(() => {
@@ -44,9 +47,9 @@ export default function Gallery() {
   };
 
   const go = (step: 1 | -1) => {
-    const next = (index + step + GALLERY.length) % GALLERY.length;
-    setIndex(next);
-    centre(next);
+    const target = (index + step + GALLERY.length) % GALLERY.length;
+    setIndex(target);
+    centre(target);
   };
 
   const scroll = (direction: 1 | -1) => {

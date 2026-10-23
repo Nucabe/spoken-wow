@@ -128,7 +128,7 @@ export default function InstallTabs({
               </a>
               . If Windows SmartScreen stops the installer, choose More info, then Run anyway.
             </p>
-            <p className="bn-note">Italian: {ITALIAN_NOTE}</p>
+            <p className="bn-note">For Italian, choose the language under Voice Language in Spoken&apos;s settings.</p>
           </>
         )}
 
