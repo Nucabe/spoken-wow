@@ -979,12 +979,18 @@ the quest log's included, except where it contributes; each addon asks
 
 Clicking it opens Spoken's contribute box (`UI/ContributeBox.lua`). It holds a link to
 `spoken.rusty.one/contribute` that carries an envelope: the addon, the build, the locale, the
-quest or NPC, and the text itself. Where no link can be built it holds the envelope and the
+quest or NPC (never a player: a quest a party member shares names no one and carries no
+observations of them), and the text itself. Where no link can be built it holds the envelope and the
 address to paste. The client still cannot open a browser or post anywhere, so the player copies
 it, opens it, sees a field-by-field preview of exactly what is about to be sent, and submits.
 The first click ever asks whether to send just that line or to collect as the player plays:
 **Collect Missing Lines** (`Gather.lua`, `/sp collect`) keeps every line Spoken is missing in
-`SpokenContributions.lua`, which the player uploads at `/contribute` (`/sp send` says how).
+`SpokenContributions.lua`, which the player uploads at `/contribute` (`/sp send` says how). It
+also keeps a line that plays but whose words on screen are not the ones its text has, tokens,
+case and spacing aside (`DataModules:IsTextKnown`), so the site can correct it: gossip against
+the speaker's lines in the client's language, a quest moment against its wordings, or for one
+wording against the Compendium's English accept and complete text. Progress text, and a quest
+moment of one wording in another language, have nothing to compare with and are not checked.
 
 The same text pasted again — by the same player or a different one — bumps a count on the
 existing row rather than filing a second one; different text under the same key stays its own
@@ -1001,7 +1007,7 @@ From there it is an ordinary line — the explorer lists it under missing audio 
 that the addon could not put back (the branch of a `$G` it picked) through the usual text
 override, generates a take, and the next export carries it into the pack. The addon does put
 back the reader's own name, class and race as `$N`, `$C` and `$R` before sending — only the
-client knows which words those were — so a contributed line is a template like an extracted
+client knows which words those were; the name as written and in capitals — so a contributed line is a template like an extracted
 one: stored as `originalText`, spoken as `Adventurer`/`Traveler` by the extract's own table,
 and hashed on the template when it is gossip. Class and race are swapped wherever they occur as
 whole words, so a warrior's "a warrior's discipline" arrives as "a `$c`'s discipline"; that

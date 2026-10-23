@@ -461,12 +461,6 @@ function Spoken:LanguageName(code)
     return Options:LanguageName(code)
 end
 
---- Whether a font draws `text`: the settings' font object, or the font file `path`. The one probe
---- every module uses, so each names a language the same way.
-function Spoken:FontDraws(text, path)
-    return Options:FontDraws(text, path)
-end
-
 --- Whether a font draws the language `code`, as the lists test it before they name it natively:
 --- the settings' font object, or the font file `path`.
 function Spoken:LanguageDraws(code, path)
@@ -501,6 +495,12 @@ end
 --- addon goes on with the table it keeps itself.
 function Spoken:BindModuleSettings(name, legacy, bind, skip)
     return Addon:BindModuleSettings(name, legacy, bind, skip)
+end
+
+--- The profile chosen for new characters, when Spoken started this character on it at this login;
+--- else nil. A feature addon passes it as its own AceDB default profile, so both start on it.
+function Spoken:NewCharacterStartProfile()
+    return Addon.newCharacterProfile
 end
 
 --- Whether Spoken's page and minimap menu open Azeroth's Compendium and hold its Unlock switches,

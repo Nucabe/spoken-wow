@@ -186,49 +186,55 @@ local function Square(char)
     local code = (a - 224) * 4096 + (b - 128) * 64 + (c - 128)
     return (code >= 0x3400 and code <= 0x9FFF) or (code >= 0xAC00 and code <= 0xD7A3)
 end
-function Options:FontDraws(text, path)
+local function FontDraws(text, path)
     if not (UIParent and UIParent.CreateFontString) then return not path end
-    local probe = probes[path or false]
+    local key = path or false
+    local probe = probes[key]
     if probe == nil then
         probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         probe:Hide()
         if path and probe:SetFont(path, 12, "") == false then probe = false end
-        probes[path or false] = probe
+        probes[key] = probe
     end
     if not probe then return false end
     local width, count = Width(probe, text), 0
     for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do count = count + 1 end
     local drew = width > 0 and math.abs(width - Width(probe, string.rep(BOX, count))) > 0.5
-    local box
-    for char in string.gmatch(text, "[\227-\237][\128-\191][\128-\191]") do
-        if not drew then break end
-        if Square(char) then
-            box = box or Width(probe, BOX)
-            drew = math.abs(Width(probe, char) - box) > 0.5
+    if drew then
+        local box
+        for char in string.gmatch(text, "[\227-\237][\128-\191][\128-\191]") do
+            if Square(char) then
+                box = box or Width(probe, BOX)
+                if math.abs(Width(probe, char) - box) <= 0.5 then
+                    drew = false
+                    break
+                end
+            end
         end
     end
     probe:SetText("")
     return drew
 end
 
+local function Locale(code)
+    for _, locale in ipairs(LANGUAGES) do
+        if locale.code == code then return locale end
+    end
+end
+
 -- Whether a font draws the language `code`: its own name, and the characters only it has.
 function Options:LanguageDraws(code, path)
-    for _, locale in ipairs(LANGUAGES) do
-        if locale.code == code then return self:FontDraws(locale.native .. (locale.sample or ""), path) end
-    end
-    return false
+    local locale = Locale(code)
+    return locale ~= nil and FontDraws(locale.native .. (locale.sample or ""), path)
 end
 
 --- A language's name in the lists, one for every module: its own, and in English where this
 --- client's font cannot draw its script (Korean on a German client).
 function Options:LanguageName(code)
-    for _, locale in ipairs(LANGUAGES) do
-        if locale.code == code then
-            if not locale.script then return locale.native end
-            return self:LanguageDraws(code) and locale.native or locale.english
-        end
-    end
-    return code
+    local locale = Locale(code)
+    if not locale then return code end
+    if not locale.script then return locale.native end
+    return self:LanguageDraws(code) and locale.native or locale.english
 end
 
 --- The client's language, as "Auto" reads it: English where the client's is not one of ours.
@@ -1004,10 +1010,33 @@ function Options:CopyProfile(name)
     end
 end
 
+--- Delete `name` where it is not in use. AceDB clears the key of each character on it; each is put
+--- on its own profile, so it is not taken for a new character at its next login. The choice of it
+--- for new characters goes too, so a later profile of that name is not chosen.
 function Options:DeleteProfile(name)
     for _, db in ipairs(self:ProfileDBs()) do
-        if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then db:DeleteProfile(name) end
+        if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then
+            local keys, moved = db.sv and db.sv.profileKeys, {}
+            for key, profile in pairs(keys or {}) do
+                if profile == name then table.insert(moved, key) end
+            end
+            db:DeleteProfile(name)
+            for _, key in ipairs(moved) do keys[key] = key end
+        end
     end
+    if Addon.db and Addon.db.global.NewCharacterProfile == name and not Addon:SavedProfile(name) then
+        Addon.db.global.NewCharacterProfile = nil
+    end
+end
+
+--- The profile a character logging in with Spoken for the first time starts on: one of Spoken's
+--- saved profiles, or false for a profile of its own.
+function Options:NewCharacterProfile()
+    return Addon:NewCharacterProfile() or false
+end
+
+function Options:SetNewCharacterProfile(name)
+    Addon.db.global.NewCharacterProfile = name or nil
 end
 
 function Options:AddProfiles(layout)
@@ -1051,6 +1080,22 @@ function Options:AddProfiles(layout)
             end,
         }
         layout:Button(L.OPT_PROFILE_NEW, 200, function() StaticPopup_Show("SPOKEN_NEW_PROFILE") end)
+    end
+    if Addon.db then
+        layout:Dropdown(L.OPT_NEW_CHARACTER_PROFILE, L.OPT_NEW_CHARACTER_PROFILE_TIP,
+            -- Only Spoken's saved profiles: it reads the choice before any other settings load.
+            function()
+                local names = {}
+                for _, name in ipairs(Addon.db:GetProfiles()) do
+                    if Addon:SavedProfile(name) then table.insert(names, name) end
+                end
+                table.sort(names)
+                table.insert(names, 1, false)
+                return names
+            end,
+            function() return self:NewCharacterProfile() end,
+            function(name) self:SetNewCharacterProfile(name) end,
+            nil, function(name) return name or L.OPT_PROFILE_OWN end)
     end
 end
 

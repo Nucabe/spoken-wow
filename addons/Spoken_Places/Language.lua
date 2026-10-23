@@ -136,7 +136,7 @@ end
 -- The pages set font files, which lack the font object's fallbacks, so the language must draw in
 -- the file itself.
 function SpokenPlaces:LanguageDraws(code, path)
-	return (path and Spoken and Spoken.LanguageDraws and Spoken:LanguageDraws(code, path)) and true or false
+	return Spoken:LanguageDraws(code, path)
 end
 
 -- The fonts clients ship for the other scripts, which the game's font objects fall back to and a
@@ -168,14 +168,10 @@ function SpokenPlaces:FontFor(fontObject, code)
 	local key = path .. "|" .. locale.code
 	if self.fonts[key] == nil then
 		self.fonts[key] = false
-		if self:LanguageDraws(locale.code, path) then
-			self.fonts[key] = path
-		else
-			for _, stock in ipairs(SCRIPT_FONTS[locale.script] or {}) do
-				if self:LanguageDraws(locale.code, stock) then
-					self.fonts[key] = stock
-					break
-				end
+		for _, font in ipairs({ path, unpack(SCRIPT_FONTS[locale.script] or {}) }) do
+			if self:LanguageDraws(locale.code, font) then
+				self.fonts[key] = font
+				break
 			end
 		end
 	end

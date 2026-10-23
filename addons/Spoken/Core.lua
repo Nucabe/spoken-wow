@@ -126,6 +126,33 @@ Defaults = {
     },
 }
 
+--- `name` where Spoken has a saved profile of that name, else nil. Reads the saved table, since
+--- InitDB asks before AceDB loads it.
+function Addon:SavedProfile(name)
+    local sv = rawget(_G, "SpokenSettings")
+    local profiles = type(sv) == "table" and sv.profiles
+    if type(name) == "string" and type(profiles) == "table" and type(profiles[name]) == "table" then return name end
+    return nil
+end
+
+--- The profile chosen for new characters, or nil where none is chosen or it is not saved.
+function Addon:NewCharacterProfile()
+    local sv = rawget(_G, "SpokenSettings")
+    local global = type(sv) == "table" and sv.global
+    return type(global) == "table" and self:SavedProfile(global.NewCharacterProfile) or nil
+end
+
+--- Whether a character missing from profileKeys has been here before: a deleted profile clears its
+--- characters' keys but leaves their own settings, and the Forever client answers "Unknown" for any
+--- character on some logins. One with neither, whose empty char table AceDB dropped, looks new.
+local function SeenBefore(sv, charKey)
+    local unknown = rawget(_G, "UNKNOWNOBJECT") or "Unknown"
+    if charKey:sub(1, #unknown + 3) == unknown .. " - " then return true end
+    local own = type(sv.profiles) == "table" and sv.profiles[charKey]
+    local char = type(sv.char) == "table" and sv.char[charKey]
+    return type(own) == "table" or type(char) == "table"
+end
+
 local RENAMED_PARTS = { zones = "places", books = "readables" }
 local RENAMED_MODULES = { Zones = "Places", Writings = "Readables" }
 
@@ -145,7 +172,23 @@ function Addon:InitDB()
     if self.db then
         return
     end
-    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
+    -- AceDB uses the third argument only for a character missing from profileKeys, and adds it as
+    -- it loads, so the keys are noted first. The client's name for the player can change between
+    -- loads, so the character's key is AceDB's own.
+    local newProfile, known = self:NewCharacterProfile(), {}
+    if newProfile then
+        for key in pairs(rawget(_G, "SpokenSettings").profileKeys or {}) do known[key] = true end
+    end
+    self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults, newProfile)
+    local charKey = newProfile and self.db.keys.char
+    if charKey and not known[charKey] then
+        if SeenBefore(self.db.sv, charKey) then
+            -- Back on the profile AceDB gave it before there was a choice: its own.
+            self.db:SetProfile(charKey)
+        else
+            self.newCharacterProfile = newProfile
+        end
+    end
     -- A saved AutoScroll = false predates ScrollMode: carry it over as "off", in every profile.
     for _, profile in pairs(self.db.sv and self.db.sv.profiles or {}) do
         local transcript = type(profile) == "table" and profile.Transcript
@@ -668,9 +711,9 @@ end
 
 --- The voice language and the fallback were set on the quests page; they are Spoken's now. On each
 --- character's first login with the quests settings loaded, that character's choice there is copied
---- to the profile it is on, unless that profile has one of its own, so the page shows what is being
---- heard. The quests settings are not loaded while that module is off: nothing is marked then, and
---- the next login that has them does it.
+--- to the profile it is on, unless that profile has one of its own or another character on it has
+--- had its copy, so the page shows what is being heard. The quests settings are not loaded while
+--- that module is off: nothing is marked then, and the next login that has them does it.
 function Addon:TakeVoiceLanguageFromQuests()
     local db = self.db
     if not db or db.char.voiceLanguageFromQuests then
@@ -681,6 +724,15 @@ function Addon:TakeVoiceLanguageFromQuests()
         return
     end
     db.char.voiceLanguageFromQuests = true
+    -- A character on this profile that has had its copy hears what the profile says: a copy now
+    -- would change that.
+    local current, chars = db:GetCurrentProfile(), db.sv and db.sv.char or {}
+    for key, profile in pairs(db.sv and db.sv.profileKeys or {}) do
+        if profile == current and key ~= db.keys.char and type(chars[key]) == "table"
+            and chars[key].voiceLanguageFromQuests then
+            return
+        end
+    end
     local audio = QuestsAudio(db)
     local language = db.profile.Language
     if not (audio and language) or language.Voice ~= nil or language.Fallback ~= nil then

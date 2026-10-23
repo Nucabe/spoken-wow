@@ -14,6 +14,16 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   Italian or Vietnamese voice, which no client runs in, still reads along in its own words where its
   pack has them. A book can show some pages in your language and the rest in English.
   *([Nucabe](https://github.com/Nucabe))*
+- **Choose the profile new characters start on.** Profile for New Characters, under Profiles on
+  Spoken's page, puts each character you make from then on straight onto that profile, quests
+  settings included. Characters you already have stay on the profile they use, with every setting
+  as it was. *([Nucabe](https://github.com/Nucabe))*
+- **Collect Missing Lines keeps each quest stage once, and keeps reworded lines.** A quest stage
+  is no longer kept a second time without its NPC as the window closes. A quest or gossip line that
+  plays but whose words in the game differ from the text it was voiced from is now kept too, so it
+  can be corrected. Your character's name no longer goes out with a line or page that writes it in
+  capitals, nor another player's name or look with a quest they shared, and lines kept before that
+  have a sharing player's name taken out when you log in. *([Nucabe](https://github.com/Nucabe))*
 - **Text Language on the Places page offers Traditional Chinese (繁體中文)** on clients in other
   languages whose fonts draw it, as it does Simplified Chinese, Korean and Russian. Voice Language
   names it in its own language on those clients too. *([Nucabe](https://github.com/Nucabe))*
