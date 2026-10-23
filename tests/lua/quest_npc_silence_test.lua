@@ -66,7 +66,8 @@ stub.ShowPanel(nil)
 stub.FireEvent("QUEST_FINISHED")
 
 -- A first talk: the client has not shown this NPC's text before, so the window opens without it
--- and the read 0.1s later finds no line. A pack voices the NPC, so the mute holds for the line.
+-- and the read 0.1s later finds no text. A pack voices the NPC, so the mute holds and the window
+-- is read again until the text is there.
 quests.available, quests.active = 0, 0
 local function Talk(guid, text)
     stub.world.npcGUID = guid
@@ -78,12 +79,13 @@ local VOICED, PLAIN = "Creature-0-0-0-0-23456-0", "Creature-0-0-0-0-12345-0"
 
 Expect("a first talk to a voiced NPC mutes it as its window opens, its text not there yet", Talk(VOICED, ""), "0")
 stub.Advance(0.15)
-Expect("...and stays muted when the read finds no line yet", GetCVar("Sound_EnableDialog"), "0")
+Expect("...and stays muted when the read finds no text yet", GetCVar("Sound_EnableDialog"), "0")
+Expect("...with nothing read yet", _G.Spoken:GetCurrent(), nil)
+-- The client fills the window in without another GOSSIP_SHOW.
 stub.world.gossipText = "Welcome to the inn."
-stub.FireEvent("GOSSIP_SHOW")
-stub.Advance(0.15)
+stub.Advance(0.3)
 local current = _G.Spoken:GetCurrent()
-Expect("...the line is read once its text arrives", current and current.fileName, GREETING_HASH)
+Expect("...the window is read again, and the line starts once its text arrives", current and current.fileName, GREETING_HASH)
 Expect("...with the NPC still silent", GetCVar("Sound_EnableDialog"), "0")
 Close()
 
@@ -92,12 +94,28 @@ stub.Advance(0.15)
 Expect("...not after the read either", GetCVar("Sound_EnableDialog"), "1")
 Close()
 
-Expect("a voiced NPC whose line never comes is muted as its window opens", Talk(VOICED, "Not a line any pack has."), "0")
+-- The text is there and no pack has a line for it: nothing is coming, so the greeting is not held.
+Expect("a voiced NPC is muted as its window opens", Talk(VOICED, "Not a line any pack has."), "0")
 stub.Advance(0.15)
-Expect("...still while the window may yet get its text", GetCVar("Sound_EnableDialog"), "0")
-stub.Advance(1.5)
-Expect("...and given its voice back at the mute's deadline, nothing having played", GetCVar("Sound_EnableDialog"), "1")
+Expect("...and given its voice back as soon as its text is read and has no line", GetCVar("Sound_EnableDialog"), "1")
 Expect("...with nothing queued", _G.Spoken:GetQueueSize(), 0)
+Close()
+
+-- The text never arrives: the window is read again a few times, then the voice comes back.
+Expect("a voiced NPC whose window gets no text is muted as it opens", Talk(VOICED, ""), "0")
+stub.Advance(0.9)
+Expect("...held while the window is read again", GetCVar("Sound_EnableDialog"), "0")
+stub.Advance(0.5)
+Expect("...and given its voice back, nothing having played", GetCVar("Sound_EnableDialog"), "1")
+Expect("...with nothing queued", _G.Spoken:GetQueueSize(), 0)
+Close()
+
+-- A window closed while it waits for its text is not read afterwards.
+Talk(VOICED, "")
+Close()
+stub.world.gossipText = "Welcome to the inn."
+stub.Advance(0.5)
+Expect("a window closed before its text arrived is not read", _G.Spoken:GetCurrent(), nil)
 Close()
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end

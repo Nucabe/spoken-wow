@@ -613,12 +613,13 @@ end
 --- The source is about to queue a line: silence the game's NPC dialogue now rather than
 --- when the line starts, so an NPC's greeting is never heard instead of being cut short.
 --- Honours the player's "mute game dialogue" setting, and lifts itself if nothing comes.
+---@return boolean? muted whether the dialogue was muted now; additive, guard on the field
 function Spoken:MuteGameDialogueAhead(source)
     -- Where Read in Battlegrounds keeps Spoken quiet no line follows, so the greeting is left alone.
     if not Addon:ReadsHere() then
-        return
+        return false
     end
-    SoundQueue:MuteGameDialogueAhead(source:GetChannel())
+    return SoundQueue:MuteGameDialogueAhead(source:GetChannel())
 end
 
 --- The read that MuteGameDialogueAhead was taken for found no line: the game's dialogue comes

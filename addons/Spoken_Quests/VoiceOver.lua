@@ -399,8 +399,18 @@ local selectedGossipOption
 -- Set by picking any option, even one whose label could not be found, until the window closes:
 -- every page after the greeting was asked for.
 local gossipOptionPicked
--- The NPC a gossip or greeting window was muted for as it opened, until the next window.
-local mutedAheadFor
+-- The gossip or greeting event whose window took a mute ahead, until its text is read or the
+-- window closes; and how often that window has been read again for its text.
+local greetingMutedFor
+local greetingTextTries = 0
+local greetingTextTicket = 0
+local GREETING_TEXT_TRIES, GREETING_TEXT_WAIT = 5, 0.2
+
+local function EndGreetingTextWait()
+    greetingMutedFor = nil
+    greetingTextTries = 0
+    greetingTextTicket = greetingTextTicket + 1
+end
 local currentQuestSoundData
 local currentGossipSoundData
 
@@ -1131,7 +1141,7 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
-    mutedAheadFor = nil
+    EndGreetingTextWait()
     if not Spoken.MuteGameDialogueAhead or not self:IsPageOn(event) or not self:IsAutoplayOn() or self.dataModulesPending
         or not Player.source then
         return
@@ -1153,20 +1163,35 @@ function Addon:MuteGreetingAhead(event)
     -- ID is not known yet is muted too: its greeting starts now, and with no line the mute lifts.
     local questID = quest and CurrentQuestID()
     if (quest and (not questID or questID == 0)) or self:ExpectedLine(event) then
-        mutedAheadFor = not quest and Utils:GetNPCGUID() or nil
-        Spoken:MuteGameDialogueAhead(self:PartOfPage(event) == "gossip" and Player.gossipSource or Player.source)
+        local muted = Spoken:MuteGameDialogueAhead(self:PartOfPage(event) == "gossip" and Player.gossipSource or Player.source)
+        greetingMutedFor = muted and SPEECH_EVENTS[event] and event or nil
     end
 end
 
---- Whether a read that found no line leaves the mute taken as its window opened. On a first talk
---- to an NPC the client has not shown before, the window's text may not be there yet when it is read,
---- so the lookup misses for an NPC a pack voices. The mute then holds to its deadline, by which
---- the line has started or nothing is coming.
----@param soundData SoundData
----@return boolean
-function Addon:KeepsMuteAhead(soundData)
-    return mutedAheadFor ~= nil and soundData.unitGUID == mutedAheadFor
-        and (soundData.event == Enums.SoundEvent.Gossip or soundData.event == Enums.SoundEvent.QuestGreeting)
+--- Whether the read of a greeting window found no text yet, with the mute its opening took
+--- still held. On a first talk to an NPC the client has not shown before, the window's text can
+--- arrive after the event, so the window is read again shortly, until the text is there or the
+--- mute's deadline has passed. A read that finds text and no line is a real miss, and gives the
+--- NPC its voice back at once.
+---@param event string
+---@param text string? what the window's text read as
+---@param manual boolean?
+---@return boolean waiting true when the read is to be tried again, so this one stops
+function Addon:WaitsForGreetingText(event, text, manual)
+    if manual or greetingMutedFor ~= event or (text and text:find("%S")) or not self.DispatchDirectEvent then
+        return false
+    end
+    if greetingTextTries >= GREETING_TEXT_TRIES then
+        return false
+    end
+    greetingTextTries = greetingTextTries + 1
+    local ticket = greetingTextTicket
+    self:ScheduleTimer(function()
+        if ticket == greetingTextTicket then
+            self:DispatchDirectEvent(event, "text not there yet, read again")
+        end
+    end, GREETING_TEXT_WAIT)
+    return true
 end
 
 --- The text autoplay will read for the dialog that just opened, or nil. Asked before the line is
@@ -1225,6 +1250,9 @@ function Addon:QUEST_GREETING(event, manual)
 
     -- Can happen if the player interacted with an NPC while having main menu or options opened
     if not guid and not targetName then
+        return
+    end
+    if self:WaitsForGreetingText(event, greetingText, manual) then
         return
     end
     if not greetingText then
@@ -1286,6 +1314,9 @@ function Addon:GOSSIP_SHOW(event, manual)
     if not guid and not targetName then
         return
     end
+    if self:WaitsForGreetingText(event, gossipText, manual) then
+        return
+    end
     if not gossipText then
         return
     end
@@ -1323,7 +1354,7 @@ function Addon:QUEST_FINISHED()
         end
     end
     currentQuestSoundData = nil
-    mutedAheadFor = nil
+    EndGreetingTextWait()
     local pending = pendingRead
     pendingRead = nil
     if pending then
@@ -1338,7 +1369,7 @@ function Addon:GOSSIP_CLOSED()
         Player:Remove(currentGossipSoundData)
     end
     currentGossipSoundData = nil
-    mutedAheadFor = nil
+    EndGreetingTextWait()
 
     selectedGossipOption = nil
     gossipOptionPicked = nil

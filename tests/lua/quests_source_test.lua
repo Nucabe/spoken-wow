@@ -217,8 +217,8 @@ Expect("...past the mute's own deadline too", world.cvars.Sound_EnableDialog, "0
 Spoken:StopAll()
 Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
 
--- The mute is taken for the NPC's lines; the page then read has none a pack holds. On a first
--- talk that is the text not having arrived yet, so the mute holds to its deadline.
+-- The mute is taken for the NPC's lines; the page then read, its text on screen, has none a pack
+-- holds. Nothing is coming, so the greeting is not held back.
 VO, env, Spoken = MuteBoot()
 VO.Addon.db.char.hasSeenGossipForNPC = {}
 stub.ShowGossip("Greetings, traveller.")
@@ -226,9 +226,7 @@ Open(VO, "GOSSIP_SHOW")
 Expect("a voiced NPC's gossip opening mutes it...", world.cvars.Sound_EnableDialog, "0")
 lookup[GREETING_HASH] = nil
 stub.Advance(0.2)
-Expect("...and keeps it muted when the read finds no line", world.cvars.Sound_EnableDialog, "0")
-stub.Advance(1.5)
-Expect("...until the mute's deadline gives its voice back", world.cvars.Sound_EnableDialog, "1")
+Expect("...and its voice is back as soon as the read finds no line", world.cvars.Sound_EnableDialog, "1")
 lookup[GREETING_HASH] = 3
 
 VO, env, Spoken = MuteBoot()

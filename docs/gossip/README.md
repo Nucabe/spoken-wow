@@ -32,8 +32,10 @@ pack calls into it.
    hold the text can lag the event. Each signal waits 0.1 s and the last one for a window wins.
 2. In the frame the window opens, `MuteGreetingAhead` cuts the NPC's own spoken greeting, but
    only where a pack has a line for this speaker and the settings say it will be read. Any
-   other NPC keeps its own voice. A read of that window that finds no line leaves the mute to its
-   1.5 s deadline (`KeepsMuteAhead`): on a first talk the client may not have the NPC's text yet.
+   other NPC keeps its own voice. On a first talk the client may not have the NPC's text yet when
+   the window is read: a read that finds the text empty keeps the mute and reads the window again
+   every 0.2 s, up to five times (`WaitsForGreetingText`). A read that finds text and no line gives
+   the voice back at once.
 3. `GetNPCGossipTextHash` finds the line from the speaker and the words. It looks in the
    tables written in the client's language first (`Gossip/<lang>.lua`, then the packs'), and only
    if no pack in that language knows the NPC does it try the others. The closest match by shared
