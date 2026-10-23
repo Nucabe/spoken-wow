@@ -215,7 +215,7 @@ Options:SetNewCharacterProfile("Alice - Realm")
 Options:SetNewCharacterProfile(false)
 Expect("choosing a profile of their own clears the choice", SpokenSettings.global.NewCharacterProfile, nil)
 
--- The dropdown: a profile of their own, then Spoken's saved profiles.
+-- The dropdown: Spoken's saved profiles, and each entry told apart from the others by what it is.
 Seed(nil)
 SpokenSettings.profiles[L.OPT_PROFILE_OWN] = Profile(12)
 SpokenQuestsSettings.profiles.QuestsOnly = { Audio = {} }
@@ -231,7 +231,8 @@ for _, entry in ipairs(entries) do
 end
 Expect("the dropdown offers a profile of their own and Spoken's saved profiles", table.concat(offered, ", "),
     table.concat({ env.L.OPT_PROFILE_OWN, "Alice - Realm", "Shared", env.L.OPT_PROFILE_OWN }, ", "))
-
+Expect("...with only one checked, though a profile has the same name as the first", checked, 1)
+Expect("...and that one the first", entries[1] and entries[1].checked, true)
 
 stub.world.playerName = nil
 if Failures() > 0 then print(Failures() .. " failure(s)"); os.exit(1) end
