@@ -462,7 +462,6 @@ function SpokenPlaces:ApplyPanelOptions()
 		return
 	end
 	panel:SetWidth(SpokenPlaces:Get("panelWidth"))
-	ApplyAnchors()
 	Refresh(SpokenPlaces:GetDisplayedMapID())
 end
 
@@ -485,7 +484,6 @@ function SpokenPlaces:SetupMapPanel()
 	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside
 	-- the Forever client's own Minimize as the map opens under the gamepad UI.
 	WorldMapFrame:HookScript("OnSizeChanged", function()
-		ApplyAnchors()
 		Refresh(SpokenPlaces:GetDisplayedMapID())
 	end)
 	WorldMapFrame:HookScript("OnHide", function()
