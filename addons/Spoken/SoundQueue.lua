@@ -388,6 +388,12 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
     return true
 end
 
+--- Whether a mute taken ahead still waits for its line, short of its deadline.
+---@return boolean
+function SoundQueue:IsMutingGameDialogueAhead()
+    return muteAheadTimer ~= nil
+end
+
 --- The read a mute ahead was taken for found no line: give the game's dialogue back now rather
 --- than at the deadline.
 function SoundQueue:EndMuteGameDialogueAhead()

@@ -628,6 +628,13 @@ function Spoken:EndMuteGameDialogueAhead()
     SoundQueue:EndMuteGameDialogueAhead()
 end
 
+--- Whether the mute MuteGameDialogueAhead took still holds for a line to come: false once its
+--- deadline passed or a read gave the game's dialogue back.
+---@return boolean
+function Spoken:IsMutingGameDialogueAhead()
+    return SoundQueue:IsMutingGameDialogueAhead()
+end
+
 --- A gate that applies to every source: fn(clip) -> reason | nil.
 function Spoken:AddGate(fn)
     SoundQueue:AddGate(fn)

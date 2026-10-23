@@ -399,15 +399,19 @@ local selectedGossipOption
 -- Set by picking any option, even one whose label could not be found, until the window closes:
 -- every page after the greeting was asked for.
 local gossipOptionPicked
--- The gossip or greeting event whose window took a mute ahead, until its text is read or the
--- window closes; and how often that window has been read again for its text.
+-- The gossip or greeting event whose window took a mute ahead, until the next window opens, it
+-- closes, or a read gives the NPC its voice back; and how often it has been read again for its text.
 local greetingMutedFor
 local greetingTextTries = 0
 local GREETING_TEXT_TRIES, GREETING_TEXT_WAIT = 5, 0.2
+-- Moved on whenever a wait ends, so a read again for one window never runs in the next: a quest
+-- page replaces the greeting in the same window with no close at all.
+local greetingWait = 0
 
 local function EndGreetingTextWait()
     greetingMutedFor = nil
     greetingTextTries = 0
+    greetingWait = greetingWait + 1
 end
 
 --- A read of a window that took a mute will not speak its greeting: the NPC has its voice back
@@ -715,10 +719,6 @@ function Addon:OnInitialize()
             -- Through pcall because a snapshot is a fallback, and a client that refuses one
             -- of these globals must not stop the event from being recorded.
             pcall(CaptureQuestSnapshot, event)
-            -- A quest page replaces the greeting in the same window, without QUEST_FINISHED: a
-            -- read of the greeting still waiting for its text would lift this page's mute, or
-            -- queue the greeting over it.
-            self:CancelDeferredRead("QUEST_GREETING")
             pcall(self.MuteGreetingAhead, self, event)
         end
     end)
@@ -776,20 +776,11 @@ function Addon:OnInitialize()
             end
         end, delay)
     end
-    self.DispatchDirectEventLater = function(addon, event, source, delay)
-        DispatchLater(event, source, delay)
-    end
-    local function CancelLater(event)
-        deferredEventGeneration[event] = (deferredEventGeneration[event] or 0) + 1
-    end
-    self.CancelDeferredRead = function(addon, event)
-        CancelLater(event)
-    end
     local function SignalDirectEvent(event, source)
         if event == "QUEST_FINISHED" then
-            CancelLater("QUEST_GREETING")
+            deferredEventGeneration.QUEST_GREETING = (deferredEventGeneration.QUEST_GREETING or 0) + 1
         elseif event == "GOSSIP_CLOSED" then
-            CancelLater("GOSSIP_SHOW")
+            deferredEventGeneration.GOSSIP_SHOW = (deferredEventGeneration.GOSSIP_SHOW or 0) + 1
         end
         if not deferredSpeechEvents[event] then
             DispatchDirectEvent(event, source)
@@ -1197,22 +1188,29 @@ end
 --- Whether the read of a greeting window found no text yet, with the mute its opening took
 --- still held. On a first talk to an NPC the client has not shown before, the window's text can
 --- arrive after the event, so the window is read again every GREETING_TEXT_WAIT seconds, up to
---- GREETING_TEXT_TRIES times, whatever the mute's deadline: the count starts again with the next
---- window, and a close ends it. A read that finds text and no line is a real miss, and gives the
---- NPC its voice back at once.
+--- GREETING_TEXT_TRIES times while the mute holds: the count starts again with the next window,
+--- and a close ends it. A read that finds text and no line is a real miss, and gives the NPC its
+--- voice back at once.
 ---@param event string
 ---@param text string? what the window's text read as
 ---@param manual boolean?
 ---@return boolean waiting true when the read is to be tried again, so this one stops
 function Addon:WaitsForGreetingText(event, text, manual)
-    if manual or greetingMutedFor ~= event or (text and text:find("%S")) or not self.DispatchDirectEventLater then
+    if manual or greetingMutedFor ~= event or (text and text:find("%S")) then
         return false
     end
     if greetingTextTries >= GREETING_TEXT_TRIES then
         return false
     end
     greetingTextTries = greetingTextTries + 1
-    self:DispatchDirectEventLater(event, "text not there yet, read again", GREETING_TEXT_WAIT)
+    local wait = greetingWait
+    self:ScheduleTimer(function()
+        -- Past the mute's deadline the NPC's greeting is heard again, and a line read now would
+        -- start over it.
+        if wait == greetingWait and Spoken:IsMutingGameDialogueAhead() then
+            self:DispatchDirectEvent(event, "text not there yet, read again")
+        end
+    end, GREETING_TEXT_WAIT)
     return true
 end
 

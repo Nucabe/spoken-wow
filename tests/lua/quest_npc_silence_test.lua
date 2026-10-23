@@ -110,6 +110,17 @@ Expect("...and given its voice back, nothing having played", GetCVar("Sound_Enab
 Expect("...with nothing queued", _G.Spoken:GetQueueSize(), 0)
 Close()
 
+-- The mute's deadline passes while the window waits (a read held back by another addon's window
+-- starts the count late): the NPC's greeting is heard again, and a line now would start over it.
+Talk(VOICED, "")
+stub.Advance(0.15)
+_G.Spoken:EndMuteGameDialogueAhead()
+stub.world.gossipText = "Welcome to the inn."
+stub.Advance(0.5)
+Expect("a window whose mute ran out while it waited for its text is not read over the greeting",
+    _G.Spoken:GetCurrent(), nil)
+Close()
+
 -- A window closed while it waits for its text is not read afterwards. The first read has run and
 -- the next is waiting when the window closes.
 Talk(VOICED, "")
@@ -178,10 +189,11 @@ Expect("...and does not give the NPC its voice back over the quest page's mute",
 CloseGreeting()
 stub.world.greetingText = nil
 
--- A read the player asks for is its own, and does not wait for the text.
+-- A read the player asks for is its own, and does not wait for the text: with none, there is no
+-- line, and the NPC has its voice back at once.
 Talk(VOICED, "")
-Expect("a read the player asked for does not wait for the window's text",
-    VO.Addon:WaitsForGreetingText("GOSSIP_SHOW", "", true), false)
+VO.Addon:ReadVisibleQuest("dialog Play button")
+Expect("a read the player asked for does not wait for the window's text", GetCVar("Sound_EnableDialog"), "1")
 Close()
 
 -- Nothing muted, nothing to hold: the voice-off settings read the window once, as before.
