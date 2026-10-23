@@ -184,18 +184,29 @@ Seed("Shared")
 SpokenQuestsSettings.profileKeys["Bob - Realm"] = nil
 SpokenSettings.char["Bob - Realm"] = nil
 SpokenSettings.profileKeys["Frank - Realm"] = "Shared"
+SpokenSettings.char["Frank - Realm"] = { voiceLanguageFromQuests = true }
 spoken, quests = Play("Bob")
 Expect("a character the quests module has not seen keeps Spoken's profile", spoken, "Shared")
 Expect("...and gets a profile of its own there, not the one Spoken is on", quests, "Bob - Realm")
 Expect("...and no voice language is copied into the profile others are on", Voice("Shared"), nil)
 Expect("...and the copy is done with", SpokenSettings.char["Bob - Realm"].voiceLanguageFromQuests, true)
 
--- Shared by name in both addons, as the page keeps them, but another character is on it.
+-- Shared by name in both addons, as the page keeps them, and another character on it has had its
+-- copy: it hears what Shared says, which a copy now would change.
+Seed(nil)
+SpokenSettings.char["Bob - Realm"] = nil
+SpokenSettings.profileKeys["Frank - Realm"] = "Shared"
+SpokenSettings.char["Frank - Realm"] = { voiceLanguageFromQuests = true }
+Play("Bob")
+Expect("a character on a profile another has had its copy on does not copy the quests page's language into it",
+    Voice("Shared"), nil)
+
+-- Where none of the characters on it has had the copy, the first to log in makes it, as before.
 Seed(nil)
 SpokenSettings.char["Bob - Realm"] = nil
 SpokenSettings.profileKeys["Frank - Realm"] = "Shared"
 Play("Bob")
-Expect("a character on a profile others are on does not copy the quests page's language into it", Voice("Shared"), nil)
+Expect("a character first on a shared profile since the move takes the quests page's language", Voice("Shared"), "deDE")
 
 -- Alone on its own profile, the copy is made as before.
 Seed(nil)

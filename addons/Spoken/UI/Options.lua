@@ -844,7 +844,6 @@ local function Build()
             -- The feature addons' DialogueUI rows are kept in their own settings too.
             DialogueUIOptions:Reset()
             Addon.db:ResetProfile()
-            Addon.db.global.NewCharacterProfile = nil
             -- Unset, the Compendium's Text Size is the one the Places page had: set, it is back
             -- to its default.
             Addon.db.profile.CompendiumFontSize = 12
@@ -940,12 +939,12 @@ local function Has(db, name)
     return false
 end
 
---- Every profile any of them has, sorted, each once; only those `keep` accepts, where given.
-function Options:ProfileNames(keep)
+--- Every profile any of them has, sorted, each once.
+function Options:ProfileNames()
     local seen, names = {}, {}
     for _, db in ipairs(self:ProfileDBs()) do
         for _, name in ipairs(db:GetProfiles()) do
-            if not seen[name] and (not keep or keep(name)) then
+            if not seen[name] then
                 seen[name] = true
                 table.insert(names, name)
             end
@@ -1050,7 +1049,11 @@ function Options:AddProfiles(layout)
         layout:Dropdown(L.OPT_NEW_CHARACTER_PROFILE, L.OPT_NEW_CHARACTER_PROFILE_TIP,
             -- Only Spoken's saved profiles: it reads the choice before any other settings load.
             function()
-                local names = self:ProfileNames(function(name) return Addon:SavedProfile(name) end)
+                local names = {}
+                for _, name in ipairs(Addon.db:GetProfiles()) do
+                    if Addon:SavedProfile(name) then table.insert(names, name) end
+                end
+                table.sort(names)
                 table.insert(names, 1, false)
                 return names
             end,

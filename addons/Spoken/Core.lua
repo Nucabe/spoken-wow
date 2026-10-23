@@ -145,7 +145,8 @@ end
 
 --- Whether a character missing from profileKeys has been here before all the same: settings of
 --- its own (a deleted profile clears its characters' keys), or AceDB keyed it "Unknown", which
---- the Forever client answers on some logins for any character.
+--- the Forever client answers on some logins for any character. A character that has neither, as
+--- one cleared before this check whose per-character table AceDB dropped empty, is taken for new.
 local function SeenBefore(sv, charKey)
     local unknown = rawget(_G, "UNKNOWNOBJECT") or "Unknown"
     if charKey:sub(1, #unknown + 3) == unknown .. " - " then return true end
@@ -713,8 +714,8 @@ end
 
 --- The voice language and the fallback were set on the quests page; they are Spoken's now. On each
 --- character's first login with the quests settings loaded, that character's choice there is copied
---- to the profile it is on, unless that profile has one of its own or another character is on it,
---- so the page shows what is being heard. The quests settings are not loaded while that module is
+--- to the profile it is on, unless that profile has one of its own or another character on it has
+--- had its copy, so the page shows what is being heard. The quests settings are not loaded while that module is
 --- off: nothing is marked then, and the next login that has them does it.
 function Addon:TakeVoiceLanguageFromQuests()
     local db = self.db
@@ -726,10 +727,14 @@ function Addon:TakeVoiceLanguageFromQuests()
         return
     end
     db.char.voiceLanguageFromQuests = true
-    -- Copied into a profile another character is on, it would change what that one hears too.
-    local current = db:GetCurrentProfile()
+    -- Another character on this profile that has had its copy already hears what the profile says:
+    -- a copy now would change that. Where none has, the first to log in copies, as before.
+    local current, chars = db:GetCurrentProfile(), db.sv and db.sv.char or {}
     for key, profile in pairs(db.sv and db.sv.profileKeys or {}) do
-        if profile == current and key ~= db.keys.char then return end
+        local char = chars[key]
+        if profile == current and key ~= db.keys.char and type(char) == "table" and char.voiceLanguageFromQuests then
+            return
+        end
     end
     local audio = QuestsAudio(db)
     local language = db.profile.Language
