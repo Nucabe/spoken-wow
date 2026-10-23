@@ -33,12 +33,20 @@ export default function Gallery() {
 
   useArrowFocus(edges, row, prev, next);
 
+  // Only the row moves: scrollIntoView would also scroll the page to bring the row into view.
+  const centre = (i: number) => {
+    const el = row.current;
+    const thumb = el?.children[i] as HTMLElement | undefined;
+    if (!el || !thumb) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const left = el.scrollLeft + thumb.getBoundingClientRect().left - el.getBoundingClientRect().left - (el.clientWidth - thumb.offsetWidth) / 2;
+    el.scrollTo({ left, behavior: smooth ? "smooth" : "auto" });
+  };
+
   const go = (step: 1 | -1) => {
     const next = (index + step + GALLERY.length) % GALLERY.length;
     setIndex(next);
-    const thumb = row.current?.children[next] as HTMLElement | undefined;
-    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    thumb?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "nearest", inline: "center" });
+    centre(next);
   };
 
   const scroll = (direction: 1 | -1) => {
@@ -65,20 +73,31 @@ export default function Gallery() {
             </svg>
           </button>
         </div>
-        <figcaption aria-live="polite">
-          <b>{item.title}</b>
-          <span>{item.text}</span>
+        <figcaption>
+          <div aria-live="polite">
+            <b>{item.title}</b>
+            <span>{item.text}</span>
+          </div>
+          {/* Every caption laid in one cell, unseen, so the figure is as tall as the longest and the row below stays put. */}
+          <div className="bn-shot-sizer" aria-hidden="true">
+            {GALLERY.map((entry) => (
+              <p key={entry.title}>
+                <b>{entry.title}</b>
+                <span>{entry.text}</span>
+              </p>
+            ))}
+          </div>
         </figcaption>
       </figure>
       <div className="bn-thumbs-wrap" data-start={edges.start} data-end={edges.end}>
         <ul className="bn-thumbs" aria-label="Gallery pictures" ref={row} onScroll={measure}>
           {GALLERY.map((entry, i) => (
             <li key={entry.title}>
-              <button type="button" aria-pressed={i === index} className="bn-thumb" onClick={() => setIndex(i)}>
+              <button type="button" aria-pressed={i === index} className="bn-thumb" onClick={() => setIndex(i)} title={entry.title}>
                 <span className="bn-thumb-art" aria-hidden="true">
                   <Image src={entry.thumb} alt="" width={320} height={180} unoptimized />
                 </span>
-                {entry.title}
+                <span className="bn-thumb-name">{entry.title}</span>
               </button>
             </li>
           ))}

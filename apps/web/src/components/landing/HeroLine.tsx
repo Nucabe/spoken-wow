@@ -10,19 +10,19 @@ const LINES: Line[] = [
     icon: "quests",
     name: "Eagan Peltskinner",
     subtitle: "Wolves Across the Border",
-    words: "I hate those nasty timber wolves! But I sure like eating".split(" "),
+    words: "I hate those nasty timber wolves! But I sure like eating.".split(" "),
   },
   {
     icon: "spoken",
     name: "Innkeeper Farley",
     subtitle: "Gossip",
-    words: "Welcome to the Lion's Pride Inn. Rest here as long as you like".split(" "),
+    words: "Welcome to the Lion's Pride Inn. Rest here as long as you like.".split(" "),
   },
   {
     icon: "zones",
     name: "Elwynn Forest",
     subtitle: "Zone lore",
-    words: "Green hills roll away from the walls of Stormwind, quiet farms and open road".split(" "),
+    words: "Green hills roll away from the walls of Stormwind, quiet farms and open road.".split(" "),
   },
 ];
 const WORD_MS = 240;

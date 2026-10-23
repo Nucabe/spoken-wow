@@ -175,6 +175,7 @@ html:has(.bn) {
   padding: 8px 0;
   color: var(--accent);
   font-weight: 700;
+  text-decoration: underline;
   text-underline-offset: 4px;
 }
 .bn-textlink:hover {
@@ -371,8 +372,17 @@ html:has(.bn) {
 }
 .bn-logos img {
   width: auto;
-  height: 64px;
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.55));
+}
+/* Heights set so the three logos, which differ in shape, take about the same area */
+.bn-logo-forever {
+  height: 88px;
+}
+.bn-logo-era {
+  height: 64px;
+}
+.bn-logo-anniversary {
+  height: 72px;
 }
 
 /* The in-game subtitle, drawn from the sample in docs/spoken/captions.png */
@@ -636,17 +646,30 @@ html:has(.bn) {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
 }
 .bn-shot figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 16px;
+  display: grid;
   padding-top: 16px;
 }
+.bn-shot figcaption > * {
+  grid-area: 1 / 1;
+}
 .bn-shot figcaption b {
-  font: 700 24px/32px var(--bn-display), serif;
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font: 700 18px/28px var(--bn-body), sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .bn-shot figcaption span {
   color: var(--text-2);
+}
+.bn-shot-sizer {
+  display: grid;
+  visibility: hidden;
+}
+.bn-shot-sizer p {
+  grid-area: 1 / 1;
+  margin: 0;
 }
 .bn-thumbs {
   display: grid;
@@ -670,6 +693,12 @@ html:has(.bn) {
 .bn-thumb:hover,
 .bn-thumb[aria-pressed="true"] {
   color: var(--text);
+}
+.bn-thumb-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .bn-thumb-art {
   display: grid;

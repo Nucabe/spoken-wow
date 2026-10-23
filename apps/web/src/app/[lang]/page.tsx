@@ -163,11 +163,11 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
                 <p className="bn-fine bn-works">Works with</p>
                 <div className="bn-logos">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/landing/games/logo-forever.png" alt="World of Warcraft: Forever" />
+                  <img className="bn-logo-forever" src="/landing/games/logo-forever.png" alt="World of Warcraft: Forever" />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/landing/games/logo-era.png" alt="World of Warcraft Classic Era" />
+                  <img className="bn-logo-era" src="/landing/games/logo-era.png" alt="World of Warcraft Classic Era" />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/landing/games/logo-anniversary.png" alt="Burning Crusade Classic Anniversary" />
+                  <img className="bn-logo-anniversary" src="/landing/games/logo-anniversary.png" alt="Burning Crusade Classic Anniversary" />
                 </div>
               </div>
               <HeroLine />
