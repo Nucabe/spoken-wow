@@ -4,6 +4,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **The quest log's Play button no longer covers a quest's title or its "(Elite)".** With
+  quest objectives shown, the title now ends short of Play and Contribute, which sit left of
+  the quest's type instead of on top of it.
+  *([Nucabe](https://github.com/Nucabe))*
 - **The tab that reopens the Place Story panel no longer covers the map's own side tabs**, such as
   Map Legend on WoW Forever. It goes under whatever tabs hang down the map's edge, whichever addon
   made them. *([rusty-key](https://github.com/rusty-key))*

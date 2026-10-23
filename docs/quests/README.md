@@ -1800,11 +1800,22 @@ client — walking the pooled rows and hooking `QuestLogQuests_Update`, which is
 `QuestLog_Update`. The blank prefix the old log's buttons indent a title with is not available
 there: that title wraps into a height the layout has already decided, and a prefix re-wraps it
 inside a row too short to hold the extra line. So the button is anchored instead — left of the
-title, in the inset the row leaves at its left, and beside the tracking checkbox at the other
-end of the row when "Quest objectives" is on and the client is drawing its own icon in that
-inset. The objective icons are how that is detected: they are pooled beside the rows rather
-than parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID
-that is not the play button.
+title, in the inset the row leaves at its left, and at the other end of the row when "Quest
+objectives" is on and the client is drawing its own icon in that inset. The `questPOI` setting
+says so (`POIButtonOwnerMixin:GetButtonForQuest` asks it, and a calling quest gets no icon);
+failing that, the objective icons find it out: they are pooled beside the rows rather than
+parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID that
+is not the play button.
+
+At that end the client ends the title against the quest's type in words (`TagText`, "(Elite)"
+on Forever) or else against the storyline icon, whose left edge is the left of the row's icons,
+and only then measures the title's height. A hook on the title's `SetPoint` records that end,
+whichever form of `SetPoint` the client uses, and moves it 23 pixels left as the client sets it,
+when the setting says the client will draw the icon. The title then wraps and is measured with
+that room taken, and the button sits in it on the title's line, covering neither the title nor
+the type. The row may not hold its quest yet when its title is anchored, so once it does, a
+title that disagrees with the row's own icon is moved again to match the button, after the
+client measured it. An error in the hook is logged and never reaches the client's quest log.
 
 A quest-log play button has no NPC to ask who is speaking. The dialog names its speaker with
 `UnitName("questnpc")` in the client's own language; the log looks the giver up in the pack
