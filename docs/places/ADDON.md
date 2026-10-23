@@ -79,8 +79,9 @@ a language pins it on every client.
   an alias table where a client runs in it) and the client's fonts can draw it
   (`CanRenderLanguage`). Interface strings are not required, because each key falls back to English.
   The fonts are asked by drawing the language's own name, and for the two Chinese the characters
-  only that one has (`SAMPLES`): each character past ASCII must measure differently from U+0378, a
-  code point no font has, so a Korean font with some Hanja does not pass for Chinese. A private-use
+  only that one has (`SAMPLES`), measured against as many U+0378, a code point no font has; each
+  Han or Hangul character must also measure differently from it alone, so a Korean font with some
+  Hanja does not pass for Chinese. A private-use
   character would not do: a Traditional Chinese font can draw those. A font file the client cannot
   load (`SetFont` returns false) draws nothing. The probe is Spoken's (`Spoken:FontDraws`), the one
   that names languages in every module's lists.

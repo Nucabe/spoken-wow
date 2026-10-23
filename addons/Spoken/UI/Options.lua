@@ -166,11 +166,12 @@ LANGUAGES = {
 }
 
 -- Whether a font draws `text`: the settings' font object, or the file `path`. A glyph the font
--- lacks draws as nothing or as a box, so each character past ASCII is measured against U+0378, a
--- code point Unicode has never assigned and so no font has: the same width means it did not draw.
--- Every one of them has to draw, not some: a font with a few Hanja draws part of a Chinese name.
--- Not a private-use character: a Traditional Chinese font can carry glyphs there as wide as its
--- Han ones. A file the client cannot load draws nothing.
+-- lacks draws as nothing or as a box, so the text is measured against as many U+0378, a code point
+-- Unicode has never assigned and so no font has: the same width means none of it drew. Han and
+-- Hangul, whose glyphs are all as wide as each other, are measured one character at a time and
+-- every one has to draw: a font with a few Hanja draws part of a Chinese name. Not a private-use
+-- character: a Traditional Chinese font can carry glyphs there as wide as its Han ones. A file the
+-- client cannot load draws nothing.
 local probes = {}
 local function Width(probe, text)
     probe:SetText(text)
@@ -185,10 +186,12 @@ function Options:FontDraws(text, path)
         probes[path or false] = probe
     end
     if path and probe:SetFont(path, 12, "") == false then return false end
-    local drew = Width(probe, text) > 0
+    local width, count = Width(probe, text), 0
+    for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do count = count + 1 end
+    local box = Width(probe, "\205\184")
+    local drew = width > 0 and math.abs(width - Width(probe, string.rep("\205\184", count))) > 0.5
     if drew then
-        local box = Width(probe, "\205\184")
-        for char in string.gmatch(text, "[\194-\244][\128-\191]*") do
+        for char in string.gmatch(text, "[\227-\244][\128-\191]*") do
             if math.abs(Width(probe, char) - box) <= 0.5 then
                 drew = false
                 break
