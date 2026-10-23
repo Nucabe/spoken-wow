@@ -958,6 +958,7 @@ local opened = 0
 env.Options.Open = function() opened = opened + 1 end
 quests:Enqueue(H.Clip({ key = "q:1:accept", present = { header = "Thrall", label = "Warchief", portrait = { kind = "none" } } }))
 quests:Enqueue(H.Clip({ key = "q:2:accept", present = { header = "Cairne", label = "Bloodhoof", portrait = { kind = "none" } } }))
+quests:Enqueue(H.Clip({ key = "q:3:accept", present = { header = "Baine", label = "Thunder Bluff", portrait = { kind = "none" } } }))
 local hadShift, shift = _G.IsShiftKeyDown, false
 _G.IsShiftKeyDown = function() return shift end
 local function Head() return opened .. " " .. env.SoundQueue:GetCurrentSound().present.header end
@@ -976,6 +977,12 @@ ExpectOf("...with the Skip button's click", function()
     local last = world.kitSounds[#world.kitSounds]
     return tostring(#world.kitSounds - clicks) .. " " .. tostring(last and last.kit)
 end, "1 1115")
+env.Transcript:Hold()
+ExpectOf("...but not the next line while the window fades out on the skipped line's words", function()
+    words.scripts.OnClick(words, "RightButton")
+    return Head()
+end, "1 Cairne")
+env.Transcript:Release()
 ExpectOf("...and the words' tooltip says what each right-click does", function()
     words.scripts.OnEnter(words)
     return table.concat(GameTooltip.lines, "|")

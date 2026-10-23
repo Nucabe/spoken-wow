@@ -702,12 +702,14 @@ function Transcript:Initialize()
         self:TurnPage(delta)
     end)
     frame:SetScript("OnClick", function(_, button)
-        if button == "RightButton" and IsShiftKeyDown and IsShiftKeyDown() then
-            if MinimalPlayer:IsEnabled() then MinimalPlayer:ToggleMenu()
-            else Options:Open() end
-        elseif button == "RightButton" then
+        if button ~= "RightButton" then
+            self:Follow()
+        elseif IsShiftKeyDown and IsShiftKeyDown() then
+            if MinimalPlayer:IsEnabled() then MinimalPlayer:ToggleMenu() else Options:Open() end
+        -- Only the line whose words these are: while a window fades out, the next already plays.
+        elseif not self.held and self.clip and self.clip == SoundQueue:GetCurrentSound() then
             Actions.Skip()
-        else self:Follow() end
+        end
     end)
     frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
