@@ -468,6 +468,9 @@ Expect("...open again unsearched", Shown(), "Eastern Kingdoms|Dun Morogh|Kalimdo
 
 ---------------------------------------------------------------- beside the map
 local mapSetAlpha = WorldMapFrame.SetAlpha
+-- The quest log beside the map, shown.
+_G.QuestMapFrame = CreateFrame("Frame", "QuestMapFrame", WorldMapFrame)
+QuestMapFrame:Show()
 Z:SetupMapPanel()
 local panel = Z.panel
 Expect("the story beside the map wears the quest log's frame", panel ~= nil, true)
@@ -533,9 +536,9 @@ Expect("...and stops reading the map's alpha each frame", panel:GetScript("OnUpd
 -- Adventure Guide Forever hangs two side tabs down the quest log's right edge, its Quests tab above
 -- its guide tab; here the upper one reaches 60 past the map's edge and the lower one 50.
 local toggle = _G.SpokenPlacesPanelToggle
-local questsTab = CreateFrame("Frame", "AdventureGuideForeverQuestsTab", WorldMapFrame)
+local questsTab = CreateFrame("Frame", "AdventureGuideForeverQuestsTab", QuestMapFrame)
 function questsTab:GetRight() return WorldMapFrame:GetRight() + 60 end
-local guideTab = CreateFrame("Frame", "AdventureGuideForeverTab", WorldMapFrame)
+local guideTab = CreateFrame("Frame", "AdventureGuideForeverTab", QuestMapFrame)
 function guideTab:GetRight() return WorldMapFrame:GetRight() + 50 end
 questsTab:Show()
 guideTab:Show()
@@ -544,13 +547,24 @@ Expect("folded, its button goes under the lowest of another addon's side tabs",
     toggle.anchor.relativeTo == guideTab and (toggle.anchor.relativePoint .. " " .. toggle.anchor.y), "BOTTOMLEFT -3")
 Z:SetMapPanelCollapsed(false)
 Expect("...and open, the panel stands clear of the widest", panel.anchor.x, 62)
-questsTab:Hide()
-guideTab:Hide()
-Z:RefreshPanel()
-Expect("with the quest log closed, the panel is back against the map", panel.anchor.x, 2)
+-- The tabs are the quest log's and go with it. Closing or opening it refreshes nothing else.
+local function CloseQuestLog()
+    questsTab:Hide()
+    guideTab:Hide()
+    QuestMapFrame:Hide()
+    for _, hook in ipairs(QuestMapFrame.hooks.OnHide or {}) do hook(QuestMapFrame) end
+end
 Z:SetMapPanelCollapsed(true)
-Expect("...and its button on the map's edge", toggle.anchor.relativeTo == WorldMapFrame and toggle.anchor.relativePoint,
-    "TOPRIGHT")
+CloseQuestLog()
+Expect("with the quest log closed, the button is back on the map's edge",
+    toggle.anchor.relativeTo == WorldMapFrame and toggle.anchor.relativePoint, "TOPRIGHT")
+Expect("...and the panel against the map", panel.anchor.x, 2)
+questsTab:Show()
+guideTab:Show()
+QuestMapFrame:Show()
+Expect("opening the quest log puts the button back under its tabs", toggle.anchor.relativeTo == guideTab, true)
+Expect("...and the panel past them", panel.anchor.x, 62)
+CloseQuestLog()
 Z:SetMapPanelCollapsed(false)
 local mapPage = panel.page
 Expect("...round the quest details' parchment", mapPage.parchment, "QuestDetailsBackgrounds")
