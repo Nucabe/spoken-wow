@@ -526,8 +526,8 @@ function SpokenPlaces:NewLoreSound(mapID, areaKey)
 		},
 		-- Recorded when the clip starts rather than when it is queued, so that
 		-- every route to a clip counts and a backlog that overflows does not spend
-		-- areas on silence. Only the autoplayExplored option reads it; see
-		-- Autoplay.lua.
+		-- areas on silence. Who reads it is in Autoplay.lua, "Per-character
+		-- record".
 		startCallback = function(item)
 			if SpokenPlaces.MarkHeard then
 				SpokenPlaces:MarkHeard(item.mapID, item.areaKey)

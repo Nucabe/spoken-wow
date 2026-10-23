@@ -230,9 +230,9 @@ end
 -- Per-character record
 --------------------------------------------------------------------------------
 --
--- What this character has already been narrated. Only `autoplayExplored` reads it;
--- everything writes it, because an area heard from the map panel is still an area
--- the player has heard.
+-- What this character has already been narrated. `autoplayExplored`, a discovery
+-- with it on, and a dungeon's story read it; everything writes it, because an area
+-- heard from the map panel is still an area the player has heard.
 --
 -- Marking happens when playback starts rather than when an area is queued. The
 -- queue holds three, so riding across an explored Stranglethorn drops most of what
@@ -504,6 +504,18 @@ end
 -- Discovery handling
 --------------------------------------------------------------------------------
 
+-- Include Places Found Before may have read a discovered place already: at login it reads a
+-- new character's zone, which the game announces only when the character walks out into it.
+local function HeardAlready(mapID, key, areaName)
+	if not (SpokenPlaces:Get("autoplayExplored") and SpokenPlaces:HasHeard(mapID, key)) then
+		return false
+	end
+	if SpokenPlaces:Get("debug") then
+		SpokenPlaces:Print('discovered "%s" -- heard already', areaName)
+	end
+	return true
+end
+
 -- Discovering the area that shares the zone's name -- stepping out of Valley of
 -- Trials into open Durotar -- is what "discovered a zone" means. Everything else
 -- the client announces is a subzone.
@@ -534,20 +546,8 @@ function SpokenPlaces:OnAreaDiscovered(areaName)
 		return
 	end
 
-	-- Include Places Found Before may have read the place already: at login it reads a new
-	-- character's zone, which the game announces only when the character walks out into it.
-	local function Heard(storyMapID, key)
-		if self:Get("autoplayExplored") and self:HasHeard(storyMapID, key) then
-			if debugOn then
-				self:Print('discovered "%s" -- heard already', areaName)
-			end
-			return true
-		end
-		return false
-	end
-
 	if IsZoneDiscovery(areaName, mapID) then
-		if self:GetLore(mapID) and not Heard(mapID, nil) then
+		if self:GetLore(mapID) and not HeardAlready(mapID, nil, areaName) then
 			if debugOn then
 				self:Print('discovered zone "%s" -- queued', areaName)
 			end
@@ -564,13 +564,13 @@ function SpokenPlaces:OnAreaDiscovered(areaName)
 	end
 
 	local entry, key, storyMapID = self:GetSubzoneLore(mapID, areaName)
-	if entry and key and Heard(storyMapID, key) then
-		return
-	elseif entry and key then
-		if debugOn then
-			self:Print('discovered subzone "%s" -> key "%s" -- queued', areaName, key)
+	if entry and key then
+		if not HeardAlready(storyMapID, key, areaName) then
+			if debugOn then
+				self:Print('discovered subzone "%s" -> key "%s" -- queued', areaName, key)
+			end
+			Enqueue(storyMapID, key)
 		end
-		Enqueue(storyMapID, key)
 	elseif debugOn then
 		self:Print('discovered subzone "%s" -> key "%s" -- no lore', areaName, tostring(key))
 	end
