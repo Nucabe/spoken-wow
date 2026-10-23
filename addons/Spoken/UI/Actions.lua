@@ -284,8 +284,13 @@ function Actions.WaitingTip(owner)
 end
 
 --- A frame over `text`, the "+N" count, that lists the waiting lines while the pointer is on it.
---- It only listens: a click goes through to the window under it, which it drags as before.
 function Actions.WaitingHover(text)
+    return Actions.Hover(text, Actions.WaitingTip)
+end
+
+--- A frame over `text` that shows `tip(hover)` while the pointer is on it, hidden until shown.
+--- It only listens: a click goes through to the window under it, which it drags as before.
+function Actions.Hover(text, tip)
     local hover = CreateFrame("Frame", nil, text:GetParent())
     hover:SetAllPoints(text)
     if hover.SetMouseClickEnabled and hover.SetMouseMotionEnabled then
@@ -294,7 +299,7 @@ function Actions.WaitingHover(text)
     else
         hover:EnableMouse(true)
     end
-    hover:SetScript("OnEnter", function() Actions.WaitingTip(hover) end)
+    hover:SetScript("OnEnter", function() tip(hover) end)
     hover:SetScript("OnLeave", function() HideTipFor(hover) end)
     hover:SetScript("OnHide", function() HideTipFor(hover) end)
     hover:Hide()
@@ -390,18 +395,27 @@ end
 -- The Small Window and the DialogueUI window name a line, count what waits and take the pointer
 -- alike.
 
---- A line's title. A line with no label (a one-page letter) goes by its header: its key means
---- nothing to a player.
+--- A line's title on a dark window.
+Actions.TITLE_COLOR = { .88, .84, .76 }
+
+--- A line's own label; nil where it has none, an empty one included.
+local function OwnLabel(present)
+    local label = present and present.label
+    return label ~= "" and label or nil
+end
+
+--- A line's title. A line with no label (a one-page letter, a quest event with no title) goes by
+--- its header, and one with neither has no title: its key means nothing to a player.
 function Actions.Label(clip)
     local present = clip and clip.present
-    return clip and (present and (present.label or present.header) or clip.key) or ""
+    return present and (OwnLabel(present) or present.header) or ""
 end
 
 --- The speaker's name over the title: the header, unless it is already the title (a line with no
 --- label), and said once, so never the same as the title.
 function Actions.Speaker(clip)
     local present = clip and clip.present
-    local name = present and present.label and present.header or ""
+    local name = OwnLabel(present) and present.header or ""
     return name ~= Actions.Label(clip) and name or ""
 end
 

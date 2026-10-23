@@ -47,10 +47,11 @@ local defaults = {
 	voiceEnabled = true,
 	autoplay = true,
 	autoplaySubzones = true,
-	-- Off, because it replaces the client's own record of what a character has
-	-- discovered with one Places keeps itself. Only a character who explored
-	-- before installing the addon needs that; see Autoplay.lua.
-	autoplayExplored = false,
+	-- On, because the game announces a discovery once per character: off, a character who
+	-- explored before installing hears nothing there, and Forget Places Heard reads nothing again.
+	-- A new character hears its zone right after its valley at login, and a place it has heard,
+	-- from the Play button too, is not read again when the game announces its discovery.
+	autoplayExplored = true,
 	-- Off, so a player cannot end up reading an unfinished translation without
 	-- having asked for one (Spoken > Developer). See Language.lua.
 	languagePreview = false,
@@ -89,6 +90,13 @@ local function MergeDefaults()
 		if SpokenPlacesSettings[key] == nil then
 			SpokenPlacesSettings[key] = value
 		end
+	end
+	-- Include Places Found Before was off by default, and the loop above stored that off in every
+	-- profile, where it reads the same as a player's choice. Turned on once per profile; the
+	-- marker, kept outside the defaults, leaves a later choice of off alone.
+	if not SpokenPlacesSettings.autoplayExploredTurnedOn then
+		SpokenPlacesSettings.autoplayExplored = true
+		SpokenPlacesSettings.autoplayExploredTurnedOn = true
 	end
 
 	SpokenPlaces.db = SpokenPlacesSettings

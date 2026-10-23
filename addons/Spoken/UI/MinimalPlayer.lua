@@ -23,7 +23,7 @@ local function PortraitWidth() return Addon:Profile("Frame").HidePortrait and 80
 local LOOKS = {
     parchment = { name = { .19, .17, .13 }, title = { .19, .17, .13 }, tail = { .50, .36, .24 }, shadow = 0,
         words = { color = { .19, .17, .13 }, shadow = false, highlight = "|cff9c1a1a" } },
-    dark = { name = { 1, .82, 0 }, title = { .88, .84, .76 }, tail = { .62, .58, .46 }, shadow = 1 },
+    dark = { name = { 1, .82, 0 }, title = Actions.TITLE_COLOR, tail = { .62, .58, .46 }, shadow = 1 },
 }
 -- Shipped with Spoken: the Classic clients list the retail parchment atlases without their art,
 -- so those draw nothing.
@@ -131,7 +131,7 @@ function MinimalPlayer:Initialize(original)
     self.title:SetHeight(TITLE_HEIGHT)
     self.title:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -NAME_HEIGHT)
     self.title:SetPoint("RIGHT", self.controls, "LEFT", -CONTROLS_CLEAR, 0)
-    self.title.text = Font(self.title, 12, .88, .84, .76)
+    self.title.text = Font(self.title, 12, unpack(Actions.TITLE_COLOR))
     self.stopped = Font(self.title, 12, .62, .58, .46)
     self.stopped:SetText(format("• (%s)", L.SUBTITLE_STOPPED))
     self.stopped:Hide()

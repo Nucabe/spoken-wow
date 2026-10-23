@@ -12,6 +12,21 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   once you open the page, under the title the pack's index gives. On an English client they are in
   English, so a German or Italian voice no longer reads along in its own words where English has
   them. A book can show some pages in your language and the rest in English.
+- **Text Language on the Places page offers Traditional Chinese (繁體中文)** on clients in other
+  languages whose fonts draw it, as it does Simplified Chinese, Korean and Russian. Voice Language
+  names it in its own language on those clients too. *([Nucabe](https://github.com/Nucabe))*
+- **The Large Window names the line as well as the speaker.** A subzone's story reads "Westfall •
+  Moonbrook", a quest "Gornek • Cutting Teeth" and a book its title after "Book", as the other windows
+  show them. Pointing at a name cut short shows the whole of it. *([Nucabe](https://github.com/Nucabe))*
+- **Include Places Found Before is on.** The game announces each discovery once per character, so a
+  character who explored before installing heard nothing in those places, and Forget Places Heard
+  read nothing again. With the setting on, each place is read once per character the first time you
+  stand in it. It is turned on once for everyone, also if you had turned it off: to keep it off,
+  untick it under Places, When to Read. Forget Places Heard is greyed while Read Automatically or Read
+  Stories Aloud is off. *([Nucabe](https://github.com/Nucabe))*
+- **The quest log's Play button no longer covers a quest's title or its "(Elite)".** With
+  quest objectives shown, the title now ends short of Play and Contribute, which sit left of
+  the quest's type instead of on top of it.
   *([Nucabe](https://github.com/Nucabe))*
 - **The tab that reopens the Place Story panel no longer covers the map's own side tabs**, such as
   Map Legend on WoW Forever. It goes under whatever tabs hang down the map's edge, whichever addon
