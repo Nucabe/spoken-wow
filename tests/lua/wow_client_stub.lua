@@ -14,6 +14,7 @@ local world = {
     rewardText = "",
     npcName = "Innkeeper Test",
     npcGUID = "Creature-0-0-0-0-1234-0",
+    npcFriendly = false,  -- UnitCanAttack: false for townsfolk the player cannot fight
     modelFileID = nil,    -- what a loaded PlayerModel answers for the unit on screen
     -- True between SetUnit and the model actually finishing loading: makes GetModelFileID
     -- answer nil even though the probe is shown, the way a real model does for however long
@@ -411,6 +412,7 @@ function _G.GetRealmName() return "Realm" end
 function _G.UnitGUID() return world.npcGUID end
 function _G.UnitExists() return true end
 function _G.UnitIsPlayer() return false end
+function _G.UnitCanAttack() return not world.npcFriendly end
 function _G.UnitSex() return world.unitSex end
 function _G.UnitCreatureType() return world.creatureType end
 -- The mouse UI unless a test turns the gamepad's on: read as "1", every popup an addon raises
@@ -585,7 +587,7 @@ M.modernSettings = {
 _G.Settings = M.modernSettings
 M.SetClient("16001")
 
--- What the zones addon's playback and autoplay files reach for.
+-- What the Places addon's playback and autoplay files reach for.
 M.chat = {}
 _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) table.insert(M.chat, text) end }
 world.inCombat = false
@@ -611,7 +613,7 @@ _G.C_Map = {
 _G.C_Timer = {
     After = function(delay, fn) table.insert(timers, { at = world.time + delay, fn = fn }) end,
 }
---- Where the player is standing, for the zones addon's map/position reads: GetPlayerMapID,
+--- Where the player is standing, for the Places addon's map/position reads: GetPlayerMapID,
 --- GetRealZoneText, GetSubZoneText and C_Map.GetPlayerMapPosition. `x`/`y` are optional --
 --- omitting them leaves world.posX nil, which GetPlayerMapPosition reads as off any map.
 function M.SetZone(t)
@@ -1233,18 +1235,18 @@ function M.ResetTimers()
     for i = #timers, 1, -1 do timers[i] = nil end
 end
 
---- Load the zones addon's playback files the way the client would -- each chunk receives
---- the addon name and the shared table as varargs -- against a hand-built SpokenZones table
+--- Load the Places addon's playback files the way the client would -- each chunk receives
+--- the addon name and the shared table as varargs -- against a hand-built SpokenPlaces table
 --- carrying the few Core.lua facts Audio.lua and Autoplay.lua read. Returns that table.
 --- Spoken's UI/Compendium.lua too where Spoken has not loaded it: a clip's header is the place
 --- above, from its tree.
-function M.LoadZones(addonDirectory, SpokenZones)
+function M.LoadPlaces(addonDirectory, SpokenPlaces)
     if not _G.SpokenCompendium then dofile(addonDirectory .. "../Spoken/UI/Compendium.lua") end
     for _, file in ipairs({ "Audio", "Autoplay" }) do
         local chunk = assert(loadfile(addonDirectory .. file .. ".lua"))
-        chunk("Spoken_Places", SpokenZones)
+        chunk("Spoken_Places", SpokenPlaces)
     end
-    return SpokenZones
+    return SpokenPlaces
 end
 
 --- Reset every piece of sound state a test can observe.
