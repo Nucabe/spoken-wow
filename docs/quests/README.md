@@ -1808,7 +1808,10 @@ anything on a client in another locale, and `DataModules:GetObjectName` asks the
 live in the addon rather than in the packs because the name follows the client, not the voice:
 a German client with English packs still shows German names. `make quests-export-giver-names`
 writes them from `entity_name` (`tts_cli/giver_names.py`), after an `import-locale`, along with
-the `Names.xml` that `addon.xml` includes to load them. Only
+a `Names.xml` that lists them all. Forever's `.toc` lists each file with
+`[AllowLoadTextLocale <lang>]`, as it does the gossip text, so the client loads only its own; the
+classic `.toc` files load `Names.xml`. The export stops with the lines to add or remove when
+Forever's `.toc` does not list exactly the files it wrote. Only
 names that differ from the English are written, since vmangos leaves untranslated names empty;
 a giver missing from a file is read in English.
 
