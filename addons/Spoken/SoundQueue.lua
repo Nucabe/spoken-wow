@@ -371,10 +371,11 @@ end
 --- the dialog after that: muting only once the line starts cut the greeting off mid-word.
 --- Muted in the same frame the dialog opened, the greeting is never heard at all.
 ---@param speakingOn string The channel the coming line will play on.
----@return boolean? muted false or nil when nothing was muted
+---@return boolean? muted false when nothing was muted: paused, or the game's dialogue left alone
 function SoundQueue:MuteGameDialogueAhead(speakingOn)
     -- Paused, the line will only queue: nothing of ours is going to speak over the greeting.
-    if self:IsPaused() then
+    -- With the game's dialogue left alone there is nothing to mute either.
+    if self:IsPaused() or not Addon.db.profile.Audio.AutoToggleDialog then
         return false
     end
     -- Cut, not faded: in the frame the window opens the greeting has barely started, and a fade

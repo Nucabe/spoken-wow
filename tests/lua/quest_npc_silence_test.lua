@@ -110,12 +110,115 @@ Expect("...and given its voice back, nothing having played", GetCVar("Sound_Enab
 Expect("...with nothing queued", _G.Spoken:GetQueueSize(), 0)
 Close()
 
--- A window closed while it waits for its text is not read afterwards.
+-- A window closed while it waits for its text is not read afterwards. The first read has run and
+-- the next is waiting when the window closes.
 Talk(VOICED, "")
-Close()
+stub.Advance(0.15)
+stub.HidePanels()
+stub.FireEvent("GOSSIP_CLOSED")
 stub.world.gossipText = "Welcome to the inn."
 stub.Advance(0.5)
-Expect("a window closed before its text arrived is not read", _G.Spoken:GetCurrent(), nil)
+Expect("a window closed while it waits for its text is not read", _G.Spoken:GetCurrent(), nil)
+Close()
+
+-- A quest giver's greeting window the same way.
+local function Greet(guid, text)
+    stub.world.npcGUID = guid
+    stub.world.greetingText = text
+    stub.ShowPanel("QuestFrameGreetingPanel")
+    stub.FireEvent("QUEST_GREETING")
+    return GetCVar("Sound_EnableDialog")
+end
+local function CloseGreeting()
+    stub.ShowPanel(nil)
+    stub.FireEvent("QUEST_FINISHED")
+    stub.Advance(3)
+    _G.Spoken:StopAll()
+end
+Expect("a first talk to a voiced quest giver mutes it as its greeting opens", Greet(VOICED, ""), "0")
+stub.Advance(0.15)
+Expect("...and stays muted when the read finds no text yet", GetCVar("Sound_EnableDialog"), "0")
+stub.world.greetingText = "Welcome to the inn."
+stub.Advance(0.3)
+current = _G.Spoken:GetCurrent()
+Expect("...the greeting is read again, and the line starts once its text arrives", current and current.fileName, GREETING_HASH)
+CloseGreeting()
+
+Expect("a greeting window closed while it waits for its text is muted", Greet(VOICED, ""), "0")
+stub.Advance(0.15)
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.world.greetingText = "Welcome to the inn."
+stub.Advance(0.5)
+Expect("...and is not read afterwards", _G.Spoken:GetCurrent(), nil)
+CloseGreeting()
+stub.world.greetingText = nil
+
+-- A read the player asks for is its own, and does not wait for the text.
+Talk(VOICED, "")
+Expect("a read the player asked for does not wait for the window's text",
+    VO.Addon:WaitsForGreetingText("GOSSIP_SHOW", "", true), false)
+Close()
+
+-- Nothing muted, nothing to hold: the voice-off settings read the window once, as before.
+local audio = _G.SpokenEnv.Addon.db.profile.Audio
+audio.AutoToggleDialog = false
+Expect("with the game's dialogue left alone, a first talk mutes nothing", Talk(VOICED, ""), "1")
+stub.Advance(0.15)
+stub.world.gossipText = "Welcome to the inn."
+stub.Advance(0.5)
+Expect("...and the window is not read again for its text", _G.Spoken:GetCurrent(), nil)
+Close()
+audio.AutoToggleDialog = true
+
+local char = _G.SpokenEnv.Addon.db.char
+char.IsPaused = true
+Expect("with the queue paused, a first talk mutes nothing", Talk(VOICED, ""), "1")
+stub.Advance(0.15)
+stub.world.gossipText = "Welcome to the inn."
+stub.Advance(0.5)
+Expect("...and the window is not read again for its text", _G.Spoken:GetCurrent(), nil)
+char.IsPaused = false
+Close()
+
+-- A greeting this character has heard, from an NPC with a quest: the window is read for its text,
+-- and a greeting that will not be read gives the NPC its voice back then.
+quests.available = 1
+VO.Addon.db.char.hasSeenGossipForNPC = {}
+Talk(VOICED, "Welcome to the inn.")
+stub.Advance(0.5)
+Expect("a quest giver's greeting is read the first time", _G.Spoken:GetCurrent() ~= nil, true)
+Close()
+Expect("the same quest giver, its text not there yet, is muted as its window opens", Talk(VOICED, ""), "0")
+stub.Advance(0.15)
+stub.world.gossipText = "Welcome to the inn."
+stub.Advance(0.25)
+Expect("...and has its voice back once the text shows a greeting already heard", GetCVar("Sound_EnableDialog"), "1")
+Expect("...with nothing read", _G.Spoken:GetCurrent(), nil)
+Close()
+Expect("a quest giver's greeting window heard before is muted as it opens, its text not there yet", Greet(VOICED, ""), "0")
+stub.Advance(0.15)
+stub.world.greetingText = "Welcome to the inn."
+stub.Advance(0.25)
+Expect("...and has its voice back once the text shows a greeting already heard", GetCVar("Sound_EnableDialog"), "1")
+CloseGreeting()
+stub.world.greetingText = nil
+quests.available = 0
+
+-- The option that led to a page labels its line, also when the page's text came after its event.
+local titles = {}
+_G.Spoken:RegisterCallback("CLIP_STARTED", function(clip) table.insert(titles, clip.title or "(none)") end)
+stub.world.npcGUID = VOICED
+stub.ShowGossip("Hail.", { "Where is the inn?" })
+stub.FireEvent("GOSSIP_SHOW")
+stub.Advance(0.3)
+stub.SelectGossipOption("Where is the inn?")
+stub.ShowGossip("")
+stub.FireEvent("GOSSIP_SHOW")
+stub.Advance(0.15)
+stub.world.gossipText = "Welcome to the inn."
+stub.Advance(0.5)
+Expect("a page whose text came late is labelled with the option that led to it", titles[#titles], '"Where is the inn?"')
 Close()
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
