@@ -26,7 +26,7 @@ One page, Game Menu, Options, AddOns, Spoken, Places:
 | --- | --- | --- | --- |
 | When to Read | Read Automatically | `autoplay` | on |
 | | Include Smaller Areas | `autoplaySubzones` | on |
-| | Include Places Found Before | `autoplayExplored` | off |
+| | Include Places Found Before | `autoplayExplored` | on |
 | Stories | Show Story Beside Map | `showMapPanel` | on |
 | | Story Panel Width | `panelWidth` | 360 |
 | | Show Pictures | `showPictures` | on |
@@ -78,9 +78,18 @@ a language pins it on every client.
 - A language is offered only when `Data/Languages.lua` marks it ready (every story translated, and
   an alias table where a client runs in it) and the client's fonts can draw it
   (`CanRenderLanguage`). Interface strings are not required, because each key falls back to English.
+  The fonts are asked by drawing the language's own name, and for the two Chinese the characters
+  only that one has (a language's `sample` in Spoken's list, none of them in a Korean font's
+  Hanja), measured against as many U+0378, a code point no font has; each Han or Hangul character
+  must also measure differently from it alone, so a Korean font with some Hanja does not pass for
+  Chinese. A private-use character would not do: a Traditional Chinese font can draw those. A font
+  file the client cannot load (`SetFont` returns false) draws nothing. The test is Spoken's
+  (`Spoken:LanguageDraws`), the one that names languages in every module's lists.
+  Whether a voice pack is installed does not decide it: the voice follows Voice Language.
 - Where a page sets a font file, `FontFor` picks the client's font for the script: `2002.TTF` for
-  Korean, `ARKai_T.ttf` for Simplified Chinese, `blei00d.TTF` for Traditional Chinese and
-  `FRIZQT___CYR.TTF` for Cyrillic.
+  Korean, `ARKai_T.ttf` for Simplified Chinese, `blei00d.TTF` for Traditional Chinese (the font the
+  game's `GameFontNormal` family uses for it), else `bKAI00M.TTF`, which an English Forever client
+  ships in its place, and `FRIZQT___CYR.TTF` for Cyrillic.
 - Text has no per-line fallback to English. A language is offered only once every story is
   translated, so a gap shows only in a preview. Audio does fall back, clip by clip: the active
   pack first, then the fallback language's packs, unless If a Voice Is Missing is Stay Silent.
@@ -166,6 +175,15 @@ The game announces a discovery once per character, and Places reads that message
   `SpokenPlacesCharacter` makes it happen once, and `/spp forget` clears it.
 - Include Places Found Before also reads on zone change, once per place, for a character that
   explored before installing. `heard` records places when a clip starts, not when it is queued.
+  It was off by default, and every profile stored that off; loading a profile turns it on once
+  (`autoplayExploredTurnedOn` marks that it was), so a player who turns it off later keeps it off.
+  With it on, a discovery of a place already heard reads nothing: at login a new character hears
+  its valley and then its zone, which the game announces only later. Nothing reads the zone or a
+  subzone, on a zone change or at login, until the greeting is settled (it queued, or there is
+  nothing it will queue, or its eight tries are spent), so the zone never plays ahead of the
+  valley; a valley already waiting in the queue counts as the greeting. Forget Places Heard (and
+  `/spp forget`) clears `heard` and `greeted`, never `visited`. The button is greyed while Read
+  Automatically or Read Stories Aloud is off, as nothing reads the list then.
 - Entering a dungeon or raid reads its story, once per character (`heard`), with Read
   Automatically and Include Smaller Areas on. Inside an instance the client gives no map for the
   player and announces no discovery, so on every loading screen, zone change and two seconds

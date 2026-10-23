@@ -146,9 +146,13 @@ name over the line's title, the controls at the header's right, then Rows at Onc
 ## Large Window
 
 `PlayerFrame.lua`. The game's Talking Head frame where the client has its art (Spoken's own art
-elsewhere): a bigger portrait drawn as a 3D model, the speaker's name, up to three rows of the
-words, the controls at the top right where the frame has its close button, and the progress line.
-It is dragged by the ring at the portrait's lower left, and it fades as the Small Window does.
+elsewhere): a bigger portrait drawn as a 3D model, a row with the speaker's name and the line's
+name after it ("Gornek • Cutting Teeth", "Westfall • Moonbrook"), up to three rows of the words,
+the controls at the top right where the frame has its close button, and the progress line. A line
+with no name of its own shows its header alone. Where the row is short the line's name is cut
+first, and pointing at it shows the whole name; with less room than "• ..." it is left out. Why
+the line waits, "• (Stopped)" and "• +N" follow it. It is dragged by the ring at the portrait's
+lower left, and it fades as the Small Window does.
 
 ## DialogueUI
 

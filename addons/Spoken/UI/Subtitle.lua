@@ -698,11 +698,8 @@ function Subtitle:Prepare(clip, text)
     self.clip, self.page = clip, nil
     self.pageFade, self.shadowSize = nil, nil
     for _, line in ipairs(self.lines or {}) do line:SetAlpha(1) end
-    local present = clip.present or {}
-    local title, label = present.header, present.label
-    if not title or title == "" then title, label = label or "", nil end
-    -- A zone's own story names the zone twice; said once.
-    if label == "" or label == title then label = nil end
+    local title, label = Actions.Speaker(clip), Actions.Label(clip)
+    if title == "" then title, label = label, nil end
     self.titleText, self.labelText, self.shownPaused = title, label, nil
     -- The waiting count as it is now, so a line that follows a skip lays its row out once, with
     -- the count already in, rather than sliding as if lines had just been added.
