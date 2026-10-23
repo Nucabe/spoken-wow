@@ -188,6 +188,13 @@ function Actions.SetPausable(buttons)
     return pausable
 end
 
+--- Skip the line playing, with the click a window's Skip makes.
+function Actions.Skip()
+    local skipped = SoundQueue:Skip()
+    if skipped then SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON") end
+    return skipped
+end
+
 --- Skip: the round button with the play glyph against a bar, the usual "next" mark.
 function Actions.SkipButton(parent, name)
     local skip = Actions.RoundButton(parent, 10, name)
@@ -199,10 +206,7 @@ function Actions.SkipButton(parent, name)
     skip.bar:SetSize(P and P(skip, 2) or 2, P and P(skip, 9) or 9)
     skip.bar:SetPoint("LEFT", skip.glyph, "RIGHT", 0, 0)
     if skip.bar.SetColorTexture then skip.bar:SetColorTexture(1, 0.82, 0, 0.85) end
-    skip:SetScript("OnClick", function()
-        SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
-        SoundQueue:Skip()
-    end)
+    skip:SetScript("OnClick", Actions.Skip)
     skip:SetScript("OnEnter", function()
         skip.glyph:SetAlpha(1)
         GameTooltip:SetOwner(skip, "ANCHOR_TOP")
