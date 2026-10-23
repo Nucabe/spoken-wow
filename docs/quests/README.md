@@ -979,8 +979,8 @@ the quest log's included, except where it contributes; each addon asks
 
 Clicking it opens Spoken's contribute box (`UI/ContributeBox.lua`). It holds a link to
 `spoken.rusty.one/contribute` that carries an envelope: the addon, the build, the locale, the
-quest or NPC (never a player: a quest a party member shares names no one), and the text
-itself. Where no link can be built it holds the envelope and the
+quest or NPC (never a player: a quest a party member shares names no one and carries no
+observations of them), and the text itself. Where no link can be built it holds the envelope and the
 address to paste. The client still cannot open a browser or post anywhere, so the player copies
 it, opens it, sees a field-by-field preview of exactly what is about to be sent, and submits.
 The first click ever asks whether to send just that line or to collect as the player plays:
@@ -1007,8 +1007,7 @@ From there it is an ordinary line — the explorer lists it under missing audio 
 that the addon could not put back (the branch of a `$G` it picked) through the usual text
 override, generates a take, and the next export carries it into the pack. The addon does put
 back the reader's own name, class and race as `$N`, `$C` and `$R` before sending — only the
-client knows which words those were; the name as written and in capitals, and lines already
-kept with the name of the character logging in are rewritten at login — so a contributed line is a template like an extracted
+client knows which words those were; the name as written and in capitals — so a contributed line is a template like an extracted
 one: stored as `originalText`, spoken as `Adventurer`/`Traveler` by the extract's own table,
 and hashed on the template when it is gossip. Class and race are swapped wherever they occur as
 whole words, so a warrior's "a warrior's discipline" arrives as "a `$c`'s discipline"; that

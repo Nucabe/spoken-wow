@@ -33,31 +33,6 @@ local function BaseFields(self)
 	}
 end
 
--- A letter, a digit, or any byte of a multi-byte UTF-8 character.
-local function IsWordByte(b)
-	return b ~= nil and (b >= 128 or (b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122))
-end
-
---- Every whole-word occurrence of `word` in `text` replaced by `token`. A plain find, as the
---- word is the player's own name and no pattern; whole words, so "Mist" leaves "Mistwood".
-local function ReplaceWord(text, word, token)
-	local out, pos = {}, 1
-	while true do
-		local first, last = string.find(text, word, pos, true)
-		if not first then
-			break
-		end
-		if IsWordByte(string.byte(text, first - 1)) or IsWordByte(string.byte(text, last + 1)) then
-			out[#out + 1] = string.sub(text, pos, last)
-		else
-			out[#out + 1] = string.sub(text, pos, first - 1)
-			out[#out + 1] = token
-		end
-		pos = last + 1
-	end
-	out[#out + 1] = string.sub(text, pos)
-	return table.concat(out)
-end
 
 --- The page with this character's name, class and race put back as the game's tokens, as
 --- Spoken_Quests/Contribute.lua's Detemplate does for quest text. The client writes them into
@@ -78,7 +53,10 @@ function SpokenReadables:Detemplate(text)
 	end
 
 	-- Whole or by one part of it, as written or in capitals: a page greets its reader "GRIMBALOR,".
-	text = Spoken.Contribute:Unname(text, UnitName and UnitName("player"))
+	-- Sorted with the class and race below.
+	for _, word in ipairs(Spoken.Contribute:NameWords(UnitName and UnitName("player"))) do
+		add(word, "$N")
+	end
 	if UnitClass then
 		local localized, classFile = UnitClass("player")
 		addCased(localized, "$C", "$c")
@@ -94,7 +72,7 @@ function SpokenReadables:Detemplate(text)
 	-- Longest first, so "Night Elf" goes as one race before a shorter word inside it.
 	table.sort(swaps, function(a, b) return string.len(a[1]) > string.len(b[1]) end)
 	for _, pair in ipairs(swaps) do
-		text = ReplaceWord(text, pair[1], pair[2])
+		text = Spoken.Contribute:ReplaceWord(text, pair[1], pair[2])
 	end
 	return text
 end
@@ -179,37 +157,6 @@ function SpokenReadables:GatherContribution()
 	end
 	local envelope, key = self:CaptureContribution()
 	return envelope and Spoken.Gather:Add(key, envelope) or false
-end
-
---- The pages kept with this character's name in them, rewritten with $N: those kept before a
---- page went out with tokens at all, and those that had it in capitals. Each keeps its place,
---- under the checksum of its new words, and goes where those words are already kept. Run at
---- login. Only the name: the class and race words of whoever kept a page are not this
---- character's to know. Such a page kept under books, before Readables had its name, goes back
---- under readables, the only name an envelope takes now.
-function SpokenReadables:TidyGathered()
-	local gather = _G.Spoken and Spoken.Gather
-	if not (gather and gather.Lines and Spoken.Contribute and Spoken.Contribute.Parse) then
-		return
-	end
-	local name = UnitName and UnitName("player")
-	local lines = gather:Lines()
-	for i = #lines, 1, -1 do
-		local line = lines[i]
-		if string.match(line.key, "^b:%d+$") then
-			local source, fields, text = Spoken.Contribute:Parse(line.envelope)
-			local unnamed = text and Spoken.Contribute:Unname(text, name)
-			if (source == "readables" or source == "books") and unnamed ~= text then
-				local sum = self:ChecksumOf(unnamed)
-				for _, field in ipairs(fields) do
-					if field[1] == "page" then
-						field[2] = sum
-					end
-				end
-				gather:Rekey(line.key, format("b:%d", sum), Spoken.Contribute:Envelope("readables", fields, unnamed))
-			end
-		end
-	end
 end
 
 --- Whether the contribute button belongs on the page: text to send, and no page id for it.

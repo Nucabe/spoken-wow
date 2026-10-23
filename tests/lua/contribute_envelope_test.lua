@@ -219,5 +219,13 @@ Expect("...an empty field kept", readFields[2][1] .. "=" .. readFields[2][2], "n
 Expect("...a value keeping its =", readFields[3][2], "a=b")
 Expect("an envelope with no text reads back with none", select(3, C:Parse(C:Envelope("places", { { "map", "1" } }, nil))), nil)
 Expect("anything else is not an envelope", C:Parse("hello"), nil)
+do
+    local built = C:Envelope("quests", { { "quest", "3117" } }, "Well met.")
+    Expect("an envelope whose words changed after it was signed is not read", C:Parse((built:gsub("Well met", "Ill met"))), nil)
+    Expect("...nor one whose field did", C:Parse((built:gsub("quest=3117", "quest=3118"))), nil)
+    Expect("...nor one cut short", C:Parse(built:sub(1, -3)), nil)
+    Expect("a text that holds a sum= line of its own reads back whole",
+        select(3, C:Parse(C:Envelope("quests", {}, "a\nsum=5\nb"))), "a\nsum=5\nb")
+end
 
 os.exit(Failures() == 0 and 0 or 1)

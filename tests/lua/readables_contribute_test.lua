@@ -54,6 +54,11 @@ local named = B:CaptureContribution()
 Expect("a page's name, class and race go back as tokens", named:find(TEMPLATE, 1, true) ~= nil, true)
 Expect("...and no name goes with it", named:find("Valaas ", 1, true) or named:find("Dawnsight", 1, true), nil)
 Expect("...keyed on the page with its tokens", named:match("\npage=" .. B:ChecksumOf(TEMPLATE) .. "\n") ~= nil, true)
+-- A part of the name inside a longer class phrase leaves that phrase to the class.
+stub.world.playerName, stub.world.playerClass = "Valaas Hunter", "Demon Hunter"
+Expect("a part of the name inside the class's words does not take them first",
+    B:Detemplate("Demon Hunter, rise. Valaas, Hunter."), "$C, rise. $N, $N.")
+stub.world.playerName, stub.world.playerClass = "Valaas Dawnsight", "Warrior"
 -- A report on a page that names the reader sends it with the token too.
 stub.ShowPage({ title = "Proof of Deed", number = 1, text = "This proof of deed is to verify that Valaas Dawnsight slew Margol the Rager, scourge of the searing gorge.\n\nThe Ironforge museum recognizes this achievement and thanks the bearer for their generous contribution.\n\n-Head Curator Thorius Stonetender" })
 local report = B:ReportContext(1231)
@@ -66,10 +71,10 @@ Expect("a page's name in capitals goes back as a token",
     shouted:find("\n$N,\n\n$N, keep this. VALAASWOOD waits.\n", 1, true) ~= nil, true)
 Expect("...and no name goes with it", shouted:find("VALAAS ", 1, true) or shouted:find("VALAAS,", 1, true), nil)
 
--- Pages kept before that, with the name in them, have it as a token after login, under the
--- checksum of their new words; one whose new words are already kept goes into that one. A page
--- naming nobody stays as it was. One kept under books, before Readables had its name, comes back
--- under readables.
+-- Pages kept earlier are left as they were at login, with the name in them and under whatever
+-- source an older version wrote ("books", which the site still reads as readables): the file is
+-- the account's, a page another character kept may hold the same word as a name of its own
+-- ("The Light keeps you."), and nothing here knows who kept which.
 local Gather = env.Spoken.Gather
 local function Page(text, source)
     local sum = B:ChecksumOf(text)
@@ -81,20 +86,23 @@ local function Page(text, source)
     end
     return { key = "b:" .. sum, envelope = envelope }
 end
-_G.SpokenContributionsDB = { Lines = {
+local before = {
     Page("GRIMBALOR,\n\nThe Light keeps you.", "books"),
     Page("A page naming nobody."),
     Page("Grimbalor,\n\nRest well."),
     Page("$N,\n\nRest well."),
-} }
+}
+_G.SpokenContributionsDB = { Lines = {} }
+for i, page in ipairs(before) do _G.SpokenContributionsDB.Lines[i] = { key = page.key, envelope = page.envelope } end
 stub.world.playerName = "Grimbalor"
 assert(loadfile(READABLES .. "Events.lua"))("Spoken_Readables", B)
 stub.FireEvent("PLAYER_LOGIN")
-local kept = _G.SpokenContributionsDB.Lines
-Expect("login puts the name in a kept page back as its token, keyed on its new words",
-    kept[1].key .. " " .. kept[1].envelope, Page("$N,\n\nThe Light keeps you.").key .. " " .. Page("$N,\n\nThe Light keeps you.").envelope)
-Expect("...leaving a page naming nobody as it was", kept[2].envelope, Page("A page naming nobody.").envelope)
-Expect("...and folding one whose words are already kept into that one", Gather:Count(), 3)
+local unchanged = Gather:Count() == #before
+for i, page in ipairs(before) do
+    local now = _G.SpokenContributionsDB.Lines[i]
+    unchanged = unchanged and now and now.key == page.key and now.envelope == page.envelope
+end
+Expect("login leaves every kept page as it was, none lost and none rewritten", unchanged, true)
 Gather:Clear()
 stub.world.playerName, stub.world.playerClass, stub.world.playerRace = nil, nil, nil
 

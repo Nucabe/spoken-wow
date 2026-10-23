@@ -92,23 +92,27 @@ function Gather:Lines()
     return Store().Lines
 end
 
---- Put `envelope` under `newKey` in place of the line kept under `key`, where it stands. Where
---- another line already holds `newKey`, that one stays and this one goes: the two are one line.
---- Without an envelope nothing changes: a kept line is never written over with nothing.
+--- The envelope kept under `key`, nil where there is none.
+---@return string|nil
+function Gather:Get(key)
+    for _, line in ipairs(Store().Lines) do
+        if line.key == key then
+            return line.envelope
+        end
+    end
+    return nil
+end
+
+--- Put `envelope` in place of the line kept under `key`, where it stands. Without an envelope
+--- nothing changes: a kept line is never written over with nothing.
 ---@return boolean replaced
-function Gather:Rekey(key, newKey, envelope)
+function Gather:Replace(key, envelope)
     if type(envelope) ~= "string" or envelope == "" then
         return false
     end
-    local lines = Store().Lines
-    for i = 1, #lines do
-        if lines[i].key == newKey and newKey ~= key then
-            return self:Remove(key)
-        end
-    end
-    for i = 1, #lines do
-        if lines[i].key == key then
-            lines[i].key, lines[i].envelope = newKey, envelope
+    for _, line in ipairs(Store().Lines) do
+        if line.key == key then
+            line.envelope = envelope
             return true
         end
     end

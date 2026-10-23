@@ -150,6 +150,14 @@ Expect("a surnamed character is swapped whole and by either part",
 world.questText = "VALAAS DAWNSIGHT! Valaas. VALAASWOOD stays."
 Expect("...and in capitals, as some pages write it",
     VoiceOver.Contribute:Capture():match("\n([^\n]*stays%.)\n"), "$N! $N. VALAASWOOD stays.")
+-- A part of the name inside a longer class phrase leaves that phrase to the class.
+do
+    local class = world.playerClass
+    world.playerName, world.playerClass = "Valaas Hunter", "Demon Hunter"
+    Expect("a part of the name inside the class's words does not take them first",
+        VoiceOver.Contribute:Detemplate("Demon Hunter, rise. Valaas, Hunter."), "$C, rise. $N, $N.")
+    world.playerClass = class
+end
 world.playerName = "Zöpf"
 Expect("an accented name in capitals is the name too",
     VoiceOver.Contribute:Detemplate("ZÖPF, Zöpf, Zöpfe."), "$N, $N, Zöpfe.")

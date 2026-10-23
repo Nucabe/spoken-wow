@@ -196,10 +196,37 @@ function Contribute:Envelope(source, fields, text)
     return body .. format("sum=%d\n", self:Checksum(body))
 end
 
--- A letter, a digit, or any byte of a multi-byte UTF-8 character, as in Spoken_Quests'
--- Contribute.lua: a name next to an accented or Cyrillic letter is part of a longer word.
+-- A letter, a digit, or any byte of a multi-byte UTF-8 character. Byte-wise rather than %w,
+-- which knows nothing past ASCII: a Cyrillic or accented name is all high bytes, and the word
+-- next to it must still count as a word.
 local function IsWordByte(b)
     return b ~= nil and (b >= 128 or (b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122))
+end
+
+--- Every whole-word occurrence of `word` in `text` replaced by `token`.
+---
+--- A plain find and a hand-made boundary check rather than a pattern: a name is the player's
+--- own input, so it would have to be escaped first, and %f -- the one pattern item that would
+--- make the boundary easy -- is not something every client's Lua is safe to lean on. Whole
+--- words only, so a player called Mist does not turn "Mistwood" into "$Nwood"; "Mist's" still
+--- matches, the apostrophe not being a word byte.
+function Contribute:ReplaceWord(text, word, token)
+    local out, pos = {}, 1
+    while true do
+        local first, last = string.find(text, word, pos, true)
+        if not first then
+            break
+        end
+        if IsWordByte(byte(text, first - 1)) or IsWordByte(byte(text, last + 1)) then
+            out[#out + 1] = string.sub(text, pos, last)
+        else
+            out[#out + 1] = string.sub(text, pos, first - 1)
+            out[#out + 1] = token
+        end
+        pos = last + 1
+    end
+    out[#out + 1] = string.sub(text, pos)
+    return table.concat(out)
 end
 
 --- `text` in capitals: ASCII, the accented Latin letters (à to þ) and Cyrillic (а to я, ѐ to џ).
@@ -219,18 +246,17 @@ local function Upper(text)
     return text
 end
 
---- `text` with the player's name as $N: whole or any one part of it ("Valaas Dawnsight" is
---- greeted "Valaas"), as written or in capitals, as the client writes it into some pages
---- ("GRIMBALOR,"). Whole words only, so a player called Mist leaves "Mistwood" alone. A plain
---- find, as a name is the player's own input and no pattern.
----@param text string
+--- The words a text may write the player's name as: the name whole or any one part of it ("Valaas
+--- Dawnsight" is greeted "Valaas"), as written and in capitals, as the client writes it into some
+--- pages ("GRIMBALOR,"). For the caller to swap for $N with ReplaceWord, among its other swaps in
+--- order of length.
 ---@param name string|nil  UnitName("player")
----@return string
-function Contribute:Unname(text, name)
-    if type(text) ~= "string" or type(name) ~= "string" or name == "" then
-        return text
-    end
+---@return string[]
+function Contribute:NameWords(name)
     local words = {}
+    if type(name) ~= "string" or name == "" then
+        return words
+    end
     for _, form in ipairs({ name, Upper(name) }) do
         words[#words + 1] = form
         for part in string.gmatch(form, "%S+") do
@@ -239,32 +265,13 @@ function Contribute:Unname(text, name)
             end
         end
     end
-    -- Longest first, so the whole name goes before a part of it.
-    table.sort(words, function(a, b) return len(a) > len(b) end)
-    for _, word in ipairs(words) do
-        local out, pos = {}, 1
-        while true do
-            local first, last = string.find(text, word, pos, true)
-            if not first then
-                break
-            end
-            if IsWordByte(byte(text, first - 1)) or IsWordByte(byte(text, last + 1)) then
-                out[#out + 1] = string.sub(text, pos, last)
-            else
-                out[#out + 1] = string.sub(text, pos, first - 1)
-                out[#out + 1] = "$N"
-            end
-            pos = last + 1
-        end
-        out[#out + 1] = string.sub(text, pos)
-        text = table.concat(out)
-    end
-    return text
+    return words
 end
 
 --- An envelope read back: its source, its fields in order and its text, so a feature addon can
 --- rewrite a line Gather kept and build it again with Envelope. Nil for anything Envelope did
---- not write.
+--- not write, and for one whose checksum is wrong: built again it would be signed afresh, and
+--- pass for what it is not.
 ---@param envelope string
 ---@return string|nil source
 ---@return table|nil  fields  array of { key, value }
@@ -273,7 +280,11 @@ function Contribute:Parse(envelope)
     if type(envelope) ~= "string" then
         return nil
     end
-    local source, body = string.match(envelope, "^!SPOKEN%d+ (%a+)\n(.-)sum=%d+\n$")
+    local signed, sum = string.match(envelope, "^(.*\n)sum=(%d+)\n$")
+    if not signed or self:Checksum(signed) ~= tonumber(sum) then
+        return nil
+    end
+    local source, body = string.match(signed, "^!SPOKEN%d+ (%a+)\n(.*)$")
     if not source then
         return nil
     end

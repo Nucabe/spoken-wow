@@ -8,8 +8,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   is no longer kept a second time without its NPC as the window closes. A quest or gossip line that
   plays but whose words in the game differ from the text it was voiced from is now kept too, so it
   can be corrected. Your character's name no longer goes out with a line or page that writes it in
-  capitals, nor another player's name with a quest they shared, and lines already kept with your
-  name have it taken out when you log in. *([Nucabe](https://github.com/Nucabe))*
+  capitals, nor another player's name or look with a quest they shared, and lines kept before that
+  have a sharing player's name taken out when you log in. *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
