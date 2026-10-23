@@ -715,6 +715,10 @@ function Addon:OnInitialize()
             -- Through pcall because a snapshot is a fallback, and a client that refuses one
             -- of these globals must not stop the event from being recorded.
             pcall(CaptureQuestSnapshot, event)
+            -- A quest page replaces the greeting in the same window, without QUEST_FINISHED: a
+            -- read of the greeting still waiting for its text would lift this page's mute, or
+            -- queue the greeting over it.
+            self:CancelDeferredRead("QUEST_GREETING")
             pcall(self.MuteGreetingAhead, self, event)
         end
     end)
@@ -775,11 +779,17 @@ function Addon:OnInitialize()
     self.DispatchDirectEventLater = function(addon, event, source, delay)
         DispatchLater(event, source, delay)
     end
+    local function CancelLater(event)
+        deferredEventGeneration[event] = (deferredEventGeneration[event] or 0) + 1
+    end
+    self.CancelDeferredRead = function(addon, event)
+        CancelLater(event)
+    end
     local function SignalDirectEvent(event, source)
         if event == "QUEST_FINISHED" then
-            deferredEventGeneration.QUEST_GREETING = (deferredEventGeneration.QUEST_GREETING or 0) + 1
+            CancelLater("QUEST_GREETING")
         elseif event == "GOSSIP_CLOSED" then
-            deferredEventGeneration.GOSSIP_SHOW = (deferredEventGeneration.GOSSIP_SHOW or 0) + 1
+            CancelLater("GOSSIP_SHOW")
         end
         if not deferredSpeechEvents[event] then
             DispatchDirectEvent(event, source)

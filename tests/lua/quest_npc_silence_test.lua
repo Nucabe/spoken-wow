@@ -152,6 +152,30 @@ stub.world.greetingText = "Welcome to the inn."
 stub.Advance(0.5)
 Expect("...and is not read afterwards", _G.Spoken:GetCurrent(), nil)
 CloseGreeting()
+
+-- A quest picked from the greeting replaces it in the same window, with no QUEST_FINISHED, while
+-- the greeting waits for its text. The quest's ID is not known yet, so its page mutes too.
+local function PickQuest()
+    stub.world.questID = 0
+    stub.ShowPanel("QuestFrameDetailPanel")
+    stub.FireEvent("QUEST_DETAIL")
+end
+Greet(VOICED, "")
+stub.Advance(0.15)
+PickQuest()
+stub.world.greetingText = "Welcome to the inn."
+stub.Advance(0.3)
+Expect("a greeting left for a quest page while it waits for its text is not read on that page",
+    _G.Spoken:GetCurrent(), nil)
+CloseGreeting()
+
+Greet(VOICED, "")
+stub.Advance(0.15)
+PickQuest()
+stub.Advance(0.3)
+Expect("...and does not give the NPC its voice back over the quest page's mute",
+    GetCVar("Sound_EnableDialog"), "0")
+CloseGreeting()
 stub.world.greetingText = nil
 
 -- A read the player asks for is its own, and does not wait for the text.
