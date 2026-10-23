@@ -183,6 +183,9 @@ local HANGUL, HAN, CYRILLIC = { [234] = true, [235] = true, [236] = true, [237] 
     { [228] = true, [229] = true, [230] = true, [231] = true, [232] = true, [233] = true },
     { [208] = true, [209] = true }
 local VIETNAMESE = { [225] = true }   -- ế and ệ, U+1EBF and U+1EC7
+-- Han, and private-use glyphs (U+E000 on) as wide as them, as a Big5 font can have.
+local HAN_AND_PRIVATE = { [238] = true }
+for lead in pairs(HAN) do HAN_AND_PRIVATE[lead] = true end
 local fontHas = {   -- the lead bytes each file draws
     ["Fonts\\FRIZQT__.TTF"] = CYRILLIC,
     ["Fonts\\QUEST.TTF"] = CYRILLIC,
@@ -190,9 +193,7 @@ local fontHas = {   -- the lead bytes each file draws
     ["Fonts\\FRIZQT___CYR.TTF"] = CYRILLIC,
     ["Fonts\\2002.TTF"] = HANGUL,
     ["Fonts\\ARKai_T.ttf"] = HAN,
-    -- Han, and private-use glyphs as wide as them, as a Big5 font can have.
-    ["Fonts\\bKAI00M.ttf"] = { [228] = true, [229] = true, [230] = true, [231] = true, [232] = true,
-        [233] = true, [238] = true },
+    ["Fonts\\blei00d.TTF"] = HAN_AND_PRIVATE,
     ["Fonts\\ARIALN.TTF"] = VIETNAMESE,
 }
 local realParent = _G.UIParent.CreateFontString
@@ -227,9 +228,12 @@ Expect("H. it offers Korean, which its font cannot draw, in the client's Korean 
     tostring(Z:CanRenderLanguage("koKR")) .. " " .. Font(_G.GameFontHighlight, "koKR"),
     "true Fonts\\2002.TTF")
 Expect("H. ...and Chinese in its Chinese fonts", Font(_G.QuestFont, "zhCN") .. " "
-    .. Font(_G.QuestFont, "zhTW"), "Fonts\\ARKai_T.ttf Fonts\\bKAI00M.ttf")
+    .. Font(_G.QuestFont, "zhTW"), "Fonts\\ARKai_T.ttf Fonts\\blei00d.TTF")
 Expect("H. Traditional Chinese is offered though its font has private-use glyphs as wide as its Han",
     Z:CanRenderLanguage("zhTW"), true)
+Expect("H. ...by Spoken's own probe, which the Voice Language lists use too",
+    tostring(Spoken:FontDraws("繁體中文", "Fonts\\blei00d.TTF")) .. " "
+    .. tostring(Spoken:FontDraws("繁體中文", "Fonts\\FRIZQT__.TTF")), "true false")
 Expect("H. a Latin language needs no asking", Z:CanRenderLanguage("frFR"), true)
 Expect("H. ...and keeps the page's font", Font(_G.GameFontHighlight, "frFR"), "Fonts\\FRIZQT__.TTF")
 Expect("H. Vietnamese, which the page's font cannot draw, is written in Arial Narrow",

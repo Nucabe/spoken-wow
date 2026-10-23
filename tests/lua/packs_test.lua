@@ -90,7 +90,15 @@ Expect("a Spanish client is offered the Spanish pack first", spanish[1], Name(ES
 Expect("...then only the pack it has installed, not English's to get", table.concat(spanish, "|", 2),
     Name(ES, "TestPack"))
 -- Every client language has a quests pack of its own now, Chinese included.
+-- A font that draws every glyph it lacks as the same box, whatever its bytes: the language is named in
+-- English, as on a client whose font has no Chinese.
+stub.TextWidth = function(fs)
+    local width = 0
+    for _ in tostring(fs.text or ""):gmatch("[%z\1-\127\194-\244][\128-\191]*") do width = width + 7 end
+    return width
+end
 local chinese, CN = Shown("zhCN")
+stub.TextWidth = nil
 Expect("a Chinese client is offered the Chinese pack first, like any other",
     table.concat(chinese, "|"), table.concat({ Name(CN, "Chinese (Simplified)"), Name(CN, "TestPack") }, "|"))
 

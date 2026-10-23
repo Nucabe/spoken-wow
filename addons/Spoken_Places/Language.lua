@@ -133,35 +133,10 @@ function SpokenPlaces:IsLanguageReady(code)
 	return (entry and entry.ready) and true or false
 end
 
--- A missing glyph draws as nothing or as a box, so `text` is measured against as many U+0378, a
--- code point Unicode has never assigned and so no font has: the same width means none of it drew.
--- Not a private-use character: a Traditional Chinese font can carry glyphs there as wide as its
--- Han ones, and would read as drawing nothing. The pages set font files, which lack the font
--- object's fallbacks, so the text must draw in the file itself.
-local probe
-local function draws(text, path)
-	probe:SetFont(path, 12, "")
-	probe:SetText(text)
-	local width = probe:GetStringWidth() or 0
-	local count = 0
-	for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do
-		count = count + 1
-	end
-	probe:SetText(string.rep("\205\184", count))
-	local missing = probe:GetStringWidth() or 0
-	probe:SetText("")
-	return width > 0 and math.abs(width - missing) > 0.5
-end
-
+-- Whether the font file `path` draws `text`, by Spoken's probe (Spoken:FontDraws). The pages set
+-- font files, which lack the font object's fallbacks, so the text must draw in the file itself.
 function SpokenPlaces:FontDraws(text, path)
-	if not (path and UIParent and UIParent.CreateFontString) then
-		return false
-	end
-	if not probe then
-		probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-		probe:Hide()
-	end
-	return draws(text, path)
+	return (path and Spoken and Spoken.FontDraws and Spoken:FontDraws(text, path)) and true or false
 end
 
 -- The fonts every client ships for the other scripts, which the game's font objects fall back to
@@ -170,8 +145,7 @@ local SCRIPT_FONTS = {
 	cyrillic = "Fonts\\FRIZQT___CYR.TTF",
 	korean = "Fonts\\2002.TTF",
 	simplifiedchinese = "Fonts\\ARKai_T.ttf",
-	-- The one the game's own font objects draw Traditional Chinese with.
-	traditionalchinese = "Fonts\\bKAI00M.ttf",
+	traditionalchinese = "Fonts\\blei00d.TTF",
 	-- Not a font for the script, only the stock one most likely to draw ệ and ữ.
 	vietnamese = "Fonts\\ARIALN.TTF",
 }

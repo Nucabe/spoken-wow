@@ -386,15 +386,21 @@ do
     end
     language.Voice, language.Fallback = "zhCN", "none"
     quests:Refresh()
-    -- The stub measures every character alike, so no font of its own draws Chinese: it is named in
-    -- English, as on a client whose font lacks it.
+    -- A font that measures every character alike draws no Chinese: it is named in English, as on a
+    -- client whose font lacks it.
+    stub.TextWidth = function(fs)
+        local width = 0
+        for _ in tostring(fs.text or ""):gmatch("[%z\1-\127\194-\244][\128-\191]*") do width = width + 7 end
+        return width
+    end
+    quests:Refresh()
     Expect("a voice language with no Quests pack and Stay Silent is said under the voice packs", Silent(),
         format(L.MODULE_NO_VOICE_FMT, "Chinese (Simplified)"))
     -- A font with the glyphs measures the text apart from the box a missing one draws.
     stub.TextWidth = function(fs)
         local text = tostring(fs.text or "")
         local width = 0
-        for char in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do width = width + (char == "\238\128\128" and 12 or 7) end
+        for char in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do width = width + (char == "\205\184" and 12 or 7) end
         return width
     end
     quests:Refresh()

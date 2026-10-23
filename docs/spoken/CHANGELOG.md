@@ -5,8 +5,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 ## Unreleased
 
 - **Text Language on the Places page offers Traditional Chinese (繁體中文)** on clients in other
-  languages, as it does Simplified Chinese, Korean and Russian. Its stories are written in the font
-  the game uses for Traditional Chinese. *([Nucabe](https://github.com/Nucabe))*
+  languages, as it does Simplified Chinese, Korean and Russian. Voice Language names it in its
+  own language on those clients too. *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and

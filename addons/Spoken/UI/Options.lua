@@ -165,25 +165,31 @@ LANGUAGES = {
     { code = "viVN", native = "Tiếng Việt", english = "Vietnamese", script = "vietnamese", hidden = true },
 }
 
--- Whether the settings' font draws `text`. A glyph the font lacks draws as nothing or as a box,
--- so the text is measured against as many private-use characters, which no font has: the same
--- width means none of it drew. Probed in the font object the rows use, which is what draws it.
-local probe
-local function FontDraws(text)
-    if not (UIParent and UIParent.CreateFontString) then return true end
+-- Whether a font draws `text`: the settings' font object, or the file `path`. A glyph the font
+-- lacks draws as nothing or as a box, so the text is measured against as many U+0378, a code point
+-- Unicode has never assigned and so no font has: the same width means none of it drew. Not a
+-- private-use character: a Traditional Chinese font can carry glyphs there as wide as its Han ones.
+-- One probe for every module (Spoken_Places asks it about the font files its pages set).
+local probes = {}
+function Options:FontDraws(text, path)
+    if not (UIParent and UIParent.CreateFontString) then return not path end
+    local probe = probes[path or false]
     if not probe then
         probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         probe:Hide()
+        probes[path or false] = probe
     end
+    if path then probe:SetFont(path, 12, "") end
     probe:SetText(text)
     local width = probe:GetStringWidth() or 0
     local count = 0
     for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do count = count + 1 end
-    probe:SetText(string.rep("\238\128\128", count))
+    probe:SetText(string.rep("\205\184", count))
     local missing = probe:GetStringWidth() or 0
     probe:SetText("")
     return width > 0 and math.abs(width - missing) > 0.5
 end
+local function FontDraws(text) return Options:FontDraws(text) end
 
 --- A language's name in the lists, one for every module: its own, and in English where this
 --- client's font cannot draw its script (Korean on a German client).
