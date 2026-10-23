@@ -461,6 +461,18 @@ function Spoken:LanguageName(code)
     return Options:LanguageName(code)
 end
 
+--- Whether a font draws `text`: the settings' font object, or the font file `path`. The one probe
+--- every module uses, so each names a language the same way.
+function Spoken:FontDraws(text, path)
+    return Options:FontDraws(text, path)
+end
+
+--- Whether a font draws the language `code`, as the lists test it before they name it natively:
+--- the settings' font object, or the font file `path`.
+function Spoken:LanguageDraws(code, path)
+    return Options:LanguageDraws(code, path)
+end
+
 --- The voice language as it plays: the one chosen on Spoken's page, "auto" being the client's.
 function Spoken:VoiceLanguage()
     local voice = self:GetLanguageChoice()
@@ -619,18 +631,26 @@ end
 --- The source is about to queue a line: silence the game's NPC dialogue now rather than
 --- when the line starts, so an NPC's greeting is never heard instead of being cut short.
 --- Honours the player's "mute game dialogue" setting, and lifts itself if nothing comes.
+---@return boolean? muted whether the dialogue was muted now; additive, guard on the field
 function Spoken:MuteGameDialogueAhead(source)
     -- Where Read in Battlegrounds keeps Spoken quiet no line follows, so the greeting is left alone.
     if not Addon:ReadsHere() then
-        return
+        return false
     end
-    SoundQueue:MuteGameDialogueAhead(source:GetChannel())
+    return SoundQueue:MuteGameDialogueAhead(source:GetChannel())
 end
 
 --- The read that MuteGameDialogueAhead was taken for found no line: the game's dialogue comes
 --- back at once, unless a line is speaking.
 function Spoken:EndMuteGameDialogueAhead()
     SoundQueue:EndMuteGameDialogueAhead()
+end
+
+--- Whether the mute MuteGameDialogueAhead took still holds for a line to come: false once its
+--- deadline passed or a read gave the game's dialogue back.
+---@return boolean
+function Spoken:IsMutingGameDialogueAhead()
+    return SoundQueue:IsMutingGameDialogueAhead()
 end
 
 --- A gate that applies to every source: fn(clip) -> reason | nil.

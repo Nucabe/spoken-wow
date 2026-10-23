@@ -979,12 +979,18 @@ the quest log's included, except where it contributes; each addon asks
 
 Clicking it opens Spoken's contribute box (`UI/ContributeBox.lua`). It holds a link to
 `spoken.rusty.one/contribute` that carries an envelope: the addon, the build, the locale, the
-quest or NPC, and the text itself. Where no link can be built it holds the envelope and the
+quest or NPC (never a player: a quest a party member shares names no one and carries no
+observations of them), and the text itself. Where no link can be built it holds the envelope and the
 address to paste. The client still cannot open a browser or post anywhere, so the player copies
 it, opens it, sees a field-by-field preview of exactly what is about to be sent, and submits.
 The first click ever asks whether to send just that line or to collect as the player plays:
 **Collect Missing Lines** (`Gather.lua`, `/sp collect`) keeps every line Spoken is missing in
-`SpokenContributions.lua`, which the player uploads at `/contribute` (`/sp send` says how).
+`SpokenContributions.lua`, which the player uploads at `/contribute` (`/sp send` says how). It
+also keeps a line that plays but whose words on screen are not the ones its text has, tokens,
+case and spacing aside (`DataModules:IsTextKnown`), so the site can correct it: gossip against
+the speaker's lines in the client's language, a quest moment against its wordings, or for one
+wording against the Compendium's English accept and complete text. Progress text, and a quest
+moment of one wording in another language, have nothing to compare with and are not checked.
 
 The same text pasted again — by the same player or a different one — bumps a count on the
 existing row rather than filing a second one; different text under the same key stays its own
@@ -1001,7 +1007,7 @@ From there it is an ordinary line — the explorer lists it under missing audio 
 that the addon could not put back (the branch of a `$G` it picked) through the usual text
 override, generates a take, and the next export carries it into the pack. The addon does put
 back the reader's own name, class and race as `$N`, `$C` and `$R` before sending — only the
-client knows which words those were — so a contributed line is a template like an extracted
+client knows which words those were; the name as written and in capitals — so a contributed line is a template like an extracted
 one: stored as `originalText`, spoken as `Adventurer`/`Traveler` by the extract's own table,
 and hashed on the template when it is gossip. Class and race are swapped wherever they occur as
 whole words, so a warrior's "a warrior's discipline" arrives as "a `$c`'s discipline"; that
@@ -1769,11 +1775,24 @@ The second class is the opposite problem: an addon that answers the quest event 
 Plus calls `AcceptQuest` from its own `QUEST_DETAIL` handler, and the auto-turn-in addons do
 the same with `CompleteQuest` and `GetQuestReward`, so the dialog is over in the frame it
 opened in — `GetQuestID` is back to 0 before the watcher's first poll, and the interaction was
-never read at all. The quest globals are therefore snapshotted when the client fires the event,
-which is the last moment they still describe it, and the watcher replays that snapshot when the
-quest ID drops to 0 with nothing dispatched for the dialog. It is a fallback, not a second
-dispatcher: a dialog the player clicks through is dispatched by the watcher as before and its
-snapshot is discarded.
+never read at all. The quest globals are therefore snapshotted when the client fires each quest
+event, which is the last moment they still describe it, one record per page: an auto turn-in
+shows the progress and the reward page before the watcher can read either, and both are read,
+in order. The watcher replays the pages nothing read when the quest ID drops to 0: of each
+kind of page, the newest, and not an offer recorded after its own quest's progress or reward
+pages, which carries the globals of the quest just handed in. The pages it passes over wait for
+their own accept or turn-in. Two events replay pages too: `QUEST_ACCEPTED` replays the quest's offer and `QUEST_TURNED_IN` its progress and reward
+pages, found by the quest ID in the event. That ID is the first argument on the Forever client
+and the second on Classic clients, which send the quest log index first; a secret ID replays
+nothing. They cover a client that keeps reporting the quest ID after the dialog closed. A page
+recorded with neither a quest ID nor a title names no quest and is not kept, since no later
+event could tie it to one. A declined quest sends neither event, so a decline reads what it did
+before. Records live ten seconds. It is a fallback, not a second dispatcher: a page the player
+reads in the open dialog is dispatched by the watcher as before. That page is the newest record
+of its event, whatever quest the globals named when the event arrived, and it and the earlier
+pages of the quest the watcher read are marked read; another quest's pages still wait for their
+own event. A page shown again keeps its mark. A replay bypasses DialogueUI's wait for its window
+and reads the record, whatever else is open, and no window's close stops it.
 
 `tests/lua/quest_overlay_test.lua` covers the other thing the quest UI owes a player: the play
 button beside each quest in the quest log. There are two quest logs to draw it in. The old one
@@ -1787,11 +1806,22 @@ client — walking the pooled rows and hooking `QuestLogQuests_Update`, which is
 `QuestLog_Update`. The blank prefix the old log's buttons indent a title with is not available
 there: that title wraps into a height the layout has already decided, and a prefix re-wraps it
 inside a row too short to hold the extra line. So the button is anchored instead — left of the
-title, in the inset the row leaves at its left, and beside the tracking checkbox at the other
-end of the row when "Quest objectives" is on and the client is drawing its own icon in that
-inset. The objective icons are how that is detected: they are pooled beside the rows rather
-than parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID
-that is not the play button.
+title, in the inset the row leaves at its left, and at the other end of the row when "Quest
+objectives" is on and the client is drawing its own icon in that inset. The `questPOI` setting
+says so (`POIButtonOwnerMixin:GetButtonForQuest` asks it, and a calling quest gets no icon);
+failing that, the objective icons find it out: they are pooled beside the rows rather than
+parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID that
+is not the play button.
+
+At that end the client ends the title against the quest's type in words (`TagText`, "(Elite)"
+on Forever) or else against the storyline icon, whose left edge is the left of the row's icons,
+and only then measures the title's height. A hook on the title's `SetPoint` records that end,
+whichever form of `SetPoint` the client uses, and moves it 23 pixels left as the client sets it,
+when the setting says the client will draw the icon. The title then wraps and is measured with
+that room taken, and the button sits in it on the title's line, covering neither the title nor
+the type. The row may not hold its quest yet when its title is anchored, so once it does, a
+title that disagrees with the row's own icon is moved again to match the button, after the
+client measured it. An error in the hook is logged and never reaches the client's quest log.
 
 A quest-log play button has no NPC to ask who is speaking. The dialog names its speaker with
 `UnitName("questnpc")` in the client's own language; the log looks the giver up in the pack
