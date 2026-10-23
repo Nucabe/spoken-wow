@@ -7,7 +7,8 @@ from test_gossip_text import ADDON, FOREVER, toc
 import pytest
 
 from tts_cli.giver_names import (check_forever_toc, forever_toc_mismatch, givers, localized_names,
-                                 lua_string, render, write_giver_names, write_names_xml)
+                                 lua_string, render, write_every_language, write_giver_names,
+                                 write_names_xml)
 
 
 def line(source, kind, npc_id, name, quest_id=1):
@@ -114,6 +115,37 @@ def test_the_export_stops_when_the_forever_toc_does_not_list_the_files_it_wrote(
     with pytest.raises(SystemExit) as stopped:
         check_forever_toc(names, [])
     assert "remove: Locale\\Names\\deDE.lua [AllowLoadTextLocale deDE]" in str(stopped.value)
+
+
+def test_a_language_the_export_drops_loses_its_file(tmp_path):
+    names = _addon_names(tmp_path, "Locale\\Names\\deDE.lua [AllowLoadTextLocale deDE]\n")
+    for lang in ("deDE", "ruRU"):
+        write_giver_names(names, lang, localized_names({}, {}))
+    found = givers(CORPUS)
+
+    written, removed, checked = write_every_language(
+        names, found, {"deDE": {("creature", "237"): "Bauer Furlbrow"}})
+
+    assert checked is True
+    assert [os.path.basename(path) for path, _ in written] == ["deDE.lua"]
+    assert removed == [os.path.join(names, "ruRU.lua")]
+    assert sorted(os.listdir(names)) == ["Names.xml", "deDE.lua"]
+
+
+def test_an_export_stopped_by_the_toc_leaves_every_file_as_it_was(tmp_path):
+    names = _addon_names(tmp_path, "Locale\\Names\\deDE.lua [AllowLoadTextLocale deDE]\n"
+                                   "Locale\\Names\\ruRU.lua [AllowLoadTextLocale ruRU]\n")
+    for lang in ("deDE", "ruRU"):
+        write_giver_names(names, lang, localized_names({}, {}))
+    write_names_xml(names, ["deDE", "ruRU"])
+    before = {name: open(os.path.join(names, name), encoding="utf-8").read()
+              for name in os.listdir(names)}
+
+    with pytest.raises(SystemExit):
+        write_every_language(names, givers(CORPUS), {"deDE": {("creature", "237"): "Bauer Furlbrow"}})
+
+    assert {name: open(os.path.join(names, name), encoding="utf-8").read()
+            for name in os.listdir(names)} == before
 
 
 def test_the_export_says_so_when_there_is_no_toc_to_check(tmp_path):

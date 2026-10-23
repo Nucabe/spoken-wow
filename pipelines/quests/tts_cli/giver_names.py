@@ -21,8 +21,11 @@ Nothing here needs a database: this picks the givers and writes the files, and c
 does the query.
 """
 import os
+import re
 
 from tts_cli.build import build_tables
+
+LANG_FILE = re.compile(r"^[a-z]{2}[A-Z]{2}\.lua$")
 
 
 HEADER = """\
@@ -151,3 +154,27 @@ def check_forever_toc(out_dir: str, langs: list) -> bool:
                          + "".join(f"\n  add:    {line}" for line in missing)
                          + "".join(f"\n  remove: {line}" for line in extra))
     return True
+
+
+def write_every_language(out_dir: str, found: dict, by_lang: dict) -> tuple:
+    """Write each language's file and Names.xml from `by_lang` ({lang: {(kind, id): name}}),
+    and delete the file of a language it no longer has. Returns (written, removed, checked),
+    `checked` as check_forever_toc gives it.
+
+    The .toc is checked before anything is written: a run that stops on it leaves the files as
+    they were, so the classic clients do not lose a language the .toc still lists. A dropped
+    language's file is deleted, as no client loads it once Names.xml and the .toc leave it out.
+    """
+    langs = sorted(by_lang)
+    checked = check_forever_toc(out_dir, langs)
+    written = []
+    for lang in langs:
+        table = localized_names(found, by_lang[lang])
+        written.append((write_giver_names(out_dir, lang, table), table))
+    write_names_xml(out_dir, langs)
+    removed = []
+    for name in sorted(os.listdir(out_dir)):
+        if LANG_FILE.match(name) and name[:-len(".lua")] not in by_lang:
+            os.remove(os.path.join(out_dir, name))
+            removed.append(os.path.join(out_dir, name))
+    return written, removed, checked
