@@ -1772,10 +1772,10 @@ opened in — `GetQuestID` is back to 0 before the watcher's first poll, and the
 never read at all. The quest globals are therefore snapshotted when the client fires each quest
 event, which is the last moment they still describe it, one record per page: an auto turn-in
 shows the progress and the reward page before the watcher can read either, and both are read,
-in order. The watcher replays the pages nothing read when the quest ID drops to 0: of offers
-opened and closed unread, the newest, and not one recorded after its own quest's progress or
-reward pages, which carries the globals of the quest just handed in. Two events replay pages
-too: `QUEST_ACCEPTED` replays the quest's offer and `QUEST_TURNED_IN` its progress and reward
+in order. The watcher replays the pages nothing read when the quest ID drops to 0: of each
+kind of page, the newest, and not an offer recorded after its own quest's progress or reward
+pages, which carries the globals of the quest just handed in. The pages it passes over wait for
+their own accept or turn-in. Two events replay pages too: `QUEST_ACCEPTED` replays the quest's offer and `QUEST_TURNED_IN` its progress and reward
 pages, found by the quest ID in the event. That ID is the first argument on the Forever client
 and the second on Classic clients, which send the quest log index first; a secret ID replays
 nothing. They cover a client that keeps reporting the quest ID after the dialog closed. A page

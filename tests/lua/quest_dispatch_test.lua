@@ -357,6 +357,26 @@ stub.FireEvent("QUEST_FINISHED")
 stub.Advance(5)
 Expect("several offers closed unread read the newest only", string.format("%d-accept", quests[3]))
 
+-- Two quests handed in one after the other: the window's close reads the newest page of each kind,
+-- and the pages it passed over wait for their own turn-in.
+lookup[string.format("%d-progress", followUp)] = 1
+lookup[string.format("%d-complete", followUp)] = 1
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_PROGRESS")
+stub.FireEvent("QUEST_COMPLETE")
+world.questID = followUp
+stub.FireEvent("QUEST_PROGRESS")
+stub.FireEvent("QUEST_COMPLETE")
+world.questID = 0
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_TURNED_IN", full, 0, 0)
+stub.FireEvent("QUEST_TURNED_IN", followUp, 0, 0)
+stub.Advance(5)
+Expect("a turn-in's pages passed over when the window closed are read by its own turn-in",
+    string.format("%d-progress, %d-complete, %d-progress, %d-complete", followUp, followUp, full, full))
+
 -- Classic's QUEST_ACCEPTED follows the quest log index with the quest ID.
 StartScenario()
 world.questID = full

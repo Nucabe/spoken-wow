@@ -606,36 +606,46 @@ function Addon:OnInitialize()
     --- Reads the recorded pages nothing has read yet, oldest first. With `questID` (from
     --- QUEST_ACCEPTED or QUEST_TURNED_IN) only that quest's pages of `events`; without it, the
     --- newest unread page of each event whose dialog has closed: of offers opened and closed
-    --- unread, the last is the one the player was left with. An offer recorded after its quest's
-    --- own pages carries the globals of the quest just handed in, so it is not read.
+    --- unread, the last is the one the player was left with. The others are passed over, and
+    --- stay for their own accept or turn-in. An offer recorded after its quest's own pages
+    --- carries the globals of the quest just handed in, so it is not read.
     local function ReplayQuestSnapshots(source, questID, events)
         local state = self.autoQuestState
         PruneQuestSnapshots()
         local newest = {}
         for i, snapshot in ipairs(questSnapshots) do
-            if not snapshot.dispatched then
+            if not snapshot.dispatched and not snapshot.passed then
                 newest[snapshot.event] = i
             end
         end
         for i, snapshot in ipairs(questSnapshots) do
-            local wanted = not questID or (events[snapshot.event] and snapshot.questID == questID)
+            local wanted
+            if questID then
+                wanted = events[snapshot.event] and snapshot.questID == questID
+            else
+                wanted = not snapshot.passed
+            end
             if wanted and not snapshot.dispatched then
-                snapshot.dispatched = true
-                local passedOver = not questID and newest[snapshot.event] ~= i
-                if not questID and snapshot.event == "QUEST_DETAIL" then
-                    for j = 1, i - 1 do
-                        if questSnapshots[j].questID == snapshot.questID and questSnapshots[j].event ~= "QUEST_DETAIL" then
-                            passedOver = true
+                if not questID and newest[snapshot.event] ~= i then
+                    snapshot.passed = true
+                else
+                    snapshot.dispatched = true
+                    local stale = false
+                    if not questID and snapshot.event == "QUEST_DETAIL" then
+                        for j = 1, i - 1 do
+                            if questSnapshots[j].questID == snapshot.questID and questSnapshots[j].event ~= "QUEST_DETAIL" then
+                                stale = true
+                            end
                         end
                     end
-                end
-                local key = PageKey(snapshot.event, snapshot.questID, snapshot.title)
-                if not passedOver and not HandledRecently(state, key) then
-                    MarkHandled(state, key)
-                    Debug:Record("auto-watcher-snapshot", format(
-                        "Reading %s quest %s from its event snapshot: %s",
-                        snapshot.event, tostring(snapshot.questID), source))
-                    self:InvokeQuestHandler(snapshot.event, "event snapshot", false, snapshot)
+                    local key = PageKey(snapshot.event, snapshot.questID, snapshot.title)
+                    if not stale and not HandledRecently(state, key) then
+                        MarkHandled(state, key)
+                        Debug:Record("auto-watcher-snapshot", format(
+                            "Reading %s quest %s from its event snapshot: %s",
+                            snapshot.event, tostring(snapshot.questID), source))
+                        self:InvokeQuestHandler(snapshot.event, "event snapshot", false, snapshot)
+                    end
                 end
             end
         end
