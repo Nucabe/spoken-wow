@@ -190,8 +190,9 @@ end
 
 --- Skip the line playing, with the click a window's Skip makes.
 function Actions.Skip()
-    SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON")
-    return SoundQueue:Skip()
+    local skipped = SoundQueue:Skip()
+    if skipped then SpokenLayout.Sound("U_CHAT_SCROLL_BUTTON") end
+    return skipped
 end
 
 --- Skip: the round button with the play glyph against a bar, the usual "next" mark.
