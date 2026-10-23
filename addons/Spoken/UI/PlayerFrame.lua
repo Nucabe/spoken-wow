@@ -49,7 +49,6 @@ local TEXTURES = [[Interface\AddOns\Spoken\Textures\]]
 local NAME_COLOR = { 1, .82, .02 }
 local WORDS_COLOR = { 1, 1, 1 }
 local TAIL_COLOR = { .6, .6, .6 }
-local LABEL_COLOR = Actions.TITLE_COLOR
 local LABEL_GAP = 6
 local LABEL_LEAST = "• ..."
 
@@ -153,7 +152,7 @@ function PlayerFrame:InitHeader()
     container.name:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
     container.label = container:CreateFontString(nil, "ARTWORK", "SpokenLabelFont")
     container.label:SetWordWrap(false)
-    container.label:SetTextColor(LABEL_COLOR[1], LABEL_COLOR[2], LABEL_COLOR[3])
+    container.label:SetTextColor(unpack(Actions.TITLE_COLOR))
     container.label:Hide()
     -- The whole of a line's name cut short.
     container.labelHover = Actions.Hover(container.label, function(owner)
@@ -368,19 +367,16 @@ function PlayerFrame:LayoutHeader()
     name:SetWidth(nameWidth)
     local x = nameWidth
     local labelRoom = room - tailRoom - nameWidth - LABEL_GAP
-    local cut = false
-    if label:IsShown() and labelRoom >= math.min(self.labelWidth or 0, self.labelLeast or 0) then
-        local labelWidth = math.min(self.labelWidth or 0, labelRoom)
+    local fits = label:IsShown() and labelRoom >= math.min(self.labelWidth, self.labelLeast)
+    if fits then
+        local labelWidth = math.min(self.labelWidth, labelRoom)
         label:SetWidth(labelWidth)
         label:ClearAllPoints()
-        label:SetPoint("LEFT", name, "LEFT", nameWidth + LABEL_GAP, 0)
-        label:SetAlpha(1)
-        x = nameWidth + LABEL_GAP + labelWidth
-        cut = labelWidth < (self.labelWidth or 0)
-    else
-        label:SetAlpha(0)
+        label:SetPoint("LEFT", name, "LEFT", x + LABEL_GAP, 0)
+        x = x + LABEL_GAP + labelWidth
     end
-    container.labelHover:SetShown(cut)
+    label:SetAlpha(fits and 1 or 0)
+    container.labelHover:SetShown(fits and labelRoom < self.labelWidth)
     if tailRoom > 0 then
         tail:Place(name, x)
         tail:Paint()
@@ -496,17 +492,21 @@ function PlayerFrame:Update()
     -- The speaker, or the line's name where nobody speaks; then the line's name, said once.
     local container = self.frame.container
     local speaker = Speaker(head)
-    container.name:SetText(speaker ~= "" and speaker or Label(head))
-    container.label:SetWidth(0)
+    local named = speaker ~= ""
+    container.name:SetText(named and speaker or Label(head))
     Addon:ClipFont(container.name, head)
-    Addon:ClipFont(container.label, head)
-    -- Measured once a line, unbounded, so the width is the text's own; the row is laid out often.
-    -- Less room than a dot and an ellipsis would draw only a stray fragment.
-    container.label:SetText(LABEL_LEAST)
-    self.labelLeast = (container.label:GetStringWidth() or 0) + 1
-    container.label:SetText(speaker ~= "" and "• " .. Label(head) or "")
-    container.label:SetShown(speaker ~= "")
-    self.labelWidth = (container.label:GetStringWidth() or 0) + 1
+    container.label:SetShown(named)
+    if named then
+        local label = container.label
+        label:SetWidth(0)
+        Addon:ClipFont(label, head)
+        -- Measured once a line, unbounded, so the width is the text's own; the row is laid out often.
+        -- Less room than a dot and an ellipsis would draw only a stray fragment.
+        label:SetText(LABEL_LEAST)
+        self.labelLeast = (label:GetStringWidth() or 0) + 1
+        label:SetText("• " .. Label(head))
+        self.labelWidth = (label:GetStringWidth() or 0) + 1
+    end
 
     Portrait:Configure(self.frame.portrait, head)
     self:ConfigureActions(head)

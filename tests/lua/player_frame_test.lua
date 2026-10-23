@@ -98,11 +98,10 @@ env.SoundQueue:RemoveAllSoundsFromQueue()
 -- A short row: the line's name gives way first, then the speaker's.
 local function Row(header, label)
     quests:Enqueue(H.Clip({ present = { header = header, label = label, portrait = { kind = "none" } } }))
-    local name, title = F.frame.container.name, F.frame.container.label
-    return name, title
 end
+local name, title = F.frame.container.name, F.frame.container.label
 local long = string.rep("The Defias Brotherhood ", 6)
-local name, title = Row("Gryan Stoutmantle", long)
+Row("Gryan Stoutmantle", long)
 ExpectOf("a long line's name is cut to the room left, past the speaker's name in full", function()
     return tostring(name.width == #"Gryan Stoutmantle" * 7 + 1) .. " " .. tostring(title:GetAlpha())
         .. " " .. tostring(title.width < #("• " .. long) * 7 + 1) .. " " .. tostring(title.anchor.x == name.width + 6)
@@ -117,19 +116,19 @@ env.SoundQueue:RemoveAllSoundsFromQueue()
 Row("Gryan Stoutmantle", "Wolves Across the Border")
 ExpectOf("...which a line's name in full does not need", function() return F.frame.container.labelHover:IsShown() end, false)
 env.SoundQueue:RemoveAllSoundsFromQueue()
-name, title = Row(string.rep("W", math.floor((room - 27) / 7)), long)
+Row(string.rep("W", math.floor((room - 27) / 7)), long)
 ExpectOf("...not drawn at all where only a fragment of it would fit", function()
     return tostring(title:IsShown()) .. " " .. tostring(title:GetAlpha())
 end, "true 0")
 env.SoundQueue:RemoveAllSoundsFromQueue()
-name, title = Row(string.rep("W", 200), long)
+Row(string.rep("W", 200), long)
 ExpectOf("...nor where the speaker's name takes the whole row, which is cut to it", function()
     return tostring(title:GetAlpha()) .. " " .. tostring(name.width == room)
 end, "0 true")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 -- A short line's name is drawn where it fits whole, though less room is left than the least a cut one
 -- takes ("• ...").
-name, title = Row(string.rep("W", math.floor((room - 6 - 1 - 40) / 7)), "A")
+Row(string.rep("W", math.floor((room - 6 - 1 - 40) / 7)), "A")
 ExpectOf("a line's name shorter than the least that is cut is drawn whole in the room it fits", function()
     return tostring(title:GetAlpha()) .. " " .. tostring(title.width == #"• A" * 7 + 1)
 end, "1 true")
@@ -138,7 +137,8 @@ env.SoundQueue:RemoveAllSoundsFromQueue()
 env, quests, places = Boot(); F = env.PlayerFrame
 places:AddGate(function() return "in combat" end)
 places:Enqueue(H.Clip({ present = { header = "Durotar", label = "Valley of Trials", bullet = "zone", portrait = { kind = "none" } } }))
-name, title = Row("Gryan Stoutmantle", long)
+Row("Gryan Stoutmantle", long)
+name, title = F.frame.container.name, F.frame.container.label
 ExpectOf("with a line waiting, the line's name is cut short of the count, which stands on the row", function()
     local tail = F.tail:Room()
     return tostring(tail > 0) .. " " .. tostring(name.width + 6 + title.width + tail == room)
