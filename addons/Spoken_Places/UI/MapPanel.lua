@@ -293,7 +293,7 @@ local function FollowMap()
 	FollowAlpha()
 end
 
--- A frame's edges in the units of a frame at `scale`, so frames of different scales compare.
+-- In units of `scale`, so frames of different scales compare.
 local function Rect(frame, scale)
 	local left, right, top, bottom = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
 	if not (left and right and top and bottom) then return end
@@ -376,7 +376,7 @@ function ApplyAnchors()
 	end
 end
 
--- Now, and again once every hook on what changed has run.
+-- Now as well as next frame, so the button never shows a frame in its old place.
 local function Relayout()
 	ApplyAnchors()
 	ApplyAnchorsSoon()
