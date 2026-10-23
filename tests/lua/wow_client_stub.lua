@@ -191,6 +191,9 @@ local function Widget(kind, name)
         local x, y, relativeTo, relativePoint
         if type(a) == "number" then
             x, y = a, b
+        elseif type(b) == "number" then
+            -- (point, relativeTo, x, y): the relative point is the point itself.
+            relativeTo, relativePoint, x, y = a, point, b, c
         else
             -- What it was anchored TO, not just where: a button placed against one of the
             -- client's own widgets is making a claim about that widget, and the claim is
@@ -1260,7 +1263,9 @@ end
 --- The quest log of a client that draws the modern map-attached one: no QuestLogFrame, no
 --- QuestLog_Update and no GetQuestLogTitle, rows out of an unnamed frame pool, and one
 --- global function that redraws the list. `quests` is a list of { questID, title, level, tag,
---- storyline, typeIcon }: `tag` is the type in words ("(Elite)"), the other two the icons.
+--- storyline, typeIcon, titleY, shortAnchor }: `tag` is the type in words ("(Elite)"), the next
+--- two the icons; the title is anchored `titleY` pixels off its end, in the form of SetPoint
+--- that leaves the relative point out when `shortAnchor` is set.
 function M.SetModernQuestLog(quests)
     local scroll = _G.CreateFrame("ScrollFrame", "QuestScrollFrame")
     scroll.Contents = _G.CreateFrame("Frame", nil, scroll)
@@ -1269,6 +1274,7 @@ function M.SetModernQuestLog(quests)
     local rows, active = {}, {}
     scroll.titleFramePool = {
         active = active,
+        GetNumActive = function(self) return getn(self.active) end,
         Acquire = function(self)
             local row = rows[getn(self.active) + 1]
             table.insert(self.active, row)
@@ -1341,11 +1347,14 @@ function M.SetModernQuestLog(quests)
             -- The row's own text carries the level prefix the quest log draws with it.
             row.Text:SetText(format("[%d] %s", quest.level or 1, quest.title))
             row.TagText:SetShown(quest.tag ~= nil)
+            local end_ = quest.tag and row.TagText or row.StorylineTexture
             if quest.tag then
                 row.TagText:SetText(quest.tag)
-                row.Text:SetPoint("RIGHT", row.TagText, "LEFT", -4, 0)
+            end
+            if quest.shortAnchor then
+                row.Text:SetPoint("RIGHT", end_, -4, quest.titleY or 0)
             else
-                row.Text:SetPoint("RIGHT", row.StorylineTexture, "LEFT", -4, 0)
+                row.Text:SetPoint("RIGHT", end_, "LEFT", -4, quest.titleY or 0)
             end
             row.TagTexture:SetShown(quest.typeIcon and true or false)
             row.StorylineTexture:SetShown(quest.storyline and true or false)

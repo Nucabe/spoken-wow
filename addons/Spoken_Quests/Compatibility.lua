@@ -129,44 +129,83 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
     -- when the button will sit there, makes the client wrap and measure the title with the
     -- button's room already taken, so the button covers neither the title nor the type.
     local TITLE_ROOM = POI_BUTTON_SIZE + 3
-    local titleEnd = setmetatable({}, { __mode = "k" })
+    -- Where the client last anchored each row's title ({ relativeTo, relativePoint, x, y }), and
+    -- whether the title now ends TITLE_ROOM short of that.
+    local titleAnchor = setmetatable({}, { __mode = "k" })
     local reserved = setmetatable({}, { __mode = "k" })
     local hookedTitles = setmetatable({}, { __mode = "k" })
+    local hookedCount = 0
     local reserving
 
-    --- Whether the client gives this row its objective icon, by POIButtonOwnerMixin's own rule.
-    local function GetsObjectiveIcon(row)
-        return GetCVarBool and GetCVarBool("questPOI") and
-            not (C_QuestLog.IsQuestCalling and C_QuestLog.IsQuestCalling(row.questID))
-    end
-
-    local function OnTitleAnchored(text, point, relativeTo, relativePoint, x, y)
-        if reserving or point ~= "RIGHT" or type(relativeTo) ~= "table" then return end
-        local row = text:GetParent()
-        titleEnd[row] = relativeTo
-        reserved[row] = Addon:IsPartOn() and GetsObjectiveIcon(row) and true or nil
-        if reserved[row] then
-            reserving = true
-            text:SetPoint("RIGHT", relativeTo, relativePoint, (x or 0) - TITLE_ROOM, y or 0)
-            reserving = false
-        end
-    end
-
-    local function HookTitles(pool)
-        for row in pool:EnumerateActive() do
-            if row.Text and not hookedTitles[row] then
-                hookedTitles[row] = true
-                hooksecurefunc(row.Text, "SetPoint", OnTitleAnchored)
+    -- These hooks run inside the client's own calls, where an error would reach its quest log.
+    local function Guarded(fn)
+        return function(...)
+            local ok, err = pcall(fn, ...)
+            if not ok then
+                Debug:Note("quest log", "title-hook", "the quest log's title hook failed: %s", tostring(err))
             end
         end
     end
+
+    --- Whether the client gives this row its objective icon, by POIButtonOwnerMixin's own rule.
+    --- A row the client has not yet given its quest still holds the last one's ID, or none.
+    local function GetsObjectiveIcon(row)
+        if not (GetCVarBool and GetCVarBool("questPOI")) then return false end
+        local questID = row.questID
+        if type(questID) ~= "number" or not (C_QuestLog and C_QuestLog.IsQuestCalling) then return true end
+        local ok, calling = pcall(C_QuestLog.IsQuestCalling, questID)
+        return not (ok and calling)
+    end
+
+    --- Ends the row's title short of the button's room, or gives that room back.
+    local function SetTitleEnd(row, narrow)
+        local anchor = titleAnchor[row]
+        if not anchor or (reserved[row] or false) == narrow then return end
+        reserving = true
+        local ok, err = pcall(row.Text.SetPoint, row.Text, "RIGHT", anchor.relativeTo, anchor.relativePoint,
+            anchor.x - (narrow and TITLE_ROOM or 0), anchor.y)
+        reserving = false
+        if ok then
+            reserved[row] = narrow
+        else
+            Debug:Note("quest log", "title-end", "the quest log's title could not be re-anchored: %s", tostring(err))
+        end
+    end
+
+    -- SetPoint(point, relativeTo, relativePoint, x, y), or without the relative point:
+    -- SetPoint(point, relativeTo, x, y), where it is the point itself.
+    local OnTitleAnchored = Guarded(function(text, point, relativeTo, relativePoint, x, y)
+        if reserving or point ~= "RIGHT" or type(relativeTo) ~= "table" then return end
+        if type(relativePoint) ~= "string" then
+            relativePoint, x, y = point, relativePoint, x
+        end
+        local row = text:GetParent()
+        titleAnchor[row] = { relativeTo = relativeTo, relativePoint = relativePoint, x = x or 0, y = y or 0 }
+        reserved[row] = false
+        SetTitleEnd(row, Addon:IsPartOn() and GetsObjectiveIcon(row) and true or false)
+    end)
+
+    local HookTitles = Guarded(function(pool)
+        -- Every row made so far is hooked, and a row is made only when none is left idle.
+        if pool.GetNumActive and pool:GetNumActive() <= hookedCount then return end
+        for row in pool:EnumerateActive() do
+            if row.Text and not hookedTitles[row] then
+                hookedTitles[row] = true
+                hookedCount = hookedCount + 1
+                local ok, err = pcall(hooksecurefunc, row.Text, "SetPoint", OnTitleAnchored)
+                if not ok then
+                    Debug:Note("quest log", "title-hook", "the quest log's title could not be hooked: %s", tostring(err))
+                end
+            end
+        end
+    end)
     HookTitles(QuestScrollFrame.titleFramePool)
     -- A row is handed out before its title is anchored, so a new one is hooked in time.
-    hooksecurefunc(QuestScrollFrame.titleFramePool, "Acquire", HookTitles)
+    pcall(hooksecurefunc, QuestScrollFrame.titleFramePool, "Acquire", HookTitles)
 
     -- Left of the title, in the inset the row leaves at its left - unless the client draws its
     -- objective icon in that inset, when the button goes to the other end of the row, where
-    -- the title was made to end short of it. Not the blank prefix the old quest log's buttons
+    -- the title is made to end short of it. Not the blank prefix the old quest log's buttons
     -- indent a title with, either: this title wraps into a height the layout has already
     -- decided, and a prefix re-wraps it inside a row too short to hold the extra line.
     function QuestOverlayUI:UpdateQuestTitle(questLogTitleFrame, playButton)
@@ -175,10 +214,15 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             local ok, err = pcall(playButton.MatchBox, playButton, questLogTitleFrame.Checkbox)
             if not ok then Say(err) end
         end
-        local atRightEnd = reserved[questLogTitleFrame] or QuestPOIButton(questLogTitleFrame)
-        local ends = titleEnd[questLogTitleFrame] or questLogTitleFrame.Checkbox
+        -- The setting decided the title's end as it was set, before the row had its quest; the
+        -- row's icon, which the client may draw whatever the setting says, decides here, and
+        -- the title is brought to match.
+        local atRightEnd = GetsObjectiveIcon(questLogTitleFrame) or QuestPOIButton(questLogTitleFrame) ~= nil
+        SetTitleEnd(questLogTitleFrame, atRightEnd and true or false)
+        local anchor = titleAnchor[questLogTitleFrame]
+        local ends = anchor and anchor.relativeTo or questLogTitleFrame.Checkbox
         if atRightEnd and ends then
-            playButton:SetPoint("RIGHT", ends, "LEFT", -3, 0)
+            playButton:SetPoint("RIGHT", ends, anchor and anchor.relativePoint or "LEFT", -3, anchor and anchor.y or 0)
         elseif atRightEnd then
             playButton:SetPoint("TOPRIGHT", questLogTitleFrame, "TOPRIGHT", -4, -2)
         else
