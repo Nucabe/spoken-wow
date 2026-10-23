@@ -77,8 +77,14 @@ local function IsPlayerGUID(guid)
     return ok and guidType == Enums.GUID.Player
 end
 
+--- Whether the window's "npc" is another player, who shares the quest: nothing about them is a
+--- quest giver's to send.
+local function SharedByPlayer()
+    return Utils:IsNPCPlayer() or IsPlayerGUID(Utils:GetNPCGUID())
+end
+
 local function NPCField()
-    if Utils:IsNPCPlayer() or IsPlayerGUID(Utils:GetNPCGUID()) then
+    if SharedByPlayer() then
         return nil
     end
     local name = UnitName and NotSecret(UnitName("npc")) or nil
@@ -168,8 +174,12 @@ local function CachedDisplays()
     return displayCache[npcID]
 end
 
---- What the client can see about who is speaking. The site decides what it means.
+--- What the client can see about who is speaking. The site decides what it means. Nothing where
+--- the one on screen is a player: their sex, kind and model are not a quest giver's.
 local function Observations(fields)
+    if SharedByPlayer() then
+        return
+    end
     local function add(key, value)
         if value ~= nil and value ~= "" then
             fields[#fields + 1] = { key, value }
@@ -669,7 +679,7 @@ function Contribute:HasGap()
     local missing = (not hidden or gathering) and IsMissing()
     local gap = not hidden and missing
     if missing then
-        if not readBody then
+        if not readBody and not SharedByPlayer() then
             NPCModel:Prime(guid, "npc")
         end
         -- Gathered here, on the one pass that already knows the line is missing, rather than

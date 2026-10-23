@@ -52,10 +52,21 @@ Expect("no character name is carried", envelope:match(world.playerName or "Teste
 -- player's, and does not go.
 do
     local isPlayer, guid, name = _G.UnitIsPlayer, world.npcGUID, world.npcName
+    local sex, modelFile = world.unitSex, world.modelFileID
     _G.UnitIsPlayer = function() return true end
     world.npcGUID, world.npcName = "Player-4401-0A1B2C3D", "Sharingfriend"
-    Expect("a quest shared by another player sends no player's name",
-        VoiceOver.Contribute:Capture():find("Sharingfriend", 1, true), nil)
+    world.unitSex, world.modelFileID = 3, 777
+    local shared = VoiceOver.Contribute:Capture()
+    Expect("a quest shared by another player sends no player's name", shared:find("Sharingfriend", 1, true), nil)
+    Expect("...nor what they look like: no kind, model, sex or creature type",
+        (shared:find("\nkind=", 1, true) or shared:find("\nmodel=", 1, true) or shared:find("\nsex=", 1, true)
+            or shared:find("\ncreature=", 1, true)), nil)
+    local primed, prime = 0, VoiceOver.NPCModel.Prime
+    VoiceOver.NPCModel.Prime = function(...) primed = primed + 1; return prime(...) end
+    VoiceOver.Contribute:HasGap()
+    VoiceOver.NPCModel.Prime = prime
+    Expect("...and no model is asked for them", primed, 0)
+    world.unitSex, world.modelFileID = sex, modelFile
     _G.UnitIsPlayer = isPlayer
     stub.HidePanels()
     Expect("...nor does a report on its line after the window closed",
