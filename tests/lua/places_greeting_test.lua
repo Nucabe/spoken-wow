@@ -100,5 +100,16 @@ stub.Advance(200)
 Z:OnAreaDiscovered("Durotar")
 Expect("...so the zone's discovery does not read it again", Spoken:GetQueueSize(), 0)
 
+-- The map settled on the zone before the subzone is filled in: the zone waits for the greeting.
+Z = Boot({ map = 1411, zone = "Durotar", subzone = "" }, 1, nil)
+Z:Set("autoplayExplored", true)
+stub.Advance(2)
+Expect("with the subzone not known yet, the zone is not read ahead of the greeting", Spoken:GetQueueSize(), 0)
+stub.SetZone(VALLEY)
+stub.Advance(2)
+current = Spoken:GetCurrent()
+Expect("...the valley is read first once it is", current and current.key, "s:1411:valley of trials")
+Expect("...and the zone after it", Spoken:GetQueueSize(), 2)
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll places greeting tests passed")

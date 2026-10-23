@@ -692,11 +692,15 @@ function SpokenPlaces:SetupAutoplay()
 		local settled = SeedLoginArea(attempts)
 		-- Logging in is not a zone change, so without this a player who logs out
 		-- and back in somewhere unheard stands there in silence until they walk
-		-- into the next subzone. The greeting runs first and Enqueue refuses a
-		-- duplicate, so the spawn area cannot end up queued by both.
-		NarrateUnheard()
-		if not settled and attempts < LOGIN_SEED_ATTEMPTS then
+		-- into the next subzone. Only once the greeting is settled, or out of tries:
+		-- before, the zone would be read ahead of the valley still to be greeted. The
+		-- greeting runs first and Enqueue refuses a duplicate, so the spawn area cannot
+		-- end up queued by both.
+		local retry = not settled and attempts < LOGIN_SEED_ATTEMPTS
+		if retry then
 			C_Timer.After(LOGIN_SEED_DELAY, seed)
+		else
+			NarrateUnheard()
 		end
 	end
 	C_Timer.After(LOGIN_SEED_DELAY, seed)
