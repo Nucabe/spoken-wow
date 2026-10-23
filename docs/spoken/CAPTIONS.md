@@ -77,7 +77,9 @@ Korean, Simplified Chinese and Traditional Chinese. English is the fallback.
 The words of a place's or a readable's caption are in the Text Language, whatever the voice and
 whichever language a fallback recording is in. Places has a setting for it, Text Language on the
 Places page. Readables has none and uses the client's language, as the game shows a page: on a
-German client the page's German words, on an English client its English ones. The recording's
+German client the page's German words, on an English client its English ones. The two can differ
+on a client whose Places Text Language is not its own language: a German client with English text
+has English place captions and German readable captions. The recording's
 language gives the words only where the Text Language has none for that place or page. A readable
 is decided page by page, so a book can be partly in the client's language and partly in the
 recording's. A book's title follows its words: the one the client showed this session, else the one
