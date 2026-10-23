@@ -467,6 +467,12 @@ function Spoken:FontDraws(text, path)
     return Options:FontDraws(text, path)
 end
 
+--- Whether a font draws the language `code`, as the lists test it before they name it natively:
+--- the settings' font object, or the font file `path`.
+function Spoken:LanguageDraws(code, path)
+    return Options:LanguageDraws(code, path)
+end
+
 --- The voice language as it plays: the one chosen on Spoken's page, "auto" being the client's.
 function Spoken:VoiceLanguage()
     local voice = self:GetLanguageChoice()

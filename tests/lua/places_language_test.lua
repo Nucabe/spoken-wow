@@ -238,7 +238,7 @@ Expect("H. ...by Spoken's own probe, which the Voice Language lists use too",
 -- A font with some Hanja draws the name of Traditional Chinese and still lacks most of its characters.
 local KOREAN_WITH_HANJA = {}
 for lead in pairs(HANGUL) do KOREAN_WITH_HANJA[lead] = true end
-for _, char in ipairs({ "中", "文", "繁", "體" }) do KOREAN_WITH_HANJA[char] = true end
+for _, char in ipairs({ "中", "文", "繁", "體", "這", "國" }) do KOREAN_WITH_HANJA[char] = true end
 fontHas["Fonts\\2002.TTF"] = KOREAN_WITH_HANJA
 Faces("Fonts\\2002.TTF", "Fonts\\2002.TTF")
 Z.drawable, Z.fonts = {}, {}

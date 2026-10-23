@@ -158,8 +158,10 @@ LANGUAGES = {
     { code = "ptBR", native = "Português", english = "Portuguese (Brazil)" },
     { code = "ruRU", native = "Русский", english = "Russian", script = "cyrillic" },
     { code = "koKR", native = "한국어", english = "Korean", script = "korean" },
-    { code = "zhCN", native = "简体中文", english = "Chinese (Simplified)", script = "han" },
-    { code = "zhTW", native = "繁體中文", english = "Chinese (Traditional)", script = "han" },
+    -- `sample`: characters only that Chinese has, which a font must draw beside the name. A Korean
+    -- font with Hanja draws "繁體中文" and still lacks most of Traditional Chinese.
+    { code = "zhCN", native = "简体中文", english = "Chinese (Simplified)", script = "han", sample = "们这简国" },
+    { code = "zhTW", native = "繁體中文", english = "Chinese (Traditional)", script = "han", sample = "嗎妳麼為" },
     -- No client runs in it either, and its stacked accents are glyphs a Latin font can lack.
     -- `hidden` keeps it out of the menus until its pack is released: picked before then, every
     -- line would play in the fallback language.
@@ -170,39 +172,52 @@ LANGUAGES = {
 -- lacks draws as nothing or as a box, so the text is measured against as many U+0378, a code point
 -- Unicode has never assigned and so no font has: the same width means none of it drew. Han and
 -- Hangul, whose glyphs are all as wide as each other, are measured one character at a time and
--- every one has to draw: a font with a few Hanja draws part of a Chinese name. Not a private-use
--- character: a Traditional Chinese font can carry glyphs there as wide as its Han ones. A file the
--- client cannot load draws nothing.
+-- every one has to draw: a font with a few Hanja draws part of a Chinese name. A file the client
+-- cannot load draws nothing.
+local BOX = "\205\184"
 local probes = {}
 local function Width(probe, text)
     probe:SetText(text)
     return probe:GetStringWidth() or 0
 end
+-- U+3400 to U+9FFF (Han) and U+AC00 to U+D7A3 (Hangul), from a three-byte character.
+local function Square(char)
+    local a, b, c = char:byte(1, 3)
+    local code = (a - 224) * 4096 + (b - 128) * 64 + (c - 128)
+    return (code >= 0x3400 and code <= 0x9FFF) or (code >= 0xAC00 and code <= 0xD7A3)
+end
 function Options:FontDraws(text, path)
     if not (UIParent and UIParent.CreateFontString) then return not path end
     local probe = probes[path or false]
-    if not probe then
+    if probe == nil then
         probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         probe:Hide()
+        if path and probe:SetFont(path, 12, "") == false then probe = false end
         probes[path or false] = probe
     end
-    if path and probe:SetFont(path, 12, "") == false then return false end
+    if not probe then return false end
     local width, count = Width(probe, text), 0
     for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do count = count + 1 end
-    local box = Width(probe, "\205\184")
-    local drew = width > 0 and math.abs(width - Width(probe, string.rep("\205\184", count))) > 0.5
-    if drew then
-        for char in string.gmatch(text, "[\227-\244][\128-\191]*") do
-            if math.abs(Width(probe, char) - box) <= 0.5 then
-                drew = false
-                break
-            end
+    local drew = width > 0 and math.abs(width - Width(probe, string.rep(BOX, count))) > 0.5
+    local box
+    for char in string.gmatch(text, "[\227-\237][\128-\191][\128-\191]") do
+        if not drew then break end
+        if Square(char) then
+            box = box or Width(probe, BOX)
+            drew = math.abs(Width(probe, char) - box) > 0.5
         end
     end
     probe:SetText("")
     return drew
 end
-local function FontDraws(text) return Options:FontDraws(text) end
+
+-- Whether a font draws the language `code`: its own name, and the characters only it has.
+function Options:LanguageDraws(code, path)
+    for _, locale in ipairs(LANGUAGES) do
+        if locale.code == code then return self:FontDraws(locale.native .. (locale.sample or ""), path) end
+    end
+    return false
+end
 
 --- A language's name in the lists, one for every module: its own, and in English where this
 --- client's font cannot draw its script (Korean on a German client).
@@ -210,7 +225,7 @@ function Options:LanguageName(code)
     for _, locale in ipairs(LANGUAGES) do
         if locale.code == code then
             if not locale.script then return locale.native end
-            return FontDraws(locale.native) and locale.native or locale.english
+            return self:LanguageDraws(code) and locale.native or locale.english
         end
     end
     return code
