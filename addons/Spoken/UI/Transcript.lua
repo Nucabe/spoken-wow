@@ -687,6 +687,16 @@ function Label(parent)
     return label
 end
 
+--- Whether the pointer moved further than DRAG since the right button went down on the words.
+local DRAG = 8
+local function Dragged(self)
+    local at = self.pressedAt
+    self.pressedAt = nil
+    if not at then return false end
+    local x, y = GetCursorPosition()
+    return math.abs(x - at[1]) + math.abs(y - at[2]) > DRAG
+end
+
 function Transcript:Initialize()
     if self.frame then return end
     local frame = CreateFrame("Button", "SpokenTranscriptFrame", PlayerFrame.frame)
@@ -707,9 +717,13 @@ function Transcript:Initialize()
         elseif IsShiftKeyDown and IsShiftKeyDown() then
             if MinimalPlayer:IsEnabled() then MinimalPlayer:ToggleMenu() else Options:Open() end
         -- Only the line whose words these are: while a window fades out, the next already plays.
-        elseif not self.held and self.clip and self.clip == SoundQueue:GetCurrentSound() then
+        elseif not Dragged(self) and not self.held and self.clip and self.clip == SoundQueue:GetCurrentSound() then
             Actions.Skip()
         end
+    end)
+    -- A right-drag that starts on the words, as to turn the camera, is not a click.
+    frame:SetScript("OnMouseDown", function(_, button)
+        self.pressedAt = button == "RightButton" and { GetCursorPosition() } or nil
     end)
     frame:SetScript("OnEnter", function()
         GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")

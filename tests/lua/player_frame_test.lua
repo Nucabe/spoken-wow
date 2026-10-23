@@ -983,6 +983,19 @@ ExpectOf("...but not the next line while the window fades out on the skipped lin
     return Head()
 end, "1 Cairne")
 env.Transcript:Release()
+local hadCursor, cursor = _G.GetCursorPosition, { 100, 100 }
+_G.GetCursorPosition = function() return cursor[1], cursor[2] end
+local function RightClick(dx)
+    cursor = { 100, 100 }
+    words.scripts.OnMouseDown(words, "RightButton")
+    cursor = { 100 + dx, 100 }
+    words.scripts.OnClick(words, "RightButton")
+    return Head()
+end
+ExpectOf("...nor at the end of a right-drag begun on the words, as to turn the camera",
+    function() return RightClick(60) end, "1 Cairne")
+ExpectOf("...where a right-click that barely moves still skips", function() return RightClick(3) end, "1 Baine")
+_G.GetCursorPosition = hadCursor
 ExpectOf("...and the words' tooltip says what each right-click does", function()
     words.scripts.OnEnter(words)
     return table.concat(GameTooltip.lines, "|")
