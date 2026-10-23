@@ -182,8 +182,8 @@ function Addon:InitDB()
         for key in pairs(rawget(_G, "SpokenSettings").profileKeys or {}) do known[key] = true end
     end
     self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults, newProfile)
-    local charKey = self.db.keys.char
-    if newProfile and not known[charKey] then
+    local charKey = newProfile and self.db.keys.char
+    if charKey and not known[charKey] then
         if SeenBefore(self.db.sv, charKey) then
             -- Back on the profile AceDB gave it before there was a choice: its own.
             self.db:SetProfile(charKey)
