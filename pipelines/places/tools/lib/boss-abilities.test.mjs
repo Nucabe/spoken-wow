@@ -90,3 +90,57 @@ test("a spell marked for Season of Mastery only is left out", () => {
   );
   assert.deepEqual(abilities(text, "Ebonroc"), [3391]);
 });
+
+test("a phase or form heading hands the lines back to the boss from the creature before it", () => {
+  const text = page(
+    [
+      "'''Bloodlord Mandokir'''",
+      "*{{Abilities|Whirlwind|id=1}}",
+      "'''Ohgan'''",
+      "*{{Abilities|Sunder Armor|id=2}}",
+      "====Phase 2====",
+      "*{{Abilities|Charge|id=3}}",
+    ].join("\n"),
+  );
+  assert.deepEqual(abilities(text, "Bloodlord Mandokir"), [1, 3]);
+});
+
+test("an add named after its boss is not the boss, and does not hide the boss's phases", () => {
+  const text = page(
+    ["===Phase 1===", "*{{Abilities|Fireball|id=1}}", "===Onyxian Whelps===", "*{{Abilities|Flame Breath|id=2}}"].join("\n"),
+  );
+  assert.deepEqual(abilities(text, "Onyxia"), [1]);
+  const son = page(["'''Hakkar'''", "*{{Abilities|Cause Insanity|id=1}}", "'''Son of Hakkar'''", "*{{Abilities|Poison|id=2}}"].join("\n"));
+  assert.deepEqual(abilities(son, "Hakkar"), [1]);
+});
+
+test("an ability named by a link to its spell keeps its sub-bullets, a bold label is no creature", () => {
+  const text = page(
+    [
+      "*{{Abilities|[[Corrupted Blood (debuff)|Corrupted Blood]]|id=24328|Poisons.}}",
+      "**{{Abilities|Weakness|id=1|Weakens.}}",
+      "*'''Note:'''",
+      "**{{Abilities|Frenzy|id=81}}",
+    ].join("\n"),
+  );
+  assert.deepEqual(abilities(text, "Hakkar"), [24328, 1, 81]);
+});
+
+test("words of a crowd are read whole: Petrification and Vanguard are not pets and guards", () => {
+  assert.deepEqual(abilities(page(["===Petrification phase===", "*{{Abilities|Stone|id=7}}"].join("\n")), "Medusa"), [7]);
+  assert.deepEqual(
+    abilities(page(["===Phase Two: Vanguard===", "*{{Abilities|Charge|id=8}}", "===Guards===", "*{{Abilities|Slash|id=9}}"].join("\n")), "Rex"),
+    [8],
+  );
+});
+
+test("a blank line or a season mark does not let sub-bullets of a left-out parent back in", () => {
+  assert.deepEqual(
+    abilities(page(["*{{Abilities|Summon Imp|id=100}}", "", "**{{Abilities|Firebolt|id=101}}"].join("\n")), "Warlock"),
+    [100],
+  );
+  assert.deepEqual(
+    abilities(page(["*{{Abilities|Brand|id=70}} (Season of Mastery only)", "**{{Abilities|Sub|id=71}}"].join("\n")), "Ebonroc"),
+    [],
+  );
+});

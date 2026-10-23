@@ -11,12 +11,15 @@ import { fileURLToPath } from "node:url";
 import { flat, readBosses } from "../../lib/bosses.mjs";
 import { cachedQuery, creatureTitles, isDisambiguation, ROOT } from "./lib/wiki.mjs";
 
-// A heading that is not a boss: a variant of the fight or a crowd with it.
-const NOT_BOSS = /season|hardcore|heroic|mythic|phase|adds?\b|guards?|protectors?|minions?|trash|pet/i;
+// A heading that is a variant of the fight or a crowd with it, by whole words: "Petrification" is no pet.
+const CROWD = /\b(?:season|hardcore|heroic|mythic|adds?|guards?|protectors?|minions?|trash|pets?)\b/i;
+// A heading that is not a boss: a crowd, or one phase of the fight.
+const NOT_BOSS = new RegExp(`${CROWD.source}|\bphase\b`, "i");
 // A heading that parts one fight rather than naming who casts: a phase or form, the shared or unique abilities,
 // the original fight where the page also has Classic Timewalking's.
 const PART = /\bphase\b|\bform$|^(?:shared |unique )?abilities$|^original$/i;
-const CROWD = /season|hardcore|heroic|mythic|adds?\b|guards?|protectors?|minions?|trash|pet/i;
+// A bold bullet that labels the lines under it rather than naming a creature: "Note:".
+const LABEL = /:$|^(?:notes?|tips?|warnings?|strategy)\b/i;
 // Season of Mastery's brands on Ebonroc and Flamegor: never in Forever.
 const OTHER_SEASON = /\(\s*Season of Mastery only\s*\)/i;
 const TEMPLATE = /\{\{abilities\|/i;
@@ -47,41 +50,63 @@ function templateName(line) {
   return /^\s*[\w ]+=/.test(field) ? "" : field.trim();
 }
 
-/** The creature a line stands for, where it is a name on its own: '''Ohgan''', ;[[Jank]], ====Sir Zeliek====. */
+// What a phase or form heading stands for: the boss itself, whoever's lines came before it.
+const BOSS_AGAIN = Symbol("boss");
+
+/** The creature a line stands for, where it is a name on its own: '''Ohgan''', ;[[Jank]], ====Sir Zeliek====.
+ * BOSS_AGAIN where it names a phase or form of the fight, null where it names nothing. */
 function ownerOf(line) {
   const m = line.match(/^'''(.+?)'''\s*:?\s*$/) ?? line.match(/^;\s*(.+?)\s*$/) ?? line.match(/^={4,}\s*(.+?)\s*={4,}\s*$/);
   const name = m && plain(m[1]);
-  return name && !PART.test(name) ? name : null;
+  if (!name) return null;
+  return PART.test(name) ? BOSS_AGAIN : name;
 }
 
-/** A bullet whose sub-bullets are another creature's: a name on its own, an ability named by a link, a summon. */
+/** A bullet whose sub-bullets are another creature's: a name on its own, a creature linked with no spell id, a
+ * summon. An ability named by a link to its spell has an id, and is the boss's. */
 function namesCreature(line) {
   const alone = line.match(/^\*+\s*'''(.+?)'''\s*:?\s*$/) ?? line.match(/^\*+\s*('{2,3})?(\[\[[^\]]+\]\])\1\s*:?\s*$/);
-  if (alone) return !PART.test(plain(alone.at(-1)));
+  if (alone) {
+    const name = plain(alone.at(-1));
+    return !PART.test(name) && !LABEL.test(name);
+  }
   if (!TEMPLATE.test(line)) return false;
   const name = templateName(line);
-  return name.includes("[[") || /^summon\b/i.test(name);
+  return (name.includes("[[") && !/\bid=\d/i.test(line)) || /^summon\b/i.test(name);
+}
+
+/** A name as its words, each without punctuation: "Jin'do the Hexxer" is jindo, the, hexxer. */
+const wordsOf = (s) => s.split(/\s+/).map(flat).filter(Boolean);
+
+/** Where `needle` stands in `words` as a run of whole words, -1 where it does not. */
+function findWords(words, needle) {
+  if (!needle.length) return -1;
+  return words.findIndex((_, i) => needle.every((w, j) => words[i + j] === w));
 }
 
 /** The ids of one part of the section, the lines of creatures other than `name` left out. */
 function idsOfPart(chunk, mine) {
   const lines = chunk.split(/\r?\n/);
   const owners = lines.map(ownerOf);
-  const bossNamed = owners.some((o) => o && mine(o));
+  const bossNamed = owners.some((o) => typeof o === "string" && mine(o));
   const groups = new Map([[null, []]]);
   let owner = null;
+  let boss = null; // the boss's own name on the page, where a heading gives it
   let stack = [];
   for (const [i, line] of lines.entries()) {
     if (owners[i]) {
-      owner = owners[i];
+      owner = owners[i] === BOSS_AGAIN ? boss : owners[i];
+      if (typeof owner === "string" && mine(owner)) boss = owner;
       stack = [];
       continue;
     }
     const depth = line.match(/^\*+/)?.[0].length ?? 0;
+    // A blank line does not end the list its sub-bullets belong to.
+    if (depth === 0 && line.trim() === "") continue;
     if (depth === 0) stack = [];
     while (stack.length && stack.at(-1).depth >= depth) stack.pop();
     const under = stack.some((s) => s.other);
-    if (depth) stack.push({ depth, other: namesCreature(line) });
+    if (depth) stack.push({ depth, other: namesCreature(line) || OTHER_SEASON.test(line) });
     if (under || OTHER_SEASON.test(line) || (bossNamed && owner !== null && !mine(owner))) continue;
     if (!groups.has(owner)) groups.set(owner, []);
     groups.get(owner).push(...[...line.matchAll(/\{\{abilities\|[^\n]*?\bid=(\d+)/gi)].map((m) => Number(m[1])));
@@ -97,9 +122,14 @@ function idsOfPart(chunk, mine) {
 export function abilities(text, name) {
   const section = text.match(/^==\s*Abilities\s*==\s*$([\s\S]*?)(?=^==[^=]|(?![\s\S]))/m);
   if (!section) return [];
+  const bossWords = wordsOf(name);
+  // The boss's name and the heading's, one inside the other by whole words ("Mandokir" in "Bloodlord Mandokir"),
+  // but not "Son of Hakkar" or "Onyxian Whelps": an add named after its boss is not the boss.
   const mine = (s) => {
-    const f = flat(plain(s));
-    return f !== "" && (f.includes(flat(name)) || flat(name).includes(f));
+    const words = wordsOf(plain(s));
+    const at = findWords(words, bossWords);
+    if (at >= 0) return !(words[at - 1] === "of" || (words[at - 1] === "the" && words[at - 2] === "of"));
+    return findWords(bossWords, words) >= 0;
   };
   const parts = section[1].split(/^===(?!=)\s*(.+?)\s*===\s*$/m);
   const headings = [];
