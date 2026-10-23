@@ -32,7 +32,7 @@ help: ## List the readables targets
 db: ## Start the vmangos MySQL (the quests pipeline's; loading the dump is its own job)
 	@docker compose -f $(QUESTS)/docker-compose.yml up -d mysql
 
-extract: ## vmangos -> pipelines/readables/corpus/extract.json
+extract: ## vmangos and the Forever repack -> pipelines/readables/corpus/extract.json
 	@node $(PIPELINE)/tools/extract.mjs
 
 import: ## corpus/extract.json -> book_line (needs DATABASE_URL)

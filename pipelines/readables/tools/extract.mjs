@@ -1,4 +1,4 @@
-// vmangos -> corpus/extract.json.
+// vmangos, and the Forever repack for Forever's own readables -> corpus/extract.json.
 //
 // Writes a file rather than importing straight into Postgres, for the reason the quests
 // pipeline splits the same way: the dump is only reachable from a machine running the
@@ -10,9 +10,9 @@ import { dirname } from "node:path";
 
 import mysql from "mysql2/promise";
 
-import { loadEnv, MYSQL_VARS } from "../../lib/env.mjs";
+import { loadEnv, MYSQL_VARS, repackSettings } from "../../lib/env.mjs";
 import { FOREVER_BUILD, wagoTable } from "../../lib/wago.mjs";
-import { FOREVER_ITEMS, readForever, readWorld, withForever, PATCH } from "./lib/world.mjs";
+import { readForeverRepack, readWorld, withForever, PATCH } from "./lib/world.mjs";
 import { buildBooks } from "./lib/chains.mjs";
 
 const OUT = new URL("../corpus/extract.json", import.meta.url).pathname;
@@ -42,7 +42,10 @@ const connection = await mysql.createConnection({
 
 try {
   const vanilla = await readWorld(connection, Number(process.env.BOOKS_PATCH ?? PATCH));
-  const forever = await readForeverRepack();
+  const forever = await readForeverRepack({
+    connect: () => mysql.createConnection(repackSettings()),
+    table: (name) => wagoTable(name, { build: FOREVER_BUILD }),
+  });
   const world = forever ? withForever(vanilla, forever) : vanilla;
   const { entries, orphans, shared } = buildBooks(world);
 
@@ -59,49 +62,6 @@ try {
   console.log(`wrote ${OUT}`);
 } finally {
   await connection.end();
-}
-
-// Forever's own readables, from the Forever repack that places.mjs reads, with its
-// PLACES_MYSQL_* variables. Where it is not running they are left out of this extract, which
-// removes nothing from the corpus: the import only adds and updates.
-async function readForeverRepack() {
-  let repack;
-  try {
-    repack = await mysql.createConnection({
-      host: process.env.PLACES_MYSQL_HOST ?? "127.0.0.1",
-      port: Number(process.env.PLACES_MYSQL_PORT ?? 3317),
-      user: process.env.PLACES_MYSQL_USER ?? "root",
-      password: process.env.PLACES_MYSQL_PASSWORD ?? "",
-      database: process.env.PLACES_MYSQL_DATABASE ?? "world",
-    });
-  } catch (error) {
-    console.warn(`no Forever repack (${error.code ?? error.message}): Forever's own readables are left out`);
-    return null;
-  }
-  try {
-    const items = (await wagoTable("ItemSparse", { build: FOREVER_BUILD }))
-      .filter((row) => FOREVER_ITEMS.includes(Number(row.ID)) && Number(row.PageID) > 0)
-      .map((row) => ({
-        kind: "item",
-        id: Number(row.ID),
-        name: row.Display_lang,
-        firstPage: Number(row.PageID),
-        material: Number(row.PageMaterialID),
-      }));
-    const pageless = FOREVER_ITEMS.filter((id) => !items.some((item) => item.id === id));
-    if (pageless.length) throw new Error(`Forever's client gives no page to items ${pageless.join(", ")}`);
-
-    const forever = await readForever(repack, items);
-    const reached = new Set(forever.pages.map((page) => page.entry));
-    const empty = forever.owners.filter((owner) => !reached.has(owner.firstPage));
-    console.log(
-      `${forever.pages.length} Forever pages` +
-        (empty.length ? `; no text yet for ${empty.map((o) => `${o.name} (${o.id})`).join(", ")}` : ""),
-    );
-    return forever;
-  } finally {
-    await repack.end();
-  }
 }
 
 function summarise(entries) {

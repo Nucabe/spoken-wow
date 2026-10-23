@@ -6,7 +6,8 @@
 // the extract emits a book titled whatever it was called in 1.2.
 //
 // page_text has no patch column, which is why it is selected plainly below -- a difference
-// worth seeing in the SQL rather than assuming in either direction.
+// worth seeing in the SQL rather than assuming in either direction. The Forever repack's tables
+// (readForever) have none either.
 
 import { walk } from "./chains.mjs";
 
@@ -130,6 +131,54 @@ export async function readForever(connection, items = [], objects = FOREVER_OBJE
     for (const page of walk(owner.firstPage, byEntry)) pages.set(page.entry, page);
   }
   return { pages: [...pages.values()], owners };
+}
+
+/**
+ * Forever's own readables from its repack, with an item's first page from Forever's client
+ * tables, or null where either is out of reach (the repack not running, wago.tools not
+ * answering): the extract then leaves them out, which removes nothing from the corpus, since
+ * the import only adds and updates. `connect` opens the repack's connection and `table` reads
+ * one of the client's tables. A named object or item that Forever does not have is an error.
+ */
+export async function readForeverRepack({ connect, table }) {
+  let repack;
+  try {
+    repack = await connect();
+  } catch (error) {
+    console.warn(`no Forever repack (${error.code ?? error.message}): Forever's own readables are left out`);
+    return null;
+  }
+  try {
+    let sparse;
+    try {
+      sparse = await table("ItemSparse");
+    } catch (error) {
+      console.warn(`no Forever client tables (${error.code ?? error.message}): Forever's own readables are left out`);
+      return null;
+    }
+    const items = sparse
+      .filter((row) => FOREVER_ITEMS.includes(Number(row.ID)) && Number(row.PageID) > 0)
+      .map((row) => ({
+        kind: "item",
+        id: Number(row.ID),
+        name: row.Display_lang,
+        firstPage: Number(row.PageID),
+        material: Number(row.PageMaterialID),
+      }));
+    const pageless = FOREVER_ITEMS.filter((id) => !items.some((item) => item.id === id));
+    if (pageless.length) throw new Error(`Forever's client gives no page to items ${pageless.join(", ")}`);
+
+    const forever = await readForever(repack, items);
+    const reached = new Set(forever.pages.map((page) => page.entry));
+    const empty = forever.owners.filter((owner) => !reached.has(owner.firstPage));
+    console.log(
+      `${forever.pages.length} Forever pages` +
+        (empty.length ? `; no text yet for ${empty.map((o) => `${o.name} (${o.id})`).join(", ")}` : ""),
+    );
+    return forever;
+  } finally {
+    await repack.end();
+  }
 }
 
 /**

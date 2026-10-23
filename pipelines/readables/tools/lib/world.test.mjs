@@ -1,7 +1,7 @@
-import { test } from "node:test";
+import { mock, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { readForever, readWorld, withForever } from "./world.mjs";
+import { FOREVER_OBJECTS, readForever, readForeverRepack, readWorld, withForever } from "./world.mjs";
 
 // A connection that answers each query by the table it reads, and keeps what it was asked.
 function stub(tables) {
@@ -22,12 +22,13 @@ test("readWorld asks for goobers by the page in data7 as well as text objects by
     gameobject_template: [{ id: 17188, name: "The Lay of Ameth'Aran", firstPage: 358 }],
     item_template: [],
   });
-  const world = await readWorld(connection);
+  // A patch that is not the goober type's number, so the parameters say which is which.
+  const world = await readWorld(connection, 8);
 
   const objects = connection.asked.find(({ sql }) => sql.includes("FROM gameobject_template"));
   assert.match(objects.sql, /t1\.type = \? AND t1\.data7 > 0/);
   assert.match(objects.sql, /IF\(t1\.type = \?, t1\.data0, t1\.data7\)/);
-  assert.deepEqual(objects.params, [9, 9, 10, 10]);
+  assert.deepEqual(objects.params, [9, 9, 10, 8]);
   assert.deepEqual(world.owners, [
     { kind: "object", id: 17188, name: "The Lay of Ameth'Aran", firstPage: 358, material: 0 },
   ]);
@@ -57,6 +58,15 @@ test("readForever keeps the named owners and only the pages they reach", async (
   assert.deepEqual(forever.pages.map((page) => page.entry), [10322, 10323, 11007]);
 });
 
+test("readForever asks for text objects by Data0 and goobers by Data7, among the named objects", async () => {
+  const connection = repack();
+  await readForever(connection, [], [617704, 658836]);
+  const objects = connection.asked.find(({ sql }) => sql.includes("FROM gameobject_template"));
+  assert.match(objects.sql, /IF\(type = \?, Data0, Data7\)/);
+  assert.match(objects.sql, /type IN \(\?, \?\)/);
+  assert.deepEqual(objects.params, [9, [617704, 658836], 9, 10]);
+});
+
 test("readForever refuses a named object the repack does not have", async () => {
   await assert.rejects(readForever(repack(), [], [617704, 1]), /object 1 in the Forever repack/);
 });
@@ -73,4 +83,64 @@ test("withForever refuses a Forever page that has a vmangos page's id", () => {
   const world = { pages: [{ entry: 358, text: "One.", nextPage: 0 }], owners: [] };
   const forever = { pages: [{ entry: 358, text: "Other words.", nextPage: 0 }], owners: [] };
   assert.throws(() => withForever(world, forever), /Forever pages 358 are vmangos pages too/);
+});
+
+// The Forever repack and the client's tables, as readForeverRepack is handed them.
+const foreverRepack = () => {
+  const connection = stub({
+    gameobject_template: FOREVER_OBJECTS.map((id) => ({ id, name: `Object ${id}`, firstPage: 10322 })),
+    page_text: [
+      { entry: 10322, text: "The cult hit us by surprise.", nextPage: 0 },
+      { entry: 11007, text: "Elf,", nextPage: 0 },
+    ],
+  });
+  connection.ended = false;
+  connection.end = async () => { connection.ended = true; };
+  return connection;
+};
+const sparse = [{ ID: "285357", PageID: "11007", PageMaterialID: "1", Display_lang: "Advisor Nazgrel's Instructions" }];
+const quiet = () => {
+  mock.method(console, "warn", () => {});
+  mock.method(console, "log", () => {});
+};
+
+test("readForeverRepack reads the named objects and items, and closes the repack", async () => {
+  quiet();
+  const connection = foreverRepack();
+  const forever = await readForeverRepack({ connect: async () => connection, table: async () => sparse });
+  mock.restoreAll();
+  assert.deepEqual(forever.owners.filter((owner) => owner.kind === "item").map((owner) => owner.firstPage), [11007]);
+  assert.deepEqual(forever.pages.map((page) => page.entry), [10322, 11007]);
+  assert.equal(connection.ended, true);
+});
+
+test("readForeverRepack leaves Forever's readables out where the repack does not answer", async () => {
+  quiet();
+  const forever = await readForeverRepack({
+    connect: async () => { throw Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }); },
+    table: async () => sparse,
+  });
+  mock.restoreAll();
+  assert.equal(forever, null);
+});
+
+test("readForeverRepack leaves Forever's readables out where the client's tables cannot be fetched", async () => {
+  quiet();
+  const connection = foreverRepack();
+  const forever = await readForeverRepack({
+    connect: async () => connection,
+    table: async () => { throw new Error("getaddrinfo ENOTFOUND wago.tools"); },
+  });
+  mock.restoreAll();
+  assert.equal(forever, null);
+  assert.equal(connection.ended, true);
+});
+
+test("readForeverRepack refuses an item whose page the client does not give", async () => {
+  quiet();
+  await assert.rejects(
+    readForeverRepack({ connect: async () => foreverRepack(), table: async () => [] }),
+    /gives no page to items 285357/,
+  );
+  mock.restoreAll();
 });

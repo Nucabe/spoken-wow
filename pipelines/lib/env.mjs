@@ -85,6 +85,20 @@ export const MYSQL_VARS = [
   "MYSQL_DATABASE",
 ];
 
+/**
+ * The Forever repack's world database (TrinityCore's schema), under its own PLACES_MYSQL_*
+ * names so it is never mistaken for the vmangos MYSQL_* one.
+ */
+export function repackSettings(env = process.env) {
+  return {
+    host: env.PLACES_MYSQL_HOST ?? "127.0.0.1",
+    port: Number(env.PLACES_MYSQL_PORT ?? 3317),
+    user: env.PLACES_MYSQL_USER ?? "root",
+    password: env.PLACES_MYSQL_PASSWORD ?? "",
+    database: env.PLACES_MYSQL_DATABASE ?? "world",
+  };
+}
+
 /** The named key from the .env files, else the environment, else null. */
 export async function readEnv(name, pipeline) {
   const values = await read(envPaths(pipeline));

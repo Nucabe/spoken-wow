@@ -85,8 +85,8 @@ and `FOREVER_ITEMS` (`tools/lib/world.mjs`), with an item's first page from Fore
 They are named one by one, because the repack also holds retail page chains Forever never
 shows. Today that is the Zephras Isle readables and Advisor Nazgrel's Instructions. Their
 words are the repack's, sniffed from Forever, until a player's contribution says otherwise.
-Where the repack is not running, the extract says so and leaves them out, which removes
-nothing: the import only adds and updates.
+Where the repack is not running, or wago.tools cannot be reached, the extract says so and leaves
+them out, which removes nothing: the import only adds and updates.
 
 ## Pages in any language
 

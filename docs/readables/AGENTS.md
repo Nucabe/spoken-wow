@@ -31,11 +31,13 @@ corpus has is minted on accept as `b:n{uuid}`, in a minted `n{uuid}` book when i
 and the import folds it into the real page if the world database turns out to have it
 (`pipelines/readables/tools/lib/absorb.mjs`).
 
-## The extract must respect `patch`
+## The vmangos extract must respect `patch`
 
-`gameobject_template` and `item_template` hold one row per content patch, and the server serves
-`max(patch)` at or below its own (`pipelines/readables/tools/lib/world.mjs`). A query without that
-window returns an object under every name it ever had. `page_text` has no patch column.
+`gameobject_template` and `item_template` in the vmangos dump hold one row per content patch, and
+the server serves `max(patch)` at or below its own (`readWorld` in
+`pipelines/readables/tools/lib/world.mjs`). A query without that window returns an object under
+every name it ever had. `page_text` has no patch column. The Forever repack is TrinityCore's
+schema, which has no patch column, so `readForever` in the same file carries no window.
 
 ## The checksum constants are load-bearing
 

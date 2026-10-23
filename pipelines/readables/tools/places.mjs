@@ -32,7 +32,7 @@ import { gunzipSync } from "node:zlib";
 import mysql from "mysql2/promise";
 
 import { instanceZones, loadDungeons } from "../../lib/dungeons.mjs";
-import { loadEnv } from "../../lib/env.mjs";
+import { loadEnv, repackSettings } from "../../lib/env.mjs";
 import { FOREVER_BUILD, wagoTable } from "../../lib/wago.mjs";
 import { areaReader } from "./lib/area.mjs";
 import { cannotBeHad, dungeonsOf, foreverQuests, isTemplateCopy, typeOf } from "./lib/places.mjs";
@@ -204,13 +204,7 @@ const itemIcon = new Map((await table("Item")).map((r) => [Number(r.ID), iconPat
 
 // ---------------------------------------------------------------- the world DB
 
-const db = await mysql.createConnection({
-  host: process.env.PLACES_MYSQL_HOST ?? "127.0.0.1",
-  port: Number(process.env.PLACES_MYSQL_PORT ?? 3317),
-  user: process.env.PLACES_MYSQL_USER ?? "root",
-  password: process.env.PLACES_MYSQL_PASSWORD ?? "",
-  database: process.env.PLACES_MYSQL_DATABASE ?? "world",
-});
+const db = await mysql.createConnection(repackSettings());
 const q = async (sql, params = []) => (await db.query(sql, params))[0];
 // An empty IN () is an error; -1 matches no id, where 0 would match every row left at 0.
 const list = (xs) => [...new Set(xs)].length ? [...new Set(xs)] : [-1];
