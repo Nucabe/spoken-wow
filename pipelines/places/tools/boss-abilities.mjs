@@ -12,9 +12,9 @@ import { flat, readBosses } from "../../lib/bosses.mjs";
 import { cachedQuery, creatureTitles, isDisambiguation, ROOT } from "./lib/wiki.mjs";
 
 // A heading that is a variant of the fight or a crowd with it, by whole words: "Petrification" is no pet.
-const CROWD = /\b(?:season|hardcore|heroic|mythic|adds?|guards?|protectors?|minions?|trash|pets?)\b/i;
+const CROWD = /\b(?:seasons?|hardcore|heroic|mythic|adds?|guards?|protectors?|minions?|trash|pets?)\b/i;
 // A heading that is not a boss: a crowd, or one phase of the fight.
-const NOT_BOSS = new RegExp(`${CROWD.source}|\bphase\b`, "i");
+const NOT_BOSS = new RegExp(`${CROWD.source}|\\bphase\\b`, "i");
 // A heading that parts one fight rather than naming who casts: a phase or form, the shared or unique abilities,
 // the original fight where the page also has Classic Timewalking's.
 const PART = /\bphase\b|\bform$|^(?:shared |unique )?abilities$|^original$/i;
@@ -54,12 +54,12 @@ function templateName(line) {
 const BOSS_AGAIN = Symbol("boss");
 
 /** The creature a line stands for, where it is a name on its own: '''Ohgan''', ;[[Jank]], ====Sir Zeliek====.
- * BOSS_AGAIN where it names a phase or form of the fight, null where it names nothing. */
+ * BOSS_AGAIN where it names a phase or form of the fight, null where it names nothing or only labels the lines under it. */
 function ownerOf(line) {
   const m = line.match(/^'''(.+?)'''\s*:?\s*$/) ?? line.match(/^;\s*(.+?)\s*$/) ?? line.match(/^={4,}\s*(.+?)\s*={4,}\s*$/);
   const name = m && plain(m[1]);
   if (!name) return null;
-  return PART.test(name) ? BOSS_AGAIN : name;
+  return PART.test(name) ? BOSS_AGAIN : LABEL.test(name) ? null : name;
 }
 
 /** A bullet whose sub-bullets are another creature's: a name on its own, a creature linked with no spell id, a
@@ -91,23 +91,26 @@ function idsOfPart(chunk, mine) {
   const bossNamed = owners.some((o) => typeof o === "string" && mine(o));
   const groups = new Map([[null, []]]);
   let owner = null;
+  let bold = false; // `owner` was named on a bold line
   let boss = null; // the boss's own name on the page, where a heading gives it
   let stack = [];
   for (const [i, line] of lines.entries()) {
     if (owners[i]) {
       owner = owners[i] === BOSS_AGAIN ? boss : owners[i];
       if (typeof owner === "string" && mine(owner)) boss = owner;
+      bold = line.startsWith("'''");
       stack = [];
       continue;
     }
     const depth = line.match(/^\*+/)?.[0].length ?? 0;
-    // A blank line does not end the list its sub-bullets belong to.
-    if (depth === 0 && line.trim() === "") continue;
-    if (depth === 0) stack = [];
+    // A blank line or prose does not end the list its sub-bullets belong to.
+    if (depth === 0 && !TEMPLATE.test(line)) continue;
     while (stack.length && stack.at(-1).depth >= depth) stack.pop();
     const under = stack.some((s) => s.other);
     if (depth) stack.push({ depth, other: namesCreature(line) || OTHER_SEASON.test(line) });
-    if (under || OTHER_SEASON.test(line) || (bossNamed && owner !== null && !mine(owner))) continue;
+    // Another creature's lines are left out where a line names the boss, and under a bold name where none does: the
+    // members of a fight of several are named by a ; line or a heading.
+    if (under || OTHER_SEASON.test(line) || (owner !== null && !mine(owner) && (bossNamed || bold))) continue;
     if (!groups.has(owner)) groups.set(owner, []);
     groups.get(owner).push(...[...line.matchAll(/\{\{abilities\|[^\n]*?\bid=(\d+)/gi)].map((m) => Number(m[1])));
   }
