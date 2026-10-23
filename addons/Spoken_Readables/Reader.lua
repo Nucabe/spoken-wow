@@ -298,7 +298,6 @@ local function CaptionWords(self, pageId, language)
 	return KeptText(self, pageId, language)
 end
 
--- The caption's words in `language`, as CaptionText returns them, or nil.
 local function CaptionIn(self, pageId, language, clipLanguage, clipText)
 	if language == clipLanguage and type(clipText) == "string" and clipText ~= "" then
 		return clipText, language, true
@@ -311,14 +310,10 @@ local function CaptionIn(self, pageId, language, clipLanguage, clipText)
 end
 
 --- The words a page's caption shows, the language they are in, and whether they are the words the
---- recording says. The words are in the Text Language: Places has a setting for it, Readables
---- follows the client's language, as the game shows the page. Whatever the voice, so French words
---- under an English voice. A voice no client runs in (Italian, Vietnamese) comes first instead:
---- its players are on another language's client, and would never read along in their own.
---- The other language gives the words only where the first has none for the page, so a
---- recording is never captioned in words nobody has. `clipText` is the playing pack's own words
---- for the page: those, where they are in the language asked, not another pack's. Nil where
---- neither has any.
+--- recording says. They are in the client's language whatever the voice, as the game shows the
+--- page, and in the clip's only where the client's has none. A voice no client runs in (Italian,
+--- Vietnamese) comes first: its players are on another language's client. `clipText`, the playing
+--- pack's own words, beats another pack's. Nil where neither has any.
 function SpokenReadables:CaptionText(pageId, clipLanguage, clipText)
 	local first, second = self:GetClientLanguage(), clipLanguage
 	if not self:IsClientLanguage(clipLanguage) then
@@ -359,8 +354,7 @@ function SpokenReadables:PackTitleOf(pageId, language)
 					for title, byNumber in pairs(index) do
 						for _, byChecksum in pairs(byNumber) do
 							for _, id in pairs(byChecksum) do
-								-- A page under two titles takes the first in order, not the first
-								-- pairs() happens to meet, so it is the same one every session.
+								-- The first in order, not pairs()', so a page under two titles keeps one.
 								if not byPage[id] or title < byPage[id] then byPage[id] = title end
 							end
 						end

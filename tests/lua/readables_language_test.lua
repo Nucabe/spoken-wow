@@ -157,7 +157,7 @@ Expect("E. a German voice on an English client is captioned in English, the Text
 SpokenReadablesData.pages[PAGE].text = nil
 Expect("E. ...and in German where English has no words for the page",
     B:ClipFor(PAGE).present.transcript, "Gespeicherte deutsche Seite.")
--- Two packs in one language: the words are the first one's that has them, not the chosen clip's.
+-- Two packs in one language, the chosen clip's with no words: the first that has them gives them.
 local TWO = Install({ { addon = "SpokenReadablesAudio_a", pages = { [PAGE] = { file = "15", len = 2 } } },
     { addon = "SpokenReadablesAudio_b", pages = { [PAGE] = { file = "15", len = 2, text = "Words of pack b." } } } })
 Expect("E. the first pack of a language that has a page's words gives them",
