@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **The Large Window names the line as well as the speaker.** A subzone's story reads "Westfall •
+  Moonbrook", a quest "Gornek • Cutting Teeth" and a book its title after "Book", as the other windows
+  show them. Pointing at a name cut short shows the whole of it. *([Nucabe](https://github.com/Nucabe))*
 - **Include Places Found Before is on.** The game announces each discovery once per character, so a
   character who explored before installing heard nothing in those places, and Forget Places Heard
   read nothing again. With the setting on, each place is read once per character the first time you
