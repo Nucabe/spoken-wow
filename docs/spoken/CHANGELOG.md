@@ -8,6 +8,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   quest objectives shown, the title now ends short of Play and Contribute, which sit left of
   the quest's type instead of on top of it.
   *([Nucabe](https://github.com/Nucabe))*
+- **Spoken's keys have their own Spoken category in Key Bindings**, instead of sitting under
+  Other. *([Jayshua83](https://github.com/Jayshua83))* *([Nucabe](https://github.com/Nucabe))*
 - **A right-click on a window's words skips the line**, in the Small Window, the Large Window and the
   DialogueUI window: a larger target than the Skip button. The menu and the settings that right-click
   opened there are now on Shift-right-click. *([Nucabe](https://github.com/Nucabe))*
