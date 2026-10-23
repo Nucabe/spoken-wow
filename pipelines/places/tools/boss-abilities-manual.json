@@ -502,5 +502,22 @@
   "drop": [
    24178
   ]
+ },
+ {
+  "map": 230,
+  "key": "plugger spazzring",
+  "name": "Plugger Spazzring",
+  "spells": [
+   12739,
+   12742,
+   13338,
+   13787
+  ],
+  "notes": "The repack database has his creature 9499 cast Shadow Bolt 12739, Immolate 12742, Curse of Tongues 13338 and Demon Armor 13787 (smart script and template spells). The wiki's Immolate 348, Curse of Tongues 1714 and Banish 710 are the player's rank 1 spells, and Banish is not among his casts.",
+  "drop": [
+   348,
+   1714,
+   710
+  ]
  }
 ]

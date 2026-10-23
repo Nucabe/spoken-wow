@@ -146,7 +146,7 @@ SpokenBossCreatures = {
 		["lord roccor"] = { creature = 9025, display = 5781, spells = { 6524, 13728, 13729 } },
 		["magmus"] = { creature = 9938, display = 12162, spells = { 13900, 24375 } },
 		["phalanx"] = { creature = 9502, display = 8177, spells = { 14099, 15588, 15285 } },
-		["plugger spazzring"] = { creature = 9499, display = 8652, spells = { 348, 1714, 710, 12739, 13787 } },
+		["plugger spazzring"] = { creature = 9499, display = 8652, spells = { 12739, 12742, 13338, 13787 } },
 		["princess moira bronzebeard"] = { creature = 8929, display = 8705, spells = { 15586, 15587, 8362, 15537, 15654 } },
 		["pyromancer loregrain"] = { creature = 9024, display = 8762, spells = { 15038, 15616, 15095, 15041 } },
 		["ribbly screwspigot"] = { creature = 9543, display = 8667, spells = { 9080, 12540 } },
