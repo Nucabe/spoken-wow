@@ -491,10 +491,8 @@ function Spoken:BindModuleSettings(name, legacy, bind, skip)
     return Addon:BindModuleSettings(name, legacy, bind, skip)
 end
 
---- The profile chosen for new characters, when Spoken started this character on it at this login
---- because it had never logged in with Spoken; nil for every other character. A feature addon that
---- keeps its own AceDB settings passes it as AceDB's default profile, so the new character starts
---- on that profile there too.
+--- The profile chosen for new characters, when Spoken started this character on it at this login;
+--- else nil. A feature addon passes it as its own AceDB default profile, so both start on it.
 function Spoken:NewCharacterStartProfile()
     return Addon.newCharacterProfile
 end

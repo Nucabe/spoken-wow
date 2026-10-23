@@ -971,10 +971,9 @@ function Options:CopyProfile(name)
     end
 end
 
---- Delete `name` where it is not in use. AceDB clears the profile of each character that was on
---- it; each is put back on its own profile here, where AceDB would put it at its next login, so
---- it is not taken for a new character and put on the one chosen for new characters. The choice of
---- that profile for new characters goes with it, so a profile made later under its name is not chosen.
+--- Delete `name` where it is not in use. AceDB clears the key of each character on it; each is put
+--- on its own profile, so it is not taken for a new character at its next login. The choice of it
+--- for new characters goes too, so a later profile of that name is not chosen.
 function Options:DeleteProfile(name)
     for _, db in ipairs(self:ProfileDBs()) do
         if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then

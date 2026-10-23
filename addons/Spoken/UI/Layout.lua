@@ -1171,9 +1171,8 @@ function Layout:Dropdown(label, tooltip, values, read, write, apply, describe)
     local caption = Caption(parent, label)
 
     local control, dropdown, Sync, setEnabled, offset
-    -- A table is compared by what it says, since a list built afresh each time hands back an equal
-    -- entry rather than the same table; anything else by its value, so two entries that read the
-    -- same are still told apart.
+    -- Tables by label, since a list built afresh hands back equal entries, not the same tables;
+    -- anything else by value, so two entries with one label are told apart.
     local function Chosen(value, current)
         if type(value) == "table" then return describe(value) == describe(current) end
         return value == current

@@ -30,7 +30,6 @@ local function RealLibraries(name)
     end
 end
 
--- Equal all the way down.
 local function Same(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then return a == b end
     for key, value in pairs(a) do if not Same(value, rawget(b, key)) then return false end end
@@ -201,14 +200,14 @@ Play("Bob")
 Expect("a character on a profile another has had its copy on does not copy the quests page's language into it",
     Voice("Shared"), nil)
 
--- Where none of the characters on it has had the copy, the first to log in makes it, as before.
+-- Where no character on it has had the copy, the first to log in makes it.
 Seed(nil)
 SpokenSettings.char["Bob - Realm"] = nil
 SpokenSettings.profileKeys["Frank - Realm"] = "Shared"
 Play("Bob")
 Expect("a character first on a shared profile since the move takes the quests page's language", Voice("Shared"), "deDE")
 
--- Alone on its own profile, the copy is made as before.
+-- Alone on its own profile, the copy is made.
 Seed(nil)
 SpokenSettings.char["Alice - Realm"] = nil
 SpokenQuestsSettings.profiles["Alice - Realm"].Audio.VoiceLanguage = "frFR"

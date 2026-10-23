@@ -126,8 +126,8 @@ Defaults = {
     },
 }
 
---- `name` where Spoken has a saved profile of that name, else nil. Read from the saved table, which
---- AceDB's db.sv is once loaded, because InitDB asks before AceDB loads it.
+--- `name` where Spoken has a saved profile of that name, else nil. Reads the saved table, since
+--- InitDB asks before AceDB loads it.
 function Addon:SavedProfile(name)
     local sv = rawget(_G, "SpokenSettings")
     local profiles = type(sv) == "table" and sv.profiles
@@ -135,18 +135,16 @@ function Addon:SavedProfile(name)
     return nil
 end
 
---- The profile chosen for new characters: nil where none is chosen or it is not a saved profile,
---- so a new character gets a profile of its own as before.
+--- The profile chosen for new characters, or nil where none is chosen or it is not saved.
 function Addon:NewCharacterProfile()
     local sv = rawget(_G, "SpokenSettings")
     local global = type(sv) == "table" and sv.global
     return type(global) == "table" and self:SavedProfile(global.NewCharacterProfile) or nil
 end
 
---- Whether a character missing from profileKeys has been here before all the same: settings of
---- its own (a deleted profile clears its characters' keys), or AceDB keyed it "Unknown", which
---- the Forever client answers on some logins for any character. A character that has neither, as
---- one cleared before this check whose per-character table AceDB dropped empty, is taken for new.
+--- Whether a character missing from profileKeys has been here before: a deleted profile clears its
+--- characters' keys but leaves their own settings, and the Forever client answers "Unknown" for any
+--- character on some logins. One with neither, whose empty char table AceDB dropped, looks new.
 local function SeenBefore(sv, charKey)
     local unknown = rawget(_G, "UNKNOWNOBJECT") or "Unknown"
     if charKey:sub(1, #unknown + 3) == unknown .. " - " then return true end
@@ -174,10 +172,9 @@ function Addon:InitDB()
     if self.db then
         return
     end
-    -- AceDB uses the third argument only for a character with no entry in profileKeys. Which
-    -- characters those are is noted first, since AceDB adds this one as it loads; the key is
-    -- AceDB's own, read from it afterwards, because the client's name for the player can differ
-    -- between AceDB's load and this one.
+    -- AceDB uses the third argument only for a character missing from profileKeys, and adds it as
+    -- it loads, so the keys are noted first. The client's name for the player can change between
+    -- loads, so the character's key is AceDB's own.
     local newProfile, known = self:NewCharacterProfile(), {}
     if newProfile then
         for key in pairs(rawget(_G, "SpokenSettings").profileKeys or {}) do known[key] = true end
@@ -715,8 +712,8 @@ end
 --- The voice language and the fallback were set on the quests page; they are Spoken's now. On each
 --- character's first login with the quests settings loaded, that character's choice there is copied
 --- to the profile it is on, unless that profile has one of its own or another character on it has
---- had its copy, so the page shows what is being heard. The quests settings are not loaded while that module is
---- off: nothing is marked then, and the next login that has them does it.
+--- had its copy, so the page shows what is being heard. The quests settings are not loaded while
+--- that module is off: nothing is marked then, and the next login that has them does it.
 function Addon:TakeVoiceLanguageFromQuests()
     local db = self.db
     if not db or db.char.voiceLanguageFromQuests then
@@ -727,8 +724,8 @@ function Addon:TakeVoiceLanguageFromQuests()
         return
     end
     db.char.voiceLanguageFromQuests = true
-    -- Another character on this profile that has had its copy already hears what the profile says:
-    -- a copy now would change that. Where none has, the first to log in copies, as before.
+    -- A character on this profile that has had its copy hears what the profile says: a copy now
+    -- would change that.
     local current, chars = db:GetCurrentProfile(), db.sv and db.sv.char or {}
     for key, profile in pairs(db.sv and db.sv.profileKeys or {}) do
         local char = chars[key]
