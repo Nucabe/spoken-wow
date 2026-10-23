@@ -293,61 +293,65 @@ local function FollowMap()
 	FollowAlpha()
 end
 
--- A frame's edges on screen, so frames of different scales compare.
-local function ScreenRect(frame)
-	local scale = frame.GetEffectiveScale and frame:GetEffectiveScale()
+-- A frame's edges in the units of a frame at `scale`, so frames of different scales compare.
+local function Rect(frame, scale)
 	local left, right, top, bottom = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
-	if not (scale and left and right and top and bottom) then return end
-	return left * scale, right * scale, top * scale, bottom * scale
+	if not (left and right and top and bottom) then return end
+	local k = frame:GetEffectiveScale() / scale
+	return left * k, right * k, top * k, bottom * k
 end
 
 local ApplyAnchors
 
 -- Several shows and hides in one frame, and other addons' hooks on the quest log that run after
--- Spoken's, all settle before one layout on the next frame.
+-- Spoken's, all settle before one layout on the next frame. With both hidden, as when the map
+-- closes, the next Refresh lays them out.
 local pending
+local function ApplyPending()
+	pending = false
+	if panel:IsShown() or toggle:IsShown() then ApplyAnchors() end
+end
 local function ApplyAnchorsSoon()
-	if pending or not (C_Timer and C_Timer.After) then return end
+	if pending then return end
 	pending = true
-	C_Timer.After(0, function()
-		pending = false
-		ApplyAnchors()
-	end)
+	C_Timer.After(0, ApplyPending)
 end
 
--- Every child of the frames a side tab hangs from, hooked once as it is first seen: a tab shows and
--- hides without its parent doing either (the game shows its own as the gamepad UI goes off and
--- hides them as the quest log checks its tabs), and a frame not laid out yet cannot be told apart
--- from a tab until it is.
+-- A tab shows and hides without its parent doing either, as the game's own do, and a frame not laid
+-- out yet cannot be told from a tab until it is. So every child is hooked once, as it is first seen.
 local watched = setmetatable({}, { __mode = "k" })
+local function Watch(child)
+	if watched[child] or not child.HookScript then return end
+	watched[child] = true
+	child:HookScript("OnShow", ApplyAnchorsSoon)
+	child:HookScript("OnHide", ApplyAnchorsSoon)
+end
+
+-- How near the map's edge a side tab's left edge may sit.
+local COLUMN_SLACK = 12
 
 -- Side tabs belong to no list another addon can join, so the column down the map's right edge is
--- read off the screen: any shown frame there, hanging from the quest log or the map, whoever made
--- it. Its left edge within COLUMN_SLACK of the map's edge, most of it outside the map, and shorter
--- than half the map, which a panel standing beside the map is not. The lowest one, and how far the
--- widest reaches past the map's edge.
-local COLUMN_SLACK = 12
+-- read off the screen, whoever made what hangs there. Shorter than half the map, which keeps out a
+-- panel standing beside it. The lowest tab, and how far the widest reaches past the map's edge.
 local function SideTabs(mapEdge)
-	local _, edgeRight, edgeTop, edgeBottom = ScreenRect(mapEdge)
-	if not edgeRight then return nil, 0 end
 	local scale = mapEdge:GetEffectiveScale()
-	local slack, tallest = COLUMN_SLACK * scale, (edgeTop - edgeBottom) / 2
+	local _, edgeRight, edgeTop, edgeBottom = Rect(mapEdge, scale)
+	if not edgeRight then return nil, 0 end
+	local function InColumn(left, right, top, bottom)
+		return left >= edgeRight - COLUMN_SLACK and (left + right) / 2 > edgeRight
+			and top <= edgeTop + COLUMN_SLACK and bottom >= edgeBottom - COLUMN_SLACK
+			and top - bottom < (edgeTop - edgeBottom) / 2
+	end
 	local lowest, lowestBottom, reach = nil, nil, 0
 	for _, parent in ipairs({ QuestMapFrame or false, WorldMapFrame, WorldMapFrame.BorderFrame or false }) do
-		if type(parent) == "table" and parent.GetChildren then
-			for _, child in ipairs({ parent:GetChildren() }) do
-				if child ~= panel and child ~= toggle then
-					if not watched[child] and child.HookScript then
-						watched[child] = true
-						child:HookScript("OnShow", ApplyAnchorsSoon)
-						child:HookScript("OnHide", ApplyAnchorsSoon)
-					end
-					local left, right, top, bottom = ScreenRect(child)
-					if left and child:IsVisible() and left >= edgeRight - slack and (left + right) / 2 > edgeRight
-						and top - bottom < tallest and top <= edgeTop + slack and bottom >= edgeBottom - slack then
-						reach = math.max(reach, (right - edgeRight) / scale)
-						if not lowestBottom or bottom < lowestBottom then lowest, lowestBottom = child, bottom end
-					end
+		for _, child in ipairs(type(parent) == "table" and { parent:GetChildren() } or {}) do
+			if child ~= panel and child ~= toggle then
+				Watch(child)
+				local left, right, top, bottom
+				if child:IsVisible() then left, right, top, bottom = Rect(child, scale) end
+				if left and InColumn(left, right, top, bottom) then
+					reach = math.max(reach, right - edgeRight)
+					if not lowestBottom or bottom < lowestBottom then lowest, lowestBottom = child, bottom end
 				end
 			end
 		end

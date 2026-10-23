@@ -561,7 +561,7 @@ local toggle = _G.SpokenPlacesPanelToggle
 local function SideTab(top, bottom, reach)
     local tab = CreateFrame("Frame", nil, QuestMapFrame)
     function tab:GetLeft() return WorldMapFrame:GetRight() + 5 end
-    function tab:GetRight() return reach and WorldMapFrame:GetRight() + reach end
+    function tab:GetRight() return not self.unplaced and WorldMapFrame:GetRight() + reach or nil end
     function tab:GetTop() return top end
     function tab:GetBottom() return bottom end
     function tab:IsShown() return self.shown end
@@ -599,13 +599,11 @@ Expect("...and the panel past them", panel.anchor.x, 62)
 -- The game's own tabs show and hide on their own: switching the gamepad UI off shows them under the
 -- open log, and the log checking its tabs hides them again, neither through the log's show or hide.
 -- Here one hangs lowest of all, reaching 80, and has not been laid out when first seen.
-local gameTab = SideTab(0, 0, nil)
-gameTab.shown = false
+local gameTab = SideTab(49, 29, 80)
+gameTab.unplaced, gameTab.shown = true, false
 Z:RefreshPanel()
 Expect("a side tab that is not shown moves nothing", panel.anchor.x, 62)
-function gameTab:GetTop() return 49 end
-function gameTab:GetBottom() return 29 end
-function gameTab:GetRight() return WorldMapFrame:GetRight() + 80 end
+gameTab.unplaced = nil
 gameTab:Show()
 stub.Advance(0.1)
 Expect("a side tab shown by itself puts the panel past it on the next frame", panel.anchor.x, 82)

@@ -167,12 +167,12 @@ folds it.
   Forever (#497).
 - The panel stands clear of the side tabs down the map's right edge by the widest one's reach
   past it, and its button goes under the lowest on screen. No addon or tab is named: a tab is any
-  shown child of the quest log, the map or its border frame whose left edge is within 12 of the
-  map's edge, that sits mostly outside the map and is shorter than half of it. Tabs show and hide
-  without the quest log doing either, as the game's own do when the gamepad UI is switched off, so
-  every child of those frames has its `OnShow` and `OnHide` hooked once, as it is first seen, and
-  the layout runs again on the next frame, after every other addon's hooks. A tab parented
-  elsewhere, such as `UIParent`, is not found.
+  shown child of the quest log, the map or its border frame whose left edge is within a few pixels
+  (`COLUMN_SLACK`) of the map's edge, that sits mostly outside the map and is shorter than half of
+  it. Tabs show and hide without the quest log doing either, so every child of those frames has its
+  `OnShow` and `OnHide` hooked once, as it is first seen, and the layout runs again on the next
+  frame, after every other addon's hooks. A tab parented elsewhere, such as `UIParent`, is not
+  found.
 - `UI/SubzoneClick.lua`: a click on a zone map resolves an area through
   `MapUtil.FindBestAreaNameAtMouse`, which returns a name and no id. A continent or world map is
   left to the game. A drag is not a click. A click on a city inside the zone opens the city's map.
