@@ -139,15 +139,16 @@ function SpokenPlaces:LanguageDraws(code, path)
 	return (path and Spoken and Spoken.LanguageDraws and Spoken:LanguageDraws(code, path)) and true or false
 end
 
--- The fonts every client ships for the other scripts, which the game's font objects fall back to
--- and a page that sets a file has to name itself.
+-- The fonts clients ship for the other scripts, which the game's font objects fall back to and a
+-- page that sets a file has to name itself, the first that draws the language taken.
 local SCRIPT_FONTS = {
-	cyrillic = "Fonts\\FRIZQT___CYR.TTF",
-	korean = "Fonts\\2002.TTF",
-	simplifiedchinese = "Fonts\\ARKai_T.ttf",
-	traditionalchinese = "Fonts\\blei00d.TTF",
+	cyrillic = { "Fonts\\FRIZQT___CYR.TTF" },
+	korean = { "Fonts\\2002.TTF" },
+	simplifiedchinese = { "Fonts\\ARKai_T.ttf" },
+	-- An English Forever client has no blei00d.TTF, which its font objects still name.
+	traditionalchinese = { "Fonts\\blei00d.TTF", "Fonts\\bKAI00M.TTF" },
 	-- Not a font for the script, only the stock one most likely to draw ệ and ữ.
-	vietnamese = "Fonts\\ARIALN.TTF",
+	vietnamese = { "Fonts\\ARIALN.TTF" },
 }
 
 --- The font file to write `code` (the lore's language by default) in where a page uses
@@ -166,13 +167,16 @@ function SpokenPlaces:FontFor(fontObject, code)
 	self.fonts = self.fonts or {}
 	local key = path .. "|" .. locale.code
 	if self.fonts[key] == nil then
-		local stock = SCRIPT_FONTS[locale.script]
+		self.fonts[key] = false
 		if self:LanguageDraws(locale.code, path) then
 			self.fonts[key] = path
-		elseif stock and self:LanguageDraws(locale.code, stock) then
-			self.fonts[key] = stock
 		else
-			self.fonts[key] = false
+			for _, stock in ipairs(SCRIPT_FONTS[locale.script] or {}) do
+				if self:LanguageDraws(locale.code, stock) then
+					self.fonts[key] = stock
+					break
+				end
+			end
 		end
 	end
 	return self.fonts[key] or nil

@@ -255,9 +255,16 @@ Expect("H. a font file the client cannot load draws nothing, whatever the fonts 
     .. tostring(Spoken:FontDraws("Русский", "Fonts\\FRIZQT___CYR.TTF")), "false true")
 local blei = fontHas["Fonts\\blei00d.TTF"]
 fontHas["Fonts\\blei00d.TTF"] = nil
-Expect("H. Traditional Chinese is not written in a stock font the client lacks",
+fontHas["Fonts\\bKAI00M.TTF"] = HAN
+Z.drawable, Z.fonts = {}, {}
+Expect("H. Traditional Chinese is written in bKAI00M.TTF where the client lacks blei00d.TTF, as on Forever",
+    Font(_G.QuestFont, "zhTW"), "Fonts\\bKAI00M.TTF")
+fontHas["Fonts\\bKAI00M.TTF"] = nil
+Z.drawable, Z.fonts = {}, {}
+Expect("H. ...and in no stock font where the client has neither",
     Font(_G.QuestFont, "zhTW"), "nil")
 fontHas["Fonts\\blei00d.TTF"] = blei
+Z.drawable, Z.fonts = {}, {}
 Expect("H. a Latin language needs no asking", Z:CanRenderLanguage("frFR"), true)
 Expect("H. ...and keeps the page's font", Font(_G.GameFontHighlight, "frFR"), "Fonts\\FRIZQT__.TTF")
 Expect("H. Vietnamese, which the page's font cannot draw, is written in Arial Narrow",

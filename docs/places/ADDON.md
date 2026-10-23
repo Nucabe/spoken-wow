@@ -88,7 +88,8 @@ a language pins it on every client.
   Whether a voice pack is installed does not decide it: the voice follows Voice Language.
 - Where a page sets a font file, `FontFor` picks the client's font for the script: `2002.TTF` for
   Korean, `ARKai_T.ttf` for Simplified Chinese, `blei00d.TTF` for Traditional Chinese (the font the
-  game's `GameFontNormal` family uses for it) and `FRIZQT___CYR.TTF` for Cyrillic.
+  game's `GameFontNormal` family uses for it), else `bKAI00M.TTF`, which an English Forever client
+  ships in its place, and `FRIZQT___CYR.TTF` for Cyrillic.
 - Text has no per-line fallback to English. A language is offered only once every story is
   translated, so a gap shows only in a preview. Audio does fall back, clip by clip: the active
   pack first, then the fallback language's packs, unless If a Voice Is Missing is Stay Silent.
