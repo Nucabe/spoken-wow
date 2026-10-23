@@ -284,6 +284,13 @@ Expect("...the boss badge on it", page.headFace.speaker.bullet, "boss")
 local badge = page.headFace and page.headFace.badge
 Expect("...the portrait's small socket holds the skull", badge and badge:IsShown() and badge.texture, [[Interface\TargetingFrame\UI-RaidTargetingIcon_8]])
 Expect("...a button for each spell the client names, with its icon", table.concat(names, ","), "Thrash:132152,VanCleef's Allies:136235")
+Expect("...the spell icon is circularly masked and no extra border is drawn",
+    page.body.partButtons[1].icon.masks and page.body.partButtons[1].icon.masks[1].texture
+        .. "|" .. tostring(page.body.partButtons[1].ring),
+    [[Interface\CharacterFrame\TempPortraitAlphaMask|nil]])
+Expect("...the circular mask is slightly smaller than the icon",
+    page.body.partButtons[1].icon.masks and page.body.partButtons[1].icon.masks[1].width,
+    32)
 _G.SpokenBossCreatures = { [36] = { ["edwin vancleef"] = { creature = 639, spells = { 3391 } } } }
 Click("Edwin VanCleef")
 Expect("a boss with a creature and spells but no model has the question mark for its portrait, and its spells",

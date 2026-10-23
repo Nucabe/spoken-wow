@@ -15,6 +15,7 @@ local _, NPCs = ...
 local L = NPCs.L
 
 local C = SpokenCompendium
+local VERSION = SpokenEnv and SpokenEnv.Version
 local CONTINENTS, CITY_IN = C.CONTINENTS, C.CITY_IN
 local MapName, ContinentOf = C.MapName, C.ContinentOf
 local Dungeon, DungeonName = C.Dungeon, C.DungeonName
@@ -433,14 +434,19 @@ local function Card(position)
 	local mask = card.CreateMaskTexture and card:CreateMaskTexture()
 	if type(mask) == "table" and icon.AddMaskTexture then
 		if not C.Atlas(mask, ICON_MASK) then mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") end
-		mask:SetSize(ICON, ICON)
+		-- Leave a small margin so the mask trims any square pixels at the icon's corners.
+		mask:SetSize(ICON - 4, ICON - 4)
 		mask:SetPoint("CENTER", icon, "CENTER")
 		icon:AddMaskTexture(mask)
 	end
-	local frame = card:CreateTexture(nil, "OVERLAY", nil, 1)
-	if C.Atlas(frame, FRAME) then
-		frame:SetPoint("TOPLEFT", button, "TOPLEFT", -11, 1)
-		frame:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -7)
+	-- Era has no extra border; Forever keeps the spellbook's own frame.
+	local era = VERSION and VERSION.IsRetailVanilla and not VERSION.IsCamelot
+	if not era then
+		local frame = card:CreateTexture(nil, "OVERLAY", nil, 1)
+		if C.Atlas(frame, FRAME) then
+			frame:SetPoint("TOPLEFT", button, "TOPLEFT", -11, 1)
+			frame:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -7)
+		end
 	end
 	local glow = card:CreateTexture(nil, "OVERLAY", nil, 2)
 	if C.Atlas(glow, FRAME_HOVER) then glow:SetAllPoints(button) end
