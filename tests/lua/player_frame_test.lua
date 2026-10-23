@@ -1001,7 +1001,31 @@ ExpectOf("...and the words' tooltip says what each right-click does", function()
     return table.concat(GameTooltip.lines, "|")
 end, table.concat({ env.L.TRANSCRIPT, env.L.TRANSCRIPT_HINT, env.L.TRANSCRIPT_SETTINGS_HINT }, "|"))
 env.SoundQueue:RemoveAllSoundsFromQueue()
-Expect("...and does nothing with no line playing", (pcall(words.scripts.OnClick, words, "RightButton")), true)
+env.SoundQueue:SetPaused(true)
+ExpectOf("...and does nothing with no line playing: no settings, still stopped, nothing queued", function()
+    words.scripts.OnClick(words, "RightButton")
+    return opened .. " " .. tostring(env.SoundQueue:IsPaused()) .. " " .. env.SoundQueue:GetQueueSize()
+end, "1 true 0")
+env.SoundQueue:SetPaused(false)
+-- The Small Window: the same right-click skips; Shift-right-click opens its menu, not the settings.
+env.Addon:SetPlayerStyle("minimal")
+env.PlayerFrame:RefreshConfig()
+local M = env.MinimalPlayer
+quests:Enqueue(H.Clip({ key = "q:4:accept", present = { header = "Thrall", label = "Warchief", portrait = { kind = "none" } } }))
+quests:Enqueue(H.Clip({ key = "q:5:accept", present = { header = "Cairne", label = "Bloodhoof", portrait = { kind = "none" } } }))
+ExpectOf("in the Small Window a right-click on the words skips the line, no menu opened", function()
+    words.scripts.OnClick(words, "RightButton")
+    return Head() .. " " .. tostring(M.menu:IsShown())
+end, "1 Cairne false")
+shift = true
+ExpectOf("...and a Shift-right-click opens its menu, the line playing on", function()
+    words.scripts.OnClick(words, "RightButton")
+    return Head() .. " " .. tostring(M.menu:IsShown())
+end, "1 Cairne true")
+shift = false
+M.menu:Hide()
+env.SoundQueue:RemoveAllSoundsFromQueue()
+env.Addon:SetPlayerStyle("classic")
 _G.IsShiftKeyDown = hadShift
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
