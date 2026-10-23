@@ -166,11 +166,16 @@ LANGUAGES = {
 }
 
 -- Whether a font draws `text`: the settings' font object, or the file `path`. A glyph the font
--- lacks draws as nothing or as a box, so the text is measured against as many U+0378, a code point
--- Unicode has never assigned and so no font has: the same width means none of it drew. Not a
--- private-use character: a Traditional Chinese font can carry glyphs there as wide as its Han ones.
--- One probe for every module (Spoken_Places asks it about the font files its pages set).
+-- lacks draws as nothing or as a box, so each character past ASCII is measured against U+0378, a
+-- code point Unicode has never assigned and so no font has: the same width means it did not draw.
+-- Every one of them has to draw, not some: a font with a few Hanja draws part of a Chinese name.
+-- Not a private-use character: a Traditional Chinese font can carry glyphs there as wide as its
+-- Han ones. A file the client cannot load draws nothing.
 local probes = {}
+local function Width(probe, text)
+    probe:SetText(text)
+    return probe:GetStringWidth() or 0
+end
 function Options:FontDraws(text, path)
     if not (UIParent and UIParent.CreateFontString) then return not path end
     local probe = probes[path or false]
@@ -179,15 +184,19 @@ function Options:FontDraws(text, path)
         probe:Hide()
         probes[path or false] = probe
     end
-    if path then probe:SetFont(path, 12, "") end
-    probe:SetText(text)
-    local width = probe:GetStringWidth() or 0
-    local count = 0
-    for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do count = count + 1 end
-    probe:SetText(string.rep("\205\184", count))
-    local missing = probe:GetStringWidth() or 0
+    if path and probe:SetFont(path, 12, "") == false then return false end
+    local drew = Width(probe, text) > 0
+    if drew then
+        local box = Width(probe, "\205\184")
+        for char in string.gmatch(text, "[\194-\244][\128-\191]*") do
+            if math.abs(Width(probe, char) - box) <= 0.5 then
+                drew = false
+                break
+            end
+        end
+    end
     probe:SetText("")
-    return width > 0 and math.abs(width - missing) > 0.5
+    return drew
 end
 local function FontDraws(text) return Options:FontDraws(text) end
 

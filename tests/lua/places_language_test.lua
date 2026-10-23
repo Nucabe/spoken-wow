@@ -205,13 +205,14 @@ end
 _G.UIParent.CreateFontString = function()
     local fs = { text = "", font = nil }
     function fs:SetText(t) self.text = t end
-    function fs:SetFont(path) self.font = path end
+    -- A file the client cannot load is refused, and the font stays the object's own.
+    function fs:SetFont(path) self.font = path; return fontHas[path] ~= nil end
     function fs:Hide() end
     function fs:GetStringWidth()
         local has = fontHas[self.font] or { [208] = true, [209] = true }   -- the object's fallbacks
         local w = 0
         for ch in self.text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-            w = w + (has[ch:byte(1)] and 7 or 10)   -- a glyph it has, or the same box as any other
+            w = w + ((has[ch:byte(1)] or has[ch]) and 7 or 10)   -- a glyph it has, or the same box as any other
         end
         return w
     end
@@ -234,6 +235,29 @@ Expect("H. Traditional Chinese is offered though its font has private-use glyphs
 Expect("H. ...by Spoken's own probe, which the Voice Language lists use too",
     tostring(Spoken:FontDraws("繁體中文", "Fonts\\blei00d.TTF")) .. " "
     .. tostring(Spoken:FontDraws("繁體中文", "Fonts\\FRIZQT__.TTF")), "true false")
+-- A font with some Hanja draws the name of Traditional Chinese and still lacks most of its characters.
+local KOREAN_WITH_HANJA = {}
+for lead in pairs(HANGUL) do KOREAN_WITH_HANJA[lead] = true end
+for _, char in ipairs({ "中", "文", "繁", "體" }) do KOREAN_WITH_HANJA[char] = true end
+fontHas["Fonts\\2002.TTF"] = KOREAN_WITH_HANJA
+Faces("Fonts\\2002.TTF", "Fonts\\2002.TTF")
+Z.drawable, Z.fonts = {}, {}
+Expect("H. a Korean font draws the name of Traditional Chinese with its Hanja",
+    tostring(Spoken:FontDraws("繁體中文", "Fonts\\2002.TTF")), "true")
+Expect("H. ...but not the characters only it has, so the client's own font writes it",
+    Font(_G.GameFontHighlight, "zhTW"), "Fonts\\blei00d.TTF")
+fontHas["Fonts\\2002.TTF"] = HANGUL
+Faces("Fonts\\FRIZQT__.TTF", "Fonts\\QUEST.TTF")
+Z.drawable, Z.fonts = {}, {}
+-- A file the client cannot load keeps the object's own font in the probe, whose fallbacks draw.
+Expect("H. a font file the client cannot load draws nothing, whatever the fonts it falls back to",
+    tostring(Spoken:FontDraws("Русский", "Fonts\\MISSING.TTF")) .. " "
+    .. tostring(Spoken:FontDraws("Русский", "Fonts\\FRIZQT___CYR.TTF")), "false true")
+local blei = fontHas["Fonts\\blei00d.TTF"]
+fontHas["Fonts\\blei00d.TTF"] = nil
+Expect("H. Traditional Chinese is not written in a stock font the client lacks",
+    Font(_G.QuestFont, "zhTW"), "nil")
+fontHas["Fonts\\blei00d.TTF"] = blei
 Expect("H. a Latin language needs no asking", Z:CanRenderLanguage("frFR"), true)
 Expect("H. ...and keeps the page's font", Font(_G.GameFontHighlight, "frFR"), "Fonts\\FRIZQT__.TTF")
 Expect("H. Vietnamese, which the page's font cannot draw, is written in Arial Narrow",

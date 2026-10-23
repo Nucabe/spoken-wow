@@ -139,6 +139,13 @@ function SpokenPlaces:FontDraws(text, path)
 	return (path and Spoken and Spoken.FontDraws and Spoken:FontDraws(text, path)) and true or false
 end
 
+-- Characters only one Chinese has, drawn beside the language's name: a font with some Hanja (the
+-- Korean one) can draw the name of the other Chinese and still lack most of its characters.
+local SAMPLES = {
+	zhTW = "體繁這國",
+	zhCN = "体简这国",
+}
+
 -- The fonts every client ships for the other scripts, which the game's font objects fall back to
 -- and a page that sets a file has to name itself.
 local SCRIPT_FONTS = {
@@ -167,9 +174,10 @@ function SpokenPlaces:FontFor(fontObject, code)
 	local key = path .. "|" .. locale.code
 	if self.fonts[key] == nil then
 		local stock = SCRIPT_FONTS[locale.script]
-		if self:FontDraws(locale.native, path) then
+		local sample = locale.native .. (SAMPLES[locale.code] or "")
+		if self:FontDraws(sample, path) then
 			self.fonts[key] = path
-		elseif stock and self:FontDraws(locale.native, stock) then
+		elseif stock and self:FontDraws(sample, stock) then
 			self.fonts[key] = stock
 		else
 			self.fonts[key] = false

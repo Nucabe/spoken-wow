@@ -78,9 +78,12 @@ a language pins it on every client.
 - A language is offered only when `Data/Languages.lua` marks it ready (every story translated, and
   an alias table where a client runs in it) and the client's fonts can draw it
   (`CanRenderLanguage`). Interface strings are not required, because each key falls back to English.
-  The fonts are asked by drawing the language's own name against as many U+0378, a code point no
-  font has. A private-use character would not do: a Traditional Chinese font can draw those. The
-  probe is Spoken's (`Spoken:FontDraws`), the one that names languages in every module's lists.
+  The fonts are asked by drawing the language's own name, and for the two Chinese the characters
+  only that one has (`SAMPLES`): each character past ASCII must measure differently from U+0378, a
+  code point no font has, so a Korean font with some Hanja does not pass for Chinese. A private-use
+  character would not do: a Traditional Chinese font can draw those. A font file the client cannot
+  load (`SetFont` returns false) draws nothing. The probe is Spoken's (`Spoken:FontDraws`), the one
+  that names languages in every module's lists.
   Whether a voice pack is installed does not decide it: the voice follows Voice Language.
 - Where a page sets a font file, `FontFor` picks the client's font for the script: `2002.TTF` for
   Korean, `ARKai_T.ttf` for Simplified Chinese, `blei00d.TTF` for Traditional Chinese (the font the
