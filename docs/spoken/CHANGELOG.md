@@ -4,6 +4,12 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Include Places Found Before is on.** The game announces each discovery once per character, so a
+  character who explored before installing heard nothing in those places, and Forget Places Heard
+  read nothing again. With the setting on, each place is read once per character the first time you
+  stand in it. It is turned on once for everyone, also if you had turned it off: to keep it off,
+  untick it under Places, When to Read. Forget Places Heard is greyed while Read Automatically or Read
+  Stories Aloud is off. *([Nucabe](https://github.com/Nucabe))*
 - **The quest log's Play button no longer covers a quest's title or its "(Elite)".** With
   quest objectives shown, the title now ends short of Play and Contribute, which sit left of
   the quest's type instead of on top of it.
