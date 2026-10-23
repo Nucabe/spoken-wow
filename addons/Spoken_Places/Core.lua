@@ -90,6 +90,13 @@ local function MergeDefaults()
 			SpokenPlacesSettings[key] = value
 		end
 	end
+	-- Include Places Found Before was off by default, and the loop above stored that off in every
+	-- profile, where it reads the same as a player's choice. Turned on once per profile; the
+	-- marker, kept outside the defaults, leaves a later choice of off alone.
+	if not SpokenPlacesSettings.autoplayExploredTurnedOn then
+		SpokenPlacesSettings.autoplayExplored = true
+		SpokenPlacesSettings.autoplayExploredTurnedOn = true
+	end
 
 	SpokenPlaces.db = SpokenPlacesSettings
 end

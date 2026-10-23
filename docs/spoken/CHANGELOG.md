@@ -4,10 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **Include Places Found Before is on for new installs.** The game announces each discovery once per character, so a character who explored before
-  installing heard nothing in those places, and forgetting read nothing again. With the setting on,
-  each place is read once per character the first time you stand in it. If you already use Spoken,
-  your setting is kept: turn it on under Places, When to Read. *([Nucabe](https://github.com/Nucabe))*
+- **Include Places Found Before is on.** The game announces each discovery once per character, so a
+  character who explored before installing heard nothing in those places, and Forget Places Heard
+  read nothing again. With the setting on, each place is read once per character the first time you
+  stand in it. It is turned on once for everyone, also if you had turned it off: to keep it off,
+  untick it under Places, When to Read. *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and

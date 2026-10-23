@@ -46,7 +46,8 @@ Expect("a reset brings the voice back on", _G.SpokenPlacesSettings.voiceEnabled,
 Expect("...and the play buttons hear the voice is on again", notified, 1)
 
 -- Include Places Found Before is on by default: a character that explored before installing hears
--- each place once, and Forget Places Heard has something to read again. A stored choice stays.
+-- each place once, and Forget Places Heard has something to read again. A profile that stored the
+-- old default's off has it turned on, once.
 Expect("a reset turns Include Places Found Before on", _G.SpokenPlacesSettings.autoplayExplored, true)
 local saved = _G.SpokenPlacesSettings
 _G.SpokenPlacesSettings = {}
@@ -56,7 +57,14 @@ Expect("a profile with no value of its own takes it on", _G.SpokenPlacesSettings
 _G.SpokenPlacesSettings = { autoplayExplored = false }
 Z.db = _G.SpokenPlacesSettings
 Z:OnSettingsBound()
-Expect("...and one that stored it off keeps it off", _G.SpokenPlacesSettings.autoplayExplored, false)
+Expect("...and one that stored it off has it turned on", _G.SpokenPlacesSettings.autoplayExplored, true)
+Z:Set("autoplayExplored", false)
+Z:OnSettingsBound()
+Expect("...once: turned off after that, it stays off", _G.SpokenPlacesSettings.autoplayExplored, false)
+Z:ResetOptions()
+Z:Set("autoplayExplored", false)
+Z:OnSettingsBound()
+Expect("...even after the page's Defaults", _G.SpokenPlacesSettings.autoplayExplored, false)
 _G.SpokenPlacesSettings = saved
 Z.db = saved
 

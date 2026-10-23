@@ -166,6 +166,8 @@ The game announces a discovery once per character, and Places reads that message
   `SpokenPlacesCharacter` makes it happen once, and `/spp forget` clears it.
 - Include Places Found Before also reads on zone change, once per place, for a character that
   explored before installing. `heard` records places when a clip starts, not when it is queued.
+  It was off by default, and every profile stored that off; loading a profile turns it on once
+  (`autoplayExploredTurnedOn` marks that it was), so a player who turns it off later keeps it off.
   With it on, a discovery of a place already heard reads nothing: at login a new character hears
   its valley and then its zone, which the game announces only later. Forget Places Heard (and
   `/spp forget`) clears `heard` and `greeted`, never `visited`. The button is greyed while Read
