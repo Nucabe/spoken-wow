@@ -256,18 +256,16 @@ function SpokenReadables:PackPageText(pageId, language)
 	return nil
 end
 
+--- The page as the client showed it this session in `language`, or nil.
+local function KeptText(self, pageId, language)
+	local kept = self.pageText and self.pageText[language] and self.pageText[language][pageId]
+	return type(kept) == "string" and kept ~= "" and kept or nil
+end
+
 --- A page's words in `language`: the words of a pack recorded in it, else the page as the client
 --- showed it this session. Nil where neither has them.
 function SpokenReadables:PageTextIn(pageId, language)
-	local packed = self:PackPageText(pageId, language)
-	if packed then
-		return packed
-	end
-	local kept = self.pageText and self.pageText[language] and self.pageText[language][pageId]
-	if type(kept) == "string" and kept ~= "" then
-		return kept
-	end
-	return nil
+	return self:PackPageText(pageId, language) or KeptText(self, pageId, language)
 end
 
 --- A page's words in this client's language, or nil. Page by page, so a readable can be in two
@@ -281,8 +279,9 @@ function SpokenReadables:ClientPageText(pageId)
 	return self:PageTextIn(pageId, client)
 end
 
---- A page's words in `language` as a caption shows them. English is the corpus's, its tokens
---- as the narrator says them, unless a pack has the page's words.
+--- A page's words in `language` as a caption shows them, and whether they are the words of an
+--- English recording. English is the corpus's, its tokens as the narrator says them, unless a pack
+--- has the page's words.
 local function CaptionWords(self, pageId, language)
 	if language ~= self.BASE_LANGUAGE then
 		return self:PageTextIn(pageId, language)
@@ -291,25 +290,55 @@ local function CaptionWords(self, pageId, language)
 	if packed then
 		return packed
 	end
+	-- Some pages have no words in the corpus: "" would caption a recording with nothing.
 	local place = self:Data() and self:Data().pages[pageId]
-	if place and place.text then
-		return self:SaidTokens(place.text)
+	if place and type(place.text) == "string" and place.text ~= "" then
+		return self:SaidTokens(place.text), true
 	end
-	return self:PageTextIn(pageId, language)
+	return KeptText(self, pageId, language)
 end
 
---- The words a page's caption shows, and the language they are in. The words are in the Text
---- Language: Places has a setting for it, Readables follows the client's language, as the game
---- shows the page. Whatever the voice, so French words under an English voice. The language of
---- the clip is the one the words are in only where the Text Language has none for the page, so a
---- recording is never captioned in words nobody has. Nil where neither has any.
-function SpokenReadables:CaptionText(pageId, clipLanguage)
-	local client = self:GetClientLanguage()
-	local text = CaptionWords(self, pageId, client)
-	if text then
-		return text, client
+-- The caption's words in `language`, as CaptionText returns them, or nil.
+local function CaptionIn(self, pageId, language, clipLanguage, clipText)
+	if language == clipLanguage and type(clipText) == "string" and clipText ~= "" then
+		return clipText, language, true
 	end
-	return CaptionWords(self, pageId, clipLanguage), clipLanguage
+	local text, corpus = CaptionWords(self, pageId, language)
+	if text then
+		-- An English pack records the corpus's words, so they are this recording's when it is English.
+		return text, language, corpus == true and language == clipLanguage
+	end
+end
+
+--- The words a page's caption shows, the language they are in, and whether they are the words the
+--- recording says. The words are in the Text Language: Places has a setting for it, Readables
+--- follows the client's language, as the game shows the page. Whatever the voice, so French words
+--- under an English voice. A voice no client runs in (Italian, Vietnamese) comes first instead:
+--- its players are on another language's client, and would never read along in their own.
+--- The other language gives the words only where the first has none for the page, so a
+--- recording is never captioned in words nobody has. `clipText` is the playing pack's own words
+--- for the page: those, where they are in the language asked, not another pack's. Nil where
+--- neither has any.
+function SpokenReadables:CaptionText(pageId, clipLanguage, clipText)
+	local first, second = self:GetClientLanguage(), clipLanguage
+	if not self:IsClientLanguage(clipLanguage) then
+		first, second = clipLanguage, first
+	end
+	local text, shown, recorded = CaptionIn(self, pageId, first, clipLanguage, clipText)
+	if not text and second ~= first then
+		text, shown, recorded = CaptionIn(self, pageId, second, clipLanguage, clipText)
+	end
+	if not text then
+		return nil, clipLanguage, false
+	end
+	return text, shown, recorded
+end
+
+--- A readable's title in `language`: the one the client showed this session, else the one a pack
+--- in it gives `pageId` in its index. Nil where Spoken has none: the corpus's title is English.
+function SpokenReadables:TitleIn(book, pageId, language)
+	local kept = self.bookTitle and self.bookTitle[language] and self.bookTitle[language][book]
+	return kept or self:PackTitleOf(pageId, language)
 end
 
 local titles = setmetatable({}, { __mode = "k" })
@@ -330,7 +359,9 @@ function SpokenReadables:PackTitleOf(pageId, language)
 					for title, byNumber in pairs(index) do
 						for _, byChecksum in pairs(byNumber) do
 							for _, id in pairs(byChecksum) do
-								byPage[id] = byPage[id] or title
+								-- A page under two titles takes the first in order, not the first
+								-- pairs() happens to meet, so it is the same one every session.
+								if not byPage[id] or title < byPage[id] then byPage[id] = title end
 							end
 						end
 					end

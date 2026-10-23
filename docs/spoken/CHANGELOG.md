@@ -10,8 +10,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   on a client in another language than English they are captioned and shown in Azeroth's Compendium
   in that language where its Readables pack has the words, or, with an older pack that has none,
   once you open the page, under the title the pack's index gives. On an English client they are in
-  English, so a German or Italian voice no longer reads along in its own words where English has
-  them. A book can show some pages in your language and the rest in English.
+  English, so a German voice no longer reads along in its own words where English has them. An
+  Italian or Vietnamese voice, which no client runs in, still reads along in its own words where its
+  pack has them. A book can show some pages in your language and the rest in English.
   *([Nucabe](https://github.com/Nucabe))*
 - **Spoken's keys have their own Spoken category in Key Bindings**, instead of sitting under
   Other. *([Jayshua83](https://github.com/Jayshua83))* *([Nucabe](https://github.com/Nucabe))*

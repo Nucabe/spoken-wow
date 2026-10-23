@@ -175,7 +175,8 @@ _G.Spoken, _G.SpokenEnv = nil, nil
 
 ---------------------------------------------------------------- F. a language no client runs in
 -- Italian has no index of its own: the page is found by the English client's and read from
--- the Italian pack, captions included.
+-- the Italian pack, captions included. No client runs in Italian, so its players are on an
+-- English one and read along in the voice's words, not the client's.
 local ITALIAN = { addon = "SpokenReadablesAudio_itIT", language = "itIT", pages = {
     [PAGE] = { file = "15", len = 2, text = "Prima pagina italiana." } } }
 B = Install({ ENGLISH, ITALIAN }, "enUS")
@@ -185,15 +186,34 @@ SpokenReadablesData.index["Registry"][1][B:ChecksumOf("English first page.")] = 
 stub.ShowPage({ title = "Registry", number = 1, text = "English first page." })
 Expect("F. the English index finds the page", B:PageOnScreen(), PAGE)
 Expect("F. ...and the Italian pack reads it", B:ClipFor(PAGE).language, "itIT")
-Expect("F. ...captioned in English, the Text Language of an English client",
-    B:ClipFor(PAGE).present.transcript, "English first page.")
-SpokenReadablesData.pages[PAGE].text = nil
-B.pageText = nil
-Expect("F. ...and in the Italian pack's own words where English has none",
+Expect("F. ...captioned in the Italian pack's own words, not the English client's",
     B:ClipFor(PAGE).present.transcript, "Prima pagina italiana.")
+ITALIAN.pages[PAGE].text = nil
+B = Install({ ENGLISH, ITALIAN }, "enUS")
+SpokenReadablesSettings.voiceLanguage = "itIT"
+Expect("F. ...and in English where the Italian pack has no words for the page",
+    B:ClipFor(PAGE).present.transcript, "English first page.")
 B = Install({ ENGLISH, ITALIAN }, "itIT")
 Expect("F. a client claiming Italian is not taken at its word", B:GetClientLanguage(), "enUS")
 Expect("F. Italian is not a client language", B:IsClientLanguage("itIT"), false)
+
+---------------------------------------------------------------- F1. the pack list
+-- A pack registered before it is in this version's format is listed once it is.
+B = Install({ ENGLISH })
+local late = { addon = "SpokenReadablesAudio_late", pages = {} }
+_G.SpokenReadablesAudioPacks.SpokenReadablesAudio_late = late
+Expect("F1. a pack in no version's format is not listed", #B:GetAudioPacks(), 1)
+late.version = 1
+Expect("F1. ...and is once it is in this one's", #B:GetAudioPacks(), 2)
+
+---------------------------------------------------------------- F2. a page the corpus has no words for
+-- English is the Text Language, but its "" is no words: the recording's language gives them.
+B = Install({ ENGLISH, { addon = "SpokenReadablesAudio_deDE", language = "deDE", pages = {
+    [PAGE] = { file = "15", len = 2, text = "Deutsche Seite." } } } }, "enUS")
+SpokenReadablesSettings.voiceLanguage = "deDE"
+SpokenReadablesData.pages[PAGE].text = ""
+Expect("F2. a page with no words in the corpus is captioned in the recording's",
+    B:ClipFor(PAGE).present.transcript, "Deutsche Seite.")
 
 ---------------------------------------------------------------- G. pages only a pack has
 do

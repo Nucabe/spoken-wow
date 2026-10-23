@@ -118,26 +118,38 @@ end
 --- readable the Compendium lists, and every page of one.
 local listed
 local NONE = {}
+local function Listable(pack)
+	return type(pack) == "table" and pack.version == PACK_FORMAT and type(pack.pages) == "table"
+end
+-- What the list takes from a registered pack: its pages, while it can be listed. A pack registered
+-- before it can be, or changed after, is listed again.
+local function Shape(pack)
+	return Listable(pack) and pack.pages or false
+end
+-- How many packs `registry` holds; nil where one is not as `seen` has it. With `note`, `seen` is
+-- filled in instead.
+local function Walk(registry, seen, note)
+	local count = 0
+	for _, pack in pairs(registry or NONE) do
+		count = count + 1
+		if note then
+			seen[pack] = Shape(pack)
+		elseif seen[pack] ~= Shape(pack) then
+			return nil
+		end
+	end
+	return count
+end
 function SpokenReadables:GetAudioPacks()
 	local current, legacy = _G.SpokenReadablesAudioPacks, _G.SpokenBooksAudioPacks
 	if listed and listed.current == current and listed.legacy == legacy then
-		-- The same tables: still the same packs in them? Counted without building anything.
-		local count, same = 0, true
-		for _, pack in pairs(current or NONE) do
-			count = count + 1
-			if not listed.known[pack] then same = false end
-		end
-		for _, pack in pairs(legacy or NONE) do
-			count = count + 1
-			if not listed.known[pack] then same = false end
-		end
-		if same and count == listed.count then return listed.packs end
+		local count = Walk(current, listed.seen)
+		local more = count and Walk(legacy, listed.seen)
+		if more and count + more == listed.count then return listed.packs end
 	end
-	local known, count = {}, 0
-	for _, pack in pairs(current or NONE) do known[pack] = true; count = count + 1 end
-	for _, pack in pairs(legacy or NONE) do known[pack] = true; count = count + 1 end
-	listed = { current = current, legacy = legacy, known = known, count = count,
-		packs = self:BuildAudioPacks() }
+	local seen = {}
+	listed = { current = current, legacy = legacy, seen = seen,
+		count = Walk(current, seen, true) + Walk(legacy, seen, true), packs = self:BuildAudioPacks() }
 	return listed.packs
 end
 
@@ -146,7 +158,7 @@ function SpokenReadables:BuildAudioPacks()
 	local current = _G.SpokenReadablesAudioPacks or {}
 	local function Collect(registry, renamed)
 		for name, pack in pairs(registry or {}) do
-			if type(pack) == "table" and pack.version == PACK_FORMAT and type(pack.pages) == "table"
+			if Listable(pack)
 				and not (renamed and current[(name:gsub("^SpokenBooksAudio", "SpokenReadablesAudio"))]) then
 				pack.addon = pack.addon or name
 				table.insert(packs, pack)
@@ -234,14 +246,9 @@ function SpokenReadables:ClipFor(pageId)
 			if entry then
 				local book = self:BookOf(pageId)
 				local oneLine = self:OneLine()
-				-- The words are in the Text Language, which here is the client's, whatever the voice
-				-- or the language of the recording; the clip's own only where it has none.
-				-- `shown` is the language they are in.
-				local text, shown = self:CaptionText(pageId, language)
-				-- The title in the language of the words below it: the one the client showed this
-				-- session, else the one the pack's index gives it, else the corpus's, which is English.
-				local title = self.bookTitle and self.bookTitle[shown] and self.bookTitle[shown][place.book]
-					or self:PackTitleOf(pageId, shown) or (book and book.title) or ""
+				-- `shown` is the language the words are in, and the title is in it too.
+				local text, shown, recorded = self:CaptionText(pageId, language, entry.text)
+				local title = self:TitleIn(place.book, pageId, shown) or (book and book.title) or ""
 				local length = (entry.len and entry.len > 0) and entry.len or nil
 				return {
 					key = "b:" .. pageId,
@@ -265,8 +272,8 @@ function SpokenReadables:ClipFor(pageId)
 						header = oneLine and self:KindOf(place.book) or title,
 						transcript = text,
 						-- The first page's words start after its title is read. Only where the words
-						-- are the ones the recording says: another language's have another length.
-						timings = place.number == 1 and shown == language
+						-- are the ones the recording says: any others have another length.
+						timings = place.number == 1 and recorded
 							and TitleFirstTimings(title, text, length) or nil,
 						label = oneLine and (title ~= "" and title or nil)
 							or ((book and #book.pages > 1)
