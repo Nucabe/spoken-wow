@@ -300,17 +300,33 @@ local function TabReach(tab, mapEdge)
 	return tab:GetWidth() or 0
 end
 
--- The side tabs shown down the quest log's right edge, children of it that show only with it, in
--- the order they hang from top to bottom: the game's own, which Forever hides until the gamepad UI
--- is switched off, then Adventure Guide Forever's, its Quests tab above its guide tab (its
--- UI/Panel.lua, CreateTabs). The lowest one, and how far the widest reaches past the map's edge.
+local ApplyAnchors
+
+-- A side tab shows and hides without the quest log doing either: the game shows its own when the
+-- gamepad UI goes off and hides them again as the log checks its tabs. So the anchors follow each
+-- tab's own show and hide, hooked once, as the tab is first seen.
+local watched = setmetatable({}, { __mode = "k" })
+local function Watch(tab)
+	if watched[tab] or not tab.HookScript then return end
+	watched[tab] = true
+	tab:HookScript("OnShow", function() ApplyAnchors() end)
+	tab:HookScript("OnHide", function() ApplyAnchors() end)
+end
+
+-- The side tabs down the quest log's right edge, children of it that go with it, in the order they
+-- hang from top to bottom: the game's own, which Forever hides until the gamepad UI is switched
+-- off, then Adventure Guide Forever's, its Quests tab above its guide tab (its UI/Panel.lua,
+-- CreateTabs). The lowest one shown, and how far the widest reaches past the map's edge.
 local function SideTabs(mapEdge)
 	local log = QuestMapFrame
 	local last, reach = nil, 0
 	for _, tab in ipairs({ log and log.QuestsTab or false, log and log.MapLegendTab or false,
 		_G.AdventureGuideForeverQuestsTab or false, _G.AdventureGuideForeverTab or false }) do
-		if type(tab) == "table" and tab.IsVisible and tab:IsVisible() then
-			last, reach = tab, math.max(reach, TabReach(tab, mapEdge))
+		if type(tab) == "table" then
+			Watch(tab)
+			if tab.IsVisible and tab:IsVisible() then
+				last, reach = tab, math.max(reach, TabReach(tab, mapEdge))
+			end
 		end
 	end
 	return last, reach
@@ -318,7 +334,7 @@ end
 
 -- Always on the map's right, beside the quest log as the game lays its own panels out, past any
 -- side tabs there. The button that reopens it goes under those tabs.
-local function ApplyAnchors()
+function ApplyAnchors()
 	local mapEdge = MapEdge()
 	local tab, reach = SideTabs(mapEdge)
 	local gap = GAP + reach
@@ -497,7 +513,8 @@ function SpokenPlaces:SetupMapPanel()
 		panel:Hide()
 		toggle:Hide()
 	end)
-	-- The side tabs on the quest log's edge come and go with it.
+	-- The side tabs on the quest log's edge go with it, and each shows and hides on its own too
+	-- (Watch).
 	if QuestMapFrame and QuestMapFrame.HookScript then
 		QuestMapFrame:HookScript("OnShow", ApplyAnchors)
 		QuestMapFrame:HookScript("OnHide", ApplyAnchors)

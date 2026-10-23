@@ -536,10 +536,17 @@ Expect("...and stops reading the map's alpha each frame", panel:GetScript("OnUpd
 -- Adventure Guide Forever hangs two side tabs down the quest log's right edge, its Quests tab above
 -- its guide tab; here the upper one reaches 60 past the map's edge and the lower one 50.
 local toggle = _G.SpokenPlacesPanelToggle
-local questsTab = CreateFrame("Frame", "AdventureGuideForeverQuestsTab", QuestMapFrame)
-function questsTab:GetRight() return WorldMapFrame:GetRight() + 60 end
-local guideTab = CreateFrame("Frame", "AdventureGuideForeverTab", QuestMapFrame)
-function guideTab:GetRight() return WorldMapFrame:GetRight() + 50 end
+-- A child of the quest log as the game has it: closing the log hides it without touching its own
+-- shown flag, so IsShown stays true under a closed log and only IsVisible says it is gone.
+local function SideTab(name, right)
+    local tab = CreateFrame("Frame", name, QuestMapFrame)
+    tab.GetRight = right
+    function tab:IsShown() return self.shown end
+    function tab:IsVisible() return self.shown and QuestMapFrame:IsVisible() end
+    return tab
+end
+local questsTab = SideTab("AdventureGuideForeverQuestsTab", function() return WorldMapFrame:GetRight() + 60 end)
+local guideTab = SideTab("AdventureGuideForeverTab", function() return WorldMapFrame:GetRight() + 50 end)
 questsTab:Show()
 guideTab:Show()
 Z:SetMapPanelCollapsed(true)
@@ -549,8 +556,6 @@ Z:SetMapPanelCollapsed(false)
 Expect("...and open, the panel stands clear of the widest", panel.anchor.x, 62)
 -- The tabs are the quest log's and go with it. Closing or opening it refreshes nothing else.
 local function CloseQuestLog()
-    questsTab:Hide()
-    guideTab:Hide()
     QuestMapFrame:Hide()
     for _, hook in ipairs(QuestMapFrame.hooks.OnHide or {}) do hook(QuestMapFrame) end
 end
@@ -559,11 +564,25 @@ CloseQuestLog()
 Expect("with the quest log closed, the button is back on the map's edge",
     toggle.anchor.relativeTo == WorldMapFrame and toggle.anchor.relativePoint, "TOPRIGHT")
 Expect("...and the panel against the map", panel.anchor.x, 2)
-questsTab:Show()
-guideTab:Show()
 QuestMapFrame:Show()
 Expect("opening the quest log puts the button back under its tabs", toggle.anchor.relativeTo == guideTab, true)
 Expect("...and the panel past them", panel.anchor.x, 62)
+-- The game's own tabs show and hide on their own: switching the gamepad UI off shows them under the
+-- open log, and the log checking its tabs hides them again, neither through the log's show or hide.
+-- One has no right edge yet, so its width is how far it reaches.
+local gameTab = SideTab("QuestMapFrameQuestsTab", function() return nil end)
+gameTab.width = 80
+gameTab.shown = false
+QuestMapFrame.QuestsTab = gameTab
+Z:RefreshPanel()
+Expect("a side tab that is not shown moves nothing", panel.anchor.x, 62)
+gameTab:Show()
+Expect("the game's own tab shown under the open log puts the panel past it, by its width",
+    panel.anchor.x, 82)
+gameTab.shown = false
+for _, hook in ipairs(gameTab.hooks.OnHide or {}) do hook(gameTab) end
+Expect("...and hidden again, back past the others", panel.anchor.x, 62)
+QuestMapFrame.QuestsTab = nil
 CloseQuestLog()
 Z:SetMapPanelCollapsed(false)
 local mapPage = panel.page
