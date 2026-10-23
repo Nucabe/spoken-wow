@@ -36,6 +36,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   stand in it. It is turned on once for everyone, also if you had turned it off: to keep it off,
   untick it under Places, When to Read. Forget Places Heard is greyed while Read Automatically or Read
   Stories Aloud is off. *([Nucabe](https://github.com/Nucabe))*
+- **A zone's page on the Quests, Readables and Bosses tabs shows the faction's seal, not the place's
+  picture.** The page has nothing to read there, and the story and its picture are on the Places tab.
+  *([Nucabe](https://github.com/Nucabe))*
 - **The quest log's Play button no longer covers a quest's title or its "(Elite)".** With
   quest objectives shown, the title now ends short of Play and Contribute, which sit left of
   the quest's type instead of on top of it.

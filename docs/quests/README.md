@@ -1716,8 +1716,8 @@ shown that a pack voices (its accept line, else its complete line) to `Player:En
 what the queue holds, and leaves the selection and the page as they were; a line already queued
 is not queued again. The page shown with no quest chosen says so.
 
-A zone's, city's, continent's or dungeon's page shows Spoken Places' picture of the place above its
-words where Places has one (`SpokenCompendium.PlacePicture`).
+A zone's, city's, continent's or dungeon's page has no words of its own: its count under the title,
+and the faction's seal. Its story is on the Places tab.
 
 Open in Azeroth's Compendium (`UI/OpenInCompendium.lua`) is Spoken Places' lore-page button for
 quests: the Compendium's tome in the player's round button, opening the tab on the quest with its
