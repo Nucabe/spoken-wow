@@ -70,7 +70,6 @@ local EDGE = { 0.2, 0.2, 0.2, 1 }
 -- How far over a shell's frame to draw what must show over its edge, which EllesmereUI draws 6
 -- levels over it.
 Ellesmere.OVER_SHELL = 7
-Ellesmere.EDGE = EDGE
 -- The dark collar between a picture and its edge, as EllesmereUI's square button draws one round the
 -- icon Spoken puts in it: 2 screen pixels in the panel's colour.
 local COLLAR = 2
