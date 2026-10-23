@@ -728,8 +728,8 @@ function Addon:TakeVoiceLanguageFromQuests()
     -- would change that.
     local current, chars = db:GetCurrentProfile(), db.sv and db.sv.char or {}
     for key, profile in pairs(db.sv and db.sv.profileKeys or {}) do
-        local char = chars[key]
-        if profile == current and key ~= db.keys.char and type(char) == "table" and char.voiceLanguageFromQuests then
+        if profile == current and key ~= db.keys.char and type(chars[key]) == "table"
+            and chars[key].voiceLanguageFromQuests then
             return
         end
     end

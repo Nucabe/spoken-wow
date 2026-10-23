@@ -982,9 +982,7 @@ function Options:DeleteProfile(name)
                 if profile == name then table.insert(moved, key) end
             end
             db:DeleteProfile(name)
-            for _, key in ipairs(moved) do
-                if keys[key] == nil then keys[key] = key end
-            end
+            for _, key in ipairs(moved) do keys[key] = key end
         end
     end
     if Addon.db and Addon.db.global.NewCharacterProfile == name and not Addon:SavedProfile(name) then
@@ -999,7 +997,7 @@ function Options:NewCharacterProfile()
 end
 
 function Options:SetNewCharacterProfile(name)
-    if Addon.db then Addon.db.global.NewCharacterProfile = name or nil end
+    Addon.db.global.NewCharacterProfile = name or nil
 end
 
 function Options:AddProfiles(layout)
