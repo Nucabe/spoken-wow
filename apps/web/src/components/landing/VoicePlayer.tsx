@@ -16,8 +16,9 @@ const behavior = (): ScrollBehavior => (window.matchMedia("(prefers-reduced-moti
  * the words below it, lit as they are spoken by the start times measured against this audio. The
  * file downloads when it is played.
  */
-function Clip({ voice, label }: { voice: Voice; label: string }) {
+function Clip({ voice, label, disabled = false }: { voice: Voice; label: string; disabled?: boolean }) {
   const audio = useRef<HTMLAudioElement>(null);
+  const pending = useRef<number | null>(null);
   const text = useRef<HTMLParagraphElement>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -27,7 +28,9 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
     if (!playing) return;
     let frame = 0;
     const tick = () => {
-      if (audio.current) setTime(audio.current.currentTime);
+      // Tenths of a second are enough for the words and the bar, and spare a render per frame.
+      const now = audio.current?.currentTime ?? 0;
+      setTime((was) => (Math.abs(now - was) >= 0.1 ? now : was));
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -47,7 +50,10 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
   };
 
   const seek = (to: number) => {
-    if (audio.current) audio.current.currentTime = to;
+    const el = audio.current;
+    // With preload none there is no metadata before the first play, and Safari drops a seek until there is.
+    if (el && el.readyState === 0) pending.current = to;
+    else if (el) el.currentTime = to;
     setTime(to);
   };
 
@@ -83,8 +89,12 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
     <div className="bn-voice-card">
       <audio
         ref={audio}
-        src={voice.audio}
+        src={voice.audio || undefined}
         preload="none"
+        onLoadedMetadata={() => {
+          if (audio.current && pending.current !== null) audio.current.currentTime = pending.current;
+          pending.current = null;
+        }}
         onPlay={() => setPlaying(true)}
         onPause={() => {
           setPlaying(false);
@@ -103,7 +113,7 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
         </p>
       </div>
       <div className="bn-voice-bar">
-        <button type="button" className="bn-voice-play" aria-label={`${playing ? "Pause" : "Play"}: ${voice.name}`} onClick={toggle}>
+        <button type="button" className="bn-voice-play" aria-label={disabled ? "Play: no recording yet" : `${playing ? "Pause" : "Play"}: ${voice.name}`} onClick={toggle} disabled={disabled}>
           {playing ? (
             <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor" />
@@ -115,7 +125,7 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
           )}
         </button>
         <div className="bn-voice-wave">
-          <input
+          {!disabled && <input
             type="range"
             className="bn-voice-seek"
             min={0}
@@ -126,7 +136,7 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
             aria-valuetext={`${timecode(time)} of ${timecode(voice.duration)}`}
             onChange={(event) => seek(Number(event.target.value))}
             onKeyDown={keySeek}
-          />
+          />}
           <div className="bn-wave" aria-hidden="true">
             {voice.peaks.map((peak, i) => (
               <i key={i} className={i / voice.peaks.length < progress ? "on" : undefined} style={{ height: `${peak * 100}%` }} />
@@ -158,6 +168,7 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
  * one example button, the speaker, a flat waveform and a Play button that cannot be pressed.
  */
 export function VoicePlaceholder({ icon, name, text }: { icon: string; name: string; text: string }) {
+  const none: Voice = { label: name, name, sub: "No recording yet", icon, audio: "", duration: 0, peaks: Array(96).fill(0.06), words: [text], times: [] };
   return (
     <div className="bn-voice">
       <div className="bn-voice-picks-wrap">
@@ -170,33 +181,7 @@ export function VoicePlaceholder({ icon, name, text }: { icon: string; name: str
           </li>
         </ul>
       </div>
-      <div className="bn-voice-card">
-        <div className="bn-voice-head">
-          <Image src={icon} alt="" width={64} height={64} unoptimized />
-          <p>
-            <b>{name}</b>
-            <span>No recording yet</span>
-          </p>
-        </div>
-        <div className="bn-voice-bar">
-          <button type="button" className="bn-voice-play" aria-label="Play: no recording yet" disabled>
-            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 4l12 8-12 8z" fill="currentColor" />
-            </svg>
-          </button>
-          <div className="bn-voice-wave">
-            <div className="bn-wave" aria-hidden="true">
-              {Array.from({ length: 96 }, (_, i) => (
-                <i key={i} style={{ height: "6%" }} />
-              ))}
-            </div>
-          </div>
-          <span className="bn-voice-time">0:00 / 0:00</span>
-        </div>
-        <p className="bn-voice-text" lang="en">
-          {text}
-        </p>
-      </div>
+      <Clip voice={none} label={name.toLowerCase()} disabled />
     </div>
   );
 }
@@ -221,7 +206,10 @@ export default function VoicePlayer({ voices, label }: { voices: Voice[]; label:
   const measure = useCallback(() => {
     const el = row.current;
     if (!el) return;
-    setEdges({ start: el.scrollLeft > 4, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+    const start = el.scrollLeft > 4;
+    const end = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+    // Scrolling fires many events; keep the same object so a row that did not change does not render.
+    setEdges((now) => (now.start === start && now.end === end ? now : { start, end }));
   }, []);
 
   useEffect(() => {
@@ -241,7 +229,9 @@ export default function VoicePlayer({ voices, label }: { voices: Voice[]; label:
     setPick(i);
     const el = row.current;
     const button = el?.children[i] as HTMLElement | undefined;
-    if (el && button) el.scrollTo({ left: button.offsetLeft - (el.clientWidth - button.offsetWidth) / 2, behavior: behavior() });
+    if (!el || !button) return;
+    const left = el.scrollLeft + button.getBoundingClientRect().left - el.getBoundingClientRect().left - (el.clientWidth - button.offsetWidth) / 2;
+    el.scrollTo({ left, behavior: behavior() });
   };
 
   return (
