@@ -973,7 +973,8 @@ end
 
 --- Delete `name` where it is not in use. AceDB clears the profile of each character that was on
 --- it; each is put back on its own profile here, where AceDB would put it at its next login, so
---- it is not taken for a new character and put on the one chosen for new characters.
+--- it is not taken for a new character and put on the one chosen for new characters. The choice of
+--- that profile for new characters goes with it, so a profile made later under its name is not chosen.
 function Options:DeleteProfile(name)
     for _, db in ipairs(self:ProfileDBs()) do
         if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then
@@ -986,6 +987,9 @@ function Options:DeleteProfile(name)
                 if keys[key] == nil then keys[key] = key end
             end
         end
+    end
+    if Addon.db and Addon.db.global.NewCharacterProfile == name and not Addon:SavedProfile(name) then
+        Addon.db.global.NewCharacterProfile = nil
     end
 end
 

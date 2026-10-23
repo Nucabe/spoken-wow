@@ -161,6 +161,13 @@ spoken = Play("Bob")
 Expect("a character with no profile but saved settings of its own gets its own profile", spoken, "Bob - Realm")
 Expect("...and keeps it", SpokenSettings.profileKeys["Bob - Realm"], "Bob - Realm")
 
+-- Settings of its own, with no profile chosen and no per-character table, show it too.
+Seed("Shared")
+SpokenSettings.profileKeys["Alice - Realm"] = nil
+SpokenSettings.char["Alice - Realm"] = nil
+spoken = Play("Alice")
+Expect("a character with no profile but a profile named for it gets that profile", spoken, "Alice - Realm")
+
 ---------------------------------------------------------------- "Unknown" logins
 -- The Forever client answers "Unknown" for the player's name on some logins, so AceDB keys any
 -- character that logs in then as "Unknown - Realm".
@@ -208,6 +215,9 @@ Expect("...and the page shows it", Options:NewCharacterProfile(), "Shared")
 Expect("...and the character choosing stays on its own", env.Addon.db:GetCurrentProfile(), "Alice - Realm")
 Options:DeleteProfile("Shared")
 Expect("deleting the chosen profile shows a profile of their own", Options:NewCharacterProfile(), false)
+Expect("...and forgets the choice", SpokenSettings.global.NewCharacterProfile, nil)
+SpokenSettings.profiles.Shared = Profile(12)
+Expect("...so a profile made later under its name is not the one for new characters", Options:NewCharacterProfile(), false)
 spoken = Play("Gina")
 Expect("...and gives the next new character one", spoken, "Gina - Realm")
 Options = env.Options
@@ -233,6 +243,14 @@ Expect("the dropdown offers a profile of their own and Spoken's saved profiles",
     table.concat({ env.L.OPT_PROFILE_OWN, "Alice - Realm", "Shared", env.L.OPT_PROFILE_OWN }, ", "))
 Expect("...with only one checked, though a profile has the same name as the first", checked, 1)
 Expect("...and that one the first", entries[1] and entries[1].checked, true)
+
+-- A list of tables built afresh on each look is checked by what its entries say.
+local made = _G.SpokenOptionsPanel.layout:Dropdown("Tables", nil,
+    function() return { { name = "one" }, { name = "two" } } end, function() return { name = "two" } end,
+    function() end, nil, function(value) return value.name end)
+local tables = stub.OpenDropdown(made)
+Expect("a dropdown of tables checks the entry that reads as the current one", (tables[1] and tables[1].checked or false) == false
+    and (tables[2] and tables[2].checked) == true, true)
 
 stub.world.playerName = nil
 if Failures() > 0 then print(Failures() .. " failure(s)"); os.exit(1) end
