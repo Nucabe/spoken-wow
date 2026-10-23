@@ -132,6 +132,16 @@ function Gather:Remove(key)
     return false
 end
 
+--- Whether the lines kept by earlier versions were tidied at login: a feature addon does that
+--- once, and the file says so, as it says whether the player was introduced to gathering.
+function Gather:IsTidied()
+    return Store().Tidied and true or false
+end
+
+function Gather:SetTidied()
+    Store().Tidied = true
+end
+
 --- Forget everything gathered. The addon cannot see the upload happen, so this is the
 --- player's to press once they have sent the file.
 function Gather:Clear()

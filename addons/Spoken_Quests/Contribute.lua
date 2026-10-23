@@ -22,6 +22,15 @@ local EVENT_PATHS =
 
 Contribute = {}
 
+--- Whether the Spoken folder beside this addon has what Detemplate and the gathering call. An
+--- older one does not, and a player on it has no contribute button rather than an error.
+local function CoreIsCurrent()
+    local contribute, gather = _G.Spoken and Spoken.Contribute, _G.Spoken and Spoken.Gather
+    return contribute and contribute.NameWords and contribute.ReplaceWord and contribute.Parse
+        and (not gather or (gather.Lines and gather.Get and gather.Replace and gather.Remove and gather.IsTidied))
+        and true or false
+end
+
 local function GUIDType()
     local guid = Utils:GetNPCGUID()
     if not guid then
@@ -327,6 +336,9 @@ end
 
 --- The envelope for what is on screen, or nil when there is nothing to send.
 function Contribute:Capture()
+    if not CoreIsCurrent() then
+        return nil
+    end
     local event, text = EventOnScreen()
     local fields = BaseFields()
 
@@ -389,6 +401,9 @@ end
 ---                        the log, or nil for the window on screen
 ---@return string|nil envelope
 function Contribute:ReportContext(clip)
+    if not CoreIsCurrent() then
+        return nil
+    end
     if clip and clip.fromLog then
         return self:CaptureFromLog(clip.questID, clip.title)
     end
@@ -512,6 +527,11 @@ local function TextOf(envelope)
     return (select(3, Spoken.Contribute:Parse(envelope)))
 end
 
+-- Line endings as Envelope writes them, which is how Parse reads a text back.
+local function Unix(text)
+    return text and (string.gsub(string.gsub(text, "\r\n", "\n"), "\r", "\n"))
+end
+
 -- Quest moment -> the words last kept for it with a speaker this session: the window's closing
 -- copy of the same words has no speaker, and is not kept.
 local keptWith = {}
@@ -538,7 +558,7 @@ local function GatherLine(known)
         keptWith[stem] = said
         -- The copy kept before it, without its speaker, saying the same.
         local twin = Spoken.Gather:Get(stem)
-        if twin and TextOf(twin) == said then
+        if twin and Unix(TextOf(twin)) == Unix(said) then
             Spoken.Gather:Remove(stem)
         end
     end
@@ -564,10 +584,11 @@ end
 --- the same moment is kept with one, saying the same words, and take a sharing player's name and
 --- look out of the rest. Lines are rewritten as they were, less those fields; a speakerless line
 --- saying anything else stays. The name of this character is left where it is: the file is the
---- account's, and a line another character kept is not this one's to read.
+--- account's, and a line another character kept is not this one's to read. Once: only lines kept
+--- by earlier versions need it, and the file says it was done.
 function Contribute:TidyGathered()
     local gather = _G.Spoken and Spoken.Gather
-    if not (gather and gather.Lines and Spoken.Contribute and Spoken.Contribute.Parse) then
+    if not (gather and CoreIsCurrent()) or gather:IsTidied() then
         return
     end
     local lines = gather:Lines()
@@ -600,6 +621,7 @@ function Contribute:TidyGathered()
             end
         end
     end
+    gather:SetTidied()
 end
 
 if CreateFrame then
@@ -632,7 +654,7 @@ end)
 --- for seconds, which is ample for the load NPCModel:Prime started to finish before a click
 --- ever reads it back.
 function Contribute:HasGap()
-    if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution) then
+    if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution and CoreIsCurrent()) then
         return false
     end
     -- Hidden in the Spoken settings: no gap to show, and so no model to prime for one. The
@@ -720,7 +742,7 @@ end
 --- contribution sent from the quest giver's own dialog. `from=log` says which of the two this
 --- was.
 function Contribute:CaptureFromLog(questID, title)
-    local text = questID and self:QuestLogDescription(questID)
+    local text = CoreIsCurrent() and questID and self:QuestLogDescription(questID)
     if not text or text == "" then
         return nil
     end
@@ -738,7 +760,7 @@ end
 --- sound, and offering to contribute all of them would say the corpus is missing what is in
 --- fact simply not installed.
 function Contribute:CanOfferFromLog()
-    if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution) then
+    if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution and CoreIsCurrent()) then
         return false
     end
     if Spoken.AreContributeButtonsHidden and Spoken:AreContributeButtonsHidden() then

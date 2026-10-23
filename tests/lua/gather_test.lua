@@ -208,12 +208,45 @@ do
     Spoken.Contribute.Parse = parse
     Expect("a quest line is kept beside them", _G.SpokenContributionsDB.Lines[401].key, "q:9127:accept:12345")
     Expect("...once, the window closing not keeping it again", Gather:Count(), 401)
-    Expect("...with no kept line read to do it", reads <= 2, true)
+    Expect("...with no kept line read to do it", reads, 0)
     world.npcGUID, world.npcName, world.questID = "Creature-0-0-0-0-12345-0", "Deathguard Linnea", 9123
+end
+
+-- A speakerless copy saying something else stays when its speaker's copy comes in: it is the only
+-- record of those words.
+do
+    Gather:Clear()
+    _G.SpokenContributionsDB.Lines = {
+        { key = "q:9128:accept:", envelope = Spoken.Contribute:Envelope("quests", { { "quest", "9128" } }, "Other words entirely.") },
+    }
+    world.questID = 9128
+    stub.FireEvent("QUEST_DETAIL")
+    Expect("a speakerless copy saying something else stays beside its speaker's", Keys(), "q:9128:accept: q:9128:accept:12345")
+end
+
+-- The window's closing copy and the speaker's say the same words whatever line endings the client
+-- wrote them with.
+do
+    Gather:Clear()
+    world.questID = 9129
+    world.questText = "Kill six of them.\r\nThen come back."
+    world.npcGUID, world.npcName = nil, nil
+    stub.FireEvent("QUEST_DETAIL")
+    Expect("a quest line with no speaker is kept", Keys(), "q:9129:accept:")
+    world.npcGUID, world.npcName = "Creature-0-0-0-0-12345-0", "Deathguard Linnea"
+    stub.FireEvent("QUEST_DETAIL")
+    Expect("...and its speaker's copy takes its place when the words hold carriage returns", Keys(), "q:9129:accept:12345")
+    world.questID, world.questText = 9123, "Kill six of them.\nThen come back."
 end
 
 -- Copies kept before this was fixed go at login. A speakerless copy saying something else, or
 -- with no copy from a speaker beside it, stays: it is the only record of those words.
+-- Lines kept by earlier versions are tidied once, so a login that stands for the first one clears the
+-- file's mark first.
+local function Login()
+    _G.SpokenContributionsDB.Tidied = nil
+    stub.FireEvent("PLAYER_LOGIN")
+end
 local function Kept(text)
     return Spoken.Contribute:Envelope("quests", { { "quest", "3117" } }, text)
 end
@@ -224,9 +257,22 @@ _G.SpokenContributionsDB.Lines = {
     { key = "q:3118:accept:", envelope = Kept("Other words.") },
     { key = "q:3118:accept:77", envelope = Kept("Different words.") },
 }
-stub.FireEvent("PLAYER_LOGIN")
+Login()
 Expect("login drops a speakerless copy of a line kept with its speaker, and nothing else", Keys(),
     "q:3117:progress:3596 q:3117:complete: q:3118:accept: q:3118:accept:77")
+Expect("...and the file says the lines were tidied", Gather:IsTidied(), true)
+do
+    local parse, reads = Spoken.Contribute.Parse, 0
+    Spoken.Contribute.Parse = function(...) reads = reads + 1; return parse(...) end
+    _G.SpokenContributionsDB.Lines = {
+        { key = "q:3117:progress:3596", envelope = Kept("You've arrived, $N.") },
+        { key = "q:3117:progress:", envelope = Kept("You've arrived, $N.") },
+    }
+    stub.FireEvent("PLAYER_LOGIN")
+    Spoken.Contribute.Parse = parse
+    Expect("a later login reads no kept line", reads, 0)
+    Expect("...and tidies none", Gather:Count(), 2)
+end
 
 -- This character's name in lines kept earlier is left where it is: the file is the account's, a
 -- line another character kept may hold the same word as a name of its own ("The Light keeps
@@ -243,7 +289,7 @@ local kept = {
 }
 _G.SpokenContributionsDB.Lines = {}
 for i, line in ipairs(kept) do _G.SpokenContributionsDB.Lines[i] = { key = line.key, envelope = line.envelope } end
-stub.FireEvent("PLAYER_LOGIN")
+Login()
 local unchanged = Gather:Count() == #kept
 for i, line in ipairs(kept) do
     local now = _G.SpokenContributionsDB.Lines[i]
@@ -254,7 +300,7 @@ Expect("login leaves a kept line holding this character's name as it was, key an
 -- A line that does not read back (its checksum is wrong) is left as it is, whatever it holds.
 local damaged = Said("Take this."):gsub("npc=12345 Linnea", "npc=Sharingfriend")
 _G.SpokenContributionsDB.Lines = { { key = "q:3120:accept:", envelope = damaged } }
-stub.FireEvent("PLAYER_LOGIN")
+Login()
 Expect("login leaves an envelope that does not read back as it was", _G.SpokenContributionsDB.Lines[1].envelope, damaged)
 
 -- A quest another player shared was kept with their name as its npc, no id and no kind, and their
@@ -266,20 +312,22 @@ local function From(...)
     return Spoken.Contribute:Envelope("quests", fields, "Take this.")
 end
 _G.SpokenContributionsDB.Lines = {
-    { key = "q:3119:accept:", envelope = From({ "npc", "Sharingfriend" }, { "model", "777" }, { "sex", "3" },
-        { "creature", "Humanoid" }, { "title", "A Task" }) },
+    { key = "q:3119:accept:", envelope = From({ "npc", "Sharingfriend" }, { "model", "777" }, { "displays", "1,2" },
+        { "sex", "3" }, { "creature", "Humanoid" }, { "title", "A Task" }) },
     { key = "q:3119:progress:", envelope = From({ "npc", "Deathguard Linnea" }, { "sex", "3" }) },
     { key = "q:3119:complete:", envelope = From({ "npc", "Hearthstone" }, { "kind", "item" }) },
     { key = "q:3119:turnin:4242", envelope = From({ "npc", "4242 Linnea" }, { "sex", "3" }) },
+    { key = "q:3119:abandon:", envelope = From({ "npc", "4242" }, { "model", "888" }) },
 }
-stub.FireEvent("PLAYER_LOGIN")
+Login()
 local lines = _G.SpokenContributionsDB.Lines
 Expect("login takes another player's name and look out of a quest they shared",
     lines[1].envelope, From({ "npc", "" }, { "title", "A Task" }))
 Expect("...and leaves an NPC's, named in two words,", lines[2].envelope, From({ "npc", "Deathguard Linnea" }, { "sex", "3" }))
 Expect("...an item's,", lines[3].envelope, From({ "npc", "Hearthstone" }, { "kind", "item" }))
 Expect("...and one with its id as it was", lines[4].envelope, From({ "npc", "4242 Linnea" }, { "sex", "3" }))
-Expect("...every line kept", Gather:Count(), 4)
+Expect("...and one with only its id", lines[5].envelope, From({ "npc", "4242" }, { "model", "888" }))
+Expect("...every line kept", Gather:Count(), 5)
 world.playerName = nil
 Gather:Clear()
 

@@ -18,6 +18,13 @@ local ADDON_NAME, SpokenReadables = ...
 -- A value the game hands over as a secret, in an instance or in combat, reads as nil.
 local NotSecret = Spoken and Spoken.NotSecret or function(value) return value end
 
+--- Whether the Spoken folder beside this addon has what Detemplate calls. An older one does not,
+--- and a player on it has no contribute button rather than an error.
+local function CoreIsCurrent()
+	local contribute = _G.Spoken and Spoken.Contribute
+	return contribute and contribute.NameWords and contribute.ReplaceWord and true or false
+end
+
 --- The fields every readables envelope starts with: which addon, which client, which language.
 local function BaseFields(self)
 	return
@@ -79,7 +86,7 @@ end
 
 --- The envelope for the page on screen, or nil when there is nothing to send.
 function SpokenReadables:CaptureContribution()
-	if self:IsMail() then
+	if not CoreIsCurrent() or self:IsMail() then
 		return nil
 	end
 
@@ -108,7 +115,7 @@ end
 --- `id`, the corpus page, not `page`: that field is a contribution's client checksum. The text
 --- is the open page's when it is the one reported, else the copy the reader kept of it.
 function SpokenReadables:ReportContext(pageId)
-	if type(pageId) ~= "number" or self:IsMail() or not (_G.Spoken and Spoken.Contribute) then
+	if type(pageId) ~= "number" or self:IsMail() or not CoreIsCurrent() then
 		return nil
 	end
 	local fields = BaseFields(self)
