@@ -89,9 +89,11 @@ def in_turn(lists):
 
 out = []
 for map_id, key, name in bosses:
-    chosen = None
+    # The creature boss-creatures-manual.json names is the one the card shows (write-boss-creatures.mjs puts it
+    # in `creature`), so its casts are the ones read, not those of a creature the database matches by name or hint.
+    chosen = manual.get((map_id, key))
     ids = [i for i in hints.get((map_id, key), {}).get("npcIds", []) if isinstance(i, int)]
-    if ids:
+    if ids and chosen is None:
         cursor.execute("SELECT MIN(entry) FROM creature_template WHERE entry IN (%s)" % ",".join(["%s"] * len(ids)), ids)
         row = cursor.fetchone()
         if row and row[0]:
@@ -119,9 +121,6 @@ for map_id, key, name in bosses:
             if len(rows) == 1:
                 chosen = rows[0][0]
     if chosen is None:
-        creature = manual.get((map_id, key))
-        if creature:
-            out.append({"map": map_id, "key": key, "creature": creature, "display": None, "spells": [], "live": sorted(live_casts.get(creature, ()))})
         continue
     members = [chosen] + hints.get((map_id, key), {}).get("members", [])
     spells = in_turn([casts(c) for c in members])

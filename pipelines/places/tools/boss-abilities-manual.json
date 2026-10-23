@@ -264,10 +264,7 @@
    24813,
    15847
   ],
-  "notes": "Emeriss (Classic) wowhead ids; Summon Player left out (TEMP icon), Putrid Mushroom 31690 not in the Forever table.",
-  "drop": [
-   24776
-  ]
+  "notes": "Emeriss (Classic) wowhead ids; Summon Player left out (TEMP icon), Putrid Mushroom 31690 not in the Forever table."
  },
  {
   "map": 2832,
@@ -280,10 +277,7 @@
    24813,
    15847
   ],
-  "notes": "Lethon (Classic) wowhead ids; Summon Player left out (TEMP icon).",
-  "drop": [
-   24776
-  ]
+  "notes": "Lethon (Classic) wowhead ids; Summon Player left out (TEMP icon)."
  },
  {
   "map": 2832,
@@ -296,10 +290,7 @@
    24813,
    15847
   ],
-  "notes": "Ysondre (Classic) wowhead ids; the retail Ysondre page (Rejuvenation 80304, Wrath 43619) is not Classic; spirit spells (Curse of Thorns, Silence) left out. Summon Player 24776 left out: the client draws it with the question-mark icon and no description.",
-  "drop": [
-   24776
-  ]
+  "notes": "Ysondre (Classic) wowhead ids; the retail Ysondre page (Rejuvenation 80304, Wrath 43619) is not Classic; spirit spells (Curse of Thorns, Silence) left out. Summon Player 24776 left out: the client draws it with the question-mark icon and no description."
  },
  {
   "map": 533,
@@ -341,36 +332,6 @@
   "notes": "Christmas Darkmaster Gandling 26200 is a Winter Veil costume the database casts on spawn.",
   "drop": [
    26200
-  ]
- },
- {
-  "map": 90,
-  "key": "grubbis",
-  "name": "Grubbis",
-  "spells": [],
-  "notes": "Dazed 1604 is the daze every creature gives from behind.",
-  "drop": [
-   1604
-  ]
- },
- {
-  "map": 329,
-  "key": "balnazzar",
-  "name": "Balnazzar",
-  "spells": [],
-  "notes": "Dazed 1604 is the daze every creature gives from behind.",
-  "drop": [
-   1604
-  ]
- },
- {
-  "map": 329,
-  "key": "black guard swordsmith",
-  "name": "Black Guard Swordsmith",
-  "spells": [],
-  "notes": "Dazed 1604 is the daze every creature gives from behind.",
-  "drop": [
-   1604
   ]
  },
  {
@@ -468,16 +429,6 @@
   ]
  },
  {
-  "map": 48,
-  "key": "gelihast",
-  "name": "Gelihast",
-  "spells": [],
-  "notes": "Battle Stance 7165 (Efficient Games) is a warrior's stance; the card describes the player's.",
-  "drop": [
-   7165
-  ]
- },
- {
   "map": 533,
   "key": "the four horsemen",
   "name": "The Four Horsemen",
@@ -518,16 +469,6 @@
    24318
   ],
   "notes": "Bloodlord Mandokir (Classic) wiki ids: Threatening Gaze, Guillotine, Whirlwind, Level Up, Mortal Strike, Intimidating Shout, Execute, Enrage; Charge and Overpower left out for the limit, Ohgan's and the Chained Spirits' spells are theirs."
- },
- {
-  "map": 2832,
-  "key": "taerar",
-  "name": "Taerar",
-  "spells": [],
-  "notes": "Summon Player 24776 left out: the client draws it with the question-mark icon and no description.",
-  "drop": [
-   24776
-  ]
  },
  {
   "map": 429,

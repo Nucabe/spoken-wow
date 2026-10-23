@@ -19,7 +19,7 @@ SpokenBossCreatures = {
 	},
 	[34] = {
 		["bazil thredd"] = { creature = 1716, display = 1621, spells = { 9128, 7964 } },
-		["dextren ward"] = { creature = 1663, display = 2149, spells = { 7165, 19134, 11976 } },
+		["dextren ward"] = { creature = 1663, display = 2149, spells = { 19134, 11976 } },
 		["hamhock"] = { creature = 1717, display = 3250, spells = { 6742, 421 } },
 		["kam deepfury"] = { creature = 1666, display = 825, spells = { 7164, 8242, 871 } },
 		["targorr the dread"] = { creature = 1696, display = 517, spells = { 3391, 8599 } },
@@ -49,7 +49,7 @@ SpokenBossCreatures = {
 		["aggem thorncurse"] = { creature = 4424, display = 6097, spells = { 6192, 14900, 8286 } },
 		["charlga razorflank"] = { creature = 4421, display = 4642, spells = { 8292, 8358, 8361, 6077 } },
 		["death speaker jargba"] = { creature = 4428, display = 4644, spells = { 14515, 9613 } },
-		["overlord ramtusk"] = { creature = 4420, display = 4652, spells = { 9128, 15548, 7165 } },
+		["overlord ramtusk"] = { creature = 4420, display = 4652, spells = { 9128, 15548 } },
 		["roogug"] = { creature = 6168, display = 6110, spells = { 9532, 8270 } },
 	},
 	[48] = {
