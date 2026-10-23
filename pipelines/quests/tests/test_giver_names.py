@@ -4,8 +4,10 @@ import os
 import re
 
 from test_gossip_text import ADDON, FOREVER, toc
-from tts_cli.giver_names import (forever_toc_mismatch, givers, localized_names, lua_string,
-                                 render, write_giver_names, write_names_xml)
+import pytest
+
+from tts_cli.giver_names import (check_forever_toc, forever_toc_mismatch, givers, localized_names,
+                                 lua_string, render, write_giver_names, write_names_xml)
 
 
 def line(source, kind, npc_id, name, quest_id=1):
@@ -92,6 +94,30 @@ def test_the_export_names_the_forever_toc_lines_a_language_change_needs(tmp_path
     assert forever_toc_mismatch(str(toc_path), ["deDE", "koKR"]) == (
         ["Locale\\Names\\koKR.lua [AllowLoadTextLocale koKR]"],
         ["Locale\\Names\\ruRU.lua [AllowLoadTextLocale ruRU]"])
+
+
+def _addon_names(tmp_path, toc_text):
+    names = tmp_path / "Spoken_Quests" / "Locale" / "Names"
+    names.mkdir(parents=True)
+    if toc_text is not None:
+        (tmp_path / "Spoken_Quests" / "Spoken_Quests.toc").write_text(toc_text, encoding="utf-8")
+    return str(names)
+
+
+def test_the_export_stops_when_the_forever_toc_does_not_list_the_files_it_wrote(tmp_path):
+    names = _addon_names(tmp_path, "Locale\\Names\\deDE.lua [AllowLoadTextLocale deDE]\n")
+
+    assert check_forever_toc(names, ["deDE"]) is True
+    with pytest.raises(SystemExit) as stopped:
+        check_forever_toc(names, ["deDE", "koKR"])
+    assert "add:    Locale\\Names\\koKR.lua [AllowLoadTextLocale koKR]" in str(stopped.value)
+    with pytest.raises(SystemExit) as stopped:
+        check_forever_toc(names, [])
+    assert "remove: Locale\\Names\\deDE.lua [AllowLoadTextLocale deDE]" in str(stopped.value)
+
+
+def test_the_export_says_so_when_there_is_no_toc_to_check(tmp_path):
+    assert check_forever_toc(_addon_names(tmp_path, None), ["deDE"]) is False
 
 
 def test_forever_loads_only_its_own_names_file_and_the_other_clients_load_every_one():

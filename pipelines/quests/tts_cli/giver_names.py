@@ -136,3 +136,18 @@ def forever_toc_mismatch(toc_path: str, langs: list) -> tuple:
         have = {line.strip() for line in f if line.strip().startswith("Locale\\Names\\")}
     want = {f"Locale\\Names\\{lang}.lua [AllowLoadTextLocale {lang}]" for lang in langs}
     return sorted(want - have), sorted(have - want)
+
+
+def check_forever_toc(out_dir: str, langs: list) -> bool:
+    """Stops with the lines to add or remove when the addon's Spoken_Quests.toc, which sits
+    two folders above `out_dir` (Locale/Names), does not match `langs`. False when there is no
+    .toc there, so the caller can say the lines were not checked."""
+    toc_path = os.path.normpath(os.path.join(out_dir, "..", "..", "Spoken_Quests.toc"))
+    if not os.path.exists(toc_path):
+        return False
+    missing, extra = forever_toc_mismatch(toc_path, langs)
+    if missing or extra:
+        raise SystemExit(f"{toc_path} does not match the names files written."
+                         + "".join(f"\n  add:    {line}" for line in missing)
+                         + "".join(f"\n  remove: {line}" for line in extra))
+    return True
