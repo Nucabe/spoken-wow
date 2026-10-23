@@ -103,6 +103,14 @@ ExpectOf("a long line's name is cut to the room left, past the speaker's name in
         .. " " .. tostring(title.width < #("• " .. long) * 7 + 1) .. " " .. tostring(title.anchor.x == name.width + 6)
 end, "true 1 true true")
 local room = name.width + 6 + title.width
+ExpectOf("...and pointing at it shows the whole of it", function()
+    local hover = F.frame.container.labelHover
+    hover:GetScript("OnEnter")(hover)
+    return tostring(hover:IsShown()) .. " " .. _G.GameTooltip.text
+end, "true " .. long)
+env.SoundQueue:RemoveAllSoundsFromQueue()
+Row("Gryan Stoutmantle", "Wolves Across the Border")
+ExpectOf("...which a line's name in full does not need", function() return F.frame.container.labelHover:IsShown() end, false)
 env.SoundQueue:RemoveAllSoundsFromQueue()
 name, title = Row(string.rep("W", math.floor((room - 27) / 7)), long)
 ExpectOf("...not drawn at all where only a fragment of it would fit", function()

@@ -155,6 +155,12 @@ function PlayerFrame:InitHeader()
     container.label:SetWordWrap(false)
     container.label:SetTextColor(LABEL_COLOR[1], LABEL_COLOR[2], LABEL_COLOR[3])
     container.label:Hide()
+    -- The whole of a line's name cut short.
+    container.labelHover = Actions.Hover(container.label, function(owner)
+        GameTooltip:SetOwner(owner, "ANCHOR_TOP")
+        GameTooltip:SetText(Label(self.shown))
+        GameTooltip:Show()
+    end)
     local function TailText()
         local text = container:CreateFontString(nil, "ARTWORK", "SpokenLabelFont")
         text:SetWordWrap(false)
@@ -362,6 +368,7 @@ function PlayerFrame:LayoutHeader()
     name:SetWidth(nameWidth)
     local x = nameWidth
     local labelRoom = room - tailRoom - nameWidth - LABEL_GAP
+    local cut = false
     if label:IsShown() and labelRoom >= math.min(self.labelWidth or 0, self.labelLeast or 0) then
         local labelWidth = math.min(self.labelWidth or 0, labelRoom)
         label:SetWidth(labelWidth)
@@ -369,9 +376,11 @@ function PlayerFrame:LayoutHeader()
         label:SetPoint("LEFT", name, "LEFT", nameWidth + LABEL_GAP, 0)
         label:SetAlpha(1)
         x = nameWidth + LABEL_GAP + labelWidth
+        cut = labelWidth < (self.labelWidth or 0)
     else
         label:SetAlpha(0)
     end
+    container.labelHover:SetShown(cut)
     if tailRoom > 0 then
         tail:Place(name, x)
         tail:Paint()

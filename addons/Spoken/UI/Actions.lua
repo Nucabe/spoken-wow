@@ -280,8 +280,13 @@ function Actions.WaitingTip(owner)
 end
 
 --- A frame over `text`, the "+N" count, that lists the waiting lines while the pointer is on it.
---- It only listens: a click goes through to the window under it, which it drags as before.
 function Actions.WaitingHover(text)
+    return Actions.Hover(text, Actions.WaitingTip)
+end
+
+--- A frame over `text` that shows `tip(hover)` while the pointer is on it, hidden until shown.
+--- It only listens: a click goes through to the window under it, which it drags as before.
+function Actions.Hover(text, tip)
     local hover = CreateFrame("Frame", nil, text:GetParent())
     hover:SetAllPoints(text)
     if hover.SetMouseClickEnabled and hover.SetMouseMotionEnabled then
@@ -290,7 +295,7 @@ function Actions.WaitingHover(text)
     else
         hover:EnableMouse(true)
     end
-    hover:SetScript("OnEnter", function() Actions.WaitingTip(hover) end)
+    hover:SetScript("OnEnter", function() tip(hover) end)
     hover:SetScript("OnLeave", function() HideTipFor(hover) end)
     hover:SetScript("OnHide", function() HideTipFor(hover) end)
     hover:Hide()
