@@ -843,6 +843,7 @@ local function Build()
             -- The feature addons' DialogueUI rows are kept in their own settings too.
             DialogueUIOptions:Reset()
             Addon.db:ResetProfile()
+            Addon.db.global.NewCharacterProfile = nil
             -- Unset, the Compendium's Text Size is the one the Places page had: set, it is back
             -- to its default.
             Addon.db.profile.CompendiumFontSize = 12
