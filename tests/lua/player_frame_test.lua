@@ -70,6 +70,11 @@ ExpectOf("...and the Small Window's title and speaker read the same", function()
     return env.Actions.Label(clip) .. "|" .. env.Actions.Speaker(clip)
 end, "Thrall|")
 env.SoundQueue:RemoveAllSoundsFromQueue()
+ExpectOf("a line with neither a header nor a label has no title, its key never shown", function()
+    local key = "q:123:accept:456"
+    return env.Actions.Label({ key = key, present = {} }) .. "|" .. env.Actions.Label({ key = key }) .. "|"
+        .. env.Actions.Speaker({ key = key, present = {} })
+end, "||")
 -- A place's story: the zone, then the subzone whose story it is (#543).
 places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Westfall", label = "Moonbrook", bullet = "zone",
     portrait = { kind = "none" } } }))
@@ -121,6 +126,23 @@ name, title = Row(string.rep("W", 200), long)
 ExpectOf("...nor where the speaker's name takes the whole row, which is cut to it", function()
     return tostring(title:GetAlpha()) .. " " .. tostring(name.width == room)
 end, "0 true")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- A short line's name is drawn where it fits whole, though less room is left than the least a cut one
+-- takes ("• ...").
+name, title = Row(string.rep("W", math.floor((room - 6 - 1 - 40) / 7)), "A")
+ExpectOf("a line's name shorter than the least that is cut is drawn whole in the room it fits", function()
+    return tostring(title:GetAlpha()) .. " " .. tostring(title.width == #"• A" * 7 + 1)
+end, "1 true")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- The count of lines waiting takes its room from the line's name, which is cut to what is left.
+env, quests, places = Boot(); F = env.PlayerFrame
+places:AddGate(function() return "in combat" end)
+places:Enqueue(H.Clip({ present = { header = "Durotar", label = "Valley of Trials", bullet = "zone", portrait = { kind = "none" } } }))
+name, title = Row("Gryan Stoutmantle", long)
+ExpectOf("with a line waiting, the line's name is cut short of the count, which stands on the row", function()
+    local tail = F.tail:Room()
+    return tostring(tail > 0) .. " " .. tostring(name.width + 6 + title.width + tail == room)
+end, "true true")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 env.Addon:SetPlayerStyle("none")
