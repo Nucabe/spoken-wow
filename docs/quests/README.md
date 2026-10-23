@@ -1787,13 +1787,18 @@ client — walking the pooled rows and hooking `QuestLogQuests_Update`, which is
 `QuestLog_Update`. The blank prefix the old log's buttons indent a title with is not available
 there: that title wraps into a height the layout has already decided, and a prefix re-wraps it
 inside a row too short to hold the extra line. So the button is anchored instead — left of the
-title, in the inset the row leaves at its left, and beside the tracking checkbox at the other
-end of the row when "Quest objectives" is on and the client is drawing its own icon in that
-inset. There it goes left of whatever the row draws before the checkbox: Forever writes an
-elite, dungeon, PvP or raid quest's type in words (`TagText`, "(Elite)"), which the button
-must not cover. The objective icons are how that is detected: they are pooled beside the rows rather
-than parented to them, so the row's own icon is the 20-pixel button carrying the row's quest ID
-that is not the play button.
+title, in the inset the row leaves at its left, and at the other end of the row when "Quest
+objectives" is on and the client is drawing its own icon in that inset. The objective icons are
+how that is detected: they are pooled beside the rows rather than parented to them, so the row's
+own icon is the 20-pixel button carrying the row's quest ID that is not the play button.
+
+At that end the client ends the title against the quest's type in words (`TagText`, "(Elite)"
+on Forever) or else against the storyline icon, whose left edge is the left of the row's icons,
+and only then measures the title's height. A hook on the title's `SetPoint` moves that end left
+by the button's width as the client sets it, when the client will draw the icon (the `questPOI`
+setting, which `POIButtonOwnerMixin:GetButtonForQuest` asks). The title then wraps and is
+measured with that room taken, and the button sits in it, covering neither the title nor the
+type.
 
 A quest-log play button has no NPC to ask who is speaking. The dialog names its speaker with
 `UnitName("questnpc")` in the client's own language; the log looks the giver up in the pack

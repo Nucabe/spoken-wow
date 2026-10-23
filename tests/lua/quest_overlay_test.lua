@@ -100,31 +100,62 @@ local anchor = buttons[748] and buttons[748].anchor
 Expect("the button sits on its own row", anchor and anchor.relativeTo == row, true)
 Expect("...left of the title", anchor and anchor.point, "TOPLEFT")
 
--- "Quest objectives" puts an icon of the client's own in exactly that spot, so the button
--- moves to the other end of the row, beside the tracking checkbox.
+-- The title runs to where the client ends it, 4 pixels short of the checkbox's corner.
+local function TitleEnd(r)
+    local a = r.Text.anchor
+    return a and a.point == "RIGHT" and a.relativeTo, a and a.x
+end
+local titleEndsAt, titleOffset = TitleEnd(row)
+Expect("with the button beside the title, the title keeps its own end",
+    titleEndsAt == row.StorylineTexture and titleOffset, -4)
+
+-- The objective icon takes exactly that spot, so the button moves to the other end of the row,
+-- where the title ends, and the title is made to end short of it before the client measures it.
 stub.SetQuestLogPOIIcons(true)
 QuestLogQuests_Update()
 anchor = buttons[748].anchor
-Expect("the objective icon takes the left of the row", anchor and anchor.relativeTo == row.Checkbox, true)
-Expect("...and the play button moves beside the checkbox", anchor and anchor.point, "RIGHT")
-Expect("...against its left edge", anchor and anchor.relativePoint, "LEFT")
--- An elite, dungeon or raid quest says so in words between the title and the checkbox, and the
--- button stays left of them, so "(Elite)" can still be read.
+Expect("the objective icon takes the left of the row, and the button goes where the title ends",
+    anchor and anchor.relativeTo == row.StorylineTexture, true)
+Expect("...against its left edge", anchor and anchor.point .. " " .. anchor.relativePoint, "RIGHT LEFT")
+titleEndsAt, titleOffset = TitleEnd(row)
+Expect("...and the title ends the button's width and a gap further left",
+    titleEndsAt == row.StorylineTexture and titleOffset, -27)
+-- An elite, dungeon or raid quest says so in words, and the title ends against those words:
+-- the button sits between them, covering neither the title nor "(Elite)".
 local eliteRow = stub.questLogRows[2]
 anchor = buttons[96130].anchor
 Expect("an elite quest's button sits left of its (Elite)", anchor and anchor.relativeTo == eliteRow.TagText, true)
 Expect("...against its left edge", anchor and anchor.point .. " " .. anchor.relativePoint, "RIGHT LEFT")
--- A row whose client draws no type in words keeps the button beside the checkbox.
-local tagText = eliteRow.TagText
-eliteRow.TagText = nil
+titleEndsAt, titleOffset = TitleEnd(eliteRow)
+Expect("...with the title ended short of the button", titleEndsAt == eliteRow.TagText and titleOffset, -27)
+-- A storyline quest has its icon between the type text and the checkbox: still the words.
+eliteRow.quest.storyline = true
 QuestLogQuests_Update()
-Expect("a row with no type text keeps it beside the checkbox",
-    buttons[96130].anchor and buttons[96130].anchor.relativeTo == eliteRow.Checkbox, true)
-eliteRow.TagText = tagText
+Expect("an elite storyline quest's button stays left of (Elite)",
+    buttons[96130].anchor.relativeTo == eliteRow.TagText, true)
+-- With no words, the title ends at the storyline icon, which the client puts left of the others.
+eliteRow.quest.tag = nil
+eliteRow.quest.typeIcon = true
+QuestLogQuests_Update()
+Expect("a storyline quest with a type icon has its button left of the storyline icon",
+    buttons[96130].anchor.relativeTo == eliteRow.StorylineTexture, true)
+Expect("...which the client puts left of the type icon",
+    eliteRow.StorylineTexture.anchor.relativeTo == eliteRow.TagTexture, true)
+eliteRow.quest.storyline = nil
+QuestLogQuests_Update()
+Expect("a type icon alone: the button is left of the hidden storyline icon's place",
+    buttons[96130].anchor.relativeTo == eliteRow.StorylineTexture, true)
+Expect("...which the client puts at the type icon's left edge",
+    eliteRow.StorylineTexture.anchor.point .. " " .. tostring(eliteRow.StorylineTexture.anchor.relativeTo == eliteRow.TagTexture),
+    "LEFT true")
+eliteRow.quest.typeIcon = nil
+eliteRow.quest.tag = "(Elite)"
 
 stub.SetQuestLogPOIIcons(false)
 QuestLogQuests_Update()
 Expect("with the icons off it is back beside the title", buttons[748].anchor.relativeTo == row, true)
+titleEndsAt, titleOffset = TitleEnd(row)
+Expect("...and the title has its own end back", titleEndsAt == row.StorylineTexture and titleOffset, -4)
 
 Expect("two rows drawn, two buttons displayed", table.getn(VO.QuestOverlayUI.displayedButtons), 2)
 Expect("...once, however often the log is redrawn", stub.SetCreatureCount() - setCreatures, 1)

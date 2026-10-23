@@ -419,6 +419,7 @@ function _G.UnitCreatureType() return world.creatureType end
 -- unasked would go to chat instead.
 local CVAR_DEFAULTS = { InputDeviceInterfaceStyle = "0" }
 function _G.GetCVar(key) return world.cvars[key] or CVAR_DEFAULTS[key] or "1" end
+function _G.GetCVarBool(key) return _G.GetCVar(key) == "1" end
 function _G.SetCVar(key, value)
     world.cvars[key] = tostring(value)
     table.insert(world.cvarLog, { key, tostring(value) })
@@ -1258,14 +1259,24 @@ end
 
 --- The quest log of a client that draws the modern map-attached one: no QuestLogFrame, no
 --- QuestLog_Update and no GetQuestLogTitle, rows out of an unnamed frame pool, and one
---- global function that redraws the list. `quests` is a list of { questID, title, level, tag }.
+--- global function that redraws the list. `quests` is a list of { questID, title, level, tag,
+--- storyline, typeIcon }: `tag` is the type in words ("(Elite)"), the other two the icons.
 function M.SetModernQuestLog(quests)
     local scroll = _G.CreateFrame("ScrollFrame", "QuestScrollFrame")
     scroll.Contents = _G.CreateFrame("Frame", nil, scroll)
 
-    local active = {}
+    -- Every row the pool has made, and the ones a redraw has handed out, in order.
+    local rows, active = {}, {}
     scroll.titleFramePool = {
         active = active,
+        Acquire = function(self)
+            local row = rows[getn(self.active) + 1]
+            table.insert(self.active, row)
+            return row
+        end,
+        ReleaseAll = function(self)
+            for index = getn(self.active), 1, -1 do self.active[index] = nil end
+        end,
         EnumerateActive = function(self)
             local index = 0
             return function()
@@ -1279,24 +1290,18 @@ function M.SetModernQuestLog(quests)
     local descriptions = {}
     for _, quest in ipairs(quests) do
         local row = _G.CreateFrame("Button", nil, scroll.Contents)
+        row.quest = quest
         row.questID = quest.questID
         row.Text = row:CreateFontString()
-        -- The row's own text carries the level prefix the quest log draws with it.
-        row.Text:SetText(format("[%d] %s", quest.level or 1, quest.title))
         row.Checkbox = _G.CreateFrame("Frame", nil, row)
-        -- Left of the checkbox: the quest's type in words, shown on Forever for an elite,
-        -- dungeon, PvP or raid quest (`tag`), and the storyline and type icons, hidden there.
         row.TagText = row:CreateFontString()
-        row.TagText:SetText(quest.tag)
-        row.TagText:SetShown(quest.tag ~= nil)
         row.StorylineTexture = row:CreateTexture()
-        row.StorylineTexture:Hide()
         row.TagTexture = row:CreateTexture()
-        row.TagTexture:Hide()
-        table.insert(active, row)
+        table.insert(rows, row)
         titles[quest.questID] = quest.title
-        descriptions[getn(active)] = quest.description
+        descriptions[getn(rows)] = quest.description
     end
+    world.cvars.questPOI = "0"
 
     -- The details view the list opens a quest into, and the one function that opens it.
     local map = _G.CreateFrame("Frame", "QuestMapFrame")
@@ -1312,10 +1317,10 @@ function M.SetModernQuestLog(quests)
 
     _G.C_QuestLog = {
         GetTitleForQuestID = function(questID) return titles[questID] end,
-        GetNumQuestLogEntries = function() return getn(active) end,
+        GetNumQuestLogEntries = function() return getn(rows) end,
         GetLogIndexForQuestID = function(questID)
-            for index, row in ipairs(active) do
-                if row.questID == questID then return index end
+            for index, row in ipairs(rows) do
+                if row.quest.questID == questID then return index end
             end
         end,
     }
@@ -1323,10 +1328,41 @@ function M.SetModernQuestLog(quests)
     _G.GetQuestLogQuestText = function(index)
         return descriptions[index], ""
     end
-    -- What the client redraws the list through, and what the overlay hooks.
-    _G.QuestLogQuests_Update = function() end
+    -- What the client redraws the list through, and what the overlay hooks. Each row is laid out
+    -- as Forever's QuestLogQuests_AddQuestButton does: handed out with its quest, the title
+    -- ended against the type in words or else the storyline icon, which is placed left of the
+    -- type icon or at the checkbox, and hidden at the left of the icons when the quest has none.
+    _G.QuestLogQuests_Update = function()
+        scroll.titleFramePool:ReleaseAll()
+        for _ = 1, getn(rows) do
+            local row = scroll.titleFramePool:Acquire()
+            local quest = row.quest
+            row.questID = quest.questID
+            -- The row's own text carries the level prefix the quest log draws with it.
+            row.Text:SetText(format("[%d] %s", quest.level or 1, quest.title))
+            row.TagText:SetShown(quest.tag ~= nil)
+            if quest.tag then
+                row.TagText:SetText(quest.tag)
+                row.Text:SetPoint("RIGHT", row.TagText, "LEFT", -4, 0)
+            else
+                row.Text:SetPoint("RIGHT", row.StorylineTexture, "LEFT", -4, 0)
+            end
+            row.TagTexture:SetShown(quest.typeIcon and true or false)
+            row.StorylineTexture:SetShown(quest.storyline and true or false)
+            row.StorylineTexture:ClearAllPoints()
+            if quest.storyline and quest.typeIcon then
+                row.StorylineTexture:SetPoint("RIGHT", row.TagTexture, "LEFT", -2, 0)
+            elseif quest.storyline then
+                row.StorylineTexture:SetPoint("RIGHT", row.Checkbox, "LEFT", -4, 0)
+            elseif quest.typeIcon then
+                row.StorylineTexture:SetPoint("LEFT", row.TagTexture, "LEFT", 0, 0)
+            else
+                row.StorylineTexture:SetPoint("LEFT", row.Checkbox, "LEFT", 0, 0)
+            end
+        end
+    end
 
-    M.questLogRows = active
+    M.questLogRows = rows
     M.questLogPOIButtons = {}
     return scroll
 end
@@ -1338,6 +1374,8 @@ function M.SetQuestLogPOIIcons(shown)
         poiButton:Hide()
     end
     M.questLogPOIButtons = {}
+    -- The setting the client asks before it hands a row its icon.
+    world.cvars.questPOI = shown and "1" or "0"
     if not shown then
         return
     end

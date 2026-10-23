@@ -123,35 +123,63 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
         end
     end
 
-    --- What the row draws left of its tracking checkbox: the quest's type as words ("(Elite)",
-    --- "(Dungeon)", on Forever), the storyline icon and the type icon, in that order from the
-    --- left. The leftmost one shown, or the checkbox when there is none.
-    local function RightEndOf(row)
-        for _, key in ipairs({ "TagText", "StorylineTexture", "TagTexture" }) do
-            local region = row[key]
-            if type(region) == "table" and region.IsShown and region:IsShown() then
-                return region
-            end
-        end
-        return row.Checkbox
+    -- The client anchors a row's title to what the title ends against, the quest's type in
+    -- words ("(Elite)") or else the storyline icon, whose left edge is the left of the row's
+    -- icons, and only then measures the title's height. Moving that end left as it is set,
+    -- when the button will sit there, makes the client wrap and measure the title with the
+    -- button's room already taken, so the button covers neither the title nor the type.
+    local TITLE_ROOM = POI_BUTTON_SIZE + 3
+    local titleEnd = setmetatable({}, { __mode = "k" })
+    local reserved = setmetatable({}, { __mode = "k" })
+    local hookedTitles = setmetatable({}, { __mode = "k" })
+    local reserving
+
+    --- Whether the client gives this row its objective icon, by POIButtonOwnerMixin's own rule.
+    local function GetsObjectiveIcon(row)
+        return GetCVarBool and GetCVarBool("questPOI") and
+            not (C_QuestLog.IsQuestCalling and C_QuestLog.IsQuestCalling(row.questID))
     end
 
-    -- Left of the title, in the inset the row leaves at its left - unless "Quest objectives"
-    -- is on, when that inset is the client's own icon and the button goes to the other end of
-    -- the row instead, left of the quest's type and the tracking checkbox. Not the blank prefix
-    -- the old quest log's buttons indent a title with, either: this title wraps into a height
-    -- the layout has already decided, and a prefix re-wraps it inside a row too short to hold
-    -- the extra line.
+    local function OnTitleAnchored(text, point, relativeTo, relativePoint, x, y)
+        if reserving or point ~= "RIGHT" or type(relativeTo) ~= "table" then return end
+        local row = text:GetParent()
+        titleEnd[row] = relativeTo
+        reserved[row] = Addon:IsPartOn() and GetsObjectiveIcon(row) and true or nil
+        if reserved[row] then
+            reserving = true
+            text:SetPoint("RIGHT", relativeTo, relativePoint, (x or 0) - TITLE_ROOM, y or 0)
+            reserving = false
+        end
+    end
+
+    local function HookTitles(pool)
+        for row in pool:EnumerateActive() do
+            if row.Text and not hookedTitles[row] then
+                hookedTitles[row] = true
+                hooksecurefunc(row.Text, "SetPoint", OnTitleAnchored)
+            end
+        end
+    end
+    HookTitles(QuestScrollFrame.titleFramePool)
+    -- A row is handed out before its title is anchored, so a new one is hooked in time.
+    hooksecurefunc(QuestScrollFrame.titleFramePool, "Acquire", HookTitles)
+
+    -- Left of the title, in the inset the row leaves at its left - unless the client draws its
+    -- objective icon in that inset, when the button goes to the other end of the row, where
+    -- the title was made to end short of it. Not the blank prefix the old quest log's buttons
+    -- indent a title with, either: this title wraps into a height the layout has already
+    -- decided, and a prefix re-wraps it inside a row too short to hold the extra line.
     function QuestOverlayUI:UpdateQuestTitle(questLogTitleFrame, playButton)
         playButton:ClearAllPoints()
         if playButton.MatchBox and questLogTitleFrame.Checkbox then
             local ok, err = pcall(playButton.MatchBox, playButton, questLogTitleFrame.Checkbox)
             if not ok then Say(err) end
         end
-        local poiButton = QuestPOIButton(questLogTitleFrame)
-        if poiButton and questLogTitleFrame.Checkbox then
-            playButton:SetPoint("RIGHT", RightEndOf(questLogTitleFrame), "LEFT", -3, 0)
-        elseif poiButton then
+        local atRightEnd = reserved[questLogTitleFrame] or QuestPOIButton(questLogTitleFrame)
+        local ends = titleEnd[questLogTitleFrame] or questLogTitleFrame.Checkbox
+        if atRightEnd and ends then
+            playButton:SetPoint("RIGHT", ends, "LEFT", -3, 0)
+        elseif atRightEnd then
             playButton:SetPoint("TOPRIGHT", questLogTitleFrame, "TOPRIGHT", -4, -2)
         else
             playButton:SetPoint("TOPLEFT", questLogTitleFrame, "TOPLEFT", 6, -4)
