@@ -6,7 +6,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 - **The Large Window names the line as well as the speaker.** A subzone's story reads "Westfall •
   Moonbrook", a quest "Gornek • Cutting Teeth" and a book its title after "Book", as the other windows
-  show them. *([Nucabe](https://github.com/Nucabe))*
+  show them. Pointing at a name cut short shows the whole of it. *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
