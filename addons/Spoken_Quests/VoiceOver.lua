@@ -173,14 +173,31 @@ end
 local function MarkQuestSnapshotRead(event, questID)
     for i = #questSnapshots, 1, -1 do
         if questSnapshots[i].event == event then
-            for j = 1, i do
-                if j == i or questSnapshots[j].questID == questID then
+            questSnapshots[i].dispatched = true
+            for j = 1, i - 1 do
+                if questSnapshots[j].questID == questID then
                     questSnapshots[j].dispatched = true
                 end
             end
             return
         end
     end
+end
+
+--- An offer recorded after a progress or reward page of its quest: it carries the globals of the
+--- quest just handed in, not an offer of its own.
+local function IsStaleOffer(i)
+    local offer = questSnapshots[i]
+    if offer.event ~= "QUEST_DETAIL" then
+        return false
+    end
+    for j = 1, i - 1 do
+        local earlier = questSnapshots[j]
+        if earlier.questID == offer.questID and earlier.event ~= "QUEST_DETAIL" then
+            return true
+        end
+    end
+    return false
 end
 
 -- Where a quest handler's fields come from: the live globals, or the snapshot being replayed.
@@ -614,52 +631,49 @@ function Addon:OnInitialize()
     --- unread, the last is the one the player was left with. The others are passed over, and
     --- stay for their own accept or turn-in. An offer recorded after its quest's own pages
     --- carries the globals of the quest just handed in, so it is not read.
-    local function ReplayQuestSnapshots(source, questID, events)
+    local function ReplaySnapshot(snapshot, source)
         local state = self.autoQuestState
+        snapshot.dispatched = true
+        local key = PageKey(snapshot.event, snapshot.questID, snapshot.title)
+        if HandledRecently(state, key) then
+            return
+        end
+        MarkHandled(state, key)
+        Debug:Record("auto-watcher-snapshot", format("Reading %s quest %s from its event snapshot: %s",
+            snapshot.event, tostring(snapshot.questID), source))
+        self:InvokeQuestHandler(snapshot.event, "event snapshot", false, snapshot)
+    end
+
+    -- Index of the newest unread page of each event, refilled on every close-time replay.
+    local newest = {}
+
+    local function ReplayQuestSnapshots(source, questID, events)
         PruneQuestSnapshots()
         -- The watcher calls this ten times a second whenever no quest is open.
         if #questSnapshots == 0 then
             return
         end
-        local newest = {}
+        if questID then
+            for _, snapshot in ipairs(questSnapshots) do
+                if not snapshot.dispatched and events[snapshot.event] and snapshot.questID == questID then
+                    ReplaySnapshot(snapshot, source)
+                end
+            end
+            return
+        end
+        wipe(newest)
         for i, snapshot in ipairs(questSnapshots) do
             if not snapshot.dispatched and not snapshot.passed then
                 newest[snapshot.event] = i
             end
         end
         for i, snapshot in ipairs(questSnapshots) do
-            local wanted
-            if questID then
-                wanted = events[snapshot.event] and snapshot.questID == questID
-            else
-                wanted = not snapshot.passed
-            end
-            if wanted and not snapshot.dispatched then
-                if not questID and newest[snapshot.event] ~= i then
+            if not snapshot.dispatched and not snapshot.passed then
+                -- Passed over, not spent: its own QUEST_ACCEPTED or QUEST_TURNED_IN still reads it.
+                if newest[snapshot.event] ~= i or IsStaleOffer(i) then
                     snapshot.passed = true
                 else
-                    local stale = false
-                    if not questID and snapshot.event == "QUEST_DETAIL" then
-                        for j = 1, i - 1 do
-                            if questSnapshots[j].questID == snapshot.questID and questSnapshots[j].event ~= "QUEST_DETAIL" then
-                                stale = true
-                            end
-                        end
-                    end
-                    -- A stale offer is passed over, not spent: its own QUEST_ACCEPTED still reads it.
-                    if stale then
-                        snapshot.passed = true
-                    else
-                        snapshot.dispatched = true
-                    end
-                    local key = PageKey(snapshot.event, snapshot.questID, snapshot.title)
-                    if not stale and not HandledRecently(state, key) then
-                        MarkHandled(state, key)
-                        Debug:Record("auto-watcher-snapshot", format(
-                            "Reading %s quest %s from its event snapshot: %s",
-                            snapshot.event, tostring(snapshot.questID), source))
-                        self:InvokeQuestHandler(snapshot.event, "event snapshot", false, snapshot)
-                    end
+                    ReplaySnapshot(snapshot, source)
                 end
             end
         end
@@ -674,7 +688,7 @@ function Addon:OnInitialize()
         if not self:IsAutoplayOn() then
             -- Nothing to poll for: InvokeQuestHandler would refuse every read. The snapshots are
             -- dropped too, so turning autoplay back on does not replay a dialog long closed.
-            questSnapshots = {}
+            wipe(questSnapshots)
             ResetCandidate(state)
             -- Said once for each quest opened meanwhile, which is the question a player asks.
             local open = CurrentQuestID()
@@ -797,6 +811,11 @@ function Addon:OnInitialize()
     -- reporting after the dialog closed cannot be read as a fresh interaction.
     -- QUEST_ACCEPTED and QUEST_TURNED_IN say the dialog closed on an accepted or handed-in quest,
     -- not a declined one, on a client that keeps reporting the quest ID after the dialog closed.
+    -- The pages each of them reads.
+    local REPLAYED_ON = {
+        QUEST_ACCEPTED = { QUEST_DETAIL = true },
+        QUEST_TURNED_IN = { QUEST_PROGRESS = true, QUEST_COMPLETE = true },
+    }
     self.questEventRecorderFrame = CreateFrame("Frame")
     for _, event in ipairs({ "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_FINISHED",
         "QUEST_ACCEPTED", "QUEST_TURNED_IN" }) do
@@ -805,7 +824,7 @@ function Addon:OnInitialize()
     self.questEventRecorderFrame:SetScript("OnEvent", function(_, event, questIDArg, ...)
         if event == "QUEST_FINISHED" then
             lastQuestEvent = nil
-        elseif event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" then
+        elseif REPLAYED_ON[event] then
             if self.dataModulesPending then
                 return
             end
@@ -819,9 +838,7 @@ function Addon:OnInitialize()
             if type(questID) ~= "number" or questID == 0 then
                 return
             end
-            local events = event == "QUEST_ACCEPTED" and { QUEST_DETAIL = true }
-                or { QUEST_PROGRESS = true, QUEST_COMPLETE = true }
-            local succeeded, replayError = pcall(ReplayQuestSnapshots, event, questID, events)
+            local succeeded, replayError = pcall(ReplayQuestSnapshots, event, questID, REPLAYED_ON[event])
             if not succeeded then
                 Debug:Record("auto-watcher-error", tostring(replayError))
             end

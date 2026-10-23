@@ -239,7 +239,7 @@ stub.Advance(5)
 Expect("auto turn-in reads progress then complete",
     string.format("%d-progress, %d-complete", full, full))
 
--- The same for a turn-in.
+-- A turn-in after a page that names no quest reads nothing either.
 StartScenario()
 world.questID = 0
 world.title = ""
