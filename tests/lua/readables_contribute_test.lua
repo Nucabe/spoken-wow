@@ -68,21 +68,27 @@ Expect("...and no name goes with it", shouted:find("VALAAS ", 1, true) or shoute
 
 -- Pages kept before that, with the name in them, have it as a token after login, under the
 -- checksum of their new words; one whose new words are already kept goes into that one. A page
--- naming nobody stays as it was.
+-- naming nobody stays as it was. One kept under books, before Readables had its name, comes back
+-- under readables.
 local Gather = env.Spoken.Gather
-local function Page(text)
+local function Page(text, source)
     local sum = B:ChecksumOf(text)
-    return { key = "b:" .. sum, envelope = env.Spoken.Contribute:Envelope("books",
-        { { "addon", "Spoken_Readables/3.4.0" }, { "page", sum }, { "book", "Ledger" } }, text) }
+    local envelope = env.Spoken.Contribute:Envelope("readables",
+        { { "addon", "Spoken_Readables/3.4.0" }, { "page", sum }, { "book", "Ledger" } }, text)
+    if source then
+        local body = envelope:match("^(.-)sum=%d+\n$"):gsub("^(!SPOKEN%d+ )readables\n", "%1" .. source .. "\n")
+        envelope = body .. ("sum=%d\n"):format(env.Spoken.Contribute:Checksum(body))
+    end
+    return { key = "b:" .. sum, envelope = envelope }
 end
 _G.SpokenContributionsDB = { Lines = {
-    Page("GRIMBALOR,\n\nThe Light keeps you."),
+    Page("GRIMBALOR,\n\nThe Light keeps you.", "books"),
     Page("A page naming nobody."),
     Page("Grimbalor,\n\nRest well."),
     Page("$N,\n\nRest well."),
 } }
 stub.world.playerName = "Grimbalor"
-assert(loadfile(BOOKS .. "Events.lua"))("Spoken_Readables", B)
+assert(loadfile(READABLES .. "Events.lua"))("Spoken_Readables", B)
 stub.FireEvent("PLAYER_LOGIN")
 local kept = _G.SpokenContributionsDB.Lines
 Expect("login puts the name in a kept page back as its token, keyed on its new words",

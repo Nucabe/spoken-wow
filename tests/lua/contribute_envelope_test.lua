@@ -217,7 +217,7 @@ Expect("Parse reads an envelope back into the same envelope", same, true)
 Expect("...its text unescaped", readText, "before\n>>\n\\>>\n>>trailer\nafter")
 Expect("...an empty field kept", readFields[2][1] .. "=" .. readFields[2][2], "npc=")
 Expect("...a value keeping its =", readFields[3][2], "a=b")
-Expect("an envelope with no text reads back with none", select(3, C:Parse(C:Envelope("zones", { { "map", "1" } }, nil))), nil)
+Expect("an envelope with no text reads back with none", select(3, C:Parse(C:Envelope("places", { { "map", "1" } }, nil))), nil)
 Expect("anything else is not an envelope", C:Parse("hello"), nil)
 
 os.exit(Failures() == 0 and 0 or 1)

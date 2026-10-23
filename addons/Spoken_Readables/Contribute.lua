@@ -185,8 +185,9 @@ end
 --- page went out with tokens at all, and those that had it in capitals. Each keeps its place,
 --- under the checksum of its new words, and goes where those words are already kept. Run at
 --- login. Only the name: the class and race words of whoever kept a page are not this
---- character's to know.
-function SpokenBooks:TidyGathered()
+--- character's to know. Such a page kept under books, before Readables had its name, goes back
+--- under readables, the only name an envelope takes now.
+function SpokenReadables:TidyGathered()
 	local gather = _G.Spoken and Spoken.Gather
 	if not (gather and gather.Lines and Spoken.Contribute and Spoken.Contribute.Parse) then
 		return
@@ -198,14 +199,14 @@ function SpokenBooks:TidyGathered()
 		if string.match(line.key, "^b:%d+$") then
 			local source, fields, text = Spoken.Contribute:Parse(line.envelope)
 			local unnamed = text and Spoken.Contribute:Unname(text, name)
-			if source == "books" and unnamed ~= text then
+			if (source == "readables" or source == "books") and unnamed ~= text then
 				local sum = self:ChecksumOf(unnamed)
 				for _, field in ipairs(fields) do
 					if field[1] == "page" then
 						field[2] = sum
 					end
 				end
-				gather:Rekey(line.key, format("b:%d", sum), Spoken.Contribute:Envelope(source, fields, unnamed))
+				gather:Rekey(line.key, format("b:%d", sum), Spoken.Contribute:Envelope("readables", fields, unnamed))
 			end
 		end
 	end

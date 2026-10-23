@@ -146,7 +146,7 @@ frame:SetScript("OnEvent", function(_, name, payload)
 	elseif name == "PLAYER_LOGIN" then
 		-- Every saved variable is in by now, and the name is known. Guarded: the tidy must not
 		-- stop the addon starting.
-		pcall(SpokenBooks.TidyGathered, SpokenBooks)
+		pcall(SpokenReadables.TidyGathered, SpokenReadables)
 	elseif name == "PLAYER_ENTERING_WORLD" then
 		SpokenReadables:SetupSource()
 		-- Both guarded, and for the same reason: UI/PlayButton.lua and UI/Options.lua are
