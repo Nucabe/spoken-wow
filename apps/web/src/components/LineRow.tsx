@@ -471,7 +471,7 @@ export default function LineRow({
               </span>
             )}
             {line.narration && (
-              <span className="text-primary-ink" title="A narrator reads this line's stage directions">
+              <span className="text-sky-300" title="A narrator reads this line's stage directions">
                 narration
               </span>
             )}
