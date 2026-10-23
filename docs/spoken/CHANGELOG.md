@@ -4,10 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **Quests are read with auto-accept and auto turn-in addons.** With Enhance QoL, RestedXP, Zygor or
-  Leatrix Plus accepting or handing in quests for you, the quest's offer is read, and a turn-in reads
-  both the progress and the reward lines, where before some or all of them were skipped. A quest you
-  decline reads as it did. *([Nucabe](https://github.com/Nucabe))*
+- **Quests are read with auto-accept and auto turn-in addons.** When Enhance QoL, RestedXP, Zygor or
+  Leatrix Plus accepts or hands in a quest for you, the quest's offer is read, and a turn-in reads
+  both the progress and the reward lines, where before some or all of them were skipped. This holds
+  while the addon leaves the quest's data in place for Spoken; a quest it clears first is not read.
+  A quest you decline reads as it did. *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
