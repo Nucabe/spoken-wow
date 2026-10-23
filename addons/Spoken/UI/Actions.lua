@@ -386,18 +386,24 @@ end
 -- The Small Window and the DialogueUI window name a line, count what waits and take the pointer
 -- alike.
 
---- A line's title. A line with no label (a one-page letter) goes by its header: its key means
---- nothing to a player.
+--- A line's own label; nil where it has none, an empty one included.
+local function OwnLabel(present)
+    local label = present and present.label
+    return label ~= "" and label or nil
+end
+
+--- A line's title. A line with no label (a one-page letter, a quest event with no title) goes by
+--- its header: its key means nothing to a player.
 function Actions.Label(clip)
     local present = clip and clip.present
-    return clip and (present and (present.label or present.header) or clip.key) or ""
+    return clip and (present and (OwnLabel(present) or present.header) or clip.key) or ""
 end
 
 --- The speaker's name over the title: the header, unless it is already the title (a line with no
 --- label), and said once, so never the same as the title.
 function Actions.Speaker(clip)
     local present = clip and clip.present
-    local name = present and present.label and present.header or ""
+    local name = OwnLabel(present) and present.header or ""
     return name ~= Actions.Label(clip) and name or ""
 end
 

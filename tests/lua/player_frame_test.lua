@@ -60,6 +60,16 @@ Expect("a line with no label is named by its header, never by its key",
     F.frame.container.name:GetText(), "A Letter Home")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 ExpectOf("...said once: nothing after it", function() return F.frame.container.label:IsShown() end, false)
+-- A quest event with no title, neither a greeting nor gossip, has an empty label.
+quests:Enqueue(H.Clip({ key = "q:1", present = { header = "Thrall", label = "", portrait = { kind = "none" } } }))
+ExpectOf("an empty label is no label: the speaker alone, no dot after him", function()
+    return F.frame.container.name:GetText() .. "|" .. tostring(F.frame.container.label:IsShown())
+end, "Thrall|false")
+ExpectOf("...and the Small Window's title and speaker read the same", function()
+    local clip = env.SoundQueue:GetCurrentSound()
+    return env.Actions.Label(clip) .. "|" .. env.Actions.Speaker(clip)
+end, "Thrall|")
+env.SoundQueue:RemoveAllSoundsFromQueue()
 -- A place's story: the zone, then the subzone whose story it is (#543).
 places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Westfall", label = "Moonbrook", bullet = "zone",
     portrait = { kind = "none" } } }))
