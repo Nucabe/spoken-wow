@@ -4,8 +4,8 @@ import os
 import re
 
 from test_gossip_text import ADDON, FOREVER, toc
-from tts_cli.giver_names import (givers, localized_names, lua_string, render,
-                                 write_giver_names, write_names_xml)
+from tts_cli.giver_names import (forever_toc_mismatch, givers, localized_names, lua_string,
+                                 render, write_giver_names, write_names_xml)
 
 
 def line(source, kind, npc_id, name, quest_id=1):
@@ -81,6 +81,17 @@ def test_names_xml_loads_exactly_the_files_written(tmp_path):
 
     assert '<Script file="deDE.lua"/>' in text and '<Script file="ruRU.lua"/>' in text
     assert text.count("<Script") == 2
+
+
+def test_the_export_names_the_forever_toc_lines_a_language_change_needs(tmp_path):
+    toc_path = tmp_path / "Spoken_Quests.toc"
+    toc_path.write_text("addon.xml\nLocale\\Names\\deDE.lua [AllowLoadTextLocale deDE]\n"
+                        "Locale\\Names\\ruRU.lua [AllowLoadTextLocale ruRU]\n", encoding="utf-8")
+
+    assert forever_toc_mismatch(str(toc_path), ["deDE", "ruRU"]) == ([], [])
+    assert forever_toc_mismatch(str(toc_path), ["deDE", "koKR"]) == (
+        ["Locale\\Names\\koKR.lua [AllowLoadTextLocale koKR]"],
+        ["Locale\\Names\\ruRU.lua [AllowLoadTextLocale ruRU]"])
 
 
 def test_forever_loads_only_its_own_names_file_and_the_other_clients_load_every_one():
