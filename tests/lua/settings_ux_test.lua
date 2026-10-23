@@ -548,9 +548,12 @@ Expect("...and changes nothing until answered", env.Addon.db.profile.Frame.Frame
 popup.dialog.OnCancel()
 popup.dialog.OnAccept()
 Expect("cancelling forgets the reset", stub.reloads, reloads)
+env.Addon.db.global.NewCharacterProfile = env.Addon.db:GetCurrentProfile()
 reset.scripts.OnClick(reset)
 stub.popups[#stub.popups].dialog.OnAccept()
 Expect("accepting resets", env.Addon.db.profile.Frame.FrameScale, 0.7)
+Expect("...but not the profile for new characters, which is every character's", env.Addon.db.global.NewCharacterProfile,
+    env.Addon.db:GetCurrentProfile())
 Expect("...and reloads to finish", stub.reloads, reloads + 1)
 
 ---------------------------------------------------------------- welcome

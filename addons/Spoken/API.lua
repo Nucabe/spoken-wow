@@ -503,6 +503,12 @@ function Spoken:BindModuleSettings(name, legacy, bind, skip)
     return Addon:BindModuleSettings(name, legacy, bind, skip)
 end
 
+--- The profile chosen for new characters, when Spoken started this character on it at this login;
+--- else nil. A feature addon passes it as its own AceDB default profile, so both start on it.
+function Spoken:NewCharacterStartProfile()
+    return Addon.newCharacterProfile
+end
+
 --- Whether Spoken's page and minimap menu open Azeroth's Compendium and hold its Unlock switches,
 --- so the parts leave theirs off their own pages.
 function Spoken:ShowsCompendium()

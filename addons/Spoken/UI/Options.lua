@@ -1004,10 +1004,33 @@ function Options:CopyProfile(name)
     end
 end
 
+--- Delete `name` where it is not in use. AceDB clears the key of each character on it; each is put
+--- on its own profile, so it is not taken for a new character at its next login. The choice of it
+--- for new characters goes too, so a later profile of that name is not chosen.
 function Options:DeleteProfile(name)
     for _, db in ipairs(self:ProfileDBs()) do
-        if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then db:DeleteProfile(name) end
+        if db.DeleteProfile and Has(db, name) and db:GetCurrentProfile() ~= name then
+            local keys, moved = db.sv and db.sv.profileKeys, {}
+            for key, profile in pairs(keys or {}) do
+                if profile == name then table.insert(moved, key) end
+            end
+            db:DeleteProfile(name)
+            for _, key in ipairs(moved) do keys[key] = key end
+        end
     end
+    if Addon.db and Addon.db.global.NewCharacterProfile == name and not Addon:SavedProfile(name) then
+        Addon.db.global.NewCharacterProfile = nil
+    end
+end
+
+--- The profile a character logging in with Spoken for the first time starts on: one of Spoken's
+--- saved profiles, or false for a profile of its own.
+function Options:NewCharacterProfile()
+    return Addon:NewCharacterProfile() or false
+end
+
+function Options:SetNewCharacterProfile(name)
+    Addon.db.global.NewCharacterProfile = name or nil
 end
 
 function Options:AddProfiles(layout)
@@ -1051,6 +1074,22 @@ function Options:AddProfiles(layout)
             end,
         }
         layout:Button(L.OPT_PROFILE_NEW, 200, function() StaticPopup_Show("SPOKEN_NEW_PROFILE") end)
+    end
+    if Addon.db then
+        layout:Dropdown(L.OPT_NEW_CHARACTER_PROFILE, L.OPT_NEW_CHARACTER_PROFILE_TIP,
+            -- Only Spoken's saved profiles: it reads the choice before any other settings load.
+            function()
+                local names = {}
+                for _, name in ipairs(Addon.db:GetProfiles()) do
+                    if Addon:SavedProfile(name) then table.insert(names, name) end
+                end
+                table.sort(names)
+                table.insert(names, 1, false)
+                return names
+            end,
+            function() return self:NewCharacterProfile() end,
+            function(name) self:SetNewCharacterProfile(name) end,
+            nil, function(name) return name or L.OPT_PROFILE_OWN end)
     end
 end
 

@@ -4,6 +4,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Choose the profile new characters start on.** Profile for New Characters, under Profiles on
+  Spoken's page, puts each character you make from then on straight onto that profile, quests
+  settings included. Characters you already have stay on the profile they use, with every setting
+  as it was. *([Nucabe](https://github.com/Nucabe))*
 - **Collect Missing Lines keeps each quest stage once, and keeps reworded lines.** A quest stage
   is no longer kept a second time without its NPC as the window closes. A quest or gossip line that
   plays but whose words in the game differ from the text it was voiced from is now kept too, so it
