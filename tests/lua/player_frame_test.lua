@@ -49,13 +49,100 @@ local a = H.Clip({ present = { header = "Eagan Peltskinner", label = "Wolves Acr
 quests:Enqueue(a)
 Expect("shown once something is queued", F.frame:IsShown(), true)
 Expect("the header is the clip's", F.frame.container.name:GetText(), "Eagan Peltskinner")
-Expect("...the speaker's name alone, as the Talking Head shows: the line's name is left off",
-    F.frame.container.label, nil)
+ExpectOf("...and the line's name after it and a dot, as the other windows show both", function()
+    local label = F.frame.container.label
+    return tostring(label:IsShown()) .. "|" .. label:GetText() .. "|" .. tostring(label.anchor.relativeTo == F.frame.container.name)
+end, "true|• Wolves Across the Border|true")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 Expect("hidden again when the queue empties", F.frame:IsShown(), false)
 quests:Enqueue(H.Clip({ key = "b:1", present = { header = "A Letter Home", portrait = { kind = "none" } } }))
 Expect("a line with no label is named by its header, never by its key",
     F.frame.container.name:GetText(), "A Letter Home")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+ExpectOf("...said once: nothing after it", function() return F.frame.container.label:IsShown() end, false)
+-- A quest event with no title, neither a greeting nor gossip, has an empty label.
+quests:Enqueue(H.Clip({ key = "q:1", present = { header = "Thrall", label = "", portrait = { kind = "none" } } }))
+ExpectOf("an empty label is no label: the speaker alone, no dot after him", function()
+    return F.frame.container.name:GetText() .. "|" .. tostring(F.frame.container.label:IsShown())
+end, "Thrall|false")
+ExpectOf("...and the Small Window's title and speaker read the same", function()
+    local clip = env.SoundQueue:GetCurrentSound()
+    return env.Actions.Label(clip) .. "|" .. env.Actions.Speaker(clip)
+end, "Thrall|")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+ExpectOf("a line with neither a header nor a label has no title, its key never shown", function()
+    local key = "q:123:accept:456"
+    return env.Actions.Label({ key = key, present = {} }) .. "|" .. env.Actions.Label({ key = key }) .. "|"
+        .. env.Actions.Speaker({ key = key, present = {} })
+end, "||")
+-- A place's story: the zone, then the subzone whose story it is (#543).
+places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Westfall", label = "Moonbrook", bullet = "zone",
+    portrait = { kind = "none" } } }))
+ExpectOf("a subzone's story names the zone, then the subzone", function()
+    return F.frame.container.name:GetText() .. " " .. F.frame.container.label:GetText()
+end, "Westfall • Moonbrook")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- A zone's own story is headed by its continent.
+places:Enqueue(H.Clip({ key = "z:1436", present = { header = "Eastern Kingdoms", label = "Westfall", bullet = "zone",
+    portrait = { kind = "none" } } }))
+ExpectOf("a zone's own story names the continent, then the zone", function()
+    return F.frame.container.name:GetText() .. " " .. F.frame.container.label:GetText()
+end, "Eastern Kingdoms • Westfall")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- An area whose zone has no name is headed by its own name.
+places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Moonbrook", label = "Moonbrook", bullet = "zone",
+    portrait = { kind = "none" } } }))
+ExpectOf("...a place named twice is named once", function() return F.frame.container.label:IsShown() end, false)
+env.SoundQueue:RemoveAllSoundsFromQueue()
+
+-- A short row: the line's name gives way first, then the speaker's.
+local function Row(header, label)
+    quests:Enqueue(H.Clip({ present = { header = header, label = label, portrait = { kind = "none" } } }))
+end
+local name, title = F.frame.container.name, F.frame.container.label
+local long = string.rep("The Defias Brotherhood ", 6)
+Row("Gryan Stoutmantle", long)
+ExpectOf("a long line's name is cut to the room left, past the speaker's name in full", function()
+    return tostring(name.width == #"Gryan Stoutmantle" * 7 + 1) .. " " .. tostring(title:GetAlpha())
+        .. " " .. tostring(title.width < #("• " .. long) * 7 + 1) .. " " .. tostring(title.anchor.x == name.width + 6)
+end, "true 1 true true")
+local room = name.width + 6 + title.width
+ExpectOf("...and pointing at it shows the whole of it", function()
+    local hover = F.frame.container.labelHover
+    hover:GetScript("OnEnter")(hover)
+    return tostring(hover:IsShown()) .. " " .. _G.GameTooltip.text
+end, "true " .. long)
+env.SoundQueue:RemoveAllSoundsFromQueue()
+Row("Gryan Stoutmantle", "Wolves Across the Border")
+ExpectOf("...which a line's name in full does not need", function() return F.frame.container.labelHover:IsShown() end, false)
+env.SoundQueue:RemoveAllSoundsFromQueue()
+Row(string.rep("W", math.floor((room - 27) / 7)), long)
+ExpectOf("...not drawn at all where only a fragment of it would fit", function()
+    return tostring(title:IsShown()) .. " " .. tostring(title:GetAlpha())
+end, "true 0")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+Row(string.rep("W", 200), long)
+ExpectOf("...nor where the speaker's name takes the whole row, which is cut to it", function()
+    return tostring(title:GetAlpha()) .. " " .. tostring(name.width == room)
+end, "0 true")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- A short line's name is drawn where it fits whole, though less room is left than the least a cut one
+-- takes ("• ...").
+Row(string.rep("W", math.floor((room - 6 - 1 - 40) / 7)), "A")
+ExpectOf("a line's name shorter than the least that is cut is drawn whole in the room it fits", function()
+    return tostring(title:GetAlpha()) .. " " .. tostring(title.width == #"• A" * 7 + 1)
+end, "1 true")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- The count of lines waiting takes its room from the line's name, which is cut to what is left.
+env, quests, places = Boot(); F = env.PlayerFrame
+places:AddGate(function() return "in combat" end)
+places:Enqueue(H.Clip({ present = { header = "Durotar", label = "Valley of Trials", bullet = "zone", portrait = { kind = "none" } } }))
+Row("Gryan Stoutmantle", long)
+name, title = F.frame.container.name, F.frame.container.label
+ExpectOf("with a line waiting, the line's name is cut short of the count, which stands on the row", function()
+    local tail = F.tail:Room()
+    return tostring(tail > 0) .. " " .. tostring(name.width + 6 + title.width + tail == room)
+end, "true true")
 env.SoundQueue:RemoveAllSoundsFromQueue()
 
 env.Addon:SetPlayerStyle("none")
@@ -144,9 +231,18 @@ ExpectOf("a waiting line gets no row: the header counts it after the name, as th
     return tostring(F.frame.container.buttons) .. " " .. tostring(F.count:IsShown()) .. " " .. F.count:GetText()
         .. " " .. tostring(F.count.anchor.relativeTo == F.frame.container.name)
 end, "nil true • +1 true")
+ExpectOf("...past the line's name", function()
+    local label = F.frame.container.label
+    return F.count.anchor.x > label.anchor.x + label.width
+end, true)
 ExpectOf("...fading in as the line is added", function() return F.count:GetAlpha() < 1 end, true)
+local measured = 0
+local Measure = F.frame.container.label.GetStringWidth
+F.frame.container.label.GetStringWidth = function(...) measured = measured + 1; return Measure(...) end
 pcall(F.Tick, F, 0.3)
 ExpectOf("...all the way", function() return F.count:GetAlpha() end, 1)
+Expect("the line's name is measured once a line, not on every poll", measured, 0)
+F.frame.container.label.GetStringWidth = Measure
 env.SoundQueue:RemoveSoundFromQueue(held)
 F:Update()
 ExpectOf("...and gone with no line waiting", function() return F.count:IsShown() end, false)
@@ -825,6 +921,8 @@ quests:Enqueue(H.Clip({ present = { header = "Gornek", label = "Cutting Teeth", 
 env.PlayerFrame:Update()
 local report = table.concat(env.PlayerFrame:Describe(), "\n")
 Expect("it reports the header it drew", string.find(report, 'header="Gornek"', 1, true) ~= nil, true)
+Expect("...the line's name after it, and whether it is drawn",
+    string.find(report, 'label="• Cutting Teeth" shown=true alpha=1.00', 1, true) ~= nil, true)
 Expect("...which portrait renderer is in use", string.find(report, "portrait kind=none", 1, true) ~= nil, true)
 Expect("...and how much is queued", string.find(report, "queue=1", 1, true) ~= nil, true)
 
