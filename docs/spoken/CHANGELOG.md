@@ -13,6 +13,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   English, so a German or Italian voice no longer reads along in its own words where English has
   them. A book can show some pages in your language and the rest in English.
   *([Nucabe](https://github.com/Nucabe))*
+- **A right-click on a window's words skips the line**, in the Small Window, the Large Window and the
+  DialogueUI window: a larger target than the Skip button. The menu and the settings that right-click
+  opened there are now on Shift-right-click. *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
