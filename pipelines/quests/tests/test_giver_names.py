@@ -1,6 +1,9 @@
 """The addon's translated quest-giver names, which export-giver-names writes."""
+import glob
 import os
+import re
 
+from test_gossip_text import ADDON, FOREVER, toc
 from tts_cli.giver_names import (givers, localized_names, lua_string, render,
                                  write_giver_names, write_names_xml)
 
@@ -80,28 +83,26 @@ def test_names_xml_loads_exactly_the_files_written(tmp_path):
     assert text.count("<Script") == 2
 
 
-ADDON = os.path.join(os.path.dirname(__file__), "../../../addons/Spoken_Quests")
-
-
-def toc(name):
-    with open(os.path.join(ADDON, name), encoding="utf-8") as f:
-        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
-
-
-def test_forever_loads_only_its_own_names_file_and_the_classic_clients_load_every_one():
-    # Every file the export wrote: a language it gains and Forever's .toc does not list is a
-    # client that names its givers in English.
-    langs = sorted(os.path.splitext(name)[0]
-                   for name in os.listdir(os.path.join(ADDON, "Locale", "Names")) if name.endswith(".lua"))
+def test_forever_loads_only_its_own_names_file_and_the_other_clients_load_every_one():
+    # Names.xml is the export's own list. Forever's .toc must name the same languages, and a
+    # file left on disk that Names.xml dropped must not be loaded anywhere.
+    names = os.path.join(ADDON, "Locale", "Names")
+    with open(os.path.join(names, "Names.xml"), encoding="utf-8") as f:
+        langs = sorted(re.findall(r'<Script file="(\w+)\.lua"/>', f.read()))
     assert langs
-    lines = toc("Spoken_Quests.toc")
-    assert "Locale\\Names\\Names.xml" not in lines
-    for lang in langs:
-        assert f"Locale\\Names\\{lang}.lua [AllowLoadTextLocale {lang}]" in lines
-    for name in ("Spoken_Quests_Vanilla.toc", "Spoken_Quests_TBC.toc"):
-        assert "Locale\\Names\\Names.xml" in toc(name), name
+    assert sorted(os.path.splitext(name)[0]
+                  for name in os.listdir(names) if name.endswith(".lua")) == langs
+    for path in glob.glob(os.path.join(ADDON, "*.toc")):
+        name = os.path.basename(path)
+        lines = toc(name)
+        if name in FOREVER:
+            assert "Locale\\Names\\Names.xml" not in lines
+            assert sorted(line for line in lines if line.startswith("Locale\\Names\\")) == sorted(
+                f"Locale\\Names\\{lang}.lua [AllowLoadTextLocale {lang}]" for lang in langs)
+        else:
+            assert "Locale\\Names\\Names.xml" in lines, name
     with open(os.path.join(ADDON, "addon.xml"), encoding="utf-8") as f:
-        assert "Names" not in f.read()
+        assert "Locale\\Names" not in f.read()
 
 
 def test_a_giver_named_only_by_a_placeholder_has_no_english_name():
