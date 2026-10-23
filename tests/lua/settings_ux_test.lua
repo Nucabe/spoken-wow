@@ -302,10 +302,6 @@ for _, name in ipairs({ "SPOKEN_PLAYPAUSE", "SPOKEN_SKIP", "SPOKEN_STOP", "SPOKE
         category and CategoryTitle(category), "Spoken")
     Expect("...named in the game's key bindings list", type(_G["BINDING_NAME_" .. name]), "string")
 end
--- The older clients take the heading from the first key's header.
-Expect("the first key also names the header an older client files the keys under",
-    bindings:match('<Binding%s[^>]-name="SPOKEN_PLAYPAUSE"[^>]-header="([^"]*)"'), "SPOKEN")
-Expect("...which is the Spoken heading", _G.BINDING_HEADER_SPOKEN, "Spoken")
 Expect("the keys section sets the Compendium's key too", Row(home, L.BIND_COMPENDIUM) ~= nil, true)
 
 ---------------------------------------------------------------- /sp in the settings' words
