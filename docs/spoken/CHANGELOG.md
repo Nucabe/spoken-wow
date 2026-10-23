@@ -19,6 +19,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   Quests whose only givers are one side's are listed for that side alone, three quests moved to
   the zone Forever's quest log uses, Westfall's Toxic Soil quests and 30 follow-ups are linked into
   their chains, and Dark Sacrifice has its new name. *([Nucabe](https://github.com/Nucabe))*
+- **Silence NPC Voices also silences the first talk to an NPC.** The first time you spoke to an
+  NPC a voice pack reads, about half a second of its own greeting was heard before Spoken's line.
+  *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*

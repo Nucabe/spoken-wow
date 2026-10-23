@@ -217,7 +217,8 @@ Expect("...past the mute's own deadline too", world.cvars.Sound_EnableDialog, "0
 Spoken:StopAll()
 Expect("...and the empty queue restores it", world.cvars.Sound_EnableDialog, "1")
 
--- The mute is taken for the NPC's lines; the page then read has none a pack holds.
+-- The mute is taken for the NPC's lines; the page then read, its text on screen, has none a pack
+-- holds. Nothing is coming, so the greeting is not held back.
 VO, env, Spoken = MuteBoot()
 VO.Addon.db.char.hasSeenGossipForNPC = {}
 stub.ShowGossip("Greetings, traveller.")

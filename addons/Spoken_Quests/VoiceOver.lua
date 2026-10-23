@@ -399,6 +399,31 @@ local selectedGossipOption
 -- Set by picking any option, even one whose label could not be found, until the window closes:
 -- every page after the greeting was asked for.
 local gossipOptionPicked
+-- The gossip or greeting event whose window took a mute ahead, until the next window opens, it
+-- closes, or a read gives the NPC its voice back; and how often it has been read again for its text.
+local greetingMutedFor
+local greetingTextTries = 0
+local GREETING_TEXT_TRIES, GREETING_TEXT_WAIT = 5, 0.2
+-- Moved on whenever a wait ends, so a read again for one window never runs in the next: a quest
+-- page replaces the greeting in the same window with no close at all.
+local greetingWait = 0
+
+local function EndGreetingTextWait()
+    greetingMutedFor = nil
+    greetingTextTries = 0
+    greetingWait = greetingWait + 1
+end
+
+--- A read of a window that took a mute will not speak its greeting: the NPC has its voice back
+--- now, not at the mute's deadline.
+local function GiveVoiceBack(event)
+    if greetingMutedFor == event then
+        EndGreetingTextWait()
+        if Spoken.EndMuteGameDialogueAhead then
+            Spoken:EndMuteGameDialogueAhead()
+        end
+    end
+end
 local currentQuestSoundData
 local currentGossipSoundData
 
@@ -741,6 +766,16 @@ function Addon:OnInitialize()
         GOSSIP_SHOW = true,
     }
     local deferredEventGeneration = {}
+    -- The last read asked for an event wins, and a close of its window cancels it.
+    local function DispatchLater(event, source, delay)
+        local generation = (deferredEventGeneration[event] or 0) + 1
+        deferredEventGeneration[event] = generation
+        self:ScheduleTimer(function()
+            if deferredEventGeneration[event] == generation then
+                DispatchDirectEvent(event, source)
+            end
+        end, delay)
+    end
     local function SignalDirectEvent(event, source)
         if event == "QUEST_FINISHED" then
             deferredEventGeneration.QUEST_GREETING = (deferredEventGeneration.QUEST_GREETING or 0) + 1
@@ -751,13 +786,7 @@ function Addon:OnInitialize()
             DispatchDirectEvent(event, source)
             return
         end
-        local generation = (deferredEventGeneration[event] or 0) + 1
-        deferredEventGeneration[event] = generation
-        self:ScheduleTimer(function()
-            if deferredEventGeneration[event] == generation then
-                DispatchDirectEvent(event, source .. " (deferred)")
-            end
-        end, 0.1)
+        DispatchLater(event, source .. " (deferred)", 0.1)
     end
 
     self.directEventFrame = CreateFrame("Frame")
@@ -1129,6 +1158,7 @@ end
 --- will be read for keeps its greeting: that is what the lookups below are for.
 ---@param event string
 function Addon:MuteGreetingAhead(event)
+    EndGreetingTextWait()
     if not Spoken.MuteGameDialogueAhead or not self:IsPageOn(event) or not self:IsAutoplayOn() or self.dataModulesPending
         or not Player.source then
         return
@@ -1150,8 +1180,38 @@ function Addon:MuteGreetingAhead(event)
     -- ID is not known yet is muted too: its greeting starts now, and with no line the mute lifts.
     local questID = quest and CurrentQuestID()
     if (quest and (not questID or questID == 0)) or self:ExpectedLine(event) then
-        Spoken:MuteGameDialogueAhead(self:PartOfPage(event) == "gossip" and Player.gossipSource or Player.source)
+        local muted = Spoken:MuteGameDialogueAhead(self:PartOfPage(event) == "gossip" and Player.gossipSource or Player.source)
+        greetingMutedFor = muted and SPEECH_EVENTS[event] and event or nil
     end
+end
+
+--- Whether the read of a greeting window found no text yet, with the mute its opening took
+--- still held. On a first talk to an NPC the client has not shown before, the window's text can
+--- arrive after the event, so the window is read again every GREETING_TEXT_WAIT seconds, up to
+--- GREETING_TEXT_TRIES times while the mute holds: the count starts again with the next window,
+--- and a close ends it. A read that finds text and no line is a real miss, and gives the NPC its
+--- voice back at once.
+---@param event string
+---@param text string? what the window's text read as
+---@param manual boolean?
+---@return boolean waiting true when the read is to be tried again, so this one stops
+function Addon:WaitsForGreetingText(event, text, manual)
+    if manual or greetingMutedFor ~= event or (text and text:find("%S")) then
+        return false
+    end
+    if greetingTextTries >= GREETING_TEXT_TRIES then
+        return false
+    end
+    greetingTextTries = greetingTextTries + 1
+    local wait = greetingWait
+    self:ScheduleTimer(function()
+        -- Past the mute's deadline the NPC's greeting is heard again, and a line read now would
+        -- start over it.
+        if wait == greetingWait and Spoken:IsMutingGameDialogueAhead() then
+            self:DispatchDirectEvent(event, "text not there yet, read again")
+        end
+    end, GREETING_TEXT_WAIT)
+    return true
 end
 
 --- The text autoplay will read for the dialog that just opened, or nil. Asked before the line is
@@ -1212,11 +1272,16 @@ function Addon:QUEST_GREETING(event, manual)
     if not guid and not targetName then
         return
     end
+    if self:WaitsForGreetingText(event, greetingText, manual) then
+        return
+    end
     if not greetingText then
+        GiveVoiceBack(event)
         return
     end
 
     if not self:ShouldPlayGossip(guid, greetingText, manual) then
+        GiveVoiceBack(event)
         return
     end
 
@@ -1247,12 +1312,17 @@ local shownGossipKey
 --- not it is read. With autoplay off it is not, and the next page's label would otherwise be
 --- looked up in this page's predecessor's options.
 function NoteGossipPage()
-    local pageKey = tostring(Utils:GetNPCGUID() or Utils:GetNPCName()) .. ":" .. tostring(NotSecret(GetGossipText()))
+    local npc = tostring(Utils:GetNPCGUID() or Utils:GetNPCName())
+    local pageKey = npc .. ":" .. tostring(NotSecret(GetGossipText()) or "")
     if not selectedGossipOption and pageKey == shownGossipKey then
         return
     end
+    -- The text of the page already noted arriving: its label stays, and only what it offers is read again.
+    local textArrived = not selectedGossipOption and shownGossipKey == npc .. ":"
     shownGossipKey = pageKey
-    shownGossipTitle = selectedGossipOption and format([["%s"]], selectedGossipOption)
+    if not textArrived then
+        shownGossipTitle = selectedGossipOption and format([["%s"]], selectedGossipOption)
+    end
     selectedGossipOption = nil
     lastGossipOptions = nil
     if C_GossipInfo and C_GossipInfo.GetOptions then
@@ -1271,11 +1341,16 @@ function Addon:GOSSIP_SHOW(event, manual)
     if not guid and not targetName then
         return
     end
+    if self:WaitsForGreetingText(event, gossipText, manual) then
+        return
+    end
     if not gossipText then
+        GiveVoiceBack(event)
         return
     end
 
     if not self:ShouldPlayGossip(guid, gossipText, manual, gossipOptionPicked) then
+        GiveVoiceBack(event)
         return
     end
 
@@ -1308,6 +1383,7 @@ function Addon:QUEST_FINISHED()
         end
     end
     currentQuestSoundData = nil
+    EndGreetingTextWait()
     local pending = pendingRead
     pendingRead = nil
     if pending then
@@ -1322,6 +1398,7 @@ function Addon:GOSSIP_CLOSED()
         Player:Remove(currentGossipSoundData)
     end
     currentGossipSoundData = nil
+    EndGreetingTextWait()
 
     selectedGossipOption = nil
     gossipOptionPicked = nil
