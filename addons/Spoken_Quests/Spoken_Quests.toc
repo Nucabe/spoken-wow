@@ -38,8 +38,8 @@ Gossip\ptBR.lua [AllowLoadTextLocale ptBR]
 Gossip\ruRU.lua [AllowLoadTextLocale ruRU]
 Gossip\zhCN.lua [AllowLoadTextLocale zhCN]
 Gossip\zhTW.lua [AllowLoadTextLocale zhTW]
-# The quest givers' names, the same way: the client's own locale only. The classic .toc files
-# load Locale\Names\Names.xml.
+# Quest givers' names for the client's own locale only: a guard inside each file returns only
+# after the client has compiled it.
 Locale\Names\deDE.lua [AllowLoadTextLocale deDE]
 Locale\Names\esES.lua [AllowLoadTextLocale esES]
 Locale\Names\esMX.lua [AllowLoadTextLocale esMX]
