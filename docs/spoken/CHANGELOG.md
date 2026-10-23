@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **The tab that reopens the Place Story panel no longer covers the map's own side tabs**, such as
+  Map Legend on WoW Forever with the gamepad UI off. It goes under whatever tabs hang down the
+  map's edge, whichever addon made them. *([rusty-key](https://github.com/rusty-key))*
 - **Walking with the world map open no longer floods the game with Lua errors** on WoW Forever. The
   Place Story panel and the tab that reopens it make room for Adventure Guide Forever's tabs on the
   quest log's edge instead of sitting under them. *([Nucabe](https://github.com/Nucabe))*

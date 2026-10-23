@@ -293,43 +293,66 @@ local function FollowMap()
 	FollowAlpha()
 end
 
--- How far a side tab reaches past the map's edge; its width while it has not been laid out yet.
-local function TabReach(tab, mapEdge)
-	local right, edgeRight = tab:GetRight(), mapEdge:GetRight()
-	if right and edgeRight then return math.max(0, right - edgeRight) end
-	return tab:GetWidth() or 0
+-- A frame's edges on screen, so frames of different scales compare.
+local function ScreenRect(frame)
+	local scale = frame.GetEffectiveScale and frame:GetEffectiveScale()
+	local left, right, top, bottom = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
+	if not (scale and left and right and top and bottom) then return end
+	return left * scale, right * scale, top * scale, bottom * scale
 end
 
 local ApplyAnchors
 
--- A side tab shows and hides without the quest log doing either: the game shows its own when the
--- gamepad UI goes off and hides them again as the log checks its tabs. So the anchors follow each
--- tab's own show and hide, hooked once, as the tab is first seen.
-local watched = setmetatable({}, { __mode = "k" })
-local function Watch(tab)
-	if watched[tab] or not tab.HookScript then return end
-	watched[tab] = true
-	tab:HookScript("OnShow", function() ApplyAnchors() end)
-	tab:HookScript("OnHide", function() ApplyAnchors() end)
+-- Several shows and hides in one frame, and other addons' hooks on the quest log that run after
+-- Spoken's, all settle before one layout on the next frame.
+local pending
+local function ApplyAnchorsSoon()
+	if pending or not (C_Timer and C_Timer.After) then return end
+	pending = true
+	C_Timer.After(0, function()
+		pending = false
+		ApplyAnchors()
+	end)
 end
 
--- The side tabs down the quest log's right edge, children of it that go with it, in the order they
--- hang from top to bottom: the game's own, which Forever hides until the gamepad UI is switched
--- off, then Adventure Guide Forever's, its Quests tab above its guide tab (its UI/Panel.lua,
--- CreateTabs). The lowest one shown, and how far the widest reaches past the map's edge.
+-- Every child of the frames a side tab hangs from, hooked once as it is first seen: a tab shows and
+-- hides without its parent doing either (the game shows its own as the gamepad UI goes off and
+-- hides them as the quest log checks its tabs), and a frame not laid out yet cannot be told apart
+-- from a tab until it is.
+local watched = setmetatable({}, { __mode = "k" })
+
+-- Side tabs belong to no list another addon can join, so the column down the map's right edge is
+-- read off the screen: any shown frame there, hanging from the quest log or the map, whoever made
+-- it. Its left edge within COLUMN_SLACK of the map's edge, most of it outside the map, and shorter
+-- than half the map, which a panel standing beside the map is not. The lowest one, and how far the
+-- widest reaches past the map's edge.
+local COLUMN_SLACK = 12
 local function SideTabs(mapEdge)
-	local log = QuestMapFrame
-	local last, reach = nil, 0
-	for _, tab in ipairs({ log and log.QuestsTab or false, log and log.MapLegendTab or false,
-		_G.AdventureGuideForeverQuestsTab or false, _G.AdventureGuideForeverTab or false }) do
-		if type(tab) == "table" then
-			Watch(tab)
-			if tab.IsVisible and tab:IsVisible() then
-				last, reach = tab, math.max(reach, TabReach(tab, mapEdge))
+	local _, edgeRight, edgeTop, edgeBottom = ScreenRect(mapEdge)
+	if not edgeRight then return nil, 0 end
+	local scale = mapEdge:GetEffectiveScale()
+	local slack, tallest = COLUMN_SLACK * scale, (edgeTop - edgeBottom) / 2
+	local lowest, lowestBottom, reach = nil, nil, 0
+	for _, parent in ipairs({ QuestMapFrame or false, WorldMapFrame, WorldMapFrame.BorderFrame or false }) do
+		if type(parent) == "table" and parent.GetChildren then
+			for _, child in ipairs({ parent:GetChildren() }) do
+				if child ~= panel and child ~= toggle then
+					if not watched[child] and child.HookScript then
+						watched[child] = true
+						child:HookScript("OnShow", ApplyAnchorsSoon)
+						child:HookScript("OnHide", ApplyAnchorsSoon)
+					end
+					local left, right, top, bottom = ScreenRect(child)
+					if left and child:IsVisible() and left >= edgeRight - slack and (left + right) / 2 > edgeRight
+						and top - bottom < tallest and top <= edgeTop + slack and bottom >= edgeBottom - slack then
+						reach = math.max(reach, (right - edgeRight) / scale)
+						if not lowestBottom or bottom < lowestBottom then lowest, lowestBottom = child, bottom end
+					end
+				end
 			end
 		end
 	end
-	return last, reach
+	return lowest, reach
 end
 
 -- Always on the map's right, beside the quest log as the game lays its own panels out, past any
@@ -347,6 +370,12 @@ function ApplyAnchors()
 	else
 		toggle:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", toggleX, toggleY)
 	end
+end
+
+-- Now, and again once every hook on what changed has run.
+local function Relayout()
+	ApplyAnchors()
+	ApplyAnchorsSoon()
 end
 
 -- Maximised, the map fills the screen and a side panel would sit off-screen, so
@@ -388,7 +417,7 @@ local function Refresh(mapID)
 
 	FollowMap()
 	-- Another addon's side tabs may have been made since the last time.
-	ApplyAnchors()
+	Relayout()
 	local collapsed = SpokenPlaces:Get("mapPanelCollapsed")
 	toggle:SetShown(collapsed)
 	panel:SetShown(not collapsed)
@@ -513,11 +542,10 @@ function SpokenPlaces:SetupMapPanel()
 		panel:Hide()
 		toggle:Hide()
 	end)
-	-- The side tabs on the quest log's edge go with it, and each shows and hides on its own too
-	-- (Watch).
+	-- The side tabs on the quest log's edge go with it.
 	if QuestMapFrame and QuestMapFrame.HookScript then
-		QuestMapFrame:HookScript("OnShow", ApplyAnchors)
-		QuestMapFrame:HookScript("OnHide", ApplyAnchors)
+		QuestMapFrame:HookScript("OnShow", Relayout)
+		QuestMapFrame:HookScript("OnHide", Relayout)
 	end
 
 	SpokenPlaces:OnMapChanged(function(mapID)
