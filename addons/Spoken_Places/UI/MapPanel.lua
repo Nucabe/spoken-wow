@@ -258,17 +258,22 @@ end
 -- whenever the map is. Not a hook on the map's SetAlpha, which the fader calls every frame: on the
 -- Forever client that hooked call raised "attempt to call a nil value" each time.
 local function FollowAlphaEachFrame()
-	if InMap() or WorldMapFrame:GetAlpha() == followed then return end
+	if WorldMapFrame:GetAlpha() == followed then return end
 	FollowAlpha()
 end
 
 -- Into the map, or out of it under the gamepad UI. Asked on every refresh, as the player can
--- switch the gamepad UI on and off without a reload.
+-- switch the gamepad UI on and off without a reload. Only beside the map do they read its alpha
+-- each frame.
 local function Place()
 	local host = Host()
-	if panel:GetParent() == host then return end
-	panel:SetParent(host)
-	toggle:SetParent(host)
+	if panel:GetParent() ~= host then
+		panel:SetParent(host)
+		toggle:SetParent(host)
+	end
+	local follow = host ~= WorldMapFrame and FollowAlphaEachFrame or nil
+	panel:SetScript("OnUpdate", follow)
+	toggle:SetScript("OnUpdate", follow)
 end
 
 -- In front of the map and, beside it, as large as a child of it would be. Copied on every show,
@@ -481,8 +486,6 @@ function SpokenPlaces:SetupMapPanel()
 	BuildPanel()
 	BuildToggle()
 	ApplyAnchors()
-	panel:HookScript("OnUpdate", FollowAlphaEachFrame)
-	toggle:HookScript("OnUpdate", FollowAlphaEachFrame)
 
 	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both
 	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside

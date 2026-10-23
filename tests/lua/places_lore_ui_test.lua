@@ -478,7 +478,8 @@ Expect("...and leaves the map's SetAlpha unhooked", WorldMapFrame.SetAlpha == ma
 local function NextFrame()
     for _, frame in ipairs({ panel, _G.SpokenPlacesPanelToggle }) do
         if frame:IsShown() then
-            for _, hook in ipairs(frame.hooks.OnUpdate or {}) do hook(frame, 0.016) end
+            local onUpdate = frame:GetScript("OnUpdate")
+            if onUpdate then onUpdate(frame, 0.016) end
         end
     end
 end
@@ -486,6 +487,8 @@ end
 Z:RefreshPanel()
 Expect("...and is the map's", panel.parent, WorldMapFrame)
 Expect("...as is the button that reopens it", _G.SpokenPlacesPanelToggle.parent, WorldMapFrame)
+Expect("...so neither reads the map's alpha each frame",
+    panel:GetScript("OnUpdate") == nil and _G.SpokenPlacesPanelToggle:GetScript("OnUpdate") == nil, true)
 local strip = panel.page.body.strips[1]
 WorldMapFrame:Show()
 Z:RefreshPanel()
@@ -526,6 +529,7 @@ Expect("...and the soft edges back", strip:IsShown(), true)
 SetCVar("InputDeviceInterfaceStyle", "0")
 Z:RefreshPanel()
 Expect("with the gamepad UI off again, the panel goes back into the map", panel.parent, WorldMapFrame)
+Expect("...and stops reading the map's alpha each frame", panel:GetScript("OnUpdate"), nil)
 -- Adventure Guide Forever hangs two side tabs down the quest log's right edge, its Quests tab above
 -- its guide tab; here the upper one reaches 60 past the map's edge and the lower one 50.
 local toggle = _G.SpokenPlacesPanelToggle
