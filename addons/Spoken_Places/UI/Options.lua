@@ -227,14 +227,15 @@ function SpokenPlaces:SetupOptions()
 	layout:Button(W.MODULE_TEST_LINE, 200, function() SpokenPlaces:PlayTestLine() end)
 
 	-- What this character has heard, as on the other pages: forgotten, every place is new again.
-	-- Greyed without Include Places Found Before: outside a dungeon, only it reads the list, and
-	-- the game announces a discovery once per character, so forgetting would read nothing again.
+	-- Greyed as the reading it resets is: the greeting, the dungeon stories and Include Places
+	-- Found Before all read only with Read Automatically and the voice on.
 	layout:Section(W.MODULE_HISTORY)
 	local forget = layout:Button(L.OPT_FORGET_PLACES, 200, function()
 		if SpokenPlaces.ForgetAutoplayHistory then SpokenPlaces:ForgetAutoplayHistory() end
 		SpokenPlaces:Print(L.OPT_FORGET_PLACES_DONE)
 	end)
-	layout:Requires(forget, Get("autoplayExplored"), L.REASON_EXPLORED)
+	layout:Requires(forget, voiced, L.REASON_VOICE)
+	layout:Requires(forget, discovering, L.REASON_DISCOVERY)
 
 	-- The page's Defaults, as Spoken's has.
 	layout:Defaults(function()

@@ -74,7 +74,6 @@ L.OPT_DEV_DEBUG = "Depuración de Lugares"
 L.OPT_DEV_PREVIEW = "Traducciones sin terminar"
 L.REASON_VOICE = "Activa «Leer historias en voz alta» para usar esto."
 L.REASON_DISCOVERY = "Activa «Leer automáticamente» para usar esto."
-L.REASON_EXPLORED = "Activa «Incluir lugares encontrados antes» para usar esto."
 L.REASON_MAP_PANEL = "Activa «Historia junto al mapa» para usar esto."
 
 -- Voice packs

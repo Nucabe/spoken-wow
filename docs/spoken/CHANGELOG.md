@@ -4,8 +4,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **Include Places Found Before is on for new installs, and Forget Places Heard is greyed while it is
-  off.** The game announces each discovery once per character, so a character who explored before
+- **Include Places Found Before is on for new installs.** The game announces each discovery once per character, so a character who explored before
   installing heard nothing in those places, and forgetting read nothing again. With the setting on,
   each place is read once per character the first time you stand in it. If you already use Spoken,
   your setting is kept: turn it on under Places, When to Read. *([Nucabe](https://github.com/Nucabe))*

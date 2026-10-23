@@ -69,7 +69,6 @@ L.OPT_DEV_DEBUG = "Débogage des Lieux"
 L.OPT_DEV_PREVIEW = "Traductions inachevées"
 L.REASON_VOICE = "Activez l'option Lire les récits à voix haute pour utiliser ceci."
 L.REASON_DISCOVERY = "Activez l'option Lire automatiquement pour utiliser ceci."
-L.REASON_EXPLORED = "Activez l'option Inclure les lieux déjà découverts pour utiliser ceci."
 L.REASON_MAP_PANEL = "Activez l'option Récit à côté de la carte pour utiliser ceci."
 
 -- Voice packs
