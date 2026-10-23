@@ -51,6 +51,12 @@ end
 
 local VALLEY = { map = 1411, zone = "Durotar", subzone = "Valley of Trials" }
 
+-- What Core's zone-change events run. Firing the event itself would also run the callbacks of
+-- every earlier Boot's addon, whose frames the stub keeps.
+local function ZoneChanged(Z)
+    for _, callback in ipairs(Z.zoneChangedCallbacks) do callback(Z:GetPlayerMapID()) end
+end
+
 Boot(VALLEY, 1, nil)
 stub.Advance(2)
 Expect("a new character in its starting area is greeted", Spoken:IsPlaying(), true)
@@ -105,11 +111,35 @@ Z = Boot({ map = 1411, zone = "Durotar", subzone = "" }, 1, nil)
 Z:Set("autoplayExplored", true)
 stub.Advance(2)
 Expect("with the subzone not known yet, the zone is not read ahead of the greeting", Spoken:GetQueueSize(), 0)
+-- The game fires a zone change as the character loads in; it takes the same route.
+ZoneChanged(Z)
+Expect("...nor by a zone change", Spoken:GetQueueSize(), 0)
 stub.SetZone(VALLEY)
 stub.Advance(2)
 current = Spoken:GetCurrent()
 Expect("...the valley is read first once it is", current and current.key, "s:1411:valley of trials")
 Expect("...and the zone after it", Spoken:GetQueueSize(), 2)
+Expect("...and the greeting is remembered", SpokenPlacesCharacter.greeted, true)
+
+-- A zone change before the greeting's first try, with the valley already known.
+Z = Boot(VALLEY, 1, nil)
+Z:Set("autoplayExplored", true)
+ZoneChanged(Z)
+Expect("a zone change before the greeting reads nothing", Spoken:GetQueueSize(), 0)
+stub.Advance(2)
+current = Spoken:GetCurrent()
+Expect("...the valley is read first", current and current.key, "s:1411:valley of trials")
+Expect("...the zone after it", Spoken:GetQueueSize(), 2)
+Expect("...and the character is greeted", SpokenPlacesCharacter.greeted, true)
+ZoneChanged(Z)
+Expect("...a zone change once it is settled does not read them again", Spoken:GetQueueSize(), 2)
+
+-- The valley already waiting from another route is not refused as a duplicate and left ungreeted.
+Z = Boot(VALLEY, 1, nil)
+Z:QueueLore(1411, "valley of trials")
+stub.Advance(2)
+Expect("a valley already queued still counts as the greeting", SpokenPlacesCharacter.greeted, true)
+Expect("...and the greeting adds no zone to it", Spoken:GetQueueSize(), 1)
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll places greeting tests passed")
