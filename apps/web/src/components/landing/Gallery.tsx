@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { GALLERY } from "./shots";
+import { useArrowFocus } from "./useArrowFocus";
 
 /**
  * One large frame and a single row of buttons under it that scrolls sideways. The frame shows the
@@ -14,6 +15,8 @@ export default function Gallery() {
   const [index, setIndex] = useState(0);
   const [edges, setEdges] = useState({ start: false, end: true });
   const row = useRef<HTMLUListElement>(null);
+  const prev = useRef<HTMLButtonElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
   const item = GALLERY[index];
 
   const measure = useCallback(() => {
@@ -27,6 +30,8 @@ export default function Gallery() {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, [measure]);
+
+  useArrowFocus(edges, row, prev, next);
 
   const go = (step: 1 | -1) => {
     const next = (index + step + GALLERY.length) % GALLERY.length;
@@ -78,20 +83,16 @@ export default function Gallery() {
             </li>
           ))}
         </ul>
-        {edges.start && (
-          <button type="button" className="bn-thumbs-arrow bn-thumbs-prev" aria-label="Earlier pictures" onClick={() => scroll(-1)}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 4l-6 6 6 6" />
-            </svg>
-          </button>
-        )}
-        {edges.end && (
-          <button type="button" className="bn-thumbs-arrow bn-thumbs-next" aria-label="More pictures" onClick={() => scroll(1)}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M8 4l6 6-6 6" />
-            </svg>
-          </button>
-        )}
+        <button type="button" ref={prev} className="bn-thumbs-arrow bn-thumbs-prev" aria-label="Earlier pictures" aria-hidden={!edges.start} tabIndex={edges.start ? 0 : -1} onClick={() => scroll(-1)}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 4l-6 6 6 6" />
+          </svg>
+        </button>
+        <button type="button" ref={next} className="bn-thumbs-arrow bn-thumbs-next" aria-label="More pictures" aria-hidden={!edges.end} tabIndex={edges.end ? 0 : -1} onClick={() => scroll(1)}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M8 4l6 6-6 6" />
+          </svg>
+        </button>
       </div>
     </div>
   );

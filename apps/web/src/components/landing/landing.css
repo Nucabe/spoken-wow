@@ -16,9 +16,9 @@
  * screenshots and the closing band each have a section of plain type on either side.
  *
  * CONTRAST (WCAG 2.2 AA, measured): text 14:1 to 17:1 and text-2 9:1 to 11:1 on every surface;
- * muted 5:1 on every surface it is used on (the page, the panel and the form field) and never on a
- * button; the accent blue 4.7:1 on the panel and 5.4:1 on the page; white on the button blue 4.6:1,
- * and the hover and pressed blues go darker, not lighter, so they only gain contrast.
+ * muted 4.7:1 to 6:1 on every surface it is used on (the page, the panel and the form field) and
+ * never on a button; the gold accent 9:1 on the panel and 11:1 on the page; the dark text on the
+ * gold button 10.5:1, and the hover and pressed golds keep it above 8:1.
  */
 
 .bn {
@@ -531,36 +531,13 @@ html:has(.bn) {
 .bn-stage-part {
   position: relative;
   isolation: isolate;
-  display: flex;
-  align-items: flex-end;
-  min-height: 440px;
   overflow: hidden;
   border-radius: 8px;
   background: var(--panel-2);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
 }
-.bn-stage-art {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background-size: cover;
-  transition: background-position 0.4s;
-}
-.bn-stage-part::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(180deg, rgba(16, 18, 22, 0.1) 0%, rgba(16, 18, 22, 0.7) 50%, rgba(16, 18, 22, 0.96) 100%);
-}
 .bn-stage-body {
-  width: 100%;
-  max-width: 560px;
-  padding: 40px;
-}
-.bn-stage-body h3 {
-  font-size: 40px;
-  line-height: 48px;
+  padding: 32px 40px 40px;
 }
 .bn-stage-body p {
   margin-top: 8px;
@@ -974,6 +951,9 @@ html:has(.bn) {
   border-radius: 8px;
   background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+}
+.bn-login[aria-busy="true"] {
+  min-height: 452px;
 }
 .bn-login h3 {
   margin-bottom: 4px;
@@ -1460,15 +1440,8 @@ html:has(.bn) {
   .bn-parts {
     grid-template-columns: minmax(0, 1fr);
   }
-  .bn-stage-part {
-    min-height: 480px;
-  }
   .bn-stage-body {
-    padding: 0 24px 24px;
-  }
-  .bn-stage-body h3 {
-    font-size: 32px;
-    line-height: 40px;
+    padding: 24px;
   }
   .bn-thumbs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1644,6 +1617,16 @@ html:has(.bn) {
 .bn-thumbs-arrow:hover {
   background: var(--btn-hover);
 }
+.bn-thumbs-arrow {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, background 0.15s;
+}
+.bn-thumbs-wrap[data-start="true"] .bn-thumbs-prev,
+.bn-thumbs-wrap[data-end="true"] .bn-thumbs-next {
+  opacity: 1;
+  pointer-events: auto;
+}
 .bn-thumbs-prev {
   left: 8px;
 }
@@ -1813,11 +1796,6 @@ html:has(.bn) {
   opacity: 0;
   transform: translateY(8px);
 }
-@media (prefers-reduced-motion: reduce) {
-  .bn-line {
-    transition: none;
-  }
-}
 
 /* Brand marks beside link and button text take its colour */
 .bn-brand-icon {
@@ -1842,31 +1820,6 @@ html:has(.bn) {
 }
 .bn-hero .bn-btn:not(.bn-btn-primary):hover {
   background: rgba(63, 66, 75, 0.75);
-}
-
-/* Showcase: the text on the panel */
-.bn-stage-part {
-  display: block;
-  min-height: 0;
-  padding: 0;
-  background: var(--panel-2);
-}
-.bn-stage-part::after {
-  display: none;
-}
-.bn-stage-body {
-  max-width: none;
-  padding: 32px 40px 40px;
-  border-radius: 0;
-  background: none;
-}
-@media (max-width: 720px) {
-  .bn-stage-part {
-    padding: 0;
-  }
-  .bn-stage-body {
-    padding: 24px;
-  }
 }
 
 

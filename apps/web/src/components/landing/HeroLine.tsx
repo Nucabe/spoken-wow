@@ -37,11 +37,14 @@ const PAUSE_STEPS = 10;
 export default function HeroLine() {
   const [line, setLine] = useState(0);
   const [fading, setFading] = useState(false);
-  const [spoken, setSpoken] = useState(LINES[0].words.length);
+  const [spoken, setSpoken] = useState(0);
   const figure = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setSpoken(LINES[0].words.length);
+      return;
+    }
     let current = 0;
     let count = 0;
     let visible = true;
@@ -49,7 +52,6 @@ export default function HeroLine() {
       visible = entry.isIntersecting;
     });
     if (figure.current) observer.observe(figure.current);
-    setSpoken(0);
     const timer = window.setInterval(() => {
       if (!visible || document.hidden) return;
       count += 1;

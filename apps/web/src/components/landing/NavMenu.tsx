@@ -1,15 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
-const LINKS = [
-  { href: "#voices", label: "What Spoken voices" },
-  { href: "#manager", label: "Manager" },
-  { href: "#install", label: "Install" },
-  { href: "#gallery", label: "Gallery" },
-  { href: "#backstage", label: "Backstage" },
-  { href: "#community", label: "Community" },
-];
+import { NAV } from "./nav";
 
 /** The section links in a menu, for the widths where the top bar has no room for them. */
 export default function NavMenu() {
@@ -18,12 +11,24 @@ export default function NavMenu() {
     if (menu.current) menu.current.open = false;
   };
 
+  // A tap outside the open menu closes it; <details> does not do that itself.
+  useEffect(() => {
+    const away = (event: PointerEvent) => {
+      if (menu.current?.open && !menu.current.contains(event.target as Node)) menu.current.open = false;
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, []);
+
   return (
     <details
       ref={menu}
       className="bn-menu"
       onKeyDown={(event) => {
-        if (event.key === "Escape") close();
+        if (event.key === "Escape") {
+          close();
+          menu.current?.querySelector("summary")?.focus();
+        }
       }}
     >
       <summary aria-label="Menu">
@@ -32,7 +37,7 @@ export default function NavMenu() {
         </svg>
       </summary>
       <nav aria-label="Menu">
-        {LINKS.map((link) => (
+        {NAV.map((link) => (
           <a key={link.href} href={link.href} onClick={close}>
             {link.label}
           </a>

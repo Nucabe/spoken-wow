@@ -9,9 +9,11 @@ import BrandIcon from "@/components/landing/BrandIcon";
 import Gallery from "@/components/landing/Gallery";
 import HeroLine from "@/components/landing/HeroLine";
 import InstallTabs, { type InstallLanguage, type InstallLink, type InstallRow } from "@/components/landing/InstallTabs";
+import { CURSEFORGE, GITHUB, WAGO } from "@/components/landing/links";
 import LoginPanel from "@/components/landing/LoginPanel";
 import ManagerWindow from "@/components/landing/ManagerWindow";
 import NavMenu from "@/components/landing/NavMenu";
+import { NAV } from "@/components/landing/nav";
 import NavSession from "@/components/landing/NavSession";
 import Showcase from "@/components/landing/Showcase";
 import { LOCALES, type Lang } from "@/lib/lang";
@@ -25,8 +27,7 @@ export const metadata: Metadata = {
     "Spoken reads quest dialogue, NPC greetings, zone lore and in-world books aloud in WoW: Forever and Classic Era. Install it with the Spoken Manager, CurseForge or by hand.",
 };
 
-const CURSEFORGE = "https://www.curseforge.com/wow/addons";
-const RELEASES = "https://github.com/rusty-key/spoken-wow/releases";
+const RELEASES = `${GITHUB}/releases`;
 const MANAGER_URL = `${RELEASES}/tag/manager-latest`;
 const MANAGER_VERSION = "0.1.2";
 const MANAGER_FILES = `${RELEASES}/download/manager-latest/Spoken-Manager`;
@@ -68,6 +69,7 @@ function installRows(lang: Lang): InstallRow[] {
       note: "The addon. Required.",
       links: [
         { label: "CurseForge", href: `${CURSEFORGE}/spoken-player` },
+        { label: "Wago", href: `${WAGO}/spoken-quests` },
         { label: "GitHub", href: github("spoken/") },
       ],
     },
@@ -94,15 +96,6 @@ const LANGUAGES: InstallLanguage[] = LOCALES.map(({ code, name }) => ({
   curseforge: META[code] ?? null,
   rows: installRows(code),
 }));
-
-const NAV = [
-  { href: "#voices", label: "What Spoken voices" },
-  { href: "#manager", label: "Manager" },
-  { href: "#install", label: "Install" },
-  { href: "#gallery", label: "Gallery" },
-  { href: "#backstage", label: "Backstage" },
-  { href: "#community", label: "Community" },
-];
 
 const FLOW = [
   {
@@ -461,7 +454,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
               <BrandIcon name="github" size={16} />
               Releases{NEW_TAB}
             </a>
-            <a href="https://github.com/rusty-key/spoken-wow" target="_blank" rel="noreferrer">
+            <a href={GITHUB} target="_blank" rel="noreferrer">
               <BrandIcon name="github" size={16} />
               GitHub{NEW_TAB}
             </a>

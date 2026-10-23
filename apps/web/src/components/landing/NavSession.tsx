@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "@/components/LocaleLink";
-import { useSession } from "@/lib/auth-client";
-
 import { BACKSTAGE_HREF } from "./backstage";
+import { useLandingSession } from "./useLandingSession";
 
 /** The top bar's sign-in button, or the way into Backstage once there is a session. */
 export default function NavSession() {
-  const { data: session, isPending } = useSession();
-  if (isPending) {
+  const { session, pending } = useLandingSession();
+  if (pending) {
     return (
       <span className="bn-btn bn-btn-sm" aria-hidden="true" style={{ visibility: "hidden" }}>
         Backstage

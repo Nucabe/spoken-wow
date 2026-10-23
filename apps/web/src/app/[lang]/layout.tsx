@@ -58,29 +58,29 @@ export default async function RootLayout({
         <LangProvider lang={lang}>
           <GrantsProvider>
             <SiteHeader>
-            <header className="border-b">
-              <Contained className="flex h-12 items-center justify-between gap-3">
-                <Link href="/" aria-label="Spoken">
-                  {/* Intrinsic 1024x187; height is what the header constrains, so the
-                      width below is that ratio and only exists to stop the reflow. */}
-                  <Image
-                    src="/logo.png"
-                    alt="Spoken"
-                    width={142}
-                    height={26}
-                    priority
-                    className="h-[26px] w-auto"
-                  />
-                </Link>
-                <div className="flex items-center gap-1">
-                  {/* On a phone the switch lives in UserMenu's burger, with the links. */}
-                  <div className="hidden md:block">
-                    <LanguageSwitcher />
+              <header className="border-b">
+                <Contained className="flex h-12 items-center justify-between gap-3">
+                  <Link href="/" aria-label="Spoken">
+                    {/* Intrinsic 1024x187; height is what the header constrains, so the
+                        width below is that ratio and only exists to stop the reflow. */}
+                    <Image
+                      src="/logo.png"
+                      alt="Spoken"
+                      width={142}
+                      height={26}
+                      priority
+                      className="h-[26px] w-auto"
+                    />
+                  </Link>
+                  <div className="flex items-center gap-1">
+                    {/* On a phone the switch lives in UserMenu's burger, with the links. */}
+                    <div className="hidden md:block">
+                      <LanguageSwitcher />
+                    </div>
+                    <UserMenu />
                   </div>
-                  <UserMenu />
-                </div>
-              </Contained>
-            </header>
+                </Contained>
+              </header>
             </SiteHeader>
             {children}
           </GrantsProvider>

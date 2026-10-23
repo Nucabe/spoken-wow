@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Lang } from "@/lib/lang";
 
 import BrandIcon from "./BrandIcon";
+import { CURSEFORGE } from "./links";
 
 export type InstallLink = { label: string; href: string };
 export type InstallRow = { name: string; note: string; links: InstallLink[] };
@@ -27,7 +28,8 @@ const TABS: { id: Tab; label: string; icon: "spoken" | "curseforge" | "github" }
 
 const NEW_TAB = <span className="sr-only"> (opens in a new tab)</span>;
 
-const CURSEFORGE = "https://www.curseforge.com/wow/addons";
+/** No game client runs in Italian, so its pack plays only once the language is chosen in Spoken. */
+const ITALIAN_NOTE = "No game client runs in Italian: install the pack, then choose the language under Voice Language in Spoken's settings.";
 
 /**
  * The three ways in: the Manager, a CurseForge meta addon per language, or a zip per pack.
@@ -126,6 +128,7 @@ export default function InstallTabs({
               </a>
               . If Windows SmartScreen stops the installer, choose More info, then Run anyway.
             </p>
+            <p className="bn-note">Italian: {ITALIAN_NOTE}</p>
           </>
         )}
 
@@ -163,7 +166,7 @@ export default function InstallTabs({
                 <a href={`${CURSEFORGE}/${italian.curseforge}`} target="_blank" rel="noreferrer">
                   Spoken Italian{NEW_TAB}
                 </a>
-                .
+                . {ITALIAN_NOTE}
               </p>
             )}
           </>
@@ -200,9 +203,9 @@ export default function InstallTabs({
                   </div>
                   <div className="bn-links-row">
                     {row.links.some((link) => link.label.startsWith("GitHub")) ? (
-                      row.links.filter((link) => link.label.startsWith("GitHub")).map((link) => (
+                      row.links.filter((link) => link.label.startsWith("GitHub") || link.label === "Wago").map((link) => (
                         <a key={link.href} className="bn-btn bn-btn-sm" href={link.href} target="_blank" rel="noreferrer">
-                          <BrandIcon name="github" size={16} />
+                          {link.label !== "Wago" && <BrandIcon name="github" size={16} />}
                           {link.label}
                           {NEW_TAB}
                         </a>
@@ -215,10 +218,7 @@ export default function InstallTabs({
               ))}
             </div>
             {chosen.code === "itIT" && (
-              <p className="bn-note">
-                No game client runs in Italian: install the pack, then choose the language under Voice
-                Language in Spoken&apos;s settings.
-              </p>
+              <p className="bn-note">{ITALIAN_NOTE}</p>
             )}
             <p className="bn-note">
               On the 1.12, 2.4.3 and 3.3.5 clients, take the Spoken Quests zip from the release page.
