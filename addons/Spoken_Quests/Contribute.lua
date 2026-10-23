@@ -184,8 +184,9 @@ local function CachedDisplays()
 end
 
 --- What the client can see about who is speaking. The site decides what it means. Nothing where
---- the one on screen is a player: their sex, kind and model are not a quest giver's.
-local function Observations(fields)
+--- the one on screen is a player: their sex, kind and model are not a quest giver's. No displays
+--- for a `reworded` line: the site already knows who speaks it, and rolling them is model work.
+local function Observations(fields, reworded)
     if SharedByPlayer() then
         return
     end
@@ -199,7 +200,7 @@ local function Observations(fields)
     add("model", NPCModel:Get(Utils:GetNPCGUID()))
     -- Creatures only: a gameobject id is a different id space, and SetCreature would roll the
     -- creature that happens to share its number.
-    if kind == "creature" then
+    if kind == "creature" and not reworded then
         add("displays", CachedDisplays())
     end
     add("sex", UnitSex and NotSecret(UnitSex("npc")) or nil)
@@ -334,8 +335,9 @@ local function BaseFields()
     }
 end
 
---- The envelope for what is on screen, or nil when there is nothing to send.
-function Contribute:Capture()
+--- The envelope for what is on screen, or nil when there is nothing to send. `reworded` for a
+--- line that plays in other words, which leaves out the displays.
+function Contribute:Capture(reworded)
     if not CoreIsCurrent() then
         return nil
     end
@@ -349,7 +351,7 @@ function Contribute:Capture()
         end
         fields[#fields + 1] = { "event", EVENT_PATHS[event] }
         fields[#fields + 1] = { "npc", NPCField() }
-        Observations(fields)
+        Observations(fields, reworded)
         fields[#fields + 1] = { "title", GetTitleText and NotSecret(GetTitleText()) or "" }
         -- The second value is what Gather keys the line on: the quest, the moment and who said
         -- it. The text is left out on purpose -- the same panel read twice is one line. The
@@ -372,7 +374,7 @@ function Contribute:Capture()
         -- characters is one line rather than one per name.
         gossip = Contribute:Detemplate(gossip)
         fields[#fields + 1] = { "npc", NPCField() }
-        Observations(fields)
+        Observations(fields, reworded)
         -- An NPC can say several different things, so gossip is keyed on the words as well.
         -- Keyed on the sex too, so a man and a woman saying the same words are two lines.
         local sex = UnitSex and NotSecret(UnitSex("npc"))
@@ -537,25 +539,34 @@ end
 local keptWith = {}
 
 --- Keep the line on screen for later. Only reached once a caller has established it is
---- missing or changed (HasGap, which passes `known`), or when its model has just arrived
+--- missing or changed (HasGap, which passes `known`, and `reworded` for a changed one), or when its model has just arrived
 --- (NPCModel.onLoaded) -- so that one re-checks that the line is still one of those.
-local function GatherLine(known)
-    if not (Spoken.Gather and Spoken.Gather:IsEnabled()) or not (known or IsMissing() or IsChanged()) then
+local function GatherLine(known, reworded)
+    if not (Spoken.Gather and Spoken.Gather:IsEnabled()) then
         return false
     end
-    local envelope, key, said = Contribute:Capture()
+    if not known then
+        if IsMissing() then
+            reworded = false
+        elseif IsChanged() then
+            reworded = true
+        else
+            return false
+        end
+    end
+    local envelope, key, said = Contribute:Capture(reworded)
     if not envelope then
         return false
     end
     -- A quest no one on screen speaks is still kept, without a speaker, until a copy with one
     -- comes in to take its place.
     local stem, speaker = QuestMoment(key)
-    if stem and speaker == "" and keptWith[stem] == said then
+    if stem and speaker == "" and keptWith[stem] == Unix(said) then
         return false
     end
     local stored = Spoken.Gather:Add(key, envelope)
     if stored and stem and speaker ~= "" then
-        keptWith[stem] = said
+        keptWith[stem] = Unix(said)
         -- The copy kept before it, without its speaker, saying the same.
         local twin = Spoken.Gather:Get(stem)
         if twin and Unix(TextOf(twin)) == Unix(said) then
@@ -690,7 +701,7 @@ function Contribute:HasGap()
     elseif gathering and IsChanged() then
         -- A line that plays in other words, kept for the site to correct. No model is loaded
         -- for it: the site already knows who speaks a line it has, and a load is kept for gaps.
-        GatherLine(true)
+        GatherLine(true, true)
     end
     if not missing and NPCModel:IsLoading() and not readBody then
         -- No gap, but a load is still in flight for whatever NPC started it: the player closed

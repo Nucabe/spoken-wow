@@ -200,13 +200,17 @@ end
 -- ª, µ, º, which are letters, and the sign × and ÷), general punctuation (curly quotes, the dash,
 -- the ellipsis, no-break and other spaces), currency, arrows, boxes and shapes, the CJK
 -- punctuation and the fullwidth forms of ASCII punctuation (the fullwidth comma, the ideographic full
--- stop), and the emoji.
+-- stop), and the emoji. Hangul, kana and Han too: those scripts put no space between words, so a
+-- name runs straight into the particle or the next word ("홍길동님"), and only a boundary there
+-- finds it.
 local SEPARATORS = {
     { 0x80, 0xA9 }, { 0xAB, 0xB4 }, { 0xB6, 0xB9 }, { 0xBB, 0xBF }, { 0xD7, 0xD7 }, { 0xF7, 0xF7 },
     { 0x2000, 0x206F }, { 0x20A0, 0x20CF }, { 0x2190, 0x23FF }, { 0x2500, 0x27BF }, { 0x2E00, 0x2E7F },
     { 0x3000, 0x3004 }, { 0x3008, 0x3020 }, { 0x3030, 0x3030 }, { 0x303D, 0x303F },
     { 0xFE30, 0xFE6F }, { 0xFF00, 0xFF0F }, { 0xFF1A, 0xFF20 }, { 0xFF3B, 0xFF40 }, { 0xFF5B, 0xFF65 },
     { 0xFFE0, 0xFFEE }, { 0x1F000, 0x1FAFF },
+    { 0x1100, 0x11FF }, { 0x3040, 0x30FF }, { 0x3130, 0x318F }, { 0x3400, 0x4DBF }, { 0x4E00, 0x9FFF },
+    { 0xAC00, 0xD7AF }, { 0xF900, 0xFAFF },
 }
 
 --- The code point of the UTF-8 character whose first byte is at i, nil where the bytes are not one.

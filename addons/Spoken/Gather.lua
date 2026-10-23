@@ -133,7 +133,7 @@ function Gather:Remove(key)
 end
 
 --- Whether the lines kept by earlier versions were tidied at login: a feature addon does that
---- once, and the file says so, as it says whether the player was introduced to gathering.
+--- once, and the file says so.
 function Gather:IsTidied()
     return Store().Tidied and true or false
 end
