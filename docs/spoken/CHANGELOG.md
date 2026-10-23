@@ -4,6 +4,12 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Collect Missing Lines keeps each quest stage once, and keeps reworded lines.** A quest stage
+  is no longer kept a second time without its NPC as the window closes. A quest or gossip line that
+  plays but whose words in the game differ from the text it was voiced from is now kept too, so it
+  can be corrected. Your character's name no longer goes out with a line or page that writes it in
+  capitals, nor another player's name or look with a quest they shared, and lines kept before that
+  have a sharing player's name taken out when you log in. *([Nucabe](https://github.com/Nucabe))*
 - **Text Language on the Places page offers Traditional Chinese (繁體中文)** on clients in other
   languages whose fonts draw it, as it does Simplified Chinese, Korean and Russian. Voice Language
   names it in its own language on those clients too. *([Nucabe](https://github.com/Nucabe))*
