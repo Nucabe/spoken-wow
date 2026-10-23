@@ -181,8 +181,13 @@ ExpectOf("...past the line's name", function()
     return F.count.anchor.x > label.anchor.x + label.width
 end, true)
 ExpectOf("...fading in as the line is added", function() return F.count:GetAlpha() < 1 end, true)
+local measured = 0
+local Measure = F.frame.container.label.GetStringWidth
+F.frame.container.label.GetStringWidth = function(...) measured = measured + 1; return Measure(...) end
 pcall(F.Tick, F, 0.3)
 ExpectOf("...all the way", function() return F.count:GetAlpha() end, 1)
+Expect("the line's name is measured once a line, not on every poll", measured, 0)
+F.frame.container.label.GetStringWidth = Measure
 env.SoundQueue:RemoveSoundFromQueue(held)
 F:Update()
 ExpectOf("...and gone with no line waiting", function() return F.count:IsShown() end, false)

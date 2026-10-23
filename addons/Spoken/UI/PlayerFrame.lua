@@ -361,11 +361,9 @@ function PlayerFrame:LayoutHeader()
     local nameWidth = math.min((name:GetStringWidth() or 0) + 1, math.max(1, room - tailRoom))
     name:SetWidth(nameWidth)
     local x = nameWidth
-    label:SetWidth(0)
-    label:SetText(label:GetText())
     local labelRoom = room - tailRoom - nameWidth - LABEL_GAP
     if label:IsShown() and labelRoom > 0 then
-        local labelWidth = math.min((label:GetStringWidth() or 0) + 1, labelRoom)
+        local labelWidth = math.min(self.labelWidth or 0, labelRoom)
         label:SetWidth(labelWidth)
         label:ClearAllPoints()
         label:SetPoint("LEFT", name, "LEFT", nameWidth + LABEL_GAP, 0)
@@ -490,10 +488,13 @@ function PlayerFrame:Update()
     local container = self.frame.container
     local speaker = Speaker(head)
     container.name:SetText(speaker ~= "" and speaker or Label(head))
+    container.label:SetWidth(0)
     container.label:SetText(speaker ~= "" and "• " .. Label(head) or "")
     container.label:SetShown(speaker ~= "")
     Addon:ClipFont(container.name, head)
     Addon:ClipFont(container.label, head)
+    -- Measured once a line, unbounded, so the width is the text's own; the row is laid out often.
+    self.labelWidth = (container.label:GetStringWidth() or 0) + 1
 
     Portrait:Configure(self.frame.portrait, head)
     self:ConfigureActions(head)
