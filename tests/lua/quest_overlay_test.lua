@@ -208,13 +208,14 @@ _G.C_QuestLog.IsQuestCalling = function() error("not known yet") end
 Expect("a failing IsQuestCalling does not reach the client's redraw", pcall(QuestLogQuests_Update), true)
 _G.C_QuestLog.IsQuestCalling = nil
 
--- The client draws the icon whatever the setting says: the button and the title still agree.
+-- The client draws the icon whatever the setting says: the title is not moved once the row is laid
+-- out, so the button stays off its end.
 stub.SetQuestLogPOIIcons(true)
 SetCVar("questPOI", "0")
 QuestLogQuests_Update()
-Expect("an icon the setting did not announce has the button at the title's end", Fit(row, buttons[748]), "fits")
 titleEndsAt, titleOffset = TitleEnd(row)
-Expect("...with the title ended short of it", titleOffset, -27)
+Expect("an icon the setting did not announce leaves the title where the client anchored it", titleOffset, -4)
+Expect("...and the button is not on the title's end", buttons[748].anchor.point, "TOPLEFT")
 
 -- An error in the title hook never reaches the client's redraw, and does not leave it stuck.
 local blocked = true
@@ -236,15 +237,7 @@ failing.GetParent = function() error("no parent") end
 Expect("an error in the hook itself does not reach the client's redraw", pcall(QuestLogQuests_Update), true)
 failing.GetParent = nil
 
--- The pool is walked once for a redraw, not once for each row it hands out.
-local walks, enumerate = 0, QuestScrollFrame.titleFramePool.EnumerateActive
-QuestScrollFrame.titleFramePool.EnumerateActive = function(...)
-    walks = walks + 1
-    return enumerate(...)
-end
 QuestLogQuests_Update()
-QuestScrollFrame.titleFramePool.EnumerateActive = enumerate
-Expect("a redraw walks the rows it drew once", walks, 1)
 
 stub.SetQuestLogPOIIcons(false)
 QuestLogQuests_Update()

@@ -134,7 +134,6 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
     local titleAnchor = setmetatable({}, { __mode = "k" })
     local reserved = setmetatable({}, { __mode = "k" })
     local hookedTitles = setmetatable({}, { __mode = "k" })
-    local hookedCount = 0
     local reserving
 
     -- These hooks run inside the client's own calls, where an error would reach its quest log.
@@ -186,12 +185,9 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
     end)
 
     local HookTitles = Guarded(function(pool)
-        -- Every row made so far is hooked, and a row is made only when none is left idle.
-        if pool.GetNumActive and pool:GetNumActive() <= hookedCount then return end
         for row in pool:EnumerateActive() do
             if row.Text and not hookedTitles[row] then
                 hookedTitles[row] = true
-                hookedCount = hookedCount + 1
                 local ok, err = pcall(hooksecurefunc, row.Text, "SetPoint", OnTitleAnchored)
                 if not ok then
                     Debug:Note("quest log", "title-hook", "the quest log's title could not be hooked: %s", tostring(err))
@@ -214,12 +210,11 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             local ok, err = pcall(playButton.MatchBox, playButton, questLogTitleFrame.Checkbox)
             if not ok then Say(err) end
         end
-        -- The setting decided the title's end as it was set, before the row had its quest; the
-        -- row's icon, which the client may draw whatever the setting says, decides here, and
-        -- the title is brought to match.
-        local atRightEnd = GetsObjectiveIcon(questLogTitleFrame) or QuestPOIButton(questLogTitleFrame) ~= nil
-        SetTitleEnd(questLogTitleFrame, atRightEnd and true or false)
+        -- The title's end was set as the client anchored it, and is not moved now that the row
+        -- is laid out: the button goes to that end only where the title was ended short of it.
+        -- A title the hook never saw is judged by the row's icon.
         local anchor = titleAnchor[questLogTitleFrame]
+        local atRightEnd = reserved[questLogTitleFrame] or (not anchor and QuestPOIButton(questLogTitleFrame) ~= nil)
         local ends = anchor and anchor.relativeTo or questLogTitleFrame.Checkbox
         if atRightEnd and ends then
             playButton:SetPoint("RIGHT", ends, anchor and anchor.relativePoint or "LEFT", -3, anchor and anchor.y or 0)
