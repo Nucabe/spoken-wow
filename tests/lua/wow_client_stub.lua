@@ -213,9 +213,13 @@ local function Widget(kind, name)
     end
     -- Seven pixels a byte by default, which the caption and subtitle suites are measured in.
     -- A suite that measures translated text sets M.TextWidth to something closer to a font.
+    -- U+0378, which no font has, is the box a missing glyph draws: as wide as a Han or Hangul
+    -- character, so no font here draws them unless a suite says so.
     function w:GetStringWidth()
         if M.TextWidth then return M.TextWidth(self) end
-        return #tostring(self.text or "") * 7
+        local text = tostring(self.text or "")
+        local _, boxes = text:gsub("\205\184", "")
+        return (#text + boxes) * 7
     end
     function w:SetWordWrap(on) self.wordWrap = on and true or false end
     function w:SetFontObject(font) self.font = type(font) == "table" and (font.name or font) or font end

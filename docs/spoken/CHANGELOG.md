@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Text Language on the Places page offers Traditional Chinese (繁體中文)** on clients in other
+  languages whose fonts draw it, as it does Simplified Chinese, Korean and Russian. Voice Language
+  names it in its own language on those clients too. *([Nucabe](https://github.com/Nucabe))*
 - **The Large Window names the line as well as the speaker.** A subzone's story reads "Westfall •
   Moonbrook", a quest "Gornek • Cutting Teeth" and a book its title after "Book", as the other windows
   show them. Pointing at a name cut short shows the whole of it. *([Nucabe](https://github.com/Nucabe))*
