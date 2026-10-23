@@ -117,23 +117,25 @@ end
 --- The list is kept for as long as the registries hold the same packs: it is asked for on every
 --- readable the Compendium lists, and every page of one.
 local listed
+local NONE = {}
 function SpokenReadables:GetAudioPacks()
 	local current, legacy = _G.SpokenReadablesAudioPacks, _G.SpokenBooksAudioPacks
 	if listed and listed.current == current and listed.legacy == legacy then
-		-- The same tables: still the same packs in them?
+		-- The same tables: still the same packs in them? Counted without building anything.
 		local count, same = 0, true
-		for _, registry in ipairs({ current or {}, legacy or {} }) do
-			for _, pack in pairs(registry) do
-				count = count + 1
-				if not listed.known[pack] then same = false end
-			end
+		for _, pack in pairs(current or NONE) do
+			count = count + 1
+			if not listed.known[pack] then same = false end
+		end
+		for _, pack in pairs(legacy or NONE) do
+			count = count + 1
+			if not listed.known[pack] then same = false end
 		end
 		if same and count == listed.count then return listed.packs end
 	end
 	local known, count = {}, 0
-	for _, registry in ipairs({ current or {}, legacy or {} }) do
-		for _, pack in pairs(registry) do known[pack] = true; count = count + 1 end
-	end
+	for _, pack in pairs(current or NONE) do known[pack] = true; count = count + 1 end
+	for _, pack in pairs(legacy or NONE) do known[pack] = true; count = count + 1 end
 	listed = { current = current, legacy = legacy, known = known, count = count,
 		packs = self:BuildAudioPacks() }
 	return listed.packs
@@ -232,26 +234,14 @@ function SpokenReadables:ClipFor(pageId)
 			if entry then
 				local book = self:BookOf(pageId)
 				local oneLine = self:OneLine()
-				-- On a client in another language the words are the client's, as the game shows
-				-- the page, whatever the voice: French words under an English voice. Not for a
-				-- clip the fallback language plays, which is captioned in what it says. The
-				-- voice's own words where this client's are not known, and on an English client,
-				-- where a voice no client speaks (Italian) is read along in its own words. The
-				-- caption keeps the page's tokens; the subtitle shows what the clip says.
-				local text = language == self:GetVoiceLanguage() and self:ClientPageText(pageId)
-				local shown = self:GetClientLanguage()
-				if not text then
-					shown = language
-					text = self:PageTextIn(pageId, language)
-					if language == self.BASE_LANGUAGE and place.text
-						and not (type(entry.text) == "string" and entry.text ~= "") then
-						text = self:SaidTokens(place.text)
-					end
-				end
-				-- The title the client showed, in the language of the words below it; the
-				-- corpus's own is English.
+				-- The words are in the Text Language, which here is the client's, whatever the voice
+				-- or the language of the recording; the clip's own only where it has none.
+				-- `shown` is the language they are in.
+				local text, shown = self:CaptionText(pageId, language)
+				-- The title in the language of the words below it: the one the client showed this
+				-- session, else the one the pack's index gives it, else the corpus's, which is English.
 				local title = self.bookTitle and self.bookTitle[shown] and self.bookTitle[shown][place.book]
-					or (book and book.title) or ""
+					or self:PackTitleOf(pageId, shown) or (book and book.title) or ""
 				local length = (entry.len and entry.len > 0) and entry.len or nil
 				return {
 					key = "b:" .. pageId,
