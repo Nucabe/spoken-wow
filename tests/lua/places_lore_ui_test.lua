@@ -526,16 +526,21 @@ Expect("...and the soft edges back", strip:IsShown(), true)
 SetCVar("InputDeviceInterfaceStyle", "0")
 Z:RefreshPanel()
 Expect("with the gamepad UI off again, the panel goes back into the map", panel.parent, WorldMapFrame)
--- Adventure Guide Forever hangs its side tabs down the quest log's right edge, 50 past the map's.
+-- Adventure Guide Forever hangs two side tabs down the quest log's right edge, its Quests tab above
+-- its guide tab; here the upper one reaches 60 past the map's edge and the lower one 50.
 local toggle = _G.SpokenPlacesPanelToggle
+local questsTab = CreateFrame("Frame", "AdventureGuideForeverQuestsTab", WorldMapFrame)
+function questsTab:GetRight() return WorldMapFrame:GetRight() + 60 end
 local guideTab = CreateFrame("Frame", "AdventureGuideForeverTab", WorldMapFrame)
 function guideTab:GetRight() return WorldMapFrame:GetRight() + 50 end
+questsTab:Show()
 guideTab:Show()
 Z:SetMapPanelCollapsed(true)
-Expect("folded, its button goes under another addon's side tabs",
+Expect("folded, its button goes under the lowest of another addon's side tabs",
     toggle.anchor.relativeTo == guideTab and (toggle.anchor.relativePoint .. " " .. toggle.anchor.y), "BOTTOMLEFT -3")
 Z:SetMapPanelCollapsed(false)
-Expect("...and open, the panel stands clear of them", panel.anchor.x, 52)
+Expect("...and open, the panel stands clear of the widest", panel.anchor.x, 62)
+questsTab:Hide()
 guideTab:Hide()
 Z:RefreshPanel()
 Expect("with the quest log closed, the panel is back against the map", panel.anchor.x, 2)

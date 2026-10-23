@@ -90,7 +90,8 @@ local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map02]]
 local SIDE_TAB_TOP = 30
 -- Space between side tabs stacked down an edge, as the game and Adventure Guide Forever leave.
 local TAB_GAP = 3
--- Where the button sits against the map's edge when no other side tab is there (BuildToggle).
+-- Where the button sits against the map's edge when no other side tab is there, and its tuck under
+-- one when there is (BuildToggle).
 local toggleX, toggleY
 
 --------------------------------------------------------------------------------
@@ -287,19 +288,6 @@ local function FollowMap()
 	FollowAlpha()
 end
 
--- The lowest side tab shown down the quest log's right edge, from top to bottom: the game's own,
--- which Forever hides until the gamepad UI is switched off, and Adventure Guide Forever's. They
--- show only with the quest log.
-local function LastSideTab()
-	local log = QuestMapFrame
-	local last
-	for _, tab in ipairs({ log and log.QuestsTab or false, log and log.MapLegendTab or false,
-		_G.AdventureGuideForeverQuestsTab or false, _G.AdventureGuideForeverTab or false }) do
-		if type(tab) == "table" and tab.IsVisible and tab:IsVisible() then last = tab end
-	end
-	return last
-end
-
 -- How far a side tab reaches past the map's edge; its width while it has not been laid out yet.
 local function TabReach(tab, mapEdge)
 	local right, edgeRight = tab:GetRight(), mapEdge:GetRight()
@@ -307,18 +295,34 @@ local function TabReach(tab, mapEdge)
 	return tab:GetWidth() or 0
 end
 
+-- The side tabs shown down the quest log's right edge, children of it that show only with it, in
+-- the order they hang from top to bottom: the game's own, which Forever hides until the gamepad UI
+-- is switched off, then Adventure Guide Forever's, its Quests tab above its guide tab (its
+-- UI/Panel.lua, CreateTabs). The lowest one, and how far the widest reaches past the map's edge.
+local function SideTabs(mapEdge)
+	local log = QuestMapFrame
+	local last, reach = nil, 0
+	for _, tab in ipairs({ log and log.QuestsTab or false, log and log.MapLegendTab or false,
+		_G.AdventureGuideForeverQuestsTab or false, _G.AdventureGuideForeverTab or false }) do
+		if type(tab) == "table" and tab.IsVisible and tab:IsVisible() then
+			last, reach = tab, math.max(reach, TabReach(tab, mapEdge))
+		end
+	end
+	return last, reach
+end
+
 -- Always on the map's right, beside the quest log as the game lays its own panels out, past any
 -- side tabs there. The button that reopens it goes under those tabs.
 local function ApplyAnchors()
 	local mapEdge = MapEdge()
-	local tab = LastSideTab()
-	local gap = GAP + (tab and TabReach(tab, mapEdge) or 0)
+	local tab, reach = SideTabs(mapEdge)
+	local gap = GAP + reach
 	panel:ClearAllPoints()
 	panel:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", gap, 0)
 	panel:SetPoint("BOTTOMLEFT", mapEdge, "BOTTOMRIGHT", gap, 0)
 	toggle:ClearAllPoints()
 	if tab then
-		toggle:SetPoint("TOPLEFT", tab, "BOTTOMLEFT", 0, -TAB_GAP)
+		toggle:SetPoint("TOPLEFT", tab, "BOTTOMLEFT", toggleX, -TAB_GAP)
 	else
 		toggle:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", toggleX, toggleY)
 	end
