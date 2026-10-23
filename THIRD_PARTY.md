@@ -166,8 +166,6 @@ None of this is the project's to license, and the MIT grant does not reach it.
   writings. The text, and the NPC, quest and place names, are Blizzard's (names from the quest
   corpus), the audio is Spoken's generated audio (see "The generated audio" below), and the word
   times come from the project's alignment of that audio. The reviewer decides whether they ship.
-- **The Bosses placeholder** (`apps/web/public/landing/placeholder-bosses.png`) is made for this page
-  from the game icon above, until Bosses has something to play.
 - **The front page's key art** (`apps/web/public/landing/hero.jpg`, `art-era.jpg`,
   `art-anniversary.jpg`) is Blizzard Entertainment's, resized and compressed from the copies on
   warcraft.wiki.gg. `hero.jpg` is the WoW: Forever key art by Alex Horley, `art-era.jpg` is the left

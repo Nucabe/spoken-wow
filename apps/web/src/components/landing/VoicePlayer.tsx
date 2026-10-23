@@ -153,6 +153,54 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
   );
 }
 
+/**
+ * A part with no recording yet, in the shape of the others so the section does not change size:
+ * one example button, the speaker, a flat waveform and a Play button that cannot be pressed.
+ */
+export function VoicePlaceholder({ icon, name, text }: { icon: string; name: string; text: string }) {
+  return (
+    <div className="bn-voice">
+      <div className="bn-voice-picks-wrap">
+        <ul className="bn-voice-picks">
+          <li>
+            <button type="button" aria-pressed="true" aria-disabled="true">
+              <Image src={icon} alt="" width={64} height={64} unoptimized />
+              {name}
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div className="bn-voice-card">
+        <div className="bn-voice-head">
+          <Image src={icon} alt="" width={64} height={64} unoptimized />
+          <p>
+            <b>{name}</b>
+            <span>No recording yet</span>
+          </p>
+        </div>
+        <div className="bn-voice-bar">
+          <button type="button" className="bn-voice-play" aria-label="Play: no recording yet" disabled>
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 4l12 8-12 8z" fill="currentColor" />
+            </svg>
+          </button>
+          <div className="bn-voice-wave">
+            <div className="bn-wave" aria-hidden="true">
+              {Array.from({ length: 96 }, (_, i) => (
+                <i key={i} style={{ height: "6%" }} />
+              ))}
+            </div>
+          </div>
+          <span className="bn-voice-time">0:00 / 0:00</span>
+        </div>
+        <p className="bn-voice-text" lang="en">
+          {text}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const CHEVRON = (path: string) => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d={path} />

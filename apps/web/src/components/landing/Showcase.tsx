@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import Link from "@/components/LocaleLink";
 
-import VoicePlayer from "./VoicePlayer";
+import VoicePlayer, { VoicePlaceholder } from "./VoicePlayer";
 import { VOICES } from "./voices";
 
 type Part = {
@@ -15,8 +15,6 @@ type Part = {
   href?: string;
   /** The game's own icon for the part, as the settings page shows it. */
   icon: string;
-  /** The picture held in the player's place while the part has no recording. */
-  placeholder?: string;
   summary: string;
   facts: string[];
 };
@@ -70,7 +68,6 @@ const PARTS: Part[] = [
     id: "bosses",
     title: "Bosses",
     icon: "/landing/icons/game-bosses.png",
-    placeholder: "/landing/placeholder-bosses.png",
     summary: "A boss's story shows in the narrator when you target it or when it dies.",
     facts: [
       "Words only: a boss's story has no voice yet",
@@ -109,8 +106,7 @@ export default function Showcase() {
           {voices ? (
             <VoicePlayer key={part.id} voices={voices} label={part.title.toLowerCase()} />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="bn-stage-media" src={part.placeholder} alt="Preview coming soon" width={778} height={268} />
+            <VoicePlaceholder icon={part.icon} name={part.title} text="Boss stories show as words in the narrator for now. Their voices come later." />
           )}
         </div>
         <div className="bn-stage-body" aria-live="polite">

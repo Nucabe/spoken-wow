@@ -1856,12 +1856,6 @@ html:has(.bn) {
   overflow: hidden;
   background: var(--bg-deep);
 }
-.bn-stage-media {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-}
 .bn-voice {
   display: flex;
   flex-direction: column;
@@ -2007,6 +2001,10 @@ html:has(.bn) {
   color: var(--cta-ink);
   cursor: pointer;
   transition: background 0.15s;
+}
+.bn-voice-play:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .bn-voice-play:hover {
   background: var(--cta-hover);
