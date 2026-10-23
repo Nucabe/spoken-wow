@@ -40,7 +40,6 @@ local function BaseFields(self)
 	}
 end
 
-
 --- The page with this character's name, class and race put back as the game's tokens, as
 --- Spoken_Quests/Contribute.lua's Detemplate does for quest text. The client writes them into
 --- a page, and a page sent as it was shown would carry the player's name to the site. $G

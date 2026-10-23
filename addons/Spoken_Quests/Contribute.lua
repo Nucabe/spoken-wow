@@ -27,7 +27,7 @@ Contribute = {}
 local function CoreIsCurrent()
     local contribute, gather = _G.Spoken and Spoken.Contribute, _G.Spoken and Spoken.Gather
     return contribute and contribute.NameWords and contribute.ReplaceWord and contribute.Parse
-        and (not gather or (gather.Lines and gather.Get and gather.Replace and gather.Remove and gather.IsTidied))
+        and (not gather or (gather.Lines and gather.Get and gather.Remove and gather.IsTidied))
         and true or false
 end
 
@@ -243,7 +243,6 @@ local function GossipOnScreen()
     end
     return GetGossipText and NotSecret(GetGossipText())
 end
-
 
 --- The text with this character's name, class and race put back as the game's own tokens.
 ---
@@ -539,13 +538,13 @@ end
 local keptWith = {}
 
 --- Keep the line on screen for later. Only reached once a caller has established it is
---- missing or changed (HasGap, which passes `known`, and `reworded` for a changed one), or when its model has just arrived
+--- missing or changed (HasGap, which passes `reworded`), or when its model has just arrived
 --- (NPCModel.onLoaded) -- so that one re-checks that the line is still one of those.
-local function GatherLine(known, reworded)
+local function GatherLine(reworded)
     if not (Spoken.Gather and Spoken.Gather:IsEnabled()) then
         return false
     end
-    if not known then
+    if reworded == nil then
         if IsMissing() then
             reworded = false
         elseif IsChanged() then
@@ -558,18 +557,19 @@ local function GatherLine(known, reworded)
     if not envelope then
         return false
     end
+    said = Unix(said)
     -- A quest no one on screen speaks is still kept, without a speaker, until a copy with one
     -- comes in to take its place.
     local stem, speaker = QuestMoment(key)
-    if stem and speaker == "" and keptWith[stem] == Unix(said) then
+    if stem and speaker == "" and keptWith[stem] == said then
         return false
     end
     local stored = Spoken.Gather:Add(key, envelope)
     if stored and stem and speaker ~= "" then
-        keptWith[stem] = Unix(said)
+        keptWith[stem] = said
         -- The copy kept before it, without its speaker, saying the same.
         local twin = Spoken.Gather:Get(stem)
-        if twin and Unix(TextOf(twin)) == Unix(said) then
+        if twin and TextOf(twin) == said then
             Spoken.Gather:Remove(stem)
         end
     end
@@ -577,8 +577,8 @@ local function GatherLine(known, reworded)
 end
 
 --- The fields of a quest line kept before a shared quest stopped sending them: the sharing
---- player's name as the npc, and their model, sex and creature type as the speaker's.
-local PLAYER_FIELDS = { npc = true, model = true, displays = true, sex = true, creature = true }
+--- player's model, sex and creature type as the speaker's. Their name, the npc, is blanked.
+local PLAYER_FIELDS = { model = true, displays = true, sex = true, creature = true }
 
 --- Whether a speakerless quest line's fields say a player shared it: an npc of one word, with no
 --- id and no kind. An NPC is kept with its id or its kind, so this cannot tell a player from an
@@ -591,12 +591,10 @@ local function SharedByAPlayer(fields)
     return npc ~= nil and npc ~= "" and kind == nil and not string.find(npc, "^%d") and not string.find(npc, "%s")
 end
 
---- Tidy the quest lines kept by earlier versions, at login: drop each kept without a speaker where
---- the same moment is kept with one, saying the same words, and take a sharing player's name and
---- look out of the rest. Lines are rewritten as they were, less those fields; a speakerless line
---- saying anything else stays. The name of this character is left where it is: the file is the
---- account's, and a line another character kept is not this one's to read. Once: only lines kept
---- by earlier versions need it, and the file says it was done.
+--- Tidy the quest lines kept by earlier versions, once, at login: drop a speakerless line where the
+--- same moment is kept with a speaker saying the same words, and take a sharing player's name and
+--- look out of the rest. This character's name stays: the file is the account's, and a line
+--- another character kept is not this one's to read.
 function Contribute:TidyGathered()
     local gather = _G.Spoken and Spoken.Gather
     if not (gather and CoreIsCurrent()) or gather:IsTidied() then
@@ -612,23 +610,24 @@ function Contribute:TidyGathered()
             if text then said[stem][text] = true end
         end
     end
+    -- Backwards, so a removed line leaves the indices still to come where they were.
     for i = #lines, 1, -1 do
         local line = lines[i]
         local stem, speaker = QuestMoment(line.key)
         if stem and speaker == "" then
             local source, fields, text = Spoken.Contribute:Parse(line.envelope)
             if text and said[stem] and said[stem][text] then
-                gather:Remove(line.key)
+                table.remove(lines, i)
             elseif source == "quests" and SharedByAPlayer(fields) then
                 local kept = {}
                 for _, field in ipairs(fields) do
-                    if not PLAYER_FIELDS[field[1]] then
-                        kept[#kept + 1] = field
-                    elseif field[1] == "npc" then
+                    if field[1] == "npc" then
                         kept[#kept + 1] = { "npc", "" }
+                    elseif not PLAYER_FIELDS[field[1]] then
+                        kept[#kept + 1] = field
                     end
                 end
-                gather:Replace(line.key, Spoken.Contribute:Envelope(source, kept, text))
+                line.envelope = Spoken.Contribute:Envelope(source, kept, text)
             end
         end
     end
@@ -665,7 +664,7 @@ end)
 --- for seconds, which is ample for the load NPCModel:Prime started to finish before a click
 --- ever reads it back.
 function Contribute:HasGap()
-    if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution and CoreIsCurrent()) then
+    if not (CoreIsCurrent() and Spoken.ShowContribution) then
         return false
     end
     -- Hidden in the Spoken settings: no gap to show, and so no model to prime for one. The
@@ -696,12 +695,12 @@ function Contribute:HasGap()
         -- by a second caller asking PrepareSound all over again. This runs on every quest and
         -- gossip event through ContributeButton's refresh, which is what drives gathering.
         if gathering then
-            GatherLine(true)
+            GatherLine(false)
         end
     elseif gathering and IsChanged() then
         -- A line that plays in other words, kept for the site to correct. No model is loaded
         -- for it: the site already knows who speaks a line it has, and a load is kept for gaps.
-        GatherLine(true, true)
+        GatherLine(true)
     end
     if not missing and NPCModel:IsLoading() and not readBody then
         -- No gap, but a load is still in flight for whatever NPC started it: the player closed
@@ -771,7 +770,7 @@ end
 --- sound, and offering to contribute all of them would say the corpus is missing what is in
 --- fact simply not installed.
 function Contribute:CanOfferFromLog()
-    if not (_G.Spoken and Spoken.Contribute and Spoken.ShowContribution and CoreIsCurrent()) then
+    if not (CoreIsCurrent() and Spoken.ShowContribution) then
         return false
     end
     if Spoken.AreContributeButtonsHidden and Spoken:AreContributeButtonsHidden() then

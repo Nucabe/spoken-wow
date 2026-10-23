@@ -196,13 +196,10 @@ function Contribute:Envelope(source, fields, text)
     return body .. format("sum=%d\n", self:Checksum(body))
 end
 
--- The code points past ASCII that are punctuation, spaces or symbols, not letters: Latin-1's (less
--- ª, µ, º, which are letters, and the sign × and ÷), general punctuation (curly quotes, the dash,
--- the ellipsis, no-break and other spaces), currency, arrows, boxes and shapes, the CJK
--- punctuation and the fullwidth forms of ASCII punctuation (the fullwidth comma, the ideographic full
--- stop), and the emoji. Hangul, kana and Han too: those scripts put no space between words, so a
--- name runs straight into the particle or the next word ("홍길동님"), and only a boundary there
--- finds it.
+-- The code points past ASCII that end a word: Latin-1 punctuation and signs (not ª, µ, º, which are
+-- letters), general punctuation and spaces, currency, arrows, shapes, CJK punctuation, fullwidth
+-- ASCII punctuation and emoji. Hangul, kana and Han too: those scripts put no space before a
+-- particle or the next word, so a name runs straight into it ("홍길동님").
 local SEPARATORS = {
     { 0x80, 0xA9 }, { 0xAB, 0xB4 }, { 0xB6, 0xB9 }, { 0xBB, 0xBF }, { 0xD7, 0xD7 }, { 0xF7, 0xF7 },
     { 0x2000, 0x206F }, { 0x20A0, 0x20CF }, { 0x2190, 0x23FF }, { 0x2500, 0x27BF }, { 0x2E00, 0x2E7F },
@@ -231,11 +228,8 @@ local function CodePointAt(text, i)
     return point
 end
 
--- Whether the byte at i is part of a word: an ASCII letter or digit, or a byte of a character that
--- is a letter. Byte-wise rather than %w, which knows nothing past ASCII: a Cyrillic or accented name
--- is all high bytes, and the word next to it must still count as a word. A high byte is judged by its
--- whole character, so a guillemet, a curly apostrophe or a fullwidth comma ends a word as ASCII
--- punctuation does. Bytes that are no character are taken for a letter's.
+-- Whether the byte at i belongs to a word. Byte-wise because %w knows only ASCII: a high byte is
+-- judged by its whole character, and bytes that are no character count as a letter's.
 local function IsWordByte(text, i)
     local b = byte(text, i)
     if b == nil then
@@ -261,13 +255,9 @@ local function IsWordByte(text, i)
     return true
 end
 
---- Every whole-word occurrence of `word` in `text` replaced by `token`.
----
---- A plain find and a hand-made boundary check rather than a pattern: a name is the player's
---- own input, so it would have to be escaped first, and %f -- the one pattern item that would
---- make the boundary easy -- is not something every client's Lua is safe to lean on. Whole
---- words only, so a player called Mist does not turn "Mistwood" into "$Nwood"; "Mist's" still
---- matches, the apostrophe not being a letter.
+--- Every whole-word occurrence of `word` in `text` replaced by `token`, so a player called Mist
+--- leaves "Mistwood" alone but not "Mist's". A plain find: a pattern would need the player's input
+--- escaped, and %f is not safe on every client's Lua.
 function Contribute:ReplaceWord(text, word, token)
     local out, pos = {}, 1
     while true do

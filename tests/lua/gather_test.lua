@@ -45,9 +45,6 @@ local lines = _G.SpokenContributionsDB.Lines
 Expect("the store never grows past its cap", Gather:Count(), Gather.CAP)
 Expect("...dropping the oldest first", lines[1].key, "cap:6")
 Expect("...and keeping the newest", lines[#lines].key, "cap:" .. (Gather.CAP + 5))
-Gather:Add("kept", "!SPOKEN1 kept")
-Expect("a line is never replaced with no envelope", tostring(Gather:Replace("kept", nil)) .. " "
-    .. Gather:Lines()[#Gather:Lines()].key .. " " .. Gather:Lines()[#Gather:Lines()].envelope, "false kept !SPOKEN1 kept")
 Gather:Clear()
 Expect("Clear forgets everything", Gather:Count(), 0)
 Gather:SetEnabled(false)
