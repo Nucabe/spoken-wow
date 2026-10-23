@@ -3,9 +3,13 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { timecode } from "@/lib/utils";
+
+import { useArrowFocus } from "./useArrowFocus";
 import type { Voice } from "./voices";
 
-const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+/** Smooth scrolling unless the visitor asks for less motion; the CSS rule does not reach scripted scrolls. */
+const behavior = (): ScrollBehavior => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
 
 /**
  * One recording from the voice packs: the speaker, a waveform that doubles as the seek bar, and
@@ -17,6 +21,7 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
   const text = useRef<HTMLParagraphElement>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!playing) return;
@@ -32,14 +37,26 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
   const toggle = () => {
     const el = audio.current;
     if (!el) return;
-    // A play that the player's removal interrupts rejects; there is nothing to do about it.
-    if (el.paused) el.play().catch(() => {});
-    else el.pause();
+    if (el.paused) {
+      setFailed(false);
+      // A play interrupted by a pause or by the player's removal rejects with AbortError.
+      el.play().catch((error: DOMException) => {
+        if (error.name !== "AbortError") setFailed(true);
+      });
+    } else el.pause();
   };
 
   const seek = (to: number) => {
     if (audio.current) audio.current.currentTime = to;
     setTime(to);
+  };
+
+  // The range moves in 50 ms steps for a pointer; a key press moves by seconds.
+  const keySeek = (event: React.KeyboardEvent) => {
+    const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -5, PageUp: 5 }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    seek(Math.min(voice.duration, Math.max(0, time + step)));
   };
 
   let current = -1;
@@ -54,9 +71,11 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
   useEffect(() => {
     const box = text.current;
     const word = box?.querySelector<HTMLElement>(".now");
+    if (!box) return;
+    if (current < 0) box.scrollTo({ top: 0, behavior: behavior() });
     // Move only when the word falls outside the two lines showing, and then to the top line.
-    if (box && word && (word.offsetTop + word.offsetHeight > box.scrollTop + box.clientHeight || word.offsetTop < box.scrollTop)) {
-      box.scrollTo({ top: word.offsetTop, behavior: "smooth" });
+    else if (word && (word.offsetTop + word.offsetHeight > box.scrollTop + box.clientHeight || word.offsetTop < box.scrollTop)) {
+      box.scrollTo({ top: word.offsetTop, behavior: behavior() });
     }
   }, [current]);
 
@@ -104,8 +123,9 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
             step={0.05}
             value={time}
             aria-label={`Position in the ${label} example`}
-            aria-valuetext={`${clock(time)} of ${clock(voice.duration)}`}
+            aria-valuetext={`${timecode(time)} of ${timecode(voice.duration)}`}
             onChange={(event) => seek(Number(event.target.value))}
+            onKeyDown={keySeek}
           />
           <div className="bn-wave" aria-hidden="true">
             {voice.peaks.map((peak, i) => (
@@ -114,9 +134,14 @@ function Clip({ voice, label }: { voice: Voice; label: string }) {
           </div>
         </div>
         <span className="bn-voice-time">
-          {clock(time)} / {clock(voice.duration)}
+          {timecode(time)} / {timecode(voice.duration)}
         </span>
       </div>
+      {failed && (
+        <p role="alert" className="bn-voice-error">
+          This recording could not be played. Check your connection and try again.
+        </p>
+      )}
       <p className="bn-voice-text" lang="en" ref={text}>
         {voice.words.map((word, i) => (
           <span key={i} className={i === current ? "now" : i < current ? "said" : undefined}>
@@ -142,6 +167,8 @@ export default function VoicePlayer({ voices, label }: { voices: Voice[]; label:
   const [pick, setPick] = useState(0);
   const [edges, setEdges] = useState({ start: false, end: false });
   const row = useRef<HTMLUListElement>(null);
+  const prev = useRef<HTMLButtonElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
 
   const measure = useCallback(() => {
     const el = row.current;
@@ -155,7 +182,7 @@ export default function VoicePlayer({ voices, label }: { voices: Voice[]; label:
     return () => window.removeEventListener("resize", measure);
   }, [measure]);
 
-  const behavior = () => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+  useArrowFocus(edges, row, prev, next);
 
   const scroll = (direction: 1 | -1) => {
     const el = row.current;
@@ -182,10 +209,10 @@ export default function VoicePlayer({ voices, label }: { voices: Voice[]; label:
             </li>
           ))}
         </ul>
-        <button type="button" className="bn-voice-arrow bn-voice-prev" aria-label="Earlier examples" aria-hidden={!edges.start} tabIndex={edges.start ? 0 : -1} onClick={() => scroll(-1)}>
+        <button type="button" ref={prev} className="bn-voice-arrow bn-voice-prev" aria-label="Earlier examples" aria-hidden={!edges.start} tabIndex={edges.start ? 0 : -1} onClick={() => scroll(-1)}>
           {CHEVRON("M12 4l-6 6 6 6")}
         </button>
-        <button type="button" className="bn-voice-arrow bn-voice-next" aria-label="More examples" aria-hidden={!edges.end} tabIndex={edges.end ? 0 : -1} onClick={() => scroll(1)}>
+        <button type="button" ref={next} className="bn-voice-arrow bn-voice-next" aria-label="More examples" aria-hidden={!edges.end} tabIndex={edges.end ? 0 : -1} onClick={() => scroll(1)}>
           {CHEVRON("M8 4l6 6-6 6")}
         </button>
       </div>

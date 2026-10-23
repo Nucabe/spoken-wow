@@ -2054,6 +2054,12 @@ html:has(.bn) {
 .bn-wave i.on {
   background: var(--accent);
 }
+.bn-voice-error {
+  margin: 0;
+  color: var(--red);
+  font-size: 14px;
+  line-height: 20px;
+}
 .bn-voice-time {
   flex: none;
   min-width: 80px;
@@ -2104,6 +2110,14 @@ html:has(.bn) {
   }
   .bn-voice-time {
     display: none;
+  }
+  .bn-voice-picks button {
+    min-height: 44px;
+  }
+  .bn-voice-arrow {
+    width: 44px;
+    height: 44px;
+    top: 0;
   }
 }
 
