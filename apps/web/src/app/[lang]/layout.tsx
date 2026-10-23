@@ -9,6 +9,7 @@ import { GrantsProvider } from "@/components/GrantsProvider";
 import { LangProvider } from "@/components/LangProvider";
 import Link from "@/components/LocaleLink";
 import NavigationProgress from "@/components/NavigationProgress";
+import SiteHeader from "@/components/SiteHeader";
 import UserMenu from "@/components/UserMenu";
 import { langTag } from "@/lib/lang";
 import { pageLang } from "@/lib/lang-server";
@@ -56,6 +57,7 @@ export default async function RootLayout({
         </Suspense>
         <LangProvider lang={lang}>
           <GrantsProvider>
+            <SiteHeader>
             <header className="border-b">
               <Contained className="flex h-12 items-center justify-between gap-3">
                 <Link href="/" aria-label="Spoken">
@@ -79,6 +81,7 @@ export default async function RootLayout({
                 </div>
               </Contained>
             </header>
+            </SiteHeader>
             {children}
           </GrantsProvider>
         </LangProvider>
