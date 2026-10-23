@@ -77,7 +77,15 @@ ExpectOf("a subzone's story names the zone, then the subzone", function()
     return F.frame.container.name:GetText() .. " " .. F.frame.container.label:GetText()
 end, "Westfall • Moonbrook")
 env.SoundQueue:RemoveAllSoundsFromQueue()
-places:Enqueue(H.Clip({ key = "z:1436", present = { header = "Westfall", label = "Westfall", bullet = "zone",
+-- A zone's own story is headed by its continent (SpokenPlaces:NewLoreSound).
+places:Enqueue(H.Clip({ key = "z:1436", present = { header = "Eastern Kingdoms", label = "Westfall", bullet = "zone",
+    portrait = { kind = "none" } } }))
+ExpectOf("a zone's own story names the continent, then the zone", function()
+    return F.frame.container.name:GetText() .. " " .. F.frame.container.label:GetText()
+end, "Eastern Kingdoms • Westfall")
+env.SoundQueue:RemoveAllSoundsFromQueue()
+-- An area whose zone has no name is headed by its own name.
+places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Moonbrook", label = "Moonbrook", bullet = "zone",
     portrait = { kind = "none" } } }))
 ExpectOf("...a place named twice is named once", function() return F.frame.container.label:IsShown() end, false)
 env.SoundQueue:RemoveAllSoundsFromQueue()
