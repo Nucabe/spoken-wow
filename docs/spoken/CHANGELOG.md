@@ -7,6 +7,27 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **The Large Window names the line as well as the speaker.** A subzone's story reads "Westfall •
   Moonbrook", a quest "Gornek • Cutting Teeth" and a book its title after "Book", as the other windows
   show them. Pointing at a name cut short shows the whole of it. *([Nucabe](https://github.com/Nucabe))*
+- **Include Places Found Before is on.** The game announces each discovery once per character, so a
+  character who explored before installing heard nothing in those places, and Forget Places Heard
+  read nothing again. With the setting on, each place is read once per character the first time you
+  stand in it. It is turned on once for everyone, also if you had turned it off: to keep it off,
+  untick it under Places, When to Read. Forget Places Heard is greyed while Read Automatically or Read
+  Stories Aloud is off. *([Nucabe](https://github.com/Nucabe))*
+- **The quest log's Play button no longer covers a quest's title or its "(Elite)".** With
+  quest objectives shown, the title now ends short of Play and Contribute, which sit left of
+  the quest's type instead of on top of it.
+  *([Nucabe](https://github.com/Nucabe))*
+- **The tab that reopens the Place Story panel no longer covers the map's own side tabs**, such as
+  Map Legend on WoW Forever. It goes under whatever tabs hang down the map's edge, whichever addon
+  made them. *([rusty-key](https://github.com/rusty-key))*
+- **Walking with the world map open no longer floods the game with Lua errors** on WoW Forever. The
+  Place Story panel and the tab that reopens it make room for Adventure Guide Forever's tabs on the
+  quest log's edge instead of sitting under them. *([Nucabe](https://github.com/Nucabe))*
+- **Quests are read with auto-accept and auto turn-in addons.** When Enhance QoL, RestedXP, Zygor or
+  Leatrix Plus accepts or hands in a quest for you, the quest's offer is read, and a turn-in reads
+  both the progress and the reward lines, where before some or all of them were skipped. This holds
+  while the addon leaves the quest's data in place for Spoken; a quest it clears first is not read.
+  A quest you decline reads as it did. *([Nucabe](https://github.com/Nucabe))*
 - **Spoken's keys have their own Spoken category in Key Bindings**, instead of sitting under
   Other. *([Jayshua83](https://github.com/Jayshua83))* *([Nucabe](https://github.com/Nucabe))*
 - **A right-click on a window's words skips the line**, in the Small Window, the Large Window and the
@@ -22,6 +43,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   Quests whose only givers are one side's are listed for that side alone, three quests moved to
   the zone Forever's quest log uses, Westfall's Toxic Soil quests and 30 follow-ups are linked into
   their chains, and Dark Sacrifice has its new name. *([Nucabe](https://github.com/Nucabe))*
+- **Silence NPC Voices also silences the first talk to an NPC.** The first time you spoke to an
+  NPC a voice pack reads, about half a second of its own greeting was heard before Spoken's line.
+  *([Nucabe](https://github.com/Nucabe))*
 - **The Places tab sorts names without a leading "The".** The Barrens is listed under B and
   The Crossroads under C, among the zones, areas and dungeons, as you would look for them. The
   names still read in full. *([rusty-key](https://github.com/rusty-key))*
@@ -73,8 +97,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Fixed: closing DialogueUI on a giver's greeting after taking a quest showed the queue's
   animation with no window.** The quest's page went behind a window that was not on screen.
   Now the window flies out of the dialog with the greeting, the quest counted after its title. *([Nucabe](https://github.com/Nucabe))*
-- **The Compendium's minimise arrow sits in the middle of its button.** It was drawn off to one side of the
-  frame the template gives it. *([Nucabe](https://github.com/Nucabe))*
+- **The Compendium's minimise arrow sits in the middle of its button, beside Close and on its row.** It
+  was drawn off to one side of the frame the template gives it. *([Nucabe](https://github.com/Nucabe))*
 - **The AddOns list shows Spoken and each module's name in colour, with new icons.** Spoken, Quests,
   Places, Readables, Contributions and Developer each have a new icon, the voice packs show Spoken in
   colour too, and the minimap button shows the mark at its size, centred. *([Nucabe](https://github.com/Nucabe))*
@@ -90,8 +114,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   *([rusty-key](https://github.com/rusty-key))*
 - **Every Compendium page has a round picture beside its title, and the lists are plain lines.** A place shows its
   picture with the world, a quest a scroll with the exclamation or question mark, a readable its kind with the
-  training book. Zones and dungeons in the lists are lines with their count, as the groups are. A title
-  is always one line. *([Nucabe](https://github.com/Nucabe))*
+  training book. The story beside the map has none: its Open button already shows the Compendium's
+  tome. Zones and dungeons in the lists are lines with their count, as the groups are. A title is always
+  one line. *([Nucabe](https://github.com/Nucabe))*
 - **A readable's page is its text only.** The where-to-find-it lines are gone. *([Nucabe](https://github.com/Nucabe))*
 - **A page with nothing to read shows your faction's wax seal in its middle.** Where the client has no seal
   it shows a faint lattice. It replaces the line telling you to choose something on the left, on the

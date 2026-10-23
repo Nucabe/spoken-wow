@@ -88,6 +88,11 @@ local TOGGLE_TUCK = 2
 local TOGGLE_ICON = [[Interface\Icons\INV_Misc_Map02]]
 -- Where the side tab sits down the map's right edge, as the character frame's first one does.
 local SIDE_TAB_TOP = 30
+-- Space between side tabs stacked down an edge, as the game and Adventure Guide Forever leave.
+local TAB_GAP = 3
+-- Where the button sits against the map's edge when no other side tab is there, and its tuck under
+-- one when there is (BuildToggle).
+local toggleX, toggleY
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -188,7 +193,7 @@ local function BuildToggle()
 		if toggle.SetChecked then toggle:SetChecked(false) end
 		toggle:SetCustomOnMouseUpHandler(function() SpokenPlaces:SetMapPanelCollapsed(false) end)
 		toggle:EnableMouse(true)
-		toggle:SetPoint("TOPLEFT", MapEdge(), "TOPRIGHT", 0, -SIDE_TAB_TOP)
+		toggleX, toggleY = 0, -SIDE_TAB_TOP
 		toggle:SetScript("OnHide", function(self)
 			if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
 		end)
@@ -207,7 +212,7 @@ local function BuildToggle()
 	border:SetPoint("CENTER")
 	toggle:SetPushedTexture([[Interface\Buttons\UI-Quickslot-Depress]])
 	toggle:SetHighlightTexture([[Interface\Buttons\ButtonHilight-Square]], "ADD")
-	toggle:SetPoint("TOPLEFT", MapEdge(), "TOPRIGHT", -TOGGLE_TUCK, -ICON_SIZE)
+	toggleX, toggleY = -TOGGLE_TUCK, -ICON_SIZE
 	toggle:SetScript("OnClick", function()
 		SpokenPlaces:SetMapPanelCollapsed(false)
 	end)
@@ -238,22 +243,37 @@ end
 -- own: the strips softening the text's cut edges showed through the parchment under them in
 -- darker bands, so there they are off until the panel is clear again. The one way to fade a frame
 -- as a whole (SetIsFrameBuffer) crashes the Forever client.
+local followed
 local function FollowAlpha()
 	local alpha = WorldMapFrame:GetAlpha() or 1
 	local inMap = InMap()
 	local own = inMap and 1 or alpha
+	followed = alpha
 	toggle:SetAlpha(own)
 	panel:SetAlpha(own)
 	page.body:SetFadeShown(inMap or alpha >= CLEAR)
 end
 
+-- Beside the map, read from the panel's and the button's own OnUpdate: one of them is shown
+-- whenever the map is. Not a hook on the map's SetAlpha, which the fader calls every frame: on the
+-- Forever client that hooked call raised "attempt to call a nil value" each time.
+local function FollowAlphaEachFrame()
+	if WorldMapFrame:GetAlpha() == followed then return end
+	FollowAlpha()
+end
+
 -- Into the map, or out of it under the gamepad UI. Asked on every refresh, as the player can
--- switch the gamepad UI on and off without a reload.
+-- switch the gamepad UI on and off without a reload. Only beside the map do they read its alpha
+-- each frame.
 local function Place()
 	local host = Host()
-	if panel:GetParent() == host then return end
-	panel:SetParent(host)
-	toggle:SetParent(host)
+	if panel:GetParent() ~= host then
+		panel:SetParent(host)
+		toggle:SetParent(host)
+	end
+	local follow = host ~= WorldMapFrame and FollowAlphaEachFrame or nil
+	panel:SetScript("OnUpdate", follow)
+	toggle:SetScript("OnUpdate", follow)
 end
 
 -- In front of the map and, beside it, as large as a child of it would be. Copied on every show,
@@ -273,12 +293,93 @@ local function FollowMap()
 	FollowAlpha()
 end
 
--- Always on the map's right, beside the quest log as the game lays its own panels out.
-local function ApplyAnchors()
-	local gap = GAP
+-- In units of `scale`, so frames of different scales compare.
+local function Rect(frame, scale)
+	local left, right, top, bottom = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
+	if not (left and right and top and bottom) then return end
+	local k = frame:GetEffectiveScale() / scale
+	return left * k, right * k, top * k, bottom * k
+end
+
+local ApplyAnchors
+
+-- Several shows and hides in one frame, and other addons' hooks on the quest log that run after
+-- Spoken's, all settle before one layout on the next frame. With both hidden, as when the map
+-- closes, the next Refresh lays them out.
+local pending
+local function ApplyPending()
+	pending = false
+	if panel:IsShown() or toggle:IsShown() then ApplyAnchors() end
+end
+local function ApplyAnchorsSoon()
+	if pending then return end
+	pending = true
+	C_Timer.After(0, ApplyPending)
+end
+
+-- A tab shows and hides without its parent doing either, as the game's own do, and a frame not laid
+-- out yet cannot be told from a tab until it is. So every child is hooked once, as it is first seen.
+local watched = setmetatable({}, { __mode = "k" })
+local function Watch(child)
+	if watched[child] or not child.HookScript then return end
+	watched[child] = true
+	child:HookScript("OnShow", ApplyAnchorsSoon)
+	child:HookScript("OnHide", ApplyAnchorsSoon)
+end
+
+-- How near the map's edge a side tab's left edge may sit.
+local COLUMN_SLACK = 12
+
+-- Side tabs belong to no list another addon can join, so the column down the map's right edge is
+-- read off the screen, whoever made what hangs there. Shorter than half the map, which keeps out a
+-- panel standing beside it. The lowest tab, and how far the widest reaches past the map's edge.
+local function SideTabs(mapEdge)
+	local scale = mapEdge:GetEffectiveScale()
+	local _, edgeRight, edgeTop, edgeBottom = Rect(mapEdge, scale)
+	if not edgeRight then return nil, 0 end
+	local function InColumn(left, right, top, bottom)
+		return left >= edgeRight - COLUMN_SLACK and (left + right) / 2 > edgeRight
+			and top <= edgeTop + COLUMN_SLACK and bottom >= edgeBottom - COLUMN_SLACK
+			and top - bottom < (edgeTop - edgeBottom) / 2
+	end
+	local lowest, lowestBottom, reach = nil, nil, 0
+	for _, parent in ipairs({ QuestMapFrame or false, WorldMapFrame, WorldMapFrame.BorderFrame or false }) do
+		for _, child in ipairs(type(parent) == "table" and { parent:GetChildren() } or {}) do
+			if child ~= panel and child ~= toggle then
+				Watch(child)
+				local left, right, top, bottom
+				if child:IsVisible() then left, right, top, bottom = Rect(child, scale) end
+				if left and InColumn(left, right, top, bottom) then
+					reach = math.max(reach, right - edgeRight)
+					if not lowestBottom or bottom < lowestBottom then lowest, lowestBottom = child, bottom end
+				end
+			end
+		end
+	end
+	return lowest, reach
+end
+
+-- Always on the map's right, beside the quest log as the game lays its own panels out, past any
+-- side tabs there. The button that reopens it goes under those tabs.
+function ApplyAnchors()
+	local mapEdge = MapEdge()
+	local tab, reach = SideTabs(mapEdge)
+	local gap = GAP + reach
 	panel:ClearAllPoints()
-	panel:SetPoint("TOPLEFT", MapEdge(), "TOPRIGHT", gap, 0)
-	panel:SetPoint("BOTTOMLEFT", MapEdge(), "BOTTOMRIGHT", gap, 0)
+	panel:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", gap, 0)
+	panel:SetPoint("BOTTOMLEFT", mapEdge, "BOTTOMRIGHT", gap, 0)
+	toggle:ClearAllPoints()
+	if tab then
+		toggle:SetPoint("TOPLEFT", tab, "BOTTOMLEFT", toggleX, -TAB_GAP)
+	else
+		toggle:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", toggleX, toggleY)
+	end
+end
+
+-- Now as well as next frame, so the button never shows a frame in its old place.
+local function Relayout()
+	ApplyAnchors()
+	ApplyAnchorsSoon()
 end
 
 -- Maximised, the map fills the screen and a side panel would sit off-screen, so
@@ -319,6 +420,8 @@ local function Refresh(mapID)
 	end
 
 	FollowMap()
+	-- Another addon's side tabs may have been made since the last time.
+	Relayout()
 	local collapsed = SpokenPlaces:Get("mapPanelCollapsed")
 	toggle:SetShown(collapsed)
 	panel:SetShown(not collapsed)
@@ -417,7 +520,6 @@ function SpokenPlaces:ApplyPanelOptions()
 		return
 	end
 	panel:SetWidth(SpokenPlaces:Get("panelWidth"))
-	ApplyAnchors()
 	Refresh(SpokenPlaces:GetDisplayedMapID())
 end
 
@@ -433,19 +535,22 @@ function SpokenPlaces:SetupMapPanel()
 	BuildPanel()
 	BuildToggle()
 	ApplyAnchors()
-	if hooksecurefunc then hooksecurefunc(WorldMapFrame, "SetAlpha", FollowAlpha) end
 
 	-- Re-evaluate visibility whenever the map changes shape: maximising and minimising both
 	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside
 	-- the Forever client's own Minimize as the map opens under the gamepad UI.
 	WorldMapFrame:HookScript("OnSizeChanged", function()
-		ApplyAnchors()
 		Refresh(SpokenPlaces:GetDisplayedMapID())
 	end)
 	WorldMapFrame:HookScript("OnHide", function()
 		panel:Hide()
 		toggle:Hide()
 	end)
+	-- The side tabs on the quest log's edge go with it.
+	if QuestMapFrame and QuestMapFrame.HookScript then
+		QuestMapFrame:HookScript("OnShow", Relayout)
+		QuestMapFrame:HookScript("OnHide", Relayout)
+	end
 
 	SpokenPlaces:OnMapChanged(function(mapID)
 		Refresh(mapID)
