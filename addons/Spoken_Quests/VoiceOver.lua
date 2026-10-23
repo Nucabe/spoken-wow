@@ -1305,7 +1305,7 @@ local shownGossipKey
 --- looked up in this page's predecessor's options.
 function NoteGossipPage()
     local npc = tostring(Utils:GetNPCGUID() or Utils:GetNPCName())
-    local pageKey = npc .. ":" .. tostring(NotSecret(GetGossipText()))
+    local pageKey = npc .. ":" .. tostring(NotSecret(GetGossipText()) or "")
     if not selectedGossipOption and pageKey == shownGossipKey then
         return
     end
