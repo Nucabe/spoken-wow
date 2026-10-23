@@ -100,7 +100,7 @@ const LANGUAGES: InstallLanguage[] = LOCALES.map(({ code, name }) => ({
 const FLOW = [
   {
     title: "Players send lines",
-    text: "Sharing in the Manager, or the Contribute page, sends quest, NPC and book text that has no voice yet.",
+    text: "Optional sharing in the Manager, or the Contribute page, sends quest, NPC and book text that has no voice yet.",
   },
   { title: "The team reviews", text: "Contributions are checked and translated where they need it." },
   { title: "Voices are made", text: "Recordings are generated on this website and checked by listeners." },
@@ -166,8 +166,6 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
                   <img className="bn-logo-forever" src="/landing/games/logo-forever.png" alt="World of Warcraft: Forever" />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className="bn-logo-era" src="/landing/games/logo-era.png" alt="World of Warcraft Classic Era" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="bn-logo-anniversary" src="/landing/games/logo-anniversary.png" alt="Burning Crusade Classic Anniversary" />
                 </div>
               </div>
               <HeroLine />
@@ -257,7 +255,8 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
                 <h2 className="bn-display bn-h2">Spoken Manager</h2>
                 <p className="bn-lead">
                   A desktop app for Windows, macOS and Linux. It installs and updates Spoken and its voice
-                  packs for every WoW install on your computer.
+                  packs for every WoW install on your computer. An update downloads only the files that
+                  changed, not the whole pack again.
                 </p>
                 <div className="bn-cta">
                   <a className="bn-btn bn-btn-primary bn-btn-lg" href={MANAGER_URL} target="_blank" rel="noreferrer">
@@ -269,7 +268,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
               <ol className="bn-steps">
                 <li>
                   <strong>It finds your games</strong>
-                  <span>Forever, Classic Era and Anniversary each get a card.</span>
+                  <span>Forever and Classic Era each get a card.</span>
                 </li>
                 <li>
                   <strong>You choose the languages</strong>
@@ -365,8 +364,8 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
               <div className="bn-fit">
                 <h3>Game versions</h3>
                 <p>
-                  WoW: Forever, Classic Era and Anniversary. On the 1.12, 2.4.3 and 3.3.5 clients Spoken
-                  starts in the Large Window, and 2.4.3 and 3.3.5 can switch to subtitles.
+                  WoW: Forever and Classic Era. On the 1.12 and 3.3.5 clients Spoken starts in the
+                  Large Window, and 3.3.5 can switch to subtitles.
                 </p>
               </div>
             </div>
@@ -419,7 +418,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
               <div>
                 <h3>Share what you find</h3>
                 <p>
-                  Turn on Sharing in the Manager and Spoken sends the quest and NPC text it has no voice
+                  Sharing is optional. Turn it on in the Manager and Spoken sends the quest and NPC text it has no voice
                   for, so it can be recorded.
                 </p>
               </div>

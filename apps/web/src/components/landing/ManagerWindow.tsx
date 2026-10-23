@@ -28,20 +28,6 @@ const GAMES = [
     tags: [],
     primary: "Manage",
   },
-  {
-    flavor: "anniversary",
-    name: "WoW: Anniversary",
-    version: "2.5.5.65340",
-    pos: "26% 40%",
-    filter: "brightness(0.8)",
-    art: "/landing/art-anniversary.jpg",
-    logo: "/landing/games/logo-anniversary.png",
-    icon: "/landing/games/icon-anniversary.png",
-    status: { tone: "", text: "Spoken not installed" },
-    flags: ["No Voice Packs"],
-    tags: [],
-    primary: "Install Spoken",
-  },
 ] as const;
 
 /**
@@ -50,7 +36,7 @@ const GAMES = [
  */
 export default function ManagerWindow() {
   return (
-    <div className="bn-app" role="img" aria-label="The Spoken Manager window, listing three installed games with their Spoken status">
+    <div className="bn-app" role="img" aria-label="The Spoken Manager window, listing two installed games with their Spoken status">
       <div aria-hidden="true">
         <div className="bn-app-bar">
           {/* eslint-disable-next-line @next/next/no-img-element */}

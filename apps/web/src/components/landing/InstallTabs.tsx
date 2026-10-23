@@ -95,12 +95,14 @@ export default function InstallTabs({
             <p>
               Download the Manager, open it and press Install. It finds your game folder, installs Spoken
               and the voice packs for the languages you pick, and updates them when a new version comes
-              out.
+              out. An update downloads only the files that changed, so a new recording does not mean
+              downloading the whole pack again.
             </p>
             <ul className="bn-pros">
               <li>Finds your game folder</li>
-              <li>Installs and updates every pack, in any language</li>
-              <li>Sharing sends the lines you collect, a few minutes after you log out</li>
+              <li>Updates download only what changed, not the whole pack</li>
+              <li>Installs every pack, in any language</li>
+              <li>Optional sharing sends the lines you collect, a few minutes after you log out</li>
               <li>Lists community voice packs</li>
             </ul>
             <div className="bn-dl">
@@ -177,7 +179,7 @@ export default function InstallTabs({
             <p>Pick your language, download each zip and unzip them into Interface/AddOns.</p>
             <ul className="bn-pros">
               <li>Plain zips from GitHub</li>
-              <li>The only route for the 1.12, 2.4.3 and 3.3.5 clients</li>
+              <li>The only route for the 1.12 and 3.3.5 clients</li>
               <li className="no">You update every zip yourself</li>
             </ul>
             <label>
@@ -221,7 +223,7 @@ export default function InstallTabs({
               <p className="bn-note">{ITALIAN_NOTE}</p>
             )}
             <p className="bn-note">
-              On the 1.12, 2.4.3 and 3.3.5 clients, take the Spoken Quests zip from the release page.
+              On the 1.12 and 3.3.5 clients, take the Spoken Quests zip from the release page.
               Spoken is inside it.
             </p>
           </>

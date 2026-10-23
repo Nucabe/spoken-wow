@@ -374,15 +374,12 @@ html:has(.bn) {
   width: auto;
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.55));
 }
-/* Heights set so the three logos, which differ in shape, take about the same area */
+/* Heights set so the two logos, which differ in shape, take about the same area */
 .bn-logo-forever {
   height: 88px;
 }
 .bn-logo-era {
   height: 64px;
-}
-.bn-logo-anniversary {
-  height: 72px;
 }
 
 /* The in-game subtitle, drawn from the sample in docs/spoken/captions.png */
@@ -1196,7 +1193,7 @@ html:has(.bn) {
 }
 .bn-games {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 .bn-app-game {
