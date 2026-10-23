@@ -312,6 +312,151 @@ stub.Advance(5)
 Expect("the follow-up's page read in the window leaves the turn-in's pages for QUEST_TURNED_IN",
     string.format("%d-accept, %d-progress, %d-complete", followUp, full, full))
 
+-- The follow-up's offer is recorded from the globals of the quest just turned in, and the player
+-- reads it in the open window. That page is the follow-up's, so the turn-in's pages are not marked
+-- read with it: they wait for QUEST_TURNED_IN.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_PROGRESS")
+stub.FireEvent("QUEST_COMPLETE")
+stub.FireEvent("QUEST_DETAIL")
+world.questID = followUp
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.Advance(3)
+stub.FireEvent("QUEST_TURNED_IN", full, 0, 0)
+stub.Advance(5)
+Expect("a follow-up recorded from the turn-in's globals, read in the window, leaves the turn-in's pages",
+    string.format("%d-accept, %d-progress, %d-complete", followUp, full, full))
+
+-- The same record, never read in a window: it holds the turn-in's text under the turn-in's quest
+-- ID, so it is not read as that quest's offer once the quest is handed in.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_PROGRESS")
+stub.FireEvent("QUEST_COMPLETE")
+stub.FireEvent("QUEST_DETAIL")
+world.questID = 0
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_TURNED_IN", full, 0, 0)
+stub.FireEvent("QUEST_ACCEPTED", followUp)
+stub.Advance(5)
+Expect("an offer recorded after its quest's own pages is not read as that quest's offer",
+    string.format("%d-progress, %d-complete", full, full))
+
+-- Offers opened and closed unread: the last is the one the player was left with.
+StartScenario()
+for _, id in ipairs(quests) do
+    world.questID = id
+    stub.FireEvent("QUEST_DETAIL")
+    stub.ShowPanel("QuestFrameDetailPanel")
+    stub.Advance(0.2)
+end
+world.questID = 0
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(5)
+Expect("several offers closed unread read the newest only", string.format("%d-accept", quests[3]))
+
+-- Classic's QUEST_ACCEPTED follows the quest log index with the quest ID.
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_DETAIL")
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_ACCEPTED", 3, full)
+stub.Advance(3)
+Expect("QUEST_ACCEPTED with the quest log index first reads the offer", string.format("%d-accept", full))
+
+-- A quest ID the client hands over as a secret is no ID, and the quest log index beside it is not
+-- taken for one: a record that happens to hold that number is not read.
+lookup["3-accept"] = 1
+StartScenario()
+world.questID = 3
+stub.FireEvent("QUEST_DETAIL")
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.Secrets(full)
+stub.FireEvent("QUEST_ACCEPTED", 3, full)
+stub.Secrets()
+stub.Advance(3)
+Expect("a secret quest ID in QUEST_ACCEPTED does not read the quest at its log index", "")
+
+-- A page the player asked for by the Play button while the window was open is read: the watcher
+-- finds it queued, and the window closing later does not read it again.
+StartScenario()
+world.questID = full
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+VO.Addon:InvokeQuestHandler("QUEST_DETAIL", "test", true)
+stub.Advance(8)
+world.questID = 0
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(5)
+Expect("a page already queued when the window closes is not read again",
+    string.format("%d-accept", full))
+
+-- Read When Window Closes holds the read until the window closes, and the page is read once. The
+-- line is short, so it is over before the watcher sees the window gone and would read the page again.
+lookup["106-accept"] = 0.02
+StartScenario()
+VO.Addon.db.profile.Audio.ReadAfterClose = true
+world.questID = 106
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+stub.Advance(8)
+Expect("Read When Window Closes holds the offer while the window is open", "")
+world.questID = 0
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(5)
+VO.Addon.db.profile.Audio.ReadAfterClose = false
+Expect("...and reads it once when the window closes", "106-accept")
+
+-- A replay is not held back by DialogueUI's wait for its window: the window it waits for is not
+-- the page's.
+VO.DialogueUIBridge = { Defer = function() return true end, Read = function() end }
+StartScenario()
+world.questID = full
+stub.FireEvent("QUEST_DETAIL")
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_ACCEPTED", full)
+stub.Advance(3)
+VO.DialogueUIBridge = nil
+Expect("a replayed page does not wait for DialogueUI's window", string.format("%d-accept", full))
+
+-- A page shown again after the first record is old enough to be dropped is a new page.
+StartScenario()
+world.questID = full
+stub.ShowPanel("QuestFrameDetailPanel")
+stub.FireEvent("QUEST_DETAIL")
+stub.Advance(3)
+stub.ShowPanel(nil)
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(12)
+stub.FireEvent("QUEST_DETAIL")
+stub.FireEvent("QUEST_FINISHED")
+stub.FireEvent("QUEST_ACCEPTED", full)
+stub.Advance(3)
+Expect("a page shown again long after it was read is read again",
+    string.format("%d-accept, %d-accept", full, full))
+
+-- A replayed line has no window left to close: another window closing does not cut it.
+StartScenario()
+VO.Addon.db.profile.Audio.StopAudioOnDisengage = true
+world.questID = full
+stub.FireEvent("QUEST_DETAIL")
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_ACCEPTED", full)
+stub.Advance(0.1)
+VO.Addon:QUEST_FINISHED()
+VO.Addon.db.profile.Audio.StopAudioOnDisengage = false
+local stillPlaying = Spoken:GetCurrent() ~= nil
+Expect("a replayed offer is not stopped by another window closing",
+    stillPlaying and string.format("%d-accept", full) or "")
+
 if failures > 0 then
     print(string.format("\n%d scenario(s) failed", failures))
     os.exit(1)

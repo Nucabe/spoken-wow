@@ -91,6 +91,10 @@ local function MarkHandled(state, key)
     state.lastHandledAt = GetTime()
 end
 
+local function PageKey(event, questID, title)
+    return format("%s:%s:%s", event, tostring(questID), title or "")
+end
+
 -- Each quest event's line: the sound it is keyed by, the data module's name for the
 -- interaction, and the global its text is read from.
 local QUEST_EVENTS = {
@@ -156,16 +160,16 @@ local function CaptureQuestSnapshot(event)
     table.insert(questSnapshots, snapshot)
 end
 
---- A page of `event` was read while its dialog was open: the newest record of that event is that
---- page, whatever the globals held when its event arrived. The earlier pages of the same quest were
---- passed over by the player, as they always were, so they are not replayed after it either. Another
---- quest's pages are not touched: they may still be waiting for their own accept or turn-in.
-local function MarkQuestSnapshotRead(event)
+--- A page of `event` of quest `questID` was read while its dialog was open: the newest record of
+--- that event is that page, whatever the globals held when its event arrived. The earlier pages of
+--- `questID` were passed over by the player, as they always were, so they are not replayed after it
+--- either. The record's own quest ID is not used for that: it may be the previous quest's, and
+--- that quest's pages may still be waiting for their own accept or turn-in.
+local function MarkQuestSnapshotRead(event, questID)
     for i = #questSnapshots, 1, -1 do
-        local read = questSnapshots[i]
-        if read.event == event then
+        if questSnapshots[i].event == event then
             for j = 1, i do
-                if questSnapshots[j].questID == read.questID then
+                if j == i or questSnapshots[j].questID == questID then
                     questSnapshots[j].dispatched = true
                 end
             end
@@ -600,17 +604,33 @@ function Addon:OnInitialize()
     end
 
     --- Reads the recorded pages nothing has read yet, oldest first. With `questID` (from
-    --- QUEST_ACCEPTED or QUEST_TURNED_IN) only that quest's pages of `events`; without it, every
-    --- page whose dialog has closed.
+    --- QUEST_ACCEPTED or QUEST_TURNED_IN) only that quest's pages of `events`; without it, the
+    --- newest unread page of each event whose dialog has closed: of offers opened and closed
+    --- unread, the last is the one the player was left with. An offer recorded after its quest's
+    --- own pages carries the globals of the quest just handed in, so it is not read.
     local function ReplayQuestSnapshots(source, questID, events)
         local state = self.autoQuestState
         PruneQuestSnapshots()
-        for _, snapshot in ipairs(questSnapshots) do
+        local newest = {}
+        for i, snapshot in ipairs(questSnapshots) do
+            if not snapshot.dispatched then
+                newest[snapshot.event] = i
+            end
+        end
+        for i, snapshot in ipairs(questSnapshots) do
             local wanted = not questID or (events[snapshot.event] and snapshot.questID == questID)
             if wanted and not snapshot.dispatched then
                 snapshot.dispatched = true
-                local key = format("%s:%s:%s", snapshot.event, tostring(snapshot.questID), snapshot.title or "")
-                if not HandledRecently(state, key) then
+                local passedOver = not questID and newest[snapshot.event] ~= i
+                if not questID and snapshot.event == "QUEST_DETAIL" then
+                    for j = 1, i - 1 do
+                        if questSnapshots[j].questID == snapshot.questID and questSnapshots[j].event ~= "QUEST_DETAIL" then
+                            passedOver = true
+                        end
+                    end
+                end
+                local key = PageKey(snapshot.event, snapshot.questID, snapshot.title)
+                if not passedOver and not HandledRecently(state, key) then
                     MarkHandled(state, key)
                     Debug:Record("auto-watcher-snapshot", format(
                         "Reading %s quest %s from its event snapshot: %s",
@@ -658,7 +678,7 @@ function Addon:OnInitialize()
             error(event)
         end
         event = event or "QUEST_DETAIL"
-        local key = format("%s:%s:%s", event, tostring(questID), questTitle or "")
+        local key = PageKey(event, questID, questTitle)
         if key ~= state.candidateKey then
             state.candidateKey = key
             state.candidateAge = 0
@@ -685,7 +705,7 @@ function Addon:OnInitialize()
             if queuedSound.questID == questID and queuedSound.event == expectedSoundEvent then
                 state.completedKey = key
                 MarkHandled(state, key)
-                MarkQuestSnapshotRead(event)
+                MarkQuestSnapshotRead(event, questID)
                 return
             end
         end
@@ -707,11 +727,7 @@ function Addon:OnInitialize()
                stage == "data-lookup-failed" then
                 state.completedKey = key
                 MarkHandled(state, key)
-                -- With no page to read, the stage is an earlier line's, and the snapshot is
-                -- still the only record of this one.
-                if visibleEvent then
-                    MarkQuestSnapshotRead(visibleEvent)
-                end
+                MarkQuestSnapshotRead(visibleEvent, questID)
             end
         end
     end
@@ -762,14 +778,19 @@ function Addon:OnInitialize()
         "QUEST_ACCEPTED", "QUEST_TURNED_IN" }) do
         pcall(self.questEventRecorderFrame.RegisterEvent, self.questEventRecorderFrame, event)
     end
-    self.questEventRecorderFrame:SetScript("OnEvent", function(_, event, questIDArg)
+    self.questEventRecorderFrame:SetScript("OnEvent", function(_, event, questIDArg, ...)
         if event == "QUEST_FINISHED" then
             lastQuestEvent = nil
         elseif event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" then
             if self.dataModulesPending then
                 return
             end
-            -- Both carry the quest ID first; QUEST_TURNED_IN adds the rewards after it.
+            -- QUEST_TURNED_IN carries the quest ID first and the rewards after it. QUEST_ACCEPTED
+            -- carries the quest ID alone, except on Classic clients, where it follows the quest log
+            -- index. A secret quest ID there is no ID, and the index is never taken for one.
+            if event == "QUEST_ACCEPTED" and select("#", ...) > 0 then
+                questIDArg = (...)
+            end
             local questID = NotSecret(questIDArg)
             if type(questID) ~= "number" or questID == 0 then
                 return
@@ -1046,13 +1067,17 @@ local function QueueRead(soundData, manual)
     if not manual and Addon.db.profile.Audio.ReadAfterClose and not questSnapshotInUse then
         pendingRead = soundData
         -- Held counts as handled for the watcher, or it would read the quest again once the window closes.
-        MarkQuestSnapshotRead(EVENT_OF_SOUND[soundData.event])
+        MarkQuestSnapshotRead(EVENT_OF_SOUND[soundData.event], soundData.questID)
         local state = Addon.autoQuestState
         if state then
             state.completedKey = state.candidateKey
             MarkHandled(state, state.candidateKey)
         end
         return
+    end
+    if questSnapshotInUse then
+        -- Its window closed before it started, so no later close is its own.
+        soundData.addedCallback = nil
     end
     Player:Enqueue(soundData, manual)
 end

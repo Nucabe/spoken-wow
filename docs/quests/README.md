@@ -1772,17 +1772,21 @@ opened in — `GetQuestID` is back to 0 before the watcher's first poll, and the
 never read at all. The quest globals are therefore snapshotted when the client fires each quest
 event, which is the last moment they still describe it, one record per page: an auto turn-in
 shows the progress and the reward page before the watcher can read either, and both are read,
-in order. The watcher replays the pages nothing read when the quest ID drops to 0. Two events
-replay them too: `QUEST_ACCEPTED` replays the quest's offer and `QUEST_TURNED_IN` its progress
-and reward pages, found by the quest ID in the event. They cover a client that keeps reporting
-the quest ID after the dialog closed. A page recorded with neither a quest ID nor a title names
-no quest and is not kept, since no later event could tie it to one. A declined quest sends
-neither event, so a decline reads what it did before. Records live ten seconds. It is a fallback,
-not a second dispatcher: a page the player reads in the open dialog is dispatched by the watcher
-as before. That page is the newest record of its event, whatever quest the globals named when the
-event arrived, and it and the earlier pages of that quest are marked read; another quest's pages
-still wait for their own event. A page shown again keeps its mark. A replay bypasses DialogueUI's
-wait for its window and reads the record, whatever else is open.
+in order. The watcher replays the pages nothing read when the quest ID drops to 0: of offers
+opened and closed unread, the newest, and not one recorded after its own quest's progress or
+reward pages, which carries the globals of the quest just handed in. Two events replay pages
+too: `QUEST_ACCEPTED` replays the quest's offer and `QUEST_TURNED_IN` its progress and reward
+pages, found by the quest ID in the event. That ID is the first argument on the Forever client
+and the second on Classic clients, which send the quest log index first; a secret ID replays
+nothing. They cover a client that keeps reporting the quest ID after the dialog closed. A page
+recorded with neither a quest ID nor a title names no quest and is not kept, since no later
+event could tie it to one. A declined quest sends neither event, so a decline reads what it did
+before. Records live ten seconds. It is a fallback, not a second dispatcher: a page the player
+reads in the open dialog is dispatched by the watcher as before. That page is the newest record
+of its event, whatever quest the globals named when the event arrived, and it and the earlier
+pages of the quest the watcher read are marked read; another quest's pages still wait for their
+own event. A page shown again keeps its mark. A replay bypasses DialogueUI's wait for its window
+and reads the record, whatever else is open, and no window's close stops it.
 
 `tests/lua/quest_overlay_test.lua` covers the other thing the quest UI owes a player: the play
 button beside each quest in the quest log. There are two quest logs to draw it in. The old one
