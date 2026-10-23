@@ -53,10 +53,11 @@ for _, quest in ipairs(quests) do
 end
 
 VO.Addon:OnInitialize()
-VO.DataModules:Register("TestPack", {
+local testPack = {
     SoundLengthLookupByFileName = lookup,
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
-})
+}
+VO.DataModules:Register("TestPack", testPack)
 
 world.title = "Test Quest"
 world.questText = "Go and do the thing."
@@ -476,6 +477,23 @@ VO.Addon.db.profile.Audio.StopAudioOnDisengage = false
 local stillPlaying = Spoken:GetCurrent() ~= nil
 Expect("a replayed offer is not stopped by another window closing",
     stillPlaying and string.format("%d-accept", full) or "")
+
+-- Classic's brief quest ID 0 as the offer arrives, on a client that then keeps reporting the ID
+-- after the window closes: the record is found by its title, so the accept event still reads it.
+lookup["107-accept"] = 1
+testPack.QuestIDLookup = { accept = { ["Unnumbered Quest"] = 107 }, progress = {}, complete = {} }
+StartScenario()
+world.title = "Unnumbered Quest"
+world.questID = 0
+stub.FireEvent("QUEST_DETAIL")
+world.questID = 107
+stub.FireEvent("QUEST_FINISHED")
+stub.Advance(0.3)
+stub.FireEvent("QUEST_ACCEPTED", 107)
+stub.Advance(3)
+world.title = "Test Quest"
+testPack.QuestIDLookup = nil
+Expect("an offer recorded under quest ID 0 is read by its accept event", "107-accept")
 
 if failures > 0 then
     print(string.format("\n%d scenario(s) failed", failures))

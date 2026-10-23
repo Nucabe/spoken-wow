@@ -131,21 +131,26 @@ local function CaptureQuestSnapshot(event)
         return
     end
     PruneQuestSnapshots()
-    local readText = quest.text
     local questID = CurrentQuestID()
     local questTitle = QuestTitle()
     -- Nothing to replay, and nothing to identify a quest by either.
     if questID == 0 and questTitle == "" then
         return
     end
+    local text, targetName = quest.text(), Utils:GetNPCName()
+    -- Resolved now, the way the handler would: QUEST_ACCEPTED and QUEST_TURNED_IN find a page by
+    -- its quest ID, and the brief 0 a Classic client reports would match neither.
+    if questID == 0 then
+        questID = ResolveQuestID(quest.source, questID, questTitle, targetName, text, true) or 0
+    end
     local snapshot = {
         event = event,
         at = GetTime(),
         questID = questID,
         title = questTitle,
-        text = readText(),
+        text = text,
         guid = Utils:GetNPCGUID(),
-        targetName = Utils:GetNPCName(),
+        targetName = targetName,
         isObjectOrItem = Utils:IsNPCObjectOrItem(),
     }
     -- The same page shown again replaces its record, and keeps what was done with it, so a page
@@ -612,6 +617,10 @@ function Addon:OnInitialize()
     local function ReplayQuestSnapshots(source, questID, events)
         local state = self.autoQuestState
         PruneQuestSnapshots()
+        -- The watcher calls this ten times a second whenever no quest is open.
+        if #questSnapshots == 0 then
+            return
+        end
         local newest = {}
         for i, snapshot in ipairs(questSnapshots) do
             if not snapshot.dispatched and not snapshot.passed then
