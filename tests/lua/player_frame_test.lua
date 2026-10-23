@@ -61,13 +61,13 @@ Expect("a line with no label is named by its header, never by its key",
 env.SoundQueue:RemoveAllSoundsFromQueue()
 ExpectOf("...said once: nothing after it", function() return F.frame.container.label:IsShown() end, false)
 -- A place's story: the zone, then the subzone whose story it is (#543).
-zones:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Westfall", label = "Moonbrook", bullet = "zone",
+places:Enqueue(H.Clip({ key = "s:1436:moonbrook", present = { header = "Westfall", label = "Moonbrook", bullet = "zone",
     portrait = { kind = "none" } } }))
 ExpectOf("a subzone's story names the zone, then the subzone", function()
     return F.frame.container.name:GetText() .. " " .. F.frame.container.label:GetText()
 end, "Westfall • Moonbrook")
 env.SoundQueue:RemoveAllSoundsFromQueue()
-zones:Enqueue(H.Clip({ key = "z:1436", present = { header = "Westfall", label = "Westfall", bullet = "zone",
+places:Enqueue(H.Clip({ key = "z:1436", present = { header = "Westfall", label = "Westfall", bullet = "zone",
     portrait = { kind = "none" } } }))
 ExpectOf("...a place named twice is named once", function() return F.frame.container.label:IsShown() end, false)
 env.SoundQueue:RemoveAllSoundsFromQueue()
