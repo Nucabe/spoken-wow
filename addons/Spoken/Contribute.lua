@@ -196,11 +196,65 @@ function Contribute:Envelope(source, fields, text)
     return body .. format("sum=%d\n", self:Checksum(body))
 end
 
--- A letter, a digit, or any byte of a multi-byte UTF-8 character. Byte-wise rather than %w,
--- which knows nothing past ASCII: a Cyrillic or accented name is all high bytes, and the word
--- next to it must still count as a word.
-local function IsWordByte(b)
-    return b ~= nil and (b >= 128 or (b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122))
+-- The code points past ASCII that are punctuation, spaces or symbols, not letters: Latin-1's (less
+-- ª, µ, º, which are letters, and the sign × and ÷), general punctuation (curly quotes, the dash,
+-- the ellipsis, no-break and other spaces), currency, arrows, boxes and shapes, the CJK
+-- punctuation and the fullwidth forms of ASCII punctuation (the fullwidth comma, the ideographic full
+-- stop), and the emoji.
+local SEPARATORS = {
+    { 0x80, 0xA9 }, { 0xAB, 0xB4 }, { 0xB6, 0xB9 }, { 0xBB, 0xBF }, { 0xD7, 0xD7 }, { 0xF7, 0xF7 },
+    { 0x2000, 0x206F }, { 0x20A0, 0x20CF }, { 0x2190, 0x23FF }, { 0x2500, 0x27BF }, { 0x2E00, 0x2E7F },
+    { 0x3000, 0x3004 }, { 0x3008, 0x3020 }, { 0x3030, 0x3030 }, { 0x303D, 0x303F },
+    { 0xFE30, 0xFE6F }, { 0xFF00, 0xFF0F }, { 0xFF1A, 0xFF20 }, { 0xFF3B, 0xFF40 }, { 0xFF5B, 0xFF65 },
+    { 0xFFE0, 0xFFEE }, { 0x1F000, 0x1FAFF },
+}
+
+--- The code point of the UTF-8 character whose first byte is at i, nil where the bytes are not one.
+local function CodePointAt(text, i)
+    local lead = byte(text, i)
+    local more = lead >= 0xF0 and 3 or lead >= 0xE0 and 2 or lead >= 0xC0 and 1 or nil
+    if not more then
+        return nil
+    end
+    local point = lead - (more == 3 and 0xF0 or more == 2 and 0xE0 or 0xC0)
+    for k = 1, more do
+        local following = byte(text, i + k)
+        if not following or following < 0x80 or following > 0xBF then
+            return nil
+        end
+        point = point * 64 + (following - 0x80)
+    end
+    return point
+end
+
+-- Whether the byte at i is part of a word: an ASCII letter or digit, or a byte of a character that
+-- is a letter. Byte-wise rather than %w, which knows nothing past ASCII: a Cyrillic or accented name
+-- is all high bytes, and the word next to it must still count as a word. A high byte is judged by its
+-- whole character, so a guillemet, a curly apostrophe or a fullwidth comma ends a word as ASCII
+-- punctuation does. Bytes that are no character are taken for a letter's.
+local function IsWordByte(text, i)
+    local b = byte(text, i)
+    if b == nil then
+        return false
+    end
+    if b < 128 then
+        return (b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122)
+    end
+    local first, at = i, b
+    while first > 1 and i - first < 3 and at < 0xC0 do
+        first = first - 1
+        at = byte(text, first)
+    end
+    local point = CodePointAt(text, first)
+    if not point then
+        return true
+    end
+    for _, range in ipairs(SEPARATORS) do
+        if point >= range[1] and point <= range[2] then
+            return false
+        end
+    end
+    return true
 end
 
 --- Every whole-word occurrence of `word` in `text` replaced by `token`.
@@ -209,7 +263,7 @@ end
 --- own input, so it would have to be escaped first, and %f -- the one pattern item that would
 --- make the boundary easy -- is not something every client's Lua is safe to lean on. Whole
 --- words only, so a player called Mist does not turn "Mistwood" into "$Nwood"; "Mist's" still
---- matches, the apostrophe not being a word byte.
+--- matches, the apostrophe not being a letter.
 function Contribute:ReplaceWord(text, word, token)
     local out, pos = {}, 1
     while true do
@@ -217,7 +271,7 @@ function Contribute:ReplaceWord(text, word, token)
         if not first then
             break
         end
-        if IsWordByte(byte(text, first - 1)) or IsWordByte(byte(text, last + 1)) then
+        if IsWordByte(text, first - 1) or IsWordByte(text, last + 1) then
             out[#out + 1] = string.sub(text, pos, last)
         else
             out[#out + 1] = string.sub(text, pos, first - 1)

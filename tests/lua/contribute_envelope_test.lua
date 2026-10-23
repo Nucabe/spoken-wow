@@ -40,6 +40,26 @@ local none = C:Envelope("places", { { "map", "1537" } }, nil)
 Expect("an envelope with no text has no fence", none:match("text<<") == nil, true)
 
 Expect("an unknown source is refused", C:Envelope("mail", { { "page", "1" } }, "x"), nil)
+
+------------------------------------------------------------------------------- whole words
+-- A name next to punctuation of any script is the name: a guillemet and its no-break space, the
+-- ellipsis, a curly apostrophe, the dash, the fullwidth comma and the ideographic stop. Next to a
+-- letter of any script it is part of a longer word.
+local function Swap(text) return C:ReplaceWord(text, "Grimbalor", "$N") end
+Expect("a name in guillemets with no-break spaces is swapped",
+    Swap("\194\171\194\160Grimbalor\194\160\194\187"), "\194\171\194\160$N\194\160\194\187")
+Expect("...before an ellipsis", Swap("Grimbalor\226\128\166 ok"), "$N\226\128\166 ok")
+Expect("...before a curly apostrophe", Swap("Grimbalor\226\128\153s axe"), "$N\226\128\153s axe")
+Expect("...between dashes", Swap("\226\128\148Grimbalor\226\128\148"), "\226\128\148$N\226\128\148")
+Expect("...before a fullwidth comma", Swap("Grimbalor\239\188\140\228\189\160\229\165\189"), "$N\239\188\140\228\189\160\229\165\189")
+Expect("...before an ideographic stop and in corner brackets",
+    Swap("\227\128\140Grimbalor\227\128\141\227\128\130"), "\227\128\140$N\227\128\141\227\128\130")
+Expect("...before an exclamation mark", Swap("Grimbalor! ok"), "$N! ok")
+Expect("...but not inside a word with an accented letter", Swap("Grimbalor\195\161"), "Grimbalor\195\161")
+Expect("...a Cyrillic one before it", Swap("\208\144Grimbalor"), "\208\144Grimbalor")
+Expect("...nor a Han character beside it", Swap("Grimbalor\228\189\160"), "Grimbalor\228\189\160")
+Expect("an accented name is swapped before the multiplication sign",
+    C:ReplaceWord("Z\195\182pf\195\151", "Z\195\182pf", "$N"), "$N\195\151")
 Expect("a field value never spans lines",
     C:Envelope("quests", { { "title", "A\nB" } }, nil):match("\ntitle=A B\n") ~= nil, true)
 
