@@ -461,12 +461,6 @@ function Spoken:LanguageName(code)
     return Options:LanguageName(code)
 end
 
---- Whether a font draws `text`: the settings' font object, or the font file `path`. The one probe
---- every module uses, so each names a language the same way.
-function Spoken:FontDraws(text, path)
-    return Options:FontDraws(text, path)
-end
-
 --- Whether a font draws the language `code`, as the lists test it before they name it natively:
 --- the settings' font object, or the font file `path`.
 function Spoken:LanguageDraws(code, path)

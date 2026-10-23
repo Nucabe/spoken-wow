@@ -186,49 +186,55 @@ local function Square(char)
     local code = (a - 224) * 4096 + (b - 128) * 64 + (c - 128)
     return (code >= 0x3400 and code <= 0x9FFF) or (code >= 0xAC00 and code <= 0xD7A3)
 end
-function Options:FontDraws(text, path)
+local function FontDraws(text, path)
     if not (UIParent and UIParent.CreateFontString) then return not path end
-    local probe = probes[path or false]
+    local key = path or false
+    local probe = probes[key]
     if probe == nil then
         probe = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         probe:Hide()
         if path and probe:SetFont(path, 12, "") == false then probe = false end
-        probes[path or false] = probe
+        probes[key] = probe
     end
     if not probe then return false end
     local width, count = Width(probe, text), 0
     for _ in string.gmatch(text, "[%z\1-\127\194-\244][\128-\191]*") do count = count + 1 end
     local drew = width > 0 and math.abs(width - Width(probe, string.rep(BOX, count))) > 0.5
-    local box
-    for char in string.gmatch(text, "[\227-\237][\128-\191][\128-\191]") do
-        if not drew then break end
-        if Square(char) then
-            box = box or Width(probe, BOX)
-            drew = math.abs(Width(probe, char) - box) > 0.5
+    if drew then
+        local box
+        for char in string.gmatch(text, "[\227-\237][\128-\191][\128-\191]") do
+            if Square(char) then
+                box = box or Width(probe, BOX)
+                if math.abs(Width(probe, char) - box) <= 0.5 then
+                    drew = false
+                    break
+                end
+            end
         end
     end
     probe:SetText("")
     return drew
 end
 
+local function Locale(code)
+    for _, locale in ipairs(LANGUAGES) do
+        if locale.code == code then return locale end
+    end
+end
+
 -- Whether a font draws the language `code`: its own name, and the characters only it has.
 function Options:LanguageDraws(code, path)
-    for _, locale in ipairs(LANGUAGES) do
-        if locale.code == code then return self:FontDraws(locale.native .. (locale.sample or ""), path) end
-    end
-    return false
+    local locale = Locale(code)
+    return locale ~= nil and FontDraws(locale.native .. (locale.sample or ""), path)
 end
 
 --- A language's name in the lists, one for every module: its own, and in English where this
 --- client's font cannot draw its script (Korean on a German client).
 function Options:LanguageName(code)
-    for _, locale in ipairs(LANGUAGES) do
-        if locale.code == code then
-            if not locale.script then return locale.native end
-            return self:LanguageDraws(code) and locale.native or locale.english
-        end
-    end
-    return code
+    local locale = Locale(code)
+    if not locale then return code end
+    if not locale.script then return locale.native end
+    return self:LanguageDraws(code) and locale.native or locale.english
 end
 
 --- The client's language, as "Auto" reads it: English where the client's is not one of ours.
