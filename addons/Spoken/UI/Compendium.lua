@@ -2,7 +2,7 @@
 -- the quests (Spoken Quests), the places (Spoken Places), the writings (Spoken Readables) -- each a
 -- list on the left and a page on the right.
 --
--- Spoken's, so every module's tab shares one window. The window is the game's portrait frame, resizable from its corner
+-- Spoken's, so every module's tab shares one window. The window is the game's portrait frame, of one size
 -- and folding down to the list. The list is a search box over an inset of rows, with the tab's
 -- switches (Started Only, Discovered Only, Found Only and the like) in the filter menu beside the
 -- search. Its rows are drawn in the game's own art: the objective tracker's campaign bar across
@@ -20,8 +20,7 @@
 -- (SpokenCompendium:Toggle opens the window from there and from the minimap menu). Shared
 -- with the tabs too: the zones' tree (C.MapName, C.ContinentOf, C.CITY_IN, C.BATTLEGROUNDS and
 -- C.OpenAround, C.OpenZone, C.PlayerZone, C.PlayerContinent to open it where the player stands),
--- the page's inset (C.PageHolder) and the parchment page (C.NewPage). The window's size is kept in
--- Spoken's settings.
+-- the page's inset (C.PageHolder) and the parchment page (C.NewPage).
 --
 -- Not under setfenv(1, SpokenEnv): the frames are built here, and the client's mixins are looked
 -- up in the calling function's environment.
