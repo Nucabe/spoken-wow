@@ -706,7 +706,7 @@ function Transcript:Initialize()
             if MinimalPlayer:IsEnabled() then MinimalPlayer:ToggleMenu()
             else Options:Open() end
         elseif button == "RightButton" then
-            SoundQueue:Skip()
+            Actions.Skip()
         else self:Follow() end
     end)
     frame:SetScript("OnEnter", function()

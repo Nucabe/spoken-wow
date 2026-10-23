@@ -967,10 +967,15 @@ ExpectOf("a Shift-right-click on the words opens the settings, the line playing 
     return Head()
 end, "1 Thrall")
 shift = false
+local clicks = #world.kitSounds
 ExpectOf("a right-click on the words skips the line", function()
     words.scripts.OnClick(words, "RightButton")
     return Head()
 end, "1 Cairne")
+ExpectOf("...with the Skip button's click", function()
+    local last = world.kitSounds[#world.kitSounds]
+    return tostring(#world.kitSounds - clicks) .. " " .. tostring(last and last.kit)
+end, "1 1115")
 ExpectOf("...and the words' tooltip says what each right-click does", function()
     words.scripts.OnEnter(words)
     return table.concat(GameTooltip.lines, "|")
