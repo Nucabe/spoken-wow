@@ -25,4 +25,5 @@ embeds.xml
 addon.xml
 Contribute.xml
 Gossip\Gossip.xml
+Locale\Names\Names.xml
 Compendium.xml
