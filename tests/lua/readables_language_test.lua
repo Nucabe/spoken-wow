@@ -91,6 +91,16 @@ Expect("D. older translated packs can caption the page opened in the client",
     B:ClipFor(PAGE).present.transcript, GERMAN_TEXT)
 Expect("D. a fallback page uses English captions rather than the open German page",
     B:ClipFor(ONLY_ENGLISH).present.transcript, "English second page.")
+-- The client showed that page this session, but the German pack has no recording of it: the clip is
+-- English, so its words are.
+B:RememberPageText(ONLY_ENGLISH, "deDE", "Die zweite Seite.")
+Expect("D. ...also where the client showed that page", B:ClipFor(ONLY_ENGLISH).present.transcript,
+    "English second page.")
+local listed = B:GetAudioPacks()
+Expect("D. the pack list is built once while the packs are the same", B:GetAudioPacks() == listed, true)
+SpokenReadablesAudioPacks.SpokenReadablesAudio_fr = { version = 1, language = "frFR", pages = {} }
+Expect("D. ...and again once a pack is added", #B:GetAudioPacks(), #listed + 1)
+SpokenReadablesAudioPacks.SpokenReadablesAudio_fr = nil
 SpokenReadablesSettings.voiceLanguage = "enUS"
 Expect("D. an English voice on a German client keeps the German words the client showed",
     B:ClipFor(PAGE).present.transcript, GERMAN_TEXT)

@@ -114,7 +114,32 @@ end
 --- Every installed pack this version can read, newest format first. Packs released as
 --- SpokenBooksAudio write SpokenBooksAudioPacks, and stay on players' disks, so it is read too; one
 --- whose SpokenReadablesAudio replacement is installed beside it is the same pack, one release older.
+--- The list is kept for as long as the registries hold the same packs: it is asked for on every
+--- readable the Compendium lists, and every page of one.
+local listed
 function SpokenReadables:GetAudioPacks()
+	local current, legacy = _G.SpokenReadablesAudioPacks, _G.SpokenBooksAudioPacks
+	if listed and listed.current == current and listed.legacy == legacy then
+		-- The same tables: still the same packs in them?
+		local count, same = 0, true
+		for _, registry in ipairs({ current or {}, legacy or {} }) do
+			for _, pack in pairs(registry) do
+				count = count + 1
+				if not listed.known[pack] then same = false end
+			end
+		end
+		if same and count == listed.count then return listed.packs end
+	end
+	local known, count = {}, 0
+	for _, registry in ipairs({ current or {}, legacy or {} }) do
+		for _, pack in pairs(registry) do known[pack] = true; count = count + 1 end
+	end
+	listed = { current = current, legacy = legacy, known = known, count = count,
+		packs = self:BuildAudioPacks() }
+	return listed.packs
+end
+
+function SpokenReadables:BuildAudioPacks()
 	local packs = {}
 	local current = _G.SpokenReadablesAudioPacks or {}
 	local function Collect(registry, renamed)
@@ -208,19 +233,19 @@ function SpokenReadables:ClipFor(pageId)
 				local book = self:BookOf(pageId)
 				local oneLine = self:OneLine()
 				-- On a client in another language the words are the client's, as the game shows
-				-- the page, whatever the voice: French words under an English voice. The voice's
-				-- own where this client's are not known, and on an English client, where a voice
-				-- no client speaks (Italian) is read along in its own words. The caption keeps the
-				-- page's tokens; the subtitle shows what the clip says.
-				local text, shown = self:ClientPageText(pageId), self:GetClientLanguage()
+				-- the page, whatever the voice: French words under an English voice. Not for a
+				-- clip the fallback language plays, which is captioned in what it says. The
+				-- voice's own words where this client's are not known, and on an English client,
+				-- where a voice no client speaks (Italian) is read along in its own words. The
+				-- caption keeps the page's tokens; the subtitle shows what the clip says.
+				local text = language == self:GetVoiceLanguage() and self:ClientPageText(pageId)
+				local shown = self:GetClientLanguage()
 				if not text then
 					shown = language
-					text = entry.text
-					if not text and language == self.BASE_LANGUAGE and place.text then
+					text = self:PageTextIn(pageId, language)
+					if language == self.BASE_LANGUAGE and place.text
+						and not (type(entry.text) == "string" and entry.text ~= "") then
 						text = self:SaidTokens(place.text)
-					end
-					if not text and self.pageText and self.pageText[language] then
-						text = self.pageText[language][pageId]
 					end
 				end
 				-- The title the client showed, in the language of the words below it; the
@@ -249,8 +274,10 @@ function SpokenReadables:ClipFor(pageId)
 						-- a letter, which is most of this corpus).
 						header = oneLine and self:KindOf(place.book) or title,
 						transcript = text,
-						-- The first page's words start after its title is read.
-						timings = place.number == 1 and TitleFirstTimings(title, text, length) or nil,
+						-- The first page's words start after its title is read. Only where the words
+						-- are the ones the recording says: another language's have another length.
+						timings = place.number == 1 and shown == language
+							and TitleFirstTimings(title, text, length) or nil,
 						label = oneLine and (title ~= "" and title or nil)
 							or ((book and #book.pages > 1)
 								and format(L.OPT_PAGE_COUNT_FMT, place.number, #book.pages) or nil),

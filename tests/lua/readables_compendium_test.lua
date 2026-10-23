@@ -548,7 +548,7 @@ end
 -- the client's language, or the page as the client showed it.
 do
     local first = SpokenReadablesData.books[KURDRAN].pages[1]
-    local packs, locale, kept = _G.SpokenReadablesAudioPacks, _G.GetLocale, B.pageText
+    local packs, locale, kept, titles = _G.SpokenReadablesAudioPacks, _G.GetLocale, B.pageText, B.bookTitle
     _G.GetLocale = function() return "esES" end
     _G.SpokenReadablesAudioPacks = { SpokenReadablesAudio_esES = { version = 1, language = "esES",
         pages = { [first] = { file = tostring(first), len = 2, text = "Palabras de Kurdran." } } } }
@@ -560,7 +560,7 @@ do
     B:ShowReadables(KURDRAN)
     Expect("...and a page the client showed is in the words it showed", page.body.text.text:sub(1, 16),
         "Palabras vistas.")
-    _G.SpokenReadablesAudioPacks, _G.GetLocale, B.pageText = packs, locale, kept
+    _G.SpokenReadablesAudioPacks, _G.GetLocale, B.pageText, B.bookTitle = packs, locale, kept, titles
     B:ShowReadables(KURDRAN)
 end
 -- Opened on a writing from elsewhere (Open in Azeroth's Compendium): chosen, with what holds it

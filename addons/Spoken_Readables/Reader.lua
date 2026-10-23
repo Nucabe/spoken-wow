@@ -245,24 +245,31 @@ function SpokenReadables:RememberPageText(pageId, language, text, title)
 	end
 end
 
---- A page's words in this client's language, from a pack in that language or from the page as
---- the client showed it, or nil. Nil on an English client: Books.lua is its words.
+--- A page's words in `language`: the words of a pack recorded in it, else the page as the client
+--- showed it this session. Nil where neither has them.
+function SpokenReadables:PageTextIn(pageId, language)
+	for _, pack in ipairs(self:GetAudioPacks()) do
+		local entry = self:PackLanguage(pack) == language and pack.pages[pageId]
+		if entry and type(entry.text) == "string" and entry.text ~= "" then
+			return entry.text
+		end
+	end
+	local kept = self.pageText and self.pageText[language] and self.pageText[language][pageId]
+	if type(kept) == "string" and kept ~= "" then
+		return kept
+	end
+	return nil
+end
+
+--- A page's words in this client's language, or nil. Page by page, so a readable can be in two
+--- languages: the pages Spoken has this client's words for, and the rest in English. Nil on an
+--- English client: Books.lua is its words.
 function SpokenReadables:ClientPageText(pageId)
 	local client = self:GetClientLanguage()
 	if client == self.BASE_LANGUAGE then
 		return nil
 	end
-	for _, pack in ipairs(self:GetAudioPacks()) do
-		local entry = self:PackLanguage(pack) == client and pack.pages[pageId]
-		if entry and type(entry.text) == "string" and entry.text ~= "" then
-			return entry.text
-		end
-	end
-	local kept = self.pageText and self.pageText[client] and self.pageText[client][pageId]
-	if type(kept) == "string" and kept ~= "" then
-		return kept
-	end
-	return nil
+	return self:PageTextIn(pageId, client)
 end
 
 --- Where a page sits: its book and its number. The corpus module's place, or a pack's for a
