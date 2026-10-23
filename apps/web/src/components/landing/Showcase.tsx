@@ -5,6 +5,9 @@ import { useState } from "react";
 
 import Link from "@/components/LocaleLink";
 
+import VoicePlayer from "./VoicePlayer";
+import { VOICES } from "./voices";
+
 type Part = {
   id: string;
   title: string;
@@ -12,6 +15,8 @@ type Part = {
   href?: string;
   /** The game's own icon for the part, as the settings page shows it. */
   icon: string;
+  /** The picture held in the player's place while the part has no recording. */
+  placeholder?: string;
   summary: string;
   facts: string[];
 };
@@ -65,6 +70,7 @@ const PARTS: Part[] = [
     id: "bosses",
     title: "Bosses",
     icon: "/landing/icons/game-bosses.png",
+    placeholder: "/landing/placeholder-bosses.png",
     summary: "A boss's story shows in the narrator when you target it or when it dies.",
     facts: [
       "Words only: a boss's story has no voice yet",
@@ -76,11 +82,13 @@ const PARTS: Part[] = [
 
 /**
  * The parts of Spoken as a list on the left and a stage on the right. The stage is a polite live
- * region, so a screen reader hears the part that was picked.
+ * region, so a screen reader hears the part that was picked. Only the picked part's player
+ * is mounted, and its audio downloads when played.
  */
 export default function Showcase() {
   const [index, setIndex] = useState(0);
   const part = PARTS[index];
+  const voices = VOICES[part.id];
 
   return (
     <div className="bn-showcase">
@@ -97,6 +105,14 @@ export default function Showcase() {
         ))}
       </ul>
       <div className="bn-stage-part">
+        <div className="bn-stage-art">
+          {voices ? (
+            <VoicePlayer key={part.id} voices={voices} label={part.title.toLowerCase()} />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="bn-stage-media" src={part.placeholder} alt="Preview coming soon" width={778} height={268} />
+          )}
+        </div>
         <div className="bn-stage-body" aria-live="polite">
           <p>{part.summary}</p>
           <ul>
