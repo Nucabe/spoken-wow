@@ -373,10 +373,12 @@ end
 --- the dialog after that: muting only once the line starts cut the greeting off mid-word.
 --- Muted in the same frame the dialog opened, the greeting is never heard at all.
 ---@param speakingOn string The channel the coming line will play on.
+---@return boolean? muted false when nothing was muted: paused, or the game's dialogue left alone
 function SoundQueue:MuteGameDialogueAhead(speakingOn)
     -- Paused, the line will only queue: nothing of ours is going to speak over the greeting.
-    if self:IsPaused() then
-        return
+    -- With the game's dialogue left alone there is nothing to mute either.
+    if self:IsPaused() or not Addon.db.profile.Audio.AutoToggleDialog then
+        return false
     end
     -- Cut, not faded: in the frame the window opens the greeting has barely started, and a fade
     -- lets its first half-second through.
@@ -385,6 +387,13 @@ function SoundQueue:MuteGameDialogueAhead(speakingOn)
         Addon:CancelTimer(muteAheadTimer)
     end
     muteAheadTimer = Addon:ScheduleTimer(LiftMuteAhead, MUTE_AHEAD_SECONDS)
+    return true
+end
+
+--- Whether a mute taken ahead still waits for its line, short of its deadline.
+---@return boolean
+function SoundQueue:IsMutingGameDialogueAhead()
+    return muteAheadTimer ~= nil
 end
 
 --- The read a mute ahead was taken for found no line: give the game's dialogue back now rather

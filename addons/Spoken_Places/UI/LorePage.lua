@@ -143,8 +143,10 @@ local LOG_PAGE = "QuestDetailsBackgrounds"
 -- top bar: this much of its height, cut off so the parchment starts at the page's top.
 local BOOK_TOP_BAND = 0.07
 -- Beside the map: the quest log's page, its heading nearer the narrower page's top and right edge,
--- smaller and on one line, under a shorter backplate.
-local LOG_LOOK = { top = 28, right = 28, titleSize = 20, oneLine = true, backplate = { full = 300, height = 80 } }
+-- smaller and on one line, under a shorter backplate, and no round picture by the title: its Open in
+-- Compendium button shows the same tome, which would stand twice on the heading's line.
+local LOG_LOOK = { top = 28, right = 28, titleSize = 20, oneLine = true, backplate = { full = 300, height = 80 },
+	noFace = true }
 
 -- What Play does on a story's page: the story `target` ({ mapID, key }) where a pack reads it, Stop
 -- while it is read and Replay once stopped, as every Play of the Compendium's (SpokenCompendium.PlayState).
