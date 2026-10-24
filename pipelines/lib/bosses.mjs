@@ -189,7 +189,7 @@ export function render(maps, names) {
 -- the client's encounter, \`ids\` every encounter the client has for it, one for each difficulty
 -- (the ids ENCOUNTER_START gives), \`key\` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
--- ${FOREVER_BUILD}, else retail ${RETAIL_BUILD}, wago.tools). \`onTarget\` marks a boss found when it dies after the player targeted it, as its
+-- ${FOREVER_BUILD}, else retail ${RETAIL_BUILD}, wago.tools). \`onTarget\` marks a boss found when it dies after the player targeted it (not inside an instance, where its GUID is hidden), as its
 -- fight may start no encounter. Regenerate with:
 --   make bosses
 --

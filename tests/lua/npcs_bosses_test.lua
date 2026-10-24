@@ -550,6 +550,47 @@ Expect("...and its death on the unit the mouse is over is, within a second", Sho
 Clear()
 units.mouseover = nil
 
+-- Two bosses are watched at once, and a watch ends after half an hour or on leaving the zone.
+local AZUREGOS = "Creature-0-1-2-3-6109-0000ABCDEF"
+_G.SpokenBossStories[2791] = { ["azuregos"] = "He freezes." }
+stub.SetZone({ zone = "Azshara" })
+dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+units.target = AZUREGOS
+NPCs:TargetChanged()
+units.target, units.nameplate1 = nil, KAZZAK
+dead = true
+Health("nameplate1")
+Expect("a second boss targeted does not drop the first", Showing(), "boss:2789:lord kazzak")
+Clear()
+units.nameplate1 = AZUREGOS
+Health("nameplate1")
+Expect("...and the second is found when it dies", Showing(), "boss:2791:azuregos")
+Clear()
+units.nameplate1 = nil
+dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+stub.Advance(1801, 1)
+units.target, units.nameplate1 = nil, KAZZAK
+dead = true
+Health("nameplate1")
+Expect("a watch ends after half an hour", Showing(), "nothing")
+dead = false
+units.target = KAZZAK
+NPCs:TargetChanged()
+stub.SetZone({ zone = "Orgrimmar" })
+stub.Advance(2, 1)
+units.target, units.nameplate1 = nil, KAZZAK
+dead = true
+Health("nameplate1")
+Expect("...and when the player leaves the zone it began in", Showing(), "nothing")
+units.nameplate1 = nil
+stub.SetZone({ zone = "" })
+
 -- A corpse targeted, another boss and a player are not watched.
 dead = true
 NPCs:ForgetStories()

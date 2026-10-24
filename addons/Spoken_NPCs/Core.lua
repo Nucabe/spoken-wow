@@ -90,7 +90,7 @@ function NPCs:FoundEncounter(encounterID)
 end
 
 --- Whether the boss `key` of `map` is one whose fight may start no encounter (`onTarget` in
---- Data/Bosses.lua): the game sends no kill for it, so its death is watched while it is targeted.
+--- Data/Bosses.lua): the game sends no kill for it, so its death is watched after the player targets it.
 function NPCs:IsUnannounced(map, key)
 	Encounters()
 	return onTarget[Key(map, key)] == true

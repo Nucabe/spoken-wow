@@ -49,12 +49,12 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
--- The boss the player last targeted alive, of those whose fight may start no encounter: { boss, guid,
--- since }. The client clears the target as the boss dies, so the target is no help then; the boss is
--- found by its GUID on any unit the client reports it on (a nameplate, the soft target, the mouse),
--- whose health event and dead flag are still readable. `generation` ends the polling of an earlier one.
-local watched, generation = nil, 0
-local watcher
+-- The bosses the player targeted alive, of those whose fight may start no encounter: [guid] = { boss,
+-- since, zone }. The client clears the target as the boss dies, so the target is no help then; the boss
+-- is found by its GUID on any unit the client reports it on (a nameplate, the soft target, the mouse),
+-- whose health event and dead flag are still readable.
+local watched, count = {}, 0
+local watcher, polling
 
 local POLL_SECONDS = 1
 local WATCH_SECONDS = 1800
@@ -66,38 +66,56 @@ local function Dead(unit)
 	return dead and true or false
 end
 
---- Stops watching the boss, as it died or the player left.
+local function Unwatch(guid)
+	if watched[guid] then watched[guid], count = nil, count - 1 end
+	if count == 0 and watcher then watcher:UnregisterEvent("UNIT_HEALTH") end
+end
+
+--- Stops watching every boss.
 function NPCs:StopWatching()
-	watched = nil
-	if watcher then watcher:UnregisterEvent("UNIT_HEALTH") end
+	for guid in pairs(watched) do Unwatch(guid) end
 end
 
---- `unit` may be the boss watched: if it is, and dead, the boss is met and its story shown.
+--- `unit` may be a boss watched: if it is, and dead, the boss is met and its story shown.
 function NPCs:CheckUnit(unit)
-	if not (watched and unit) or Spoken.NotSecret(UnitGUID(unit)) ~= watched.guid or Dead(unit) ~= true then return end
-	local boss = watched.boss
-	self:StopWatching()
-	self:FoundBoss(boss.map, boss.key)
-	self:ReadStory(boss.map, boss.key)
+	local guid = unit and Spoken.NotSecret(UnitGUID(unit))
+	local entry = guid and watched[guid]
+	if not entry or Dead(unit) ~= true then return end
+	Unwatch(guid)
+	self:FoundBoss(entry.boss.map, entry.boss.key)
+	self:ReadStory(entry.boss.map, entry.boss.key)
 end
 
--- The event is not everywhere: the boss is also looked for by its GUID once a second.
-local function Poll(mine)
-	if mine ~= generation or not watched then return end
-	if GetTime() - watched.since > WATCH_SECONDS then return NPCs:StopWatching() end
-	local unit = UnitTokenFromGUID and UnitTokenFromGUID(watched.guid)
-	if unit then NPCs:CheckUnit(unit) end
-	if watched then C_Timer.After(POLL_SECONDS, function() Poll(mine) end) end
+-- The event is not everywhere: the bosses are also looked for by their GUID once a second. A watch
+-- ends after half an hour, or where the player left the zone it began in.
+local function Poll()
+	polling = false
+	local now, zone = GetTime(), GetRealZoneText()
+	for guid, entry in pairs(watched) do
+		if now - entry.since > WATCH_SECONDS or zone ~= entry.zone then
+			Unwatch(guid)
+		else
+			local unit = UnitTokenFromGUID and UnitTokenFromGUID(guid)
+			if unit then NPCs:CheckUnit(unit) end
+		end
+	end
+	if count > 0 then polling = true; C_Timer.After(POLL_SECONDS, Poll) end
+end
+
+-- Only these units can be a boss the player has met: the rest of a raid's health events are not looked at.
+local function Reported(unit)
+	return unit == "target" or unit == "softenemy" or unit == "mouseover" or (unit and unit:sub(1, 9) == "nameplate")
 end
 
 local function Watch(boss, guid)
-	if watched and watched.guid == guid then return end
-	watched, generation = { boss = boss, guid = guid, since = GetTime() }, generation + 1
-	watcher = watcher or CreateFrame("Frame")
-	watcher:SetScript("OnEvent", function(_, _, unit) NPCs:CheckUnit(unit) end)
+	if watched[guid] then return end
+	watched[guid], count = { boss = boss, since = GetTime(), zone = GetRealZoneText() }, count + 1
+	if not watcher then
+		watcher = CreateFrame("Frame")
+		watcher:SetScript("OnEvent", function(_, _, unit) if Reported(unit) then NPCs:CheckUnit(unit) end end)
+	end
 	watcher:RegisterEvent("UNIT_HEALTH")
-	local mine = generation
-	C_Timer.After(POLL_SECONDS, function() Poll(mine) end)
+	if not polling then polling = true; C_Timer.After(POLL_SECONDS, Poll) end
 end
 
 --- The player targeted a unit: a boss whose fight may start no encounter is watched until it dies.
