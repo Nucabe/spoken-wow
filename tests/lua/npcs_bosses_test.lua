@@ -450,27 +450,6 @@ world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
 stub.Secrets(world.npcGUID)
 NPCs:TargetChanged()
 Expect("...nor a boss whose GUID the client keeps secret", Showing(), "nothing")
--- In an instance, where the name is hidden too, the model's display id says which boss it is.
-do
-    local instanceInfo, unitName, createFrame, exists = _G.GetInstanceInfo, _G.UnitName, _G.CreateFrame, _G.UnitExists
-    _G.GetInstanceInfo = function() return "Deadmines", "party", 1, "", 5, 0, false, 36 end
-    _G.UnitName = function() return nil end
-    _G.UnitExists = function() return true end
-    local display = 2029
-    _G.CreateFrame = function(kind, ...)
-        if kind == "PlayerModel" then
-            return { SetUnit = function() end, GetDisplayInfo = function() return display end }
-        end
-        return createFrame(kind, ...)
-    end
-    NPCs:TargetChanged()
-    Expect("a secret GUID in an instance: the model's display id names the boss and shows its story", Showing(), EDWIN)
-    Clear(); NPCs:ForgetStories()
-    display = 123456
-    NPCs:TargetChanged()
-    Expect("...a model no boss of the instance has shows nothing", Showing(), "nothing")
-    _G.GetInstanceInfo, _G.UnitName, _G.CreateFrame, _G.UnitExists = instanceInfo, unitName, createFrame, exists
-end
 stub.Secrets()
 SpokenEnv.Addon.db.profile.Transcript.Enabled = false
 NPCs:TargetChanged()

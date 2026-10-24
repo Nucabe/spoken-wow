@@ -75,36 +75,15 @@ function NPCs:ReadStory(map, key, meets)
 	return source:Enqueue(clip) and true or false
 end
 
--- The boss of the instance the player is in whose model is the target's, or nil. Read through a model
--- frame, as the client gives no other identity for a unit it hides.
-local model
-function NPCs:BossByDisplay()
-	local map = self:InstanceMap()
-	local known = map and _G.SpokenBossCreatures and SpokenBossCreatures[map]
-	if not known or not (CreateFrame and UnitExists and UnitExists("target")) then return nil end
-	model = model or CreateFrame("PlayerModel")
-	local ok, display = pcall(function() model:SetUnit("target"); return model:GetDisplayInfo() end)
-	display = ok and Spoken.NotSecret(display) or nil
-	if type(display) ~= "number" then return nil end
-	for key, entry in pairs(known) do
-		if entry.display == display then return { map = map, key = key } end
-	end
-end
-
 --- The player targeted a unit: where it is a boss, met if its fight may start no encounter, and its
 --- story where targeting shows them.
 function NPCs:TargetChanged()
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
+	if not id then return end
 	local reads = SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "target"
-	local boss, member
-	if id then
-		boss = Creatures()[id]
-		member = not boss and reads and Member(id)
-		boss = boss or member
-	else
-		-- Inside an instance the GUID and the name are hidden; the model's display id is not.
-		boss = self:BossByDisplay()
-	end
+	local boss = Creatures()[id]
+	local member = not boss and reads and Member(id)
+	boss = boss or member
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
 	boss = boss or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
