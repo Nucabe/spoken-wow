@@ -99,14 +99,12 @@ L.OPT_REPORT_LINE_ADDRESS = "Copy this address and open it in your browser to re
 --------------------------------------------------------------------------------
 
 L.MENU_LORE_WINDOW = "Open Azeroth's Compendium"
-L.OPEN_IN_LORE_TIP = "This place's story in Azeroth's Compendium, beside every other zone and area's."
 L.MENU_ZONE_SETTINGS = "Places Settings"
 
 --------------------------------------------------------------------------------
 -- Lore window buttons
 --------------------------------------------------------------------------------
 
-L.AUDIO_READ_TIP = "Hear this story read aloud."
 L.REPORT_BUTTON = "Report"
 L.IN_ZONE_FMT = "In %1$s"
 L.DISCOVERED_FMT = "%1$d of %2$d discovered"
@@ -151,6 +149,6 @@ L.OPT_PAGE_TITLE = "Places"
 L.OPT_DEV_DEBUG = "Places Debug Messages"
 L.OPT_DEV_PREVIEW = "Offer Unfinished Translations"
 
-L.OPEN_IN_COMPENDIUM = "Open in Azeroth's Compendium"
+L.OPEN_IN_COMPENDIUM = "Open in the Azeroth Compendium"
 
 SpokenPlaces:RegisterStrings("enUS", L)
