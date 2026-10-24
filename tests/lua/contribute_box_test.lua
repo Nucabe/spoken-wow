@@ -51,6 +51,19 @@ Expect("a context that errors leaves the bare address", box.editBox:GetText(), r
 Spoken:ShowReport(report, function() return nil end)
 Expect("...as does no context at all", box.editBox:GetText(), report)
 
+------------------------------------------------------------------------------- collected text
+Spoken.Gather:SetEnabled(true)
+Spoken.Gather:Add("q:9123:accept", envelope)
+Spoken:ShowGatheredText()
+local gathered = Spoken.GatheredLinesView
+Expect("the collected-lines button opens a separate window", gathered and gathered.frame:IsShown(), true)
+Expect("the collected window has a scrollbar", gathered and gathered.scrollView and gathered.scrollView.bar ~= nil, true)
+Expect("the collected window formats the source and field",
+    gathered.text:GetText():match("1%. Quests\nQuest: 9123") ~= nil, true)
+Expect("...and shows the gathered text instead of the raw envelope",
+    gathered.text:GetText():match("Text:\nWords%.") ~= nil
+        and gathered.text:GetText():find("!SPOKEN", 1, true) == nil, true)
+
 ------------------------------------------------------------------------------- over a host
 -- A dialog window that hides UIParent (DialogueUI's) would hide the box with it, so a feature
 -- addon puts it over that window while it is open.

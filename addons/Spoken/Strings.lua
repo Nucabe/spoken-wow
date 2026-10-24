@@ -193,6 +193,7 @@ L = {
     OPT_HIDE_CONTRIBUTE = "Hide Contribute Buttons",
     OPT_HIDE_REPORT = "Hide Report Buttons",
     OPT_GATHER = "Collect Missing Lines",
+    OPT_GATHER_VIEW = "Show Collected Lines",
     OPT_GATHER_SHARE = "How to Send Collected Lines",
     OPT_GATHER_CLEAR = "Clear Collected Lines",
     CONTRIBUTE_INTRO = "Spoken has no voice for this yet, and the game's own text is how it gets one.\n\nYou can send just this line now, or let Spoken quietly keep every line it is missing while you play, and any line that plays but reads differently in your game, then send them all at once whenever you like.\n\nNothing leaves your game unless you upload it, or let the Spoken Manager send it for you, and you can stop collecting at any time in the Spoken settings.",
