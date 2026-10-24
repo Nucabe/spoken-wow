@@ -61,7 +61,7 @@ end
 table.sort(notBoss)
 table.sort(shared)
 Expect("every entry of Data/Creatures.lua is a boss of Data/Bosses.lua", table.concat(notBoss, ","), "")
-Expect("...no creature is two bosses', so targeting one shows its own story", table.concat(shared, ","), "")
+Expect("...no creature is two bosses', so a creature's death is one boss's", table.concat(shared, ","), "")
 local function Face(map, key)
     local entry = creatures[map] and creatures[map][key]
     return entry and tostring(entry.creature) .. "/" .. tostring(entry.display) or "none"
@@ -86,7 +86,7 @@ Expect("bosses have the model Forever draws them with: Sneed himself on his spaw
     Face(36, "sneed") .. "," .. Face(90, "grubbis") .. "," .. Face(289, "darkmaster gandling") .. "," .. Face(533, "sapphiron"),
     "642/7125,7361/144378,1853/11070,15989/16033")
 Expect("...the City of Dalaran's Arcane Anomaly is Forever's, not Karazhan's", Face(2959, "arcane anomaly"), "245999/129891")
-Expect("a boss known only by a namesake has no creature, so targeting the namesake does not show its story",
+Expect("a boss known only by a namesake has no creature, so the namesake's death does not tell its story",
     Face(2856, "balnazzar") .. "," .. Face(2959, "mana elemental") .. "," .. tostring(owner[10813]) .. "," .. tostring(owner[16488]),
     "none,none,nil,nil")
 Expect("a boss whose model the client lacks has no portrait rather than an empty one", Face(329, "crimson hammersmith"), "11120/nil")
@@ -465,6 +465,12 @@ Clear(); NPCs:ForgetStories()
 stub.FireEvent("ENCOUNTER_END", edwin.id, "Edwin VanCleef", 1, 5, 1)
 Expect("ENCOUNTER_END with success 1 shows it too", Showing(), EDWIN)
 Clear(); NPCs:ForgetStories()
+stub.FireEvent("BOSS_KILL", edwin.id, "Edwin VanCleef")
+stub.FireEvent("ENCOUNTER_END", edwin.id, "Edwin VanCleef", 1, 5, 1)
+local both = {}
+for _, queued in ipairs(Q.sounds) do both[#both + 1] = queued.key end
+Expect("...and both for one kill show it once", table.concat(both, "|"), EDWIN)
+Clear(); NPCs:ForgetStories()
 
 local instanceInfo, unitName = _G.GetInstanceInfo, _G.UnitName
 local sunkenMap
@@ -482,7 +488,7 @@ Expect("...and an encounter of two bosses shows both stories", table.concat(keys
 Clear()
 
 -- A boss whose fight may start no encounter (the world bosses): the game sends no kill for it, so its
--- death is watched while it is targeted.
+-- death is watched once the player targeted it or saw its nameplate.
 local function Listed(map, key)
     for _, boss in ipairs(SpokenBosses.maps[map] or {}) do
         if boss.key == key then return boss end
@@ -490,11 +496,11 @@ local function Listed(map, key)
 end
 Expect("Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths",
     tostring(Listed(230, "ribbly screwspigot") ~= nil) .. "|" .. tostring(Listed(230, "plugger spazzring") ~= nil), "true|true")
-Expect("Baron Aquanis, the world bosses, Ribbly and Plugger are watched for their death; Edwin VanCleef is not",
-    tostring(NPCs:IsUnannounced(48, "baron aquanis")) .. "|" .. tostring(NPCs:IsUnannounced(2789, "lord kazzak")) .. "|"
-        .. tostring(NPCs:IsUnannounced(2832, "ysondre")) .. "|" .. tostring(NPCs:IsUnannounced(230, "ribbly screwspigot")) .. "|"
-        .. tostring(NPCs:IsUnannounced(36, "edwin vancleef")),
-    "true|true|true|true|false")
+Expect("the world bosses are watched for their death; Baron Aquanis, Ribbly, Plugger and Edwin VanCleef, inside instances, are not",
+    tostring(NPCs:IsUnannounced(2789, "lord kazzak")) .. "|" .. tostring(NPCs:IsUnannounced(2832, "ysondre")) .. "|"
+        .. tostring(NPCs:IsUnannounced(48, "baron aquanis")) .. "|" .. tostring(NPCs:IsUnannounced(230, "ribbly screwspigot")) .. "|"
+        .. tostring(NPCs:IsUnannounced(230, "plugger spazzring")) .. "|" .. tostring(NPCs:IsUnannounced(36, "edwin vancleef")),
+    "true|true|false|false|false|false")
 -- What each unit is: the client clears the target as the boss dies, and still reports it, dead, on a
 -- nameplate or the soft target.
 local units, dead = {}, false
@@ -516,7 +522,7 @@ _G.SpokenBossStories[2789] = { ["lord kazzak"] = "He burns." }
 NPCs:ForgetStories()
 units.target = KAZZAK
 NPCs:TargetChanged()
-Expect("targeting a world boss meets it and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+Expect("a world boss targeted alive is not met and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
 Health("target")
 Expect("...nor does its health changing while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
@@ -578,8 +584,33 @@ stub.Advance(1801, 1)
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
-Expect("a watch ends after half an hour", Showing(), "nothing")
+Expect("a watch lasts while the boss is seen, however long", Showing(), "boss:2789:lord kazzak")
+Clear()
+units.nameplate1 = nil
 dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+units.target = nil
+stub.Advance(1801, 1)
+units.nameplate1 = KAZZAK
+dead = true
+Health("nameplate1")
+Expect("a watch ends half an hour after the boss was last seen", Showing(), "nothing")
+dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+stub.SetZone({ zone = "" })
+stub.Advance(2, 1)
+stub.SetZone({ zone = "Azshara" })
+units.target, units.nameplate1 = nil, KAZZAK
+dead = true
+Health("nameplate1")
+Expect("...a blank zone name, as in a loading screen, does not end it", Showing(), "boss:2789:lord kazzak")
+Clear()
+dead = false
+NPCs:ForgetStories()
 units.target = KAZZAK
 NPCs:TargetChanged()
 stub.SetZone({ zone = "Orgrimmar" })
@@ -587,9 +618,66 @@ stub.Advance(2, 1)
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
-Expect("...and when the player leaves the zone it began in", Showing(), "nothing")
+Expect("...and leaving the zone it began in does", Showing(), "nothing")
 units.nameplate1 = nil
 stub.SetZone({ zone = "" })
+
+-- A boss that comes into view is watched without being targeted, and a death on a boss or focus unit counts.
+dead = false
+NPCs:ForgetStories()
+units.nameplate1 = KAZZAK
+stub.FireEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+units.nameplate1, units.boss1 = nil, KAZZAK
+dead = true
+Health("boss1")
+Expect("a boss whose nameplate appeared is watched though never targeted, and a death on boss1 counts", Showing(), "boss:2789:lord kazzak")
+Clear()
+units.boss1 = nil
+
+-- A dead flag the client hides is not a kill; a client with no UnitTokenFromGUID still has the event;
+-- a failure meeting the boss does not lose its story.
+dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+units.target, units.nameplate1 = nil, KAZZAK
+dead = true
+stub.Secrets(true)
+Health("nameplate1")
+stub.Secrets()
+Expect("a dead flag the client hides is not a kill", Showing(), "nothing")
+Health("nameplate1")
+Expect("...until it can be read", Showing(), "boss:2789:lord kazzak")
+Clear()
+units.nameplate1 = nil
+local tokenFromGUID = _G.UnitTokenFromGUID
+_G.UnitTokenFromGUID = nil
+dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+units.target = nil
+stub.Advance(2, 1)
+units.nameplate1 = KAZZAK
+dead = true
+Health("nameplate1")
+Expect("a client with no UnitTokenFromGUID still finds the death by its event", Showing(), "boss:2789:lord kazzak")
+Clear()
+_G.UnitTokenFromGUID = tokenFromGUID
+units.nameplate1 = nil
+local foundBoss = NPCs.FoundBoss
+NPCs.FoundBoss = function() error("the list failed to draw") end
+dead = false
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+units.target, units.nameplate1 = nil, KAZZAK
+dead = true
+Health("nameplate1")
+NPCs.FoundBoss = foundBoss
+Expect("a failure meeting the boss still shows its story", Showing(), "boss:2789:lord kazzak")
+Clear()
+units.nameplate1 = nil
 
 -- A corpse targeted, another boss and a player are not watched.
 dead = true
@@ -611,28 +699,17 @@ dead = true
 Health("target")
 Expect("a player is not watched", Showing(), "nothing")
 
--- In Blackrock Depths, by name.
-SpokenNPCsCharacter.found = {}
-_G.GetInstanceInfo = function() return "Blackrock Depths", "party", 1, "", 5, 0, false, 230 end
-_G.UnitName = function() return "Ribbly Screwspigot" end
-local RIBBLY = "Creature-0-1-2-3-9543-0000ABCDEF"
+-- Inside an instance the client hides a unit's GUID.
 dead = false
-units.target = RIBBLY
-stub.Secrets(RIBBLY)
+NPCs:ForgetStories()
+units.target = KAZZAK
+stub.Secrets(KAZZAK)
 NPCs:TargetChanged()
 stub.Secrets()
+units.target, units.nameplate1 = nil, KAZZAK
 dead = true
-units.nameplate1, units.target = RIBBLY, nil
 Health("nameplate1")
-Expect("a boss whose GUID the client keeps secret is not watched", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
-dead = false
-units.target, units.nameplate1 = RIBBLY, nil
-NPCs:TargetChanged()
-dead = true
-units.target, units.nameplate1 = nil, RIBBLY
-Health("nameplate1")
-Expect("...and Ribbly Screwspigot is met by his death once the GUID can be read", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
-Clear()
+Expect("a boss whose GUID the client hides is not watched", Showing(), "nothing")
 _G.UnitGUID, _G.UnitTokenFromGUID, _G.UnitIsDead = unitGUID, unitTokenFromGUID, unitIsDead
 _G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
 

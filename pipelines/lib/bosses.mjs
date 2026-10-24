@@ -68,12 +68,10 @@ const UNCONFIRMED = {
 };
 
 // Bosses whose fight Forever may never announce with ENCOUNTER_START, found when they die after the
-// player targeted them (`onTarget`): Baron Aquanis has only a Season of Discovery row, the world bosses' rows are on
-// instanced maps while Forever spawns them in the open world, and the Grim Guzzler's Ribbly and
-// Plugger are townsfolk until a quest or a theft turns them.
+// player targeted them (`onTarget`): the world bosses' rows are on instanced maps while Forever spawns
+// them in the open world. Inside an instance the client hides a unit's GUID, so a boss there (Baron
+// Aquanis, Ribbly, Plugger) cannot be watched and is found by the game's own events.
 const ON_TARGET = {
-  48: ["baron aquanis"],
-  230: ["ribbly screwspigot", "plugger spazzring"],
   2789: ["lord kazzak"],
   2791: ["azuregos"],
   2804: ["prince thunderaan"],
@@ -189,7 +187,7 @@ export function render(maps, names) {
 -- the client's encounter, \`ids\` every encounter the client has for it, one for each difficulty
 -- (the ids ENCOUNTER_START gives), \`key\` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
--- ${FOREVER_BUILD}, else retail ${RETAIL_BUILD}, wago.tools). \`onTarget\` marks a boss found when it dies after the player targeted it (not inside an instance, where its GUID is hidden), as its
+-- ${FOREVER_BUILD}, else retail ${RETAIL_BUILD}, wago.tools). \`onTarget\` marks a boss found when it dies after the player targeted it, as its
 -- fight may start no encounter. Regenerate with:
 --   make bosses
 --

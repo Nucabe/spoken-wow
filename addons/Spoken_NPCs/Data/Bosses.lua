@@ -5,7 +5,7 @@
 -- the client's encounter, `ids` every encounter the client has for it, one for each difficulty
 -- (the ids ENCOUNTER_START gives), `key` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
--- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). `onTarget` marks a boss found when it dies after the player targeted it (not inside an instance, where its GUID is hidden), as its
+-- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). `onTarget` marks a boss found when it dies after the player targeted it, as its
 -- fight may start no encounter. Regenerate with:
 --   make bosses
 --
@@ -68,7 +68,7 @@ SpokenBosses = {
 			{ id = 2765, ids = { 2765, 2912 }, key = "old serrakis", "Old Serra'kis", deDE = "Alter Serra'kis", esES = "Viejo Serra'kis", esMX = "Viejo Serra'kis", frFR = "Vieux Serra’kis", ptBR = "Velho Serra'kis", ruRU = "Старина Серракис", koKR = "늙은 세라키스", zhCN = "瑟拉吉斯", zhTW = "老瑟拉吉斯" },
 			{ id = 2825, ids = { 2766, 2825, 2911 }, key = "twilight lord kelris", "Twilight Lord Kelris", deDE = "Twilight-Lord Kelris", esES = "Señor Crepuscular Kelris", esMX = "Señor Crepuscular Kelris", frFR = "Seigneur du Crépuscule Kelris", ptBR = "Senhor do Crepúsculo Kelris", ruRU = "Повелитель сумрака Келрис", koKR = "황혼의 군주 켈리스", zhCN = "暮光领主克尔里斯", zhTW = "暮光領主克爾里斯" },
 			{ id = 2891, ids = { 2767, 2891, 2910 }, key = "akumai", "Aku'mai", frFR = "Aku’mai", ruRU = "Аку'май", koKR = "아쿠마이", zhCN = "阿库麦尔", zhTW = "阿庫麥爾" },
-			{ id = 2694, ids = { 2694 }, key = "baron aquanis", "Baron Aquanis", esES = "Barón Aquanis", esMX = "Barón Aquanis", ptBR = "Barão Aquanis", ruRU = "Барон Акванис", koKR = "군주 아쿠아니스", zhCN = "阿奎尼斯男爵", zhTW = "阿奎尼斯男爵", onTarget = true },
+			{ id = 2694, ids = { 2694 }, key = "baron aquanis", "Baron Aquanis", esES = "Barón Aquanis", esMX = "Barón Aquanis", ptBR = "Barão Aquanis", ruRU = "Барон Акванис", koKR = "군주 아쿠아니스", zhCN = "阿奎尼斯男爵", zhTW = "阿奎尼斯男爵" },
 		},
 		[70] = {
 			{ id = 547, ids = { 547 }, key = "revelosh", "Revelosh", ruRU = "Ревелош", koKR = "레벨로쉬", zhCN = "鲁维罗什", zhTW = "魯維羅什" },
@@ -154,8 +154,8 @@ SpokenBosses = {
 			{ id = 237, ids = { 237 }, key = "golem lord argelmach", "Golem Lord Argelmach", deDE = "Golemlord Argelmach", esES = "Señor gólem Argelmach", esMX = "Señor Gólem Argelmach", frFR = "Seigneur golem Argelmach", ptBR = "Lorde Golem Argelmach", ruRU = "Повелитель големов Аргелмах", koKR = "골렘 군주 아젤마크", zhCN = "傀儡统帅阿格曼奇", zhTW = "傀儡統帥阿格曼奇", itIT = "Argelmach il Signore dei Golem" },
 			{ id = 238, ids = { 238 }, key = "hurley blackbreath", "Hurley Blackbreath", deDE = "Hurley Pestatem", esES = "Hurley Negrálito", esMX = "Hurley Negrálito", frFR = "Hurley Soufflenoir", ptBR = "Hurley Bafonegro", ruRU = "Харли Чернопых", koKR = "헐레이 블랙브레스", zhCN = "霍尔雷·黑须", zhTW = "霍爾雷·黑鬚", itIT = "Hurley Fiatonero" },
 			{ id = 239, ids = { 239 }, key = "phalanx", "Phalanx", esES = "Falange", esMX = "Falange", frFR = "Phalange", ptBR = "Falange", ruRU = "Фаланг", koKR = "팔란스", zhCN = "法拉克斯", zhTW = "法拉克斯", itIT = "Falange" },
-			{ id = 240, ids = { 240 }, key = "ribbly screwspigot", "Ribbly Screwspigot", deDE = "Ribbly Schraubstutz", esES = "Ribbly Llavenrosca", esMX = "Ribbly Llavenrosca", frFR = "Ribbly Fermevanne", ptBR = "Ribas Parafuseta", ruRU = "Риббли Крутипроб", koKR = "리블리 스크류스피곳", zhCN = "雷布里·斯库比格特", zhTW = "雷布里·斯庫比格特", itIT = "Ribbly Giravite", onTarget = true },
-			{ id = 241, ids = { 241 }, key = "plugger spazzring", "Plugger Spazzring", deDE = "Stöpsel Zapfring", esES = "Plugger Aropatoso", esMX = "Plugger Aropatoso", frFR = "Lanfiche Brouillecircuit", ptBR = "Birra Guardachave", ruRU = "Штоппор Наливалс", koKR = "플러거 스파즈링", zhCN = "普拉格", zhTW = "普拉格", itIT = "Spiny Spazzanello", onTarget = true },
+			{ id = 240, ids = { 240 }, key = "ribbly screwspigot", "Ribbly Screwspigot", deDE = "Ribbly Schraubstutz", esES = "Ribbly Llavenrosca", esMX = "Ribbly Llavenrosca", frFR = "Ribbly Fermevanne", ptBR = "Ribas Parafuseta", ruRU = "Риббли Крутипроб", koKR = "리블리 스크류스피곳", zhCN = "雷布里·斯库比格特", zhTW = "雷布里·斯庫比格特", itIT = "Ribbly Giravite" },
+			{ id = 241, ids = { 241 }, key = "plugger spazzring", "Plugger Spazzring", deDE = "Stöpsel Zapfring", esES = "Plugger Aropatoso", esMX = "Plugger Aropatoso", frFR = "Lanfiche Brouillecircuit", ptBR = "Birra Guardachave", ruRU = "Штоппор Наливалс", koKR = "플러거 스파즈링", zhCN = "普拉格", zhTW = "普拉格", itIT = "Spiny Spazzanello" },
 			{ id = 242, ids = { 242 }, key = "ambassador flamelash", "Ambassador Flamelash", deDE = "Botschafter Flammenschlag", esES = "Embajador Latifuego", esMX = "Embajador Latifuego", frFR = "Ambassadeur Cinglefouet", ptBR = "Embaixador Fogaçoite", ruRU = "Посол Огнехлыст", koKR = "사자 화염채찍", zhCN = "弗莱拉斯大使", zhTW = "弗萊拉斯大使", itIT = "Ambasciatore Sferzardente" },
 			{ id = 243, ids = { 243 }, key = "the seven", "The Seven", deDE = "Die Sieben", esES = "Los Siete", esMX = "Los siete", frFR = "Les Sept", ptBR = "Os Sete", ruRU = "Семеро", koKR = "일곱 현자", zhCN = "黑铁七贤", zhTW = "七賢", itIT = "Sette Re" },
 			{ id = 244, ids = { 244 }, key = "magmus", "Magmus", ruRU = "Магмус", koKR = "마그무스", zhCN = "玛格姆斯", zhTW = "瑪格姆斯" },

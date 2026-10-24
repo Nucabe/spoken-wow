@@ -314,16 +314,6 @@ end
 -- The page
 --------------------------------------------------------------------------------
 
---- The boss named `name`, in the client's language or English, of the dungeon or raid the player
---- is in: { map, key }, or nil.
-function NPCs:BossNamed(name)
-	if type(name) ~= "string" then return nil end
-	local map = NPCs:InstanceMap()
-	for _, boss in ipairs(map and Index().all[map] or {}) do
-		if Name(boss) == name or boss[1] == name then return { map = map, key = boss.key } end
-	end
-end
-
 -- Nothing to play or to report yet: a boss's story is words alone until it is voiced.
 local PLAY = { has = function() return false end, find = function() end, start = function() end, tip = "" }
 local REPORT = { has = function() return false end, open = function() end, title = "", tip = "" }
