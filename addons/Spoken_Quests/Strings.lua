@@ -162,7 +162,6 @@ L.OPT_DUI_OLD_PLAYER = "Needs a newer Spoken."
 L.OPT_DUI_UNKNOWN = "This version of DialogueUI is not recognised."
 L.REASON_DUI_CAPTIONS = "Turn on Mark Words in DialogueUI to use this."
 
-L.OPT_REPORT_LINE_TIP = "Get a link to report a wrong reading or a mispronounced name."
 L.OPT_REPORT_NO_LINE = "This client cannot tell which line that was, so there is no address to report."
 L.OPT_STOP_GOSSIP = "Stop Gossip"
 L.OPT_NEXT_GOSSIP = "Next Gossip"

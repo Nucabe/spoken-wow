@@ -31,7 +31,6 @@ L.OPT_REPORT_PROBLEM = "문제 신고"
 L.MENU_LORE_WINDOW = "아제로스 백과사전 열기"
 L.MENU_ZONE_SETTINGS = "장소 설정"
 
-L.OPT_REPORT_LINE_TIP = "잘못된 이야기, 잘못 읽은 부분이나 잘못 발음된 이름을 신고할 링크를 받습니다."
 L.OPT_REPORT_LINE_ADDRESS = "이 주소를 복사하여 브라우저에서 열어 이 항목의 문제를 신고하세요."
 
 L.REPORT_BUTTON = "신고"

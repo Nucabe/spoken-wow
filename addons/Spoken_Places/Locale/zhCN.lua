@@ -31,7 +31,6 @@ L.OPT_REPORT_PROBLEM = "报告问题"
 L.MENU_LORE_WINDOW = "打开艾泽拉斯百科"
 L.MENU_ZONE_SETTINGS = "地点设置"
 
-L.OPT_REPORT_LINE_TIP = "获取链接，报告剧情有误、朗读错误或名字念错。"
 L.OPT_REPORT_LINE_ADDRESS = "复制此地址并在浏览器中打开，以报告该条目的问题。"
 
 L.REPORT_BUTTON = "报告"

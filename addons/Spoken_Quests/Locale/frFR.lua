@@ -120,7 +120,6 @@ L.OPT_REPORT_PROBLEM = "Signaler un problème"
 -- Starting over
 L.OPT_RESET_PROFILE_CONFIRM = "Remettre chaque paramètre de Quêtes et de Discussions du profil utilisé à sa valeur par défaut ?"
 L.OPT_CANCEL = "Annuler"
-L.OPT_REPORT_LINE_TIP = "Obtenez un lien pour signaler une lecture erronée ou un nom mal prononcé."
 L.OPT_REPORT_NO_LINE = "Ce client ne peut pas savoir de quelle réplique il s'agissait, il n'y a donc pas d'adresse pour la signaler."
 L.OPT_STOP_GOSSIP = "Arrêter la discussion"
 L.OPT_NEXT_GOSSIP = "Discussion suivante"

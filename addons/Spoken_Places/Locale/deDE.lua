@@ -31,7 +31,6 @@ L.OPT_REPORT_PROBLEM = "Problem melden"
 L.MENU_LORE_WINDOW = "„Kompendium von Azeroth“ öffnen"
 L.MENU_ZONE_SETTINGS = "Einstellungen für Orte"
 
-L.OPT_REPORT_LINE_TIP = "Erhalte einen Link, um eine falsche Geschichte, eine falsche Lesung oder einen falsch ausgesprochenen Namen zu melden."
 L.OPT_REPORT_LINE_ADDRESS = "Kopiere diese Adresse und öffne sie in deinem Browser, um ein Problem mit diesem Eintrag zu melden."
 
 L.REPORT_BUTTON = "Melden"

@@ -164,7 +164,6 @@ local REPORT = {
 		SpokenPlaces:ShowReport(target[1], target[2])
 	end,
 	title = L.OPT_REPORT_PROBLEM,
-	tip = L.OPT_REPORT_LINE_TIP,
 }
 
 -- The Compendium's page inside, its parts (title, sub, body, play, report, frame) read through.

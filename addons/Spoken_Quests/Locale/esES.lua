@@ -125,7 +125,6 @@ L.OPT_REPORT_PROBLEM = "Informar de un problema"
 -- Starting over
 L.OPT_RESET_PROFILE_CONFIRM = "¿Restablecer todos los ajustes de Misiones y Charlas del perfil en uso a su valor predeterminado?"
 L.OPT_CANCEL = "Cancelar"
-L.OPT_REPORT_LINE_TIP = "Obtén un enlace para informar de una lectura errónea o de un nombre mal pronunciado."
 L.OPT_REPORT_NO_LINE = "Este cliente no puede saber qué línea era, así que no hay ninguna dirección para informar."
 L.OPT_STOP_GOSSIP = "Detener la charla"
 L.OPT_NEXT_GOSSIP = "Siguiente charla"
