@@ -495,77 +495,104 @@ Expect("Baron Aquanis, the world bosses, Ribbly and Plugger are watched for thei
         .. tostring(NPCs:IsUnannounced(2832, "ysondre")) .. "|" .. tostring(NPCs:IsUnannounced(230, "ribbly screwspigot")) .. "|"
         .. tostring(NPCs:IsUnannounced(36, "edwin vancleef")),
     "true|true|true|true|false")
-local dead = false
-local unitIsDead = _G.UnitIsDead
--- The client answers 1 or nil, as the Classic API does.
-_G.UnitIsDead = function() return dead and 1 or nil end
-local function Dies()
-    dead = true
-    NPCs:CheckWatched()
-    dead = false
+-- What each unit is: the client clears the target as the boss dies, and still reports it, dead, on a
+-- nameplate or the soft target.
+local units, dead = {}, false
+local unitGUID, unitTokenFromGUID, unitIsDead = _G.UnitGUID, _G.UnitTokenFromGUID, _G.UnitIsDead
+_G.UnitGUID = function(unit) return units[unit] end
+_G.UnitIsDead = function() return dead end
+_G.UnitTokenFromGUID = function(guid)
+    for unit, unitGuid in pairs(units) do
+        if unitGuid == guid then return unit end
+    end
 end
+local KAZZAK = "Creature-0-1-2-3-12397-0000ABCDEF"
+local EDWIN_GUID = "Creature-0-1-2-3-639-0000ABCDEF"
+local function Health(unit) stub.FireEvent("UNIT_HEALTH", unit) end
+
 SpokenNPCsCharacter.found = {}
 _G.GetInstanceInfo = function() return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0 end
-world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"
 _G.SpokenBossStories[2789] = { ["lord kazzak"] = "He burns." }
 NPCs:ForgetStories()
+units.target = KAZZAK
 NPCs:TargetChanged()
 Expect("targeting a world boss meets it and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
-NPCs:CheckWatched()
-Expect("...nor does it being checked while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+Health("target")
+Expect("...nor does its health changing while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
-Dies()
-Expect("...its death shows its story", Showing(), "boss:2789:lord kazzak")
+units.target = nil
+NPCs:TargetChanged()
+units.nameplate1 = KAZZAK
+dead = true
+Health("nameplate2")
+Expect("...nor does another unit dying", Showing(), "nothing")
+Health("nameplate1")
+Expect("...its death on a nameplate shows its story, though the target was cleared", Showing(), "boss:2789:lord kazzak")
 Expect("...and meets it", NPCs:IsBossFound(2789, "lord kazzak"), true)
 Clear()
-Dies()
+Health("nameplate1")
 Expect("...once", Showing(), "nothing")
--- Found by the poll, as the client's health event is not relied on.
-NPCs:ForgetStories()
-NPCs:TargetChanged()
-stub.Advance(1)
-Expect("a target alive is not a kill by the poll", Showing(), "nothing")
-dead = true
-stub.Advance(1)
+
+-- The poll finds it where the event does not come.
 dead = false
-Expect("...and its death is, within a second", Showing(), "boss:2789:lord kazzak")
+units.nameplate1 = nil
+NPCs:ForgetStories()
+units.target = KAZZAK
+NPCs:TargetChanged()
+units.target = nil
+stub.Advance(2)
+Expect("a boss no unit shows is not a kill", Showing(), "nothing")
+units.mouseover = KAZZAK
+dead = true
+stub.Advance(2)
+Expect("...and its death on the unit the mouse is over is, within a second", Showing(), "boss:2789:lord kazzak")
 Clear()
-NPCs:ForgetStories()
-NPCs:TargetChanged()
-world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
-NPCs:TargetChanged()
-Dies()
-Expect("...nor does a death after another target is chosen", Showing(), "nothing")
-world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"
+units.mouseover = nil
+
+-- A corpse targeted, another boss and a player are not watched.
 dead = true
+NPCs:ForgetStories()
+units.target = KAZZAK
 NPCs:TargetChanged()
-NPCs:CheckWatched()
-dead = false
+Health("target")
 Expect("a corpse targeted is not a kill", Showing(), "nothing")
-world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
+dead = false
+units.target = EDWIN_GUID
 NPCs:TargetChanged()
-Dies()
+dead = true
+Health("target")
 Expect("a boss whose fight starts an encounter is not watched", Showing(), "nothing")
+dead = false
+units.target = "Player-1-0000ABCD"
+NPCs:TargetChanged()
+dead = true
+Health("target")
+Expect("a player is not watched", Showing(), "nothing")
+
 -- In Blackrock Depths, by name.
 SpokenNPCsCharacter.found = {}
 _G.GetInstanceInfo = function() return "Blackrock Depths", "party", 1, "", 5, 0, false, 230 end
 _G.UnitName = function() return "Ribbly Screwspigot" end
-world.npcGUID = "Player-1-0000ABCD"
+local RIBBLY = "Creature-0-1-2-3-9543-0000ABCDEF"
+dead = false
+units.target = RIBBLY
+stub.Secrets(RIBBLY)
 NPCs:TargetChanged()
-Dies()
-Expect("a player's death meets nobody", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
-world.npcGUID = "Creature-0-1-2-3-9543-0000ABCDEF"
-stub.Secrets(world.npcGUID)
-NPCs:TargetChanged()
-Dies()
-Expect("...nor does the death of a boss whose GUID the client keeps secret", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
 stub.Secrets()
+dead = true
+units.nameplate1, units.target = RIBBLY, nil
+Health("nameplate1")
+Expect("a boss whose GUID the client keeps secret is not watched", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
+dead = false
+units.target, units.nameplate1 = RIBBLY, nil
 NPCs:TargetChanged()
-Dies()
+dead = true
+units.target, units.nameplate1 = nil, RIBBLY
+Health("nameplate1")
 Expect("...and Ribbly Screwspigot is met by his death once the GUID can be read", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
 Clear()
-_G.UnitIsDead = unitIsDead
+_G.UnitGUID, _G.UnitTokenFromGUID, _G.UnitIsDead = unitGUID, unitTokenFromGUID, unitIsDead
 _G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
 
 if Failures() > 0 then os.exit(1) end

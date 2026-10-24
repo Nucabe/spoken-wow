@@ -7,7 +7,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **A boss's story shows in the narrator when you kill the boss, in dungeons too.** The Bosses page no
   longer has Show a Boss's Story: killing is the only way, because inside an instance the game hides
   which boss a target is. The world bosses, whose fight the game sends no kill for, count when they die
-  while you have them targeted. A boss is also met when you kill it, so its page unlocks in the
+  after you targeted them. A boss is also met when you kill it, so its page unlocks in the
   Compendium even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and

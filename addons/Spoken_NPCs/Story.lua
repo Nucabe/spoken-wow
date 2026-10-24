@@ -2,7 +2,7 @@ local _, NPCs = ...
 
 -- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
 -- is killed. The game sends no kill for a boss whose fight it may not announce (`onTarget`), so its
--- death is watched while the player has it targeted.
+-- death is watched after the player targets it.
 
 local L = NPCs.L
 
@@ -49,48 +49,67 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
--- The target, where it is a boss whose fight may start no encounter and it is alive; `generation`
--- ends the polling of an earlier one.
+-- The boss the player last targeted alive, of those whose fight may start no encounter: { boss, guid,
+-- since }. The client clears the target as the boss dies, so the target is no help then; the boss is
+-- found by its GUID on any unit the client reports it on (a nameplate, the soft target, the mouse),
+-- whose health event and dead flag are still readable. `generation` ends the polling of an earlier one.
 local watched, generation = nil, 0
+local watcher
 
-local POLL_SECONDS = 0.5
+local POLL_SECONDS = 1
+local WATCH_SECONDS = 1800
 
--- Whether the target is dead, or nil when the client hides it. The client answers 1 or nil, not a boolean.
-local function TargetDead()
-	local dead = UnitIsDead("target")
+-- Whether `unit` is dead, or nil when the client hides it.
+local function Dead(unit)
+	local dead = UnitIsDead(unit)
 	if issecretvalue and issecretvalue(dead) then return nil end
 	return dead and true or false
 end
 
---- The boss watched is dead, so it is met and its story shown.
-function NPCs:CheckWatched()
-	if not watched or not TargetDead() then return end
-	local boss = watched
+--- Stops watching the boss, as it died or the player left.
+function NPCs:StopWatching()
 	watched = nil
+	if watcher then watcher:UnregisterEvent("UNIT_HEALTH") end
+end
+
+--- `unit` may be the boss watched: if it is, and dead, the boss is met and its story shown.
+function NPCs:CheckUnit(unit)
+	if not (watched and unit) or Spoken.NotSecret(UnitGUID(unit)) ~= watched.guid or Dead(unit) ~= true then return end
+	local boss = watched.boss
+	self:StopWatching()
 	self:FoundBoss(boss.map, boss.key)
 	self:ReadStory(boss.map, boss.key)
 end
 
--- The client's health events are not relied on: the target is read twice a second while it is watched.
+-- The event is not everywhere: the boss is also looked for by its GUID once a second.
 local function Poll(mine)
 	if mine ~= generation or not watched then return end
-	NPCs:CheckWatched()
+	if GetTime() - watched.since > WATCH_SECONDS then return NPCs:StopWatching() end
+	local unit = UnitTokenFromGUID and UnitTokenFromGUID(watched.guid)
+	if unit then NPCs:CheckUnit(unit) end
 	if watched then C_Timer.After(POLL_SECONDS, function() Poll(mine) end) end
 end
 
+local function Watch(boss, guid)
+	if watched and watched.guid == guid then return end
+	watched, generation = { boss = boss, guid = guid, since = GetTime() }, generation + 1
+	watcher = watcher or CreateFrame("Frame")
+	watcher:SetScript("OnEvent", function(_, _, unit) NPCs:CheckUnit(unit) end)
+	watcher:RegisterEvent("UNIT_HEALTH")
+	local mine = generation
+	C_Timer.After(POLL_SECONDS, function() Poll(mine) end)
+end
+
 --- The player targeted a unit: a boss whose fight may start no encounter is watched until it dies.
+--- A target cleared, as it is when the boss dies, leaves the watch as it was.
 function NPCs:TargetChanged()
-	watched, generation = nil, generation + 1
-	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
+	local guid = Spoken.NotSecret(UnitGUID and UnitGUID("target"))
+	local id = Spoken.CreatureID(guid)
 	if not id then return end
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
 	local boss = Creatures()[id] or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
-	if boss and self:IsUnannounced(boss.map, boss.key) and TargetDead() == false then
-		watched = boss
-		local mine = generation
-		C_Timer.After(POLL_SECONDS, function() Poll(mine) end)
-	end
+	if boss and self:IsUnannounced(boss.map, boss.key) and Dead("target") == false then Watch(boss, guid) end
 end
 
 --- An encounter was won: its bosses are met, and their stories shown.
