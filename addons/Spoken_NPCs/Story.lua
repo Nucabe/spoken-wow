@@ -49,12 +49,31 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
--- The target, where it is a boss whose fight may start no encounter and it is alive.
-local watched
+-- The target, where it is a boss whose fight may start no encounter and it is alive; `generation`
+-- ends the polling of an earlier one.
+local watched, generation = nil, 0
+
+local POLL_SECONDS = 0.5
+
+--- The boss watched is dead, so it is met and its story shown.
+function NPCs:CheckWatched()
+	if not watched or Spoken.NotSecret(UnitIsDead("target")) ~= true then return end
+	local boss = watched
+	watched = nil
+	self:FoundBoss(boss.map, boss.key)
+	self:ReadStory(boss.map, boss.key)
+end
+
+-- The client's health events are not relied on: the target is read twice a second while it is watched.
+local function Poll(mine)
+	if mine ~= generation or not watched then return end
+	NPCs:CheckWatched()
+	if watched then C_Timer.After(POLL_SECONDS, function() Poll(mine) end) end
+end
 
 --- The player targeted a unit: a boss whose fight may start no encounter is watched until it dies.
 function NPCs:TargetChanged()
-	watched = nil
+	watched, generation = nil, generation + 1
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
 	if not id then return end
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
@@ -62,16 +81,9 @@ function NPCs:TargetChanged()
 	local boss = Creatures()[id] or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
 	if boss and self:IsUnannounced(boss.map, boss.key) and Spoken.NotSecret(UnitIsDead("target")) == false then
 		watched = boss
+		local mine = generation
+		C_Timer.After(POLL_SECONDS, function() Poll(mine) end)
 	end
-end
-
---- The target's health changed: the boss watched is dead, so it is met and its story shown.
-function NPCs:TargetHealthChanged()
-	if not watched or Spoken.NotSecret(UnitIsDead("target")) ~= true then return end
-	local boss = watched
-	watched = nil
-	self:FoundBoss(boss.map, boss.key)
-	self:ReadStory(boss.map, boss.key)
 end
 
 --- An encounter was won: its bosses are met, and their stories shown.

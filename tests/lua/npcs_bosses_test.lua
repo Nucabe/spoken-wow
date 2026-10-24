@@ -500,7 +500,7 @@ local unitIsDead = _G.UnitIsDead
 _G.UnitIsDead = function() return dead end
 local function Dies()
     dead = true
-    NPCs:TargetHealthChanged()
+    NPCs:CheckWatched()
     dead = false
 end
 SpokenNPCsCharacter.found = {}
@@ -511,8 +511,8 @@ NPCs:ForgetStories()
 NPCs:TargetChanged()
 Expect("targeting a world boss meets it and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
-NPCs:TargetHealthChanged()
-Expect("...nor does its health changing while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+NPCs:CheckWatched()
+Expect("...nor does it being checked while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
 Dies()
 Expect("...its death shows its story", Showing(), "boss:2789:lord kazzak")
@@ -520,6 +520,16 @@ Expect("...and meets it", NPCs:IsBossFound(2789, "lord kazzak"), true)
 Clear()
 Dies()
 Expect("...once", Showing(), "nothing")
+-- Found by the poll, as the client's health event is not relied on.
+NPCs:ForgetStories()
+NPCs:TargetChanged()
+stub.Advance(1)
+Expect("a target alive is not a kill by the poll", Showing(), "nothing")
+dead = true
+stub.Advance(1)
+dead = false
+Expect("...and its death is, within a second", Showing(), "boss:2789:lord kazzak")
+Clear()
 NPCs:ForgetStories()
 NPCs:TargetChanged()
 world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
@@ -529,7 +539,7 @@ Expect("...nor does a death after another target is chosen", Showing(), "nothing
 world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"
 dead = true
 NPCs:TargetChanged()
-NPCs:TargetHealthChanged()
+NPCs:CheckWatched()
 dead = false
 Expect("a corpse targeted is not a kill", Showing(), "nothing")
 world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"

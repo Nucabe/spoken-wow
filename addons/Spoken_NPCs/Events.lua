@@ -10,7 +10,6 @@ frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
 frame:RegisterEvent("BOSS_KILL")
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
-frame:RegisterUnitEvent("UNIT_HEALTH", "target")
 frame:SetScript("OnEvent", function(self, event, arg1, _, _, _, arg5)
 	if event == "ADDON_LOADED" then
 		-- Every addon's load fires this; the saved variables are read when this one's does.
@@ -29,8 +28,6 @@ frame:SetScript("OnEvent", function(self, event, arg1, _, _, _, arg5)
 		NPCs:EncounterEnded(arg1, 1)
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		NPCs:TargetChanged()
-	elseif event == "UNIT_HEALTH" then
-		NPCs:TargetHealthChanged()
 	else
 		if NPCs.SetupBosses then NPCs:SetupBosses() end
 		if NPCs.SetupOptions then NPCs:SetupOptions() end

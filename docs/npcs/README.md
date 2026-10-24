@@ -15,7 +15,7 @@ A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_
 `BOSS_KILL`), by any difficulty's encounter id from the `ids` of `Data/Bosses.lua`, kept per character in
 `SpokenNPCsCharacter`. A boss whose fight may start no encounter in Forever (`onTarget`, from `ON_TARGET`
 in `pipelines/lib/bosses.mjs`: Baron Aquanis, the world bosses, Ribbly Screwspigot and Plugger Spazzring)
-is found when it dies while the player has it targeted (`UNIT_HEALTH` on the target, `Story.lua`).
+is found when it dies while the player has it targeted (`Story.lua` reads the target twice a second).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
 Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
 do; Found Only leaves out what holds none found. A found boss's page names its dungeon and zone and
