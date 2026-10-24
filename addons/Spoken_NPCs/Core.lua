@@ -12,9 +12,6 @@ local defaults = {
 	-- Every boss openable, met or not (on Spoken's page); and the list leaving out those not met.
 	unlockUnfound = false,
 	compendiumFoundOnly = false,
-	-- When a boss's story shows in Spoken's narrator: "target" when the player targets it, "kill" when
-	-- it is killed.
-	storyTrigger = "target",
 }
 
 --- The settings and what this character has met. The settings are how the tab behaves, and the

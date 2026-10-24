@@ -385,14 +385,12 @@ Expect("clearing it brings the list back", Has(Shown(), "Westfall"), true)
 NPCs:SetupOptions()
 local panel = NPCs.optionsPanel
 Expect("the Bosses page is built", panel ~= nil and panel.layout ~= nil, true)
-SpokenNPCsSettings.storyTrigger = "kill"
 SpokenNPCsSettings.unlockUnfound = true
 SpokenNPCsCharacter.found["36:edwin vancleef"] = true
 local reset = panel.layout.defaults
 reset.scripts.OnClick(reset)
 stub.popups[#stub.popups].dialog.OnAccept()
-Expect("its Defaults put a boss's story back on targeting it", SpokenNPCsSettings.storyTrigger, "target")
-Expect("...and leave Unlock Unfound Bosses, which Spoken's page resets", SpokenNPCsSettings.unlockUnfound, true)
+Expect("its Defaults leave Unlock Unfound Bosses, which Spoken's page resets", SpokenNPCsSettings.unlockUnfound, true)
 Expect("...and keep the bosses this character has met", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
 
 ---------------------------------------------------------------- a boss's story in the narrator
@@ -415,11 +413,14 @@ local Q = SpokenEnv.SoundQueue
 local function Showing() local head = Q:GetCurrentSound(); return head and head.key or "nothing" end
 local function Clear() Q:RemoveAllSoundsFromQueue(); stub.Advance(2) end
 local EDWIN = "boss:36:edwin vancleef"
-Expect("targeting is the default trigger", SpokenNPCsSettings.storyTrigger, "target")
 world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 NPCs:TargetChanged()
-Expect("targeting a boss shows its story", Showing(), EDWIN)
+Expect("targeting a boss shows no story", Showing(), "nothing")
+NPCs:EncounterEnded(edwin.id, 0)
+Expect("...nor does a fight the party lost", Showing(), "nothing")
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("killing the boss shows its story", Showing(), EDWIN)
 Expect("...and the boss is met, as its page is no longer locked", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
 Expect("...as words alone, as every line of its part", Q:GetCurrentSound().textOnly, true)
 Expect("...noted for the character", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], true)
@@ -427,69 +428,29 @@ Clear()
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 Q:PauseQueue()
 NPCs:ForgetStories()
-NPCs:TargetChanged()
+NPCs:EncounterEnded(edwin.id, 1)
 Expect("a story waiting behind a stop is queued", Showing(), EDWIN)
 Expect("...as low as gossip", Q:GetCurrentSound().priority, "low")
 Expect("...and not noted until it shows", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], nil)
 Expect("...nor met until it shows", SpokenNPCsCharacter.found["36:edwin vancleef"], nil)
 Clear()
 Q:ResumeQueue()
-NPCs:TargetChanged()
+NPCs:EncounterEnded(edwin.id, 1)
 Expect("...so cleared, it shows the next time", Showing(), EDWIN)
 Clear()
-NPCs:TargetChanged()
+NPCs:EncounterEnded(edwin.id, 1)
 Expect("...once", Showing(), "nothing")
 Expect("Forget Stories Shown counts what it forgot", NPCs:ForgetStories(), 1)
-NPCs:TargetChanged()
+NPCs:EncounterEnded(edwin.id, 1)
 Expect("...and the story shows again", Showing(), EDWIN)
 Clear(); NPCs:ForgetStories()
-world.npcGUID = "Player-1-0000ABCD"
-NPCs:TargetChanged()
-Expect("targeting a player shows nothing", Showing(), "nothing")
-world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
-stub.Secrets(world.npcGUID)
-NPCs:TargetChanged()
-Expect("...nor a boss whose GUID the client keeps secret", Showing(), "nothing")
-stub.Secrets()
 SpokenEnv.Addon.db.profile.Transcript.Enabled = false
-NPCs:TargetChanged()
-Expect("...nor any boss with Show Narrator off", Showing() .. "|" .. tostring(SpokenNPCsCharacter.storiesRead["36:edwin vancleef"]),
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("no boss shows its story with Show Narrator off", Showing() .. "|" .. tostring(SpokenNPCsCharacter.storiesRead["36:edwin vancleef"]),
     "nothing|nil")
 SpokenEnv.Addon.db.profile.Transcript.Enabled = true
 
--- A boss only Forever has, with no creature id: known by its name in the dungeon the player is in.
 local instanceInfo, unitName = _G.GetInstanceInfo, _G.UnitName
-_G.GetInstanceInfo = function() return "Ruins of Lordaeron", "party", 1, "", 5, 0, false, 2999 end
-_G.UnitName = function() return "Witherfang" end
-world.npcGUID = "Creature-0-1-2-3-999999-0000ABCDEF"
-_G.SpokenBossStories[2999] = { witherfang = "It stalks the ruins above the Undercity." }
-NPCs:TargetChanged()
-Expect("a boss with no creature id is known by its name in its dungeon", Showing(), "boss:2999:witherfang")
-Clear()
-_G.GetInstanceInfo = function() return "Westfall", "none", 0, "", 0, 0, false, 0 end
-NPCs:ForgetStories()
-NPCs:TargetChanged()
-Expect("...and not outside it", Showing(), "nothing")
-_G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
-world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
-
-SpokenNPCsSettings.storyTrigger = "kill"
-NPCs:TargetChanged()
-Expect("with When Killed, targeting shows nothing", Showing(), "nothing")
-NPCs:EncounterEnded(edwin.id, 0)
-Expect("...nor a fight the party lost", Showing(), "nothing")
-NPCs:EncounterEnded(edwin.id, 1)
-Expect("...and killing the boss shows its story", Showing(), EDWIN)
-Clear()
--- In an instance the client hides a unit's GUID, so with When Targeted the pull is what shows the story.
-NPCs:ForgetStories()
-NPCs:EncounterStarted(edwin.id)
-Expect("with When Killed, a fight starting shows nothing", Showing(), "nothing")
-SpokenNPCsSettings.storyTrigger = "target"
-NPCs:EncounterStarted(edwin.id)
-Expect("with When Targeted, a fight starting shows the boss's story", Showing(), EDWIN)
-Clear()
-SpokenNPCsSettings.storyTrigger = "kill"
 local sunkenMap
 for map, bosses in pairs(SpokenBosses.maps) do
     for _, boss in ipairs(bosses) do
@@ -504,7 +465,7 @@ Expect("...and an encounter of two bosses shows both stories", table.concat(keys
     "boss:" .. sunkenMap .. ":weaver|boss:" .. sunkenMap .. ":dreamscythe")
 Clear()
 
--- A boss whose fight may start no encounter is met when targeted, whichever trigger shows stories.
+-- A boss whose fight may start no encounter is met when targeted.
 local function Listed(map, key)
     for _, boss in ipairs(SpokenBosses.maps[map] or {}) do
         if boss.key == key then return boss end
@@ -525,9 +486,8 @@ _G.GetInstanceInfo = function() return "Blackrock Depths", "party", 1, "", 5, 0,
 _G.UnitName = function() return "Ribbly Screwspigot" end
 world.npcGUID = "Creature-0-1-2-3-9543-0000ABCDEF"
 NPCs:TargetChanged()
-Expect("targeting Ribbly Screwspigot meets him, with When Killed on", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
+Expect("targeting Ribbly Screwspigot meets him", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
 Expect("...and shows no story", Showing(), "nothing")
-SpokenNPCsSettings.storyTrigger = "target"
 _G.UnitName = function() return "Plugger Spazzring" end
 world.npcGUID = "Creature-0-1-2-3-9499-0000ABCDEF"
 world.npcFriendly = true
@@ -535,21 +495,9 @@ NPCs:TargetChanged()
 Expect("Plugger Spazzring selling ale is not met", NPCs:IsBossFound(230, "plugger spazzring"), false)
 world.npcFriendly = false
 NPCs:TargetChanged()
-Expect("...and is once he can be fought, with Targeting on", NPCs:IsBossFound(230, "plugger spazzring"), true)
+Expect("...and is once he can be fought", NPCs:IsBossFound(230, "plugger spazzring"), true)
 Clear()
 _G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
--- Another creature of a fight of several shows the fight's story, in that fight's map only.
-_G.SpokenBossStories[469] = { nefarian = "He schemes beneath the mountain." }
-_G.UnitName = function() return "Lord Victor Nefarius" end
-world.npcGUID = "Creature-0-1-2-3-10162-0000ABCDEF"
-_G.GetInstanceInfo = function() return "Blackrock Spire", "party", 1, "", 5, 0, false, 229 end
-NPCs:TargetChanged()
-Expect("Lord Victor Nefarius in Blackrock Spire shows nothing", Showing(), "nothing")
-_G.GetInstanceInfo = function() return "Blackwing Lair", "raid", 9, "", 40, 0, false, 469 end
-NPCs:TargetChanged()
-Expect("...and in Blackwing Lair shows Nefarian's story", Showing(), "boss:469:nefarian")
-Expect("...without meeting Nefarian", NPCs:IsBossFound(469, "nefarian"), false)
-Clear()
 _G.UnitName = unitName
 _G.GetInstanceInfo = function() return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0 end
 world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"

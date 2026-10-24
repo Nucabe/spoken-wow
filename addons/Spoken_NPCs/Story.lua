@@ -1,7 +1,7 @@
 local _, NPCs = ...
 
--- A boss's story in Spoken's narrator, as words with no voice, once per character: when the
--- player targets the boss, or when it is killed (Show a Boss's Story, on the Bosses page).
+-- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
+-- is killed.
 
 local L = NPCs.L
 
@@ -20,29 +20,6 @@ local function Creatures()
 	return byCreature
 end
 
--- The other creatures of a fight Data/Creatures.lua files under one of them, so targeting any of
--- them shows the fight's story: [creature id] = { map, key }. Only inside that map, as Lord Victor
--- Nefarius also stands in Blackrock Spire.
-local MEMBERS = {
-	[3976] = { 189, "high inquisitor whitemane" }, -- Scarlet Commander Mograine
-	[6907] = { 70, "the lost dwarves" }, [6908] = { 70, "the lost dwarves" }, -- Eric "The Swift", Olaf
-	[9035] = { 230, "the seven" }, [9036] = { 230, "the seven" }, [9037] = { 230, "the seven" },
-	[9038] = { 230, "the seven" }, [9039] = { 230, "the seven" }, [9040] = { 230, "the seven" },
-	[15083] = { 309, "edge of madness" }, [15084] = { 309, "edge of madness" }, [15085] = { 309, "edge of madness" },
-	[10162] = { 469, "nefarian" }, -- Lord Victor Nefarius
-	[15543] = { 531, "silithid royalty" }, [15544] = { 531, "silithid royalty" }, -- Princess Yauj, Vem
-	[15276] = { 531, "twin emperors" }, -- Emperor Vek'lor
-	[16063] = { 533, "the four horsemen" }, [16064] = { 533, "the four horsemen" }, [16065] = { 533, "the four horsemen" },
-	[15929] = { 533, "thaddius" }, [15930] = { 533, "thaddius" }, -- Stalagg, Feugen
-}
-
--- The fight the creature `id` is a member of, where the player is in its map: { map, key }, or nil.
-local function Member(id)
-	local member = MEMBERS[id]
-	if not member or NPCs:InstanceMap() ~= member[1] then return nil end
-	return { map = member[1], key = member[2] }
-end
-
 --- Registers the bosses' stories with Spoken as a part of its own, after the settings are read.
 function NPCs:SetupStories()
 	if source or not (Spoken and Spoken.RegisterSource and Spoken.ShowsNarratorFor) then return end
@@ -59,9 +36,8 @@ end
 --- Shows the story of the boss `key` of `map` in the narrator. Nothing when this character has
 --- been shown it, the narrator would not show it, or the boss has none. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
---- once it starts, so one dropped or cleared shows the next time. `meets`: the boss is met when its
---- story starts, as it is not for the story of a fight shown by targeting another member of it.
-function NPCs:ReadStory(map, key, meets)
+--- once it starts, so one dropped or cleared shows the next time. The boss is met when it starts.
+function NPCs:ReadStory(map, key)
 	if not (source and SpokenNPCsCharacter) then return false end
 	local id = map .. ":" .. key
 	if SpokenNPCsCharacter.storiesRead[id] or not Spoken:ShowsNarratorFor("bosses") then return false end
@@ -70,40 +46,25 @@ function NPCs:ReadStory(map, key, meets)
 	clip.priority = "low"
 	clip.startCallback = function()
 		SpokenNPCsCharacter.storiesRead[id] = true
-		if meets then self:FoundStory(map, key) end
+		self:FoundStory(map, key)
 	end
 	return source:Enqueue(clip) and true or false
 end
 
---- The player targeted a unit: where it is a boss, met if its fight may start no encounter, and its
---- story where targeting shows them.
+--- The player targeted a unit: where it is a boss, it is met.
 function NPCs:TargetChanged()
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
 	if not id then return end
-	local reads = SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "target"
-	local boss = Creatures()[id]
-	local member = not boss and reads and Member(id)
-	boss = boss or member
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
-	boss = boss or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
-	if not boss then return end
-	self:FoundTarget(boss.map, boss.key)
-	if reads then self:ReadStory(boss.map, boss.key, not member) end
+	local boss = Creatures()[id] or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
+	if boss then self:FoundTarget(boss.map, boss.key) end
 end
 
---- An encounter started: its bosses' stories, where targeting shows them. Inside an instance the client
---- hides a unit's GUID and name from addons, so targeting names no boss there; the pull is the first
---- moment one is known.
-function NPCs:EncounterStarted(encounterID)
-	if not (SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "target") then return end
-	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key, true) end
-end
-
---- An encounter ended: its bosses' stories, where it was won and killing shows them.
+--- An encounter ended: its bosses' stories, where it was won.
 function NPCs:EncounterEnded(encounterID, success)
-	if not (SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "kill") or success ~= 1 then return end
-	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key, true) end
+	if success ~= 1 then return end
+	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key) end
 end
 
 --- Every story this character was shown can be shown again. Returns how many.

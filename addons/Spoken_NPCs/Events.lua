@@ -20,7 +20,6 @@ frame:SetScript("OnEvent", function(self, event, arg1, _, _, _, arg5)
 		end
 	elseif event == "ENCOUNTER_START" then
 		NPCs:FoundEncounter(arg1)
-		NPCs:EncounterStarted(arg1)
 	elseif event == "ENCOUNTER_END" then
 		-- encounterID, name, difficulty, group size, success (1 when the boss died).
 		NPCs:EncounterEnded(arg1, arg5)

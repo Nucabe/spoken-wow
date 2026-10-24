@@ -22,10 +22,11 @@ do; Found Only leaves out what holds none found. A found boss's page names its d
 tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
 The search finds bosses, dungeons and zones by name.
 
-A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`): when the player
-targets the boss (known by its creature id, or by its name in the dungeon the player is in where
-`Data/Creatures.lua` has no creature for it; in a fight of several, any of them, `MEMBERS`), or when it is killed (`ENCOUNTER_END` with success), as Show a Boss's Story on the
-Bosses page says (`SpokenNPCsSettings.storyTrigger`, targeting by default). Each story shows once per
+A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
+killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
+`ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it: inside an instance
+the client hides a unit's GUID, name and model from addons, so no boss is known from the target there.
+Each story shows once per
 character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
 Spoken's, "bosses", registered with `textOnly`: What Spoken Reads turns them off, and nothing is queued
