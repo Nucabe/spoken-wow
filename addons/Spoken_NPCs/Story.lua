@@ -55,9 +55,16 @@ local watched, generation = nil, 0
 
 local POLL_SECONDS = 0.5
 
+-- Whether the target is dead, or nil when the client hides it. The client answers 1 or nil, not a boolean.
+local function TargetDead()
+	local dead = UnitIsDead("target")
+	if issecretvalue and issecretvalue(dead) then return nil end
+	return dead and true or false
+end
+
 --- The boss watched is dead, so it is met and its story shown.
 function NPCs:CheckWatched()
-	if not watched or Spoken.NotSecret(UnitIsDead("target")) ~= true then return end
+	if not watched or not TargetDead() then return end
 	local boss = watched
 	watched = nil
 	self:FoundBoss(boss.map, boss.key)
@@ -79,7 +86,7 @@ function NPCs:TargetChanged()
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
 	local boss = Creatures()[id] or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
-	if boss and self:IsUnannounced(boss.map, boss.key) and Spoken.NotSecret(UnitIsDead("target")) == false then
+	if boss and self:IsUnannounced(boss.map, boss.key) and TargetDead() == false then
 		watched = boss
 		local mine = generation
 		C_Timer.After(POLL_SECONDS, function() Poll(mine) end)

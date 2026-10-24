@@ -497,7 +497,8 @@ Expect("Baron Aquanis, the world bosses, Ribbly and Plugger are watched for thei
     "true|true|true|true|false")
 local dead = false
 local unitIsDead = _G.UnitIsDead
-_G.UnitIsDead = function() return dead end
+-- The client answers 1 or nil, as the Classic API does.
+_G.UnitIsDead = function() return dead and 1 or nil end
 local function Dies()
     dead = true
     NPCs:CheckWatched()
