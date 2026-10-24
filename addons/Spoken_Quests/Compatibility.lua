@@ -225,7 +225,8 @@ do
             if not button then
                 button = QuestOverlayUI:MakePlayButton(line)
                 local minimize = line.expandQuest
-                button:SetPoint("RIGHT", minimize or line.label or line, "LEFT", -4, 0)
+                if minimize then button:SetSize(18, 18) end
+                button:SetPoint("RIGHT", minimize or line.label or line, "LEFT", minimize and -1 or -4, 0)
                 if minimize and button.SetFrameLevel and minimize.GetFrameLevel then
                     button:SetFrameLevel(minimize:GetFrameLevel() + 1)
                 end

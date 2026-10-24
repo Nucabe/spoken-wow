@@ -72,6 +72,9 @@ Expect("Questie's button is bound to the quest", line.spokenPlayButton.questID, 
 local _, anchor, anchorPoint = line.spokenPlayButton:GetPoint()
 Expect("Questie's Play button is left of minimize", anchor, line.expandQuest)
 Expect("...anchored to minimize's left edge", anchorPoint, "LEFT")
+local _, _, _, xOffset = line.spokenPlayButton:GetPoint()
+Expect("...sits right next to minimize", xOffset, -1)
+Expect("...is slightly smaller", line.spokenPlayButton:GetWidth(), 18)
 
 line.mode = "objective"
 questieTracker:Update()
