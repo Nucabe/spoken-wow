@@ -179,8 +179,8 @@ end
 
 -- Questie owns its tracker instead of using Blizzard's blocks. Current Questie versions keep a
 -- pooled `line.playButton` on each quest title, but their built-in VoiceOver bridge only recognizes
--- the retired AI_VoiceOver addon names. Reuse that button when available and bind it to Spoken's
--- queue, so Questie keeps its layout and we do not draw a second button beside it.
+-- the retired AI_VoiceOver addon names. Give each title line its own Spoken button so Questie
+-- cannot hide it, and leave Questie's own button and layout untouched.
 do
     local installed
     local callbacks
@@ -245,7 +245,13 @@ do
             if not frame or (seen and seen[frame]) then return end
             seen = seen or {}
             seen[frame] = true
-            if frame.mode == "quest" and frame.Quest and (frame.label or frame.playButton) then Dress(frame) end
+            if frame.mode == "quest" and frame.Quest and (frame.label or frame.playButton) then
+                Dress(frame)
+            elseif frame.spokenPlayButton then
+                -- Questie reuses line frames: a title line can become a zone or objective row
+                -- on the next redraw, so a button from its previous quest must not remain behind.
+                frame.spokenPlayButton:Hide()
+            end
             if frame.GetChildren then
                 for _, child in ipairs({ frame:GetChildren() }) do
                     SweepVisibleLines(child, seen)

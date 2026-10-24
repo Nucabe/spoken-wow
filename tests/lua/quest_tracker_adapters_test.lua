@@ -58,7 +58,8 @@ local classicButton
 classicButton = VO.QuestOverlayUI.legacyTrackerPlayButtons[748]
 Expect("the Era watch frame gets a Play button", classicButton and classicButton:IsShown(), true)
 
-local line = CreateFrame("Button", nil, Questie_BaseFrame or UIParent)
+_G.Questie_BaseFrame = CreateFrame("Frame", nil, UIParent)
+local line = CreateFrame("Button", nil, _G.Questie_BaseFrame)
 line.Quest = { Id = 748 }
 line.mode = "quest"
 line.label = line:CreateFontString()
@@ -68,13 +69,9 @@ questieTracker:Update()
 Expect("Questie's title line gets a separate Spoken Play button", line.spokenPlayButton:IsShown(), true)
 Expect("Questie's button is bound to the quest", line.spokenPlayButton.questID, 748)
 
-local objective = CreateFrame("Button", nil, Questie_BaseFrame or UIParent)
-objective.Quest = { Id = 748 }
-objective.mode = "objective"
-objective.label = objective:CreateFontString()
-table.insert(questieLines, objective)
+line.mode = "objective"
 questieTracker:Update()
-Expect("Questie's objective line does not get a Play button", objective.spokenPlayButton, nil)
+Expect("a reused Questie objective line hides its old Play button", line.spokenPlayButton:IsShown(), false)
 
 VO.Addon.db.profile.TrackerPlayButton = false
 VO.QuestOverlayUI.UpdateTrackerButtons()
