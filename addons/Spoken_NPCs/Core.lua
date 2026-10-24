@@ -77,7 +77,7 @@ local function Meet(self, bosses)
 			new = true
 		end
 	end
-	-- At a boss's pull: the list is drawn again only where it is seen, and opening it draws it.
+	-- The list is drawn again only where it is seen, and opening it draws it.
 	if new and self.bosses and self.bosses:IsVisible() then self:RefreshBosses() end
 	return new
 end
@@ -97,13 +97,6 @@ function NPCs:FoundTarget(map, key)
 	Encounters()
 	if not onTarget[Key(map, key)] then return false end
 	if not (UnitCanAttack and Spoken.NotSecret(UnitCanAttack("player", "target"))) then return false end
-	return Meet(self, { { map = map, key = key } })
-end
-
---- The boss `key` of `map` was shown its story in the narrator: met, as a boss whose page the player
---- has heard is no longer a locked row. Returns whether it was not met before.
-function NPCs:FoundStory(map, key)
-	if not SpokenNPCsCharacter or self:IsBossFound(map, key) then return false end
 	return Meet(self, { { map = map, key = key } })
 end
 

@@ -36,7 +36,7 @@ end
 --- Shows the story of the boss `key` of `map` in the narrator. Nothing when this character has
 --- been shown it, the narrator would not show it, or the boss has none. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
---- once it starts, so one dropped or cleared shows the next time. The boss is met when it starts.
+--- once it starts, so one dropped or cleared shows the next time.
 function NPCs:ReadStory(map, key)
 	if not (source and SpokenNPCsCharacter) then return false end
 	local id = map .. ":" .. key
@@ -44,14 +44,11 @@ function NPCs:ReadStory(map, key)
 	local clip = self:StoryClip(map, key)
 	if not clip then return false end
 	clip.priority = "low"
-	clip.startCallback = function()
-		SpokenNPCsCharacter.storiesRead[id] = true
-		self:FoundStory(map, key)
-	end
+	clip.startCallback = function() SpokenNPCsCharacter.storiesRead[id] = true end
 	return source:Enqueue(clip) and true or false
 end
 
---- The player targeted a unit: where it is a boss, it is met.
+--- The player targeted a unit: a boss whose fight may start no encounter is met (`onTarget`).
 function NPCs:TargetChanged()
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
 	if not id then return end
@@ -61,9 +58,10 @@ function NPCs:TargetChanged()
 	if boss then self:FoundTarget(boss.map, boss.key) end
 end
 
---- An encounter ended: its bosses' stories, where it was won.
+--- An encounter was won: its bosses are met, and their stories shown.
 function NPCs:EncounterEnded(encounterID, success)
 	if success ~= 1 then return end
+	self:FoundEncounter(encounterID)
 	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key) end
 end
 

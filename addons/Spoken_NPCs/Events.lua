@@ -2,7 +2,7 @@ local _, NPCs = ...
 
 -- The bosses' tab in Azeroth's Compendium is registered once the world is up, as the other
 -- modules' are; the window itself is built the first time it is opened. A boss is met when its
--- fight starts.
+-- fight starts or is won, or, where its fight may start no encounter, when it is targeted.
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")

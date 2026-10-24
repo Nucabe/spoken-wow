@@ -11,7 +11,8 @@ its bosses under an opened dungeon. A city's dungeons (the Stockade, Ragefire Ch
 around the city. After the continents, Other Lands holds any zone on none. Each dungeon has a badge of
 its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's file list).
 
-A boss is found when its fight starts (`ENCOUNTER_START`, any difficulty's encounter id from the
+A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
+`BOSS_KILL`), by any difficulty's encounter id from the
 `ids` of `Data/Bosses.lua`), kept per character in `SpokenNPCsCharacter`. A boss whose fight may start no
 encounter in Forever is also found when the player targets it (`onTarget`, from `ON_TARGET` in
 `pipelines/lib/bosses.mjs`): Baron Aquanis, the world bosses, Ribbly Screwspigot and Plugger Spazzring,
@@ -26,8 +27,8 @@ A boss's story also shows in Spoken's narrator, as words with no voice (`Story.l
 killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
 `ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it: inside an instance
 the client hides a unit's GUID, name and model from addons, so no boss is known from the target there.
-Each story shows once per
-character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until Forget Stories Shown. A story
+Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
+Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
 Spoken's, "bosses", registered with `textOnly`: What Spoken Reads turns them off, and nothing is queued
 where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off).

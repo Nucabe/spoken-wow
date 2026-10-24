@@ -6,8 +6,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 - **A boss's story shows in the narrator when you kill the boss, in dungeons too.** The Bosses page no
   longer has Show a Boss's Story: killing is the only way, because inside an instance the game hides
-  which boss a target is. A boss is met when its story is shown, so its page unlocks in the Compendium
-  as the story plays. *([Nucabe](https://github.com/Nucabe))*
+  which boss a target is. A boss is also met when you kill it, so its page unlocks in the Compendium
+  even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:
@@ -66,8 +66,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
-  Gnomeregan list their bosses in Forever's order, not the Season of Discovery raid's, and targeting any creature of a fight of several,
-  such as Stalagg or one of the Four Horsemen, shows the fight's story. *([Nucabe](https://github.com/Nucabe))*
+  Gnomeregan list their bosses in Forever's order, not the Season of Discovery raid's.
+  *([Nucabe](https://github.com/Nucabe))*
 - **The Compendium's quest list follows live Forever more closely.** Skyborne and other races
   see the class quests Forever gives them, and human priests no longer see Desperate Prayer.
   Quests whose only givers are one side's are listed for that side alone, three quests moved to
@@ -118,9 +118,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   with no known face shows the question mark instead of an empty portrait, and targeting Balnazzar in Stratholme no
   longer shows the Scarlet Enclave's story. Five bosses take the name the game gives them: The Baron, Magmatus,
   Kirtonos the Herald, Ras Frostwhisper and C'Thun. *([Nucabe](https://github.com/Nucabe))*
-- **A boss's story shows in the narrator when you target the boss.** It shows once per character, as words
-  with no voice. On the Bosses settings page, Show a Boss's Story picks targeting or killing it, and Forget
-  Stories Shown shows each again. *([Nucabe](https://github.com/Nucabe))*
+- **A boss's story shows in the narrator.** It shows once per character, as words with no voice. On the
+  Bosses settings page, Forget Stories Shown shows each again. *([Nucabe](https://github.com/Nucabe))*
 - **Quest givers show their own face.** The quest portraits in the Compendium and the narrator's quest-giver
   face are drawn from appearances that ship with Spoken, so a creature the client has not met yet no longer
   shows your own face or another creature's. *([Nucabe](https://github.com/Nucabe))*

@@ -13,8 +13,10 @@ Sources checked for every boss below:
   its JournalEncounter tables cannot be fetched for this build;
 - the retail Adventure Guide (12.1.5), for portraits the client also has.
 
-A boss with no creature id is still found when the player targets it in its dungeon, by its name
-(`NPCs:BossNamed`), wherever the client's name for it is the encounter's. What it lacks is its face.
+A boss with no creature id is still known by its name when the player targets it in its dungeon
+(`NPCs:BossNamed`; an `onTarget` boss is found then), wherever the client's name for it is the
+encounter's. Inside an instance the client hides the name, so only the pull and the kill name a boss
+there. What it lacks is its face.
 
 ## How to fill a gap
 
