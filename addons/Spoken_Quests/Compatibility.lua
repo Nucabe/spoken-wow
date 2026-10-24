@@ -125,6 +125,7 @@ do
             local button = buttons[questID]
             if not button then
                 button = QuestOverlayUI:MakePlayButton(line:GetParent() or trackerFrame)
+                button:SetSize(18, 18)
                 button.setPlayState = QuestOverlayUI.FollowQueue
                 buttons[questID] = button
             end

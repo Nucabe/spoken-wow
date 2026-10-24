@@ -57,6 +57,7 @@ Expect("the watch log quest id is available", select(8, GetQuestLogTitle(1)), 74
 local classicButton
 classicButton = VO.QuestOverlayUI.legacyTrackerPlayButtons[748]
 Expect("the Era watch frame gets a Play button", classicButton and classicButton:IsShown(), true)
+Expect("the Era Play button is 18 pixels square", classicButton:GetWidth(), 18)
 
 _G.Questie_BaseFrame = CreateFrame("Frame", nil, UIParent)
 local line = CreateFrame("Button", nil, _G.Questie_BaseFrame)
