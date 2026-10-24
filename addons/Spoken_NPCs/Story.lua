@@ -59,15 +59,19 @@ end
 --- Shows the story of the boss `key` of `map` in the narrator. Nothing when this character has
 --- been shown it, the narrator would not show it, or the boss has none. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
---- once it starts, so one dropped or cleared shows the next time.
-function NPCs:ReadStory(map, key)
+--- once it starts, so one dropped or cleared shows the next time. `meets`: the boss is met when its
+--- story starts, as it is not for the story of a fight shown by targeting another member of it.
+function NPCs:ReadStory(map, key, meets)
 	if not (source and SpokenNPCsCharacter) then return false end
 	local id = map .. ":" .. key
 	if SpokenNPCsCharacter.storiesRead[id] or not Spoken:ShowsNarratorFor("bosses") then return false end
 	local clip = self:StoryClip(map, key)
 	if not clip then return false end
 	clip.priority = "low"
-	clip.startCallback = function() SpokenNPCsCharacter.storiesRead[id] = true end
+	clip.startCallback = function()
+		SpokenNPCsCharacter.storiesRead[id] = true
+		if meets then self:FoundStory(map, key) end
+	end
 	return source:Enqueue(clip) and true or false
 end
 
@@ -77,19 +81,21 @@ function NPCs:TargetChanged()
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
 	if not id then return end
 	local reads = SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "target"
-	local boss = Creatures()[id] or reads and Member(id)
+	local boss = Creatures()[id]
+	local member = not boss and reads and Member(id)
+	boss = boss or member
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
 	boss = boss or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
 	if not boss then return end
 	self:FoundTarget(boss.map, boss.key)
-	if reads then self:ReadStory(boss.map, boss.key) end
+	if reads then self:ReadStory(boss.map, boss.key, not member) end
 end
 
 --- An encounter ended: its bosses' stories, where it was won and killing shows them.
 function NPCs:EncounterEnded(encounterID, success)
 	if not (SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "kill") or success ~= 1 then return end
-	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key) end
+	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key, true) end
 end
 
 --- Every story this character was shown can be shown again. Returns how many.

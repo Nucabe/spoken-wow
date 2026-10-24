@@ -103,6 +103,13 @@ function NPCs:FoundTarget(map, key)
 	return Meet(self, { { map = map, key = key } })
 end
 
+--- The boss `key` of `map` was shown its story in the narrator: met, as a boss whose page the player
+--- has heard is no longer a locked row. Returns whether it was not met before.
+function NPCs:FoundStory(map, key)
+	if not SpokenNPCsCharacter or self:IsBossFound(map, key) then return false end
+	return Meet(self, { { map = map, key = key } })
+end
+
 --- The instance map the player is in, or nil.
 function NPCs:InstanceMap()
 	return GetInstanceInfo and Spoken.NotSecret((select(8, GetInstanceInfo()))) or nil

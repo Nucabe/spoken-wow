@@ -417,17 +417,21 @@ local function Clear() Q:RemoveAllSoundsFromQueue(); stub.Advance(2) end
 local EDWIN = "boss:36:edwin vancleef"
 Expect("targeting is the default trigger", SpokenNPCsSettings.storyTrigger, "target")
 world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 NPCs:TargetChanged()
 Expect("targeting a boss shows its story", Showing(), EDWIN)
+Expect("...and the boss is met, as its page is no longer locked", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
 Expect("...as words alone, as every line of its part", Q:GetCurrentSound().textOnly, true)
 Expect("...noted for the character", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], true)
 Clear()
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 Q:PauseQueue()
 NPCs:ForgetStories()
 NPCs:TargetChanged()
 Expect("a story waiting behind a stop is queued", Showing(), EDWIN)
 Expect("...as low as gossip", Q:GetCurrentSound().priority, "low")
 Expect("...and not noted until it shows", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], nil)
+Expect("...nor met until it shows", SpokenNPCsCharacter.found["36:edwin vancleef"], nil)
 Clear()
 Q:ResumeQueue()
 NPCs:TargetChanged()
