@@ -62,13 +62,13 @@ line.label = line:CreateFontString()
 line.playButton = CreateFrame("Button", nil, line)
 table.insert(questieLines, line)
 questieTracker:Update()
-Expect("Questie's title line gets Spoken's Play behavior", line.playButton:IsShown(), true)
-Expect("Questie's button is bound to the quest", line.playButton.questID, 748)
+Expect("Questie's title line gets a separate Spoken Play button", line.spokenPlayButton:IsShown(), true)
+Expect("Questie's button is bound to the quest", line.spokenPlayButton.questID, 748)
 
 VO.Addon.db.profile.TrackerPlayButton = false
 VO.QuestOverlayUI.UpdateTrackerButtons()
 Expect("turning Tracker off hides the Era button", classicButton:IsShown(), false)
-Expect("...and hides Questie's button", line.playButton:IsShown(), false)
+Expect("...and hides Questie's button", line.spokenPlayButton:IsShown(), false)
 
 if Failures() > 0 then os.exit(1) end
 print("\nAll quest tracker adapter tests passed")

@@ -191,6 +191,8 @@ do
         local updateQuestTitleLines = pool.UpdateQuestTitleLines
         local tracker
         pcall(function() tracker = _G.QuestieLoader:ImportModule("QuestieTracker") end)
+        local trackerUtils
+        pcall(function() trackerUtils = _G.QuestieLoader:ImportModule("TrackerUtils") end)
 
         local function QuestTitle(questID)
             if C_QuestLog and C_QuestLog.GetTitleForQuestID then
@@ -216,11 +218,14 @@ do
             local quest = line and line.Quest
             local questID = quest and (quest.Id or quest.questID)
             if type(questID) ~= "number" then return end
-            local button = line.playButton
+            -- Questie's own line.playButton is still governed by its legacy AI_VoiceOver
+            -- visibility checks. Keep Spoken's button separate so Questie cannot hide it after
+            -- this adapter has bound it.
+            local button = line.spokenPlayButton
             if not button then
                 button = QuestOverlayUI:MakePlayButton(line)
-                button:SetPoint("RIGHT", line.label, "LEFT", -4, 0)
-                line.playButton = button
+                button:SetPoint("RIGHT", line.label or line, "LEFT", -4, 0)
+                line.spokenPlayButton = button
             end
             if not Addon:IsPartOn() or (Addon.db and Addon.db.profile.TrackerPlayButton == false)
                 or not DataModules:PrepareSound({ event = Enums.SoundEvent.QuestAccept, questID = questID }) then
@@ -236,14 +241,30 @@ do
                 "Questie's tracker Play button")
             QuestOverlayUI:SetPlayButtonState(button)
         end
+        local function SweepVisibleLines(frame, seen)
+            if not frame or (seen and seen[frame]) then return end
+            seen = seen or {}
+            seen[frame] = true
+            if frame.Quest and (frame.label or frame.playButton) then Dress(frame) end
+            if frame.GetChildren then
+                for _, child in ipairs({ frame:GetChildren() }) do
+                    SweepVisibleLines(child, seen)
+                end
+            end
+        end
         local function Sweep()
             updateQuestTitleLines(pool, Dress)
+            SweepVisibleLines(_G.Questie_BaseFrame)
+            SweepVisibleLines(_G.QuestieTrackerFrame)
         end
 
         installed = true
         RegisterTrackerUpdater(Sweep)
         hooksecurefunc(pool, "UpdateQuestTitleLines", Sweep)
         if tracker and type(tracker.Update) == "function" then hooksecurefunc(tracker, "Update", Sweep) end
+        if trackerUtils and type(trackerUtils.UpdateVoiceOverPlayButtons) == "function" then
+            hooksecurefunc(trackerUtils, "UpdateVoiceOverPlayButtons", Sweep)
+        end
         Sweep()
     end
     local waiter = CreateFrame("Frame")
