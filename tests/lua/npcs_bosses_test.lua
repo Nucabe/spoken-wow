@@ -481,7 +481,8 @@ Expect("...and an encounter of two bosses shows both stories", table.concat(keys
     "boss:" .. sunkenMap .. ":weaver|boss:" .. sunkenMap .. ":dreamscythe")
 Clear()
 
--- A boss whose fight may start no encounter is met when targeted.
+-- A boss whose fight may start no encounter (the world bosses): the game sends no kill for it, so its
+-- death is watched while it is targeted.
 local function Listed(map, key)
     for _, boss in ipairs(SpokenBosses.maps[map] or {}) do
         if boss.key == key then return boss end
@@ -489,60 +490,71 @@ local function Listed(map, key)
 end
 Expect("Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths",
     tostring(Listed(230, "ribbly screwspigot") ~= nil) .. "|" .. tostring(Listed(230, "plugger spazzring") ~= nil), "true|true")
-Expect("Baron Aquanis, the world bosses, Ribbly and Plugger are met on target; Edwin VanCleef is not",
-    tostring(Listed(48, "baron aquanis").onTarget) .. "|" .. tostring(Listed(2789, "lord kazzak").onTarget) .. "|"
-        .. tostring(Listed(2832, "ysondre").onTarget) .. "|" .. tostring(Listed(230, "ribbly screwspigot").onTarget) .. "|"
-        .. tostring(Listed(36, "edwin vancleef").onTarget),
-    "true|true|true|true|nil")
+Expect("Baron Aquanis, the world bosses, Ribbly and Plugger are watched for their death; Edwin VanCleef is not",
+    tostring(NPCs:IsUnannounced(48, "baron aquanis")) .. "|" .. tostring(NPCs:IsUnannounced(2789, "lord kazzak")) .. "|"
+        .. tostring(NPCs:IsUnannounced(2832, "ysondre")) .. "|" .. tostring(NPCs:IsUnannounced(230, "ribbly screwspigot")) .. "|"
+        .. tostring(NPCs:IsUnannounced(36, "edwin vancleef")),
+    "true|true|true|true|false")
+local dead = false
+local unitIsDead = _G.UnitIsDead
+_G.UnitIsDead = function() return dead end
+local function Dies()
+    dead = true
+    NPCs:TargetHealthChanged()
+    dead = false
+end
 SpokenNPCsCharacter.found = {}
-world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
-NPCs:TargetChanged()
-Expect("targeting a boss whose fight starts an encounter does not meet it", NPCs:IsBossFound(36, "edwin vancleef"), false)
-_G.GetInstanceInfo = function() return "Blackrock Depths", "party", 1, "", 5, 0, false, 230 end
-_G.UnitName = function() return "Ribbly Screwspigot" end
-world.npcGUID = "Creature-0-1-2-3-9543-0000ABCDEF"
-NPCs:TargetChanged()
-Expect("targeting Ribbly Screwspigot meets him", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
-Expect("...and shows no story", Showing(), "nothing")
-SpokenNPCsCharacter.found = {}
-world.npcGUID = "Player-1-0000ABCD"
-NPCs:TargetChanged()
-Expect("targeting a player meets nobody", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
-world.npcGUID = "Creature-0-1-2-3-9543-0000ABCDEF"
-stub.Secrets(world.npcGUID)
-NPCs:TargetChanged()
-Expect("...nor does a boss whose GUID the client keeps secret", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
-stub.Secrets()
-NPCs:TargetChanged()
-Expect("...and he is met once the GUID can be read", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
-_G.UnitName = function() return "Plugger Spazzring" end
-world.npcGUID = "Creature-0-1-2-3-9499-0000ABCDEF"
-world.npcFriendly = true
-NPCs:TargetChanged()
-Expect("Plugger Spazzring selling ale is not met", NPCs:IsBossFound(230, "plugger spazzring"), false)
-world.npcFriendly = false
-NPCs:TargetChanged()
-Expect("...and is once he can be fought", NPCs:IsBossFound(230, "plugger spazzring"), true)
-Clear()
-_G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
 _G.GetInstanceInfo = function() return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0 end
 world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"
-NPCs:TargetChanged()
-Clear()
-Expect("a world boss is met when targeted in the open world, as at its pull", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|"
-    .. tostring(NPCs:FoundEncounter(Listed(2789, "lord kazzak").ids[1])), "true|false")
--- The game sends no kill for it, so targeting is what shows its story.
 _G.SpokenBossStories[2789] = { ["lord kazzak"] = "He burns." }
 NPCs:ForgetStories()
 NPCs:TargetChanged()
-Expect("...and shows its story, once", Showing(), "boss:2789:lord kazzak")
+Expect("targeting a world boss meets it and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+    "false|nothing")
+NPCs:TargetHealthChanged()
+Expect("...nor does its health changing while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+    "false|nothing")
+Dies()
+Expect("...its death shows its story", Showing(), "boss:2789:lord kazzak")
+Expect("...and meets it", NPCs:IsBossFound(2789, "lord kazzak"), true)
 Clear()
-NPCs:TargetChanged()
-Expect("...not again", Showing(), "nothing")
-world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
+Dies()
+Expect("...once", Showing(), "nothing")
 NPCs:ForgetStories()
 NPCs:TargetChanged()
-Expect("a boss whose fight starts an encounter shows nothing when targeted", Showing(), "nothing")
-_G.GetInstanceInfo = instanceInfo
+world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
+NPCs:TargetChanged()
+Dies()
+Expect("...nor does a death after another target is chosen", Showing(), "nothing")
+world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"
+dead = true
+NPCs:TargetChanged()
+NPCs:TargetHealthChanged()
+dead = false
+Expect("a corpse targeted is not a kill", Showing(), "nothing")
+world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
+NPCs:TargetChanged()
+Dies()
+Expect("a boss whose fight starts an encounter is not watched", Showing(), "nothing")
+-- In Blackrock Depths, by name.
+SpokenNPCsCharacter.found = {}
+_G.GetInstanceInfo = function() return "Blackrock Depths", "party", 1, "", 5, 0, false, 230 end
+_G.UnitName = function() return "Ribbly Screwspigot" end
+world.npcGUID = "Player-1-0000ABCD"
+NPCs:TargetChanged()
+Dies()
+Expect("a player's death meets nobody", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
+world.npcGUID = "Creature-0-1-2-3-9543-0000ABCDEF"
+stub.Secrets(world.npcGUID)
+NPCs:TargetChanged()
+Dies()
+Expect("...nor does the death of a boss whose GUID the client keeps secret", NPCs:IsBossFound(230, "ribbly screwspigot"), false)
+stub.Secrets()
+NPCs:TargetChanged()
+Dies()
+Expect("...and Ribbly Screwspigot is met by his death once the GUID can be read", NPCs:IsBossFound(230, "ribbly screwspigot"), true)
+Clear()
+_G.UnitIsDead = unitIsDead
+_G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
 
 if Failures() > 0 then os.exit(1) end

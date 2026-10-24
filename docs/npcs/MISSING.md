@@ -14,7 +14,7 @@ Sources checked for every boss below:
 - the retail Adventure Guide (12.1.5), for portraits the client also has.
 
 A boss with no creature id is still known by its name when the player targets it in its dungeon
-(`NPCs:BossNamed`; an `onTarget` boss is found then), wherever the client's name for it is the
+(`NPCs:BossNamed`; an `onTarget` boss is watched for its death then), wherever the client's name for it is the
 encounter's. Inside an instance the client hides the name, so only the pull and the kill name a boss
 there. What it lacks is its face.
 

@@ -5,7 +5,7 @@
 -- the client's encounter, `ids` every encounter the client has for it, one for each difficulty
 -- (the ids ENCOUNTER_START gives), `key` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
--- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). `onTarget` marks a boss found when the player targets it, as its
+-- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). `onTarget` marks a boss found when it dies while the player has it targeted, as its
 -- fight may start no encounter. Regenerate with:
 --   make bosses
 --

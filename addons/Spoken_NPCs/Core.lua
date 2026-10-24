@@ -41,7 +41,7 @@ end
 
 -- [encounter id] = { { map, key }, ... }, from Data/Bosses.lua, built on first use. A fight against
 -- two bosses at once (the Weaver and Dreamscythe) is one encounter of both. onTarget["map:key"] =
--- true for a boss met when targeted, built alongside.
+-- true for a boss whose fight may start no encounter, built alongside.
 local byEncounter, onTarget
 local function Encounters()
 	if byEncounter then return byEncounter end
@@ -89,19 +89,16 @@ function NPCs:FoundEncounter(encounterID)
 	return bosses and Meet(self, bosses) or false
 end
 
---- Whether targeting the boss `key` of `map` counts: its fight may start no encounter (`onTarget` in
---- Data/Bosses.lua) and it can be fought, as the Grim Guzzler's townsfolk are only after a quest or a
---- theft turns them.
-function NPCs:MeetsOnTarget(map, key)
+--- Whether the boss `key` of `map` is one whose fight may start no encounter (`onTarget` in
+--- Data/Bosses.lua): the game sends no kill for it, so its death is watched while it is targeted.
+function NPCs:IsUnannounced(map, key)
 	Encounters()
-	return onTarget[Key(map, key)] and UnitCanAttack and Spoken.NotSecret(UnitCanAttack("player", "target")) and true
-		or false
+	return onTarget[Key(map, key)] == true
 end
 
---- The player targeted the boss `key` of `map`: met where `MeetsOnTarget`. Returns whether it was not
---- met before.
-function NPCs:FoundTarget(map, key)
-	if not SpokenNPCsCharacter or self:IsBossFound(map, key) or not self:MeetsOnTarget(map, key) then return false end
+--- The boss `key` of `map` is met. Returns whether it was not met before.
+function NPCs:FoundBoss(map, key)
+	if not SpokenNPCsCharacter then return false end
 	return Meet(self, { { map = map, key = key } })
 end
 

@@ -1,8 +1,8 @@
 local _, NPCs = ...
 
 -- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
--- is killed. A boss whose fight the game may not announce (`onTarget`) shows it when targeted, as no
--- kill is sent for it.
+-- is killed. The game sends no kill for a boss whose fight it may not announce (`onTarget`), so its
+-- death is watched while the player has it targeted.
 
 local L = NPCs.L
 
@@ -49,15 +49,28 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
---- The player targeted a unit: a boss whose fight may start no encounter is met, and shows its story.
+-- The target, where it is a boss whose fight may start no encounter and it is alive.
+local watched
+
+--- The player targeted a unit: a boss whose fight may start no encounter is watched until it dies.
 function NPCs:TargetChanged()
+	watched = nil
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
 	if not id then return end
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
 	local boss = Creatures()[id] or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
-	if not boss or not self:MeetsOnTarget(boss.map, boss.key) then return end
-	self:FoundTarget(boss.map, boss.key)
+	if boss and self:IsUnannounced(boss.map, boss.key) and Spoken.NotSecret(UnitIsDead("target")) == false then
+		watched = boss
+	end
+end
+
+--- The target's health changed: the boss watched is dead, so it is met and its story shown.
+function NPCs:TargetHealthChanged()
+	if not watched or Spoken.NotSecret(UnitIsDead("target")) ~= true then return end
+	local boss = watched
+	watched = nil
+	self:FoundBoss(boss.map, boss.key)
 	self:ReadStory(boss.map, boss.key)
 end
 

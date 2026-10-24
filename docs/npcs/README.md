@@ -12,11 +12,10 @@ around the city. After the continents, Other Lands holds any zone on none. Each 
 its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's file list).
 
 A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
-`BOSS_KILL`), by any difficulty's encounter id from the
-`ids` of `Data/Bosses.lua`), kept per character in `SpokenNPCsCharacter`. A boss whose fight may start no
-encounter in Forever is also found when the player targets it (`onTarget`, from `ON_TARGET` in
-`pipelines/lib/bosses.mjs`): Baron Aquanis, the world bosses, Ribbly Screwspigot and Plugger Spazzring,
-once the player can attack it (Ribbly and Plugger are townsfolk until a quest or a theft turns them).
+`BOSS_KILL`), by any difficulty's encounter id from the `ids` of `Data/Bosses.lua`, kept per character in
+`SpokenNPCsCharacter`. A boss whose fight may start no encounter in Forever (`onTarget`, from `ON_TARGET`
+in `pipelines/lib/bosses.mjs`: Baron Aquanis, the world bosses, Ribbly Screwspigot and Plugger Spazzring)
+is found when it dies while the player has it targeted (`UNIT_HEALTH` on the target, `Story.lua`).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
 Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
 do; Found Only leaves out what holds none found. A found boss's page names its dungeon and zone and
@@ -27,8 +26,8 @@ A boss's story also shows in Spoken's narrator, as words with no voice (`Story.l
 killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
 `ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it in an instance: the
 client hides a unit's GUID, name and model from addons there, so no boss is known from the target. An
-`onTarget` boss (the world bosses, Baron Aquanis, Ribbly, Plugger) shows its story when targeted instead,
-as Forever sends no kill for it (seen with Lord Kazzak).
+`onTarget` boss is told by its death instead, as Forever sends no kill for it (seen with Lord Kazzak);
+inside an instance (Baron Aquanis, Ribbly, Plugger) that works only if the game announces the fight.
 Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
 Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of

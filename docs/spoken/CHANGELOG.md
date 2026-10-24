@@ -5,10 +5,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 ## Unreleased
 
 - **A boss's story shows in the narrator when you kill the boss, in dungeons too.** The Bosses page no
-  longer has Show a Boss's Story: killing is the way, because inside an instance the game hides which
-  boss a target is. The world bosses, Baron Aquanis, Ribbly Screwspigot and Plugger Spazzring, whose
-  fight the game sends no kill for, show it when you target them. A boss is also met when you kill it,
-  so its page unlocks in the Compendium even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
+  longer has Show a Boss's Story: killing is the only way, because inside an instance the game hides
+  which boss a target is. The world bosses, whose fight the game sends no kill for, count when they die
+  while you have them targeted. A boss is also met when you kill it, so its page unlocks in the
+  Compendium even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:
@@ -64,7 +64,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **A right-click on a window's words skips the line**, in the Small Window, the Large Window and the
   DialogueUI window: a larger target than the Skip button. The menu and the settings that right-click
   opened there are now on Shift-right-click. *([Nucabe](https://github.com/Nucabe))*
-- **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
+- **Bosses whose fight the game may not announce are found when they die.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
   Gnomeregan list their bosses in Forever's order, not the Season of Discovery raid's.
