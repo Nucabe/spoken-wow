@@ -92,6 +92,14 @@ function NPCs:TargetChanged()
 	if reads then self:ReadStory(boss.map, boss.key, not member) end
 end
 
+--- An encounter started: its bosses' stories, where targeting shows them. Inside an instance the client
+--- hides a unit's GUID and name from addons, so targeting names no boss there; the pull is the first
+--- moment one is known.
+function NPCs:EncounterStarted(encounterID)
+	if not (SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "target") then return end
+	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key, true) end
+end
+
 --- An encounter ended: its bosses' stories, where it was won and killing shows them.
 function NPCs:EncounterEnded(encounterID, success)
 	if not (SpokenNPCsSettings and SpokenNPCsSettings.storyTrigger == "kill") or success ~= 1 then return end

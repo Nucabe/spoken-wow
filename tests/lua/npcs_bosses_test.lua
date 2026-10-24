@@ -481,6 +481,15 @@ Expect("...nor a fight the party lost", Showing(), "nothing")
 NPCs:EncounterEnded(edwin.id, 1)
 Expect("...and killing the boss shows its story", Showing(), EDWIN)
 Clear()
+-- In an instance the client hides a unit's GUID, so with When Targeted the pull is what shows the story.
+NPCs:ForgetStories()
+NPCs:EncounterStarted(edwin.id)
+Expect("with When Killed, a fight starting shows nothing", Showing(), "nothing")
+SpokenNPCsSettings.storyTrigger = "target"
+NPCs:EncounterStarted(edwin.id)
+Expect("with When Targeted, a fight starting shows the boss's story", Showing(), EDWIN)
+Clear()
+SpokenNPCsSettings.storyTrigger = "kill"
 local sunkenMap
 for map, bosses in pairs(SpokenBosses.maps) do
     for _, boss in ipairs(bosses) do
