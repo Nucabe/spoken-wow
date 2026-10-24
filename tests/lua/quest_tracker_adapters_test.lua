@@ -27,8 +27,8 @@ end
 local questieLines = {}
 local questiePool = {
     active = questieLines,
-    UpdateQuestTitleLines = function(self, callback)
-        for _, line in ipairs(self.active) do callback(line) end
+    UpdateQuestTitleLines = function(callback)
+        for _, line in ipairs(questieLines) do callback(line) end
     end,
 }
 local questieTracker = { Update = function() end }

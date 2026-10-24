@@ -253,7 +253,7 @@ do
             end
         end
         local function Sweep()
-            updateQuestTitleLines(pool, Dress)
+            updateQuestTitleLines(Dress)
             SweepVisibleLines(_G.Questie_BaseFrame)
             SweepVisibleLines(_G.QuestieTrackerFrame)
         end
