@@ -28,7 +28,9 @@ local questieLines = {}
 local questiePool = {
     active = questieLines,
     UpdateQuestTitleLines = function(callback)
-        for _, line in ipairs(questieLines) do callback(line) end
+        for _, line in ipairs(questieLines) do
+            if line.mode == "quest" then callback(line) end
+        end
     end,
 }
 local questieTracker = { Update = function() end }
@@ -58,12 +60,21 @@ Expect("the Era watch frame gets a Play button", classicButton and classicButton
 
 local line = CreateFrame("Button", nil, Questie_BaseFrame or UIParent)
 line.Quest = { Id = 748 }
+line.mode = "quest"
 line.label = line:CreateFontString()
 line.playButton = CreateFrame("Button", nil, line)
 table.insert(questieLines, line)
 questieTracker:Update()
 Expect("Questie's title line gets a separate Spoken Play button", line.spokenPlayButton:IsShown(), true)
 Expect("Questie's button is bound to the quest", line.spokenPlayButton.questID, 748)
+
+local objective = CreateFrame("Button", nil, Questie_BaseFrame or UIParent)
+objective.Quest = { Id = 748 }
+objective.mode = "objective"
+objective.label = objective:CreateFontString()
+table.insert(questieLines, objective)
+questieTracker:Update()
+Expect("Questie's objective line does not get a Play button", objective.spokenPlayButton, nil)
 
 VO.Addon.db.profile.TrackerPlayButton = false
 VO.QuestOverlayUI.UpdateTrackerButtons()

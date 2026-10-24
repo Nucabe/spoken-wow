@@ -245,7 +245,7 @@ do
             if not frame or (seen and seen[frame]) then return end
             seen = seen or {}
             seen[frame] = true
-            if frame.Quest and (frame.label or frame.playButton) then Dress(frame) end
+            if frame.mode == "quest" and frame.Quest and (frame.label or frame.playButton) then Dress(frame) end
             if frame.GetChildren then
                 for _, child in ipairs({ frame:GetChildren() }) do
                     SweepVisibleLines(child, seen)
