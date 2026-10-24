@@ -64,10 +64,14 @@ line.Quest = { Id = 748 }
 line.mode = "quest"
 line.label = line:CreateFontString()
 line.playButton = CreateFrame("Button", nil, line)
+line.expandQuest = CreateFrame("Button", nil, line)
 table.insert(questieLines, line)
 questieTracker:Update()
 Expect("Questie's title line gets a separate Spoken Play button", line.spokenPlayButton:IsShown(), true)
 Expect("Questie's button is bound to the quest", line.spokenPlayButton.questID, 748)
+local _, anchor, anchorPoint = line.spokenPlayButton:GetPoint()
+Expect("Questie's Play button is left of minimize", anchor, line.expandQuest)
+Expect("...anchored to minimize's left edge", anchorPoint, "LEFT")
 
 line.mode = "objective"
 questieTracker:Update()

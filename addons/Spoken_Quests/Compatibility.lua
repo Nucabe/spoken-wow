@@ -224,7 +224,11 @@ do
             local button = line.spokenPlayButton
             if not button then
                 button = QuestOverlayUI:MakePlayButton(line)
-                button:SetPoint("RIGHT", line.label or line, "LEFT", -4, 0)
+                local minimize = line.expandQuest
+                button:SetPoint("RIGHT", minimize or line.label or line, "LEFT", -4, 0)
+                if minimize and button.SetFrameLevel and minimize.GetFrameLevel then
+                    button:SetFrameLevel(minimize:GetFrameLevel() + 1)
+                end
                 line.spokenPlayButton = button
             end
             if not Addon:IsPartOn() or (Addon.db and Addon.db.profile.TrackerPlayButton == false)
