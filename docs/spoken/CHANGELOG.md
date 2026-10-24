@@ -7,7 +7,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **A boss is met when its story is shown, and in a dungeon "When Targeted" shows it at the pull.**
   Targeting a boss showed its story and left it locked in the Compendium. Inside an instance the
   game hides a unit's name from addons, so targeting names no boss there; the story now shows when
-  the fight starts. *([Nucabe](https://github.com/Nucabe))*
+  the fight starts. "When Killed" also works in dungeons, where the game reports a won fight as lost. *([Nucabe](https://github.com/Nucabe))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:

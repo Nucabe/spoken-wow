@@ -8,6 +8,7 @@ frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
+frame:RegisterEvent("BOSS_KILL")
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 frame:SetScript("OnEvent", function(self, event, arg1, _, _, _, arg5)
 	if event == "ADDON_LOADED" then
@@ -23,6 +24,9 @@ frame:SetScript("OnEvent", function(self, event, arg1, _, _, _, arg5)
 	elseif event == "ENCOUNTER_END" then
 		-- encounterID, name, difficulty, group size, success (1 when the boss died).
 		NPCs:EncounterEnded(arg1, arg5)
+	elseif event == "BOSS_KILL" then
+		-- Forever reports a won dungeon fight as ENCOUNTER_END with success 0; this event names the kill.
+		NPCs:EncounterEnded(arg1, 1)
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		NPCs:TargetChanged()
 	else
