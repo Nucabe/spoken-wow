@@ -1,7 +1,8 @@
 local _, NPCs = ...
 
 -- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
--- is killed.
+-- is killed. A boss whose fight the game may not announce (`onTarget`) shows it when targeted, as no
+-- kill is sent for it.
 
 local L = NPCs.L
 
@@ -48,14 +49,16 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
---- The player targeted a unit: a boss whose fight may start no encounter is met (`onTarget`).
+--- The player targeted a unit: a boss whose fight may start no encounter is met, and shows its story.
 function NPCs:TargetChanged()
 	local id = Spoken.CreatureID(UnitGUID and UnitGUID("target"))
 	if not id then return end
 	-- A boss only Forever has is not among Data/Creatures.lua's: known by its name in the dungeon
 	-- the player is in.
 	local boss = Creatures()[id] or self:BossNamed(Spoken.NotSecret(UnitName and UnitName("target")))
-	if boss then self:FoundTarget(boss.map, boss.key) end
+	if not boss or not self:MeetsOnTarget(boss.map, boss.key) then return end
+	self:FoundTarget(boss.map, boss.key)
+	self:ReadStory(boss.map, boss.key)
 end
 
 --- An encounter was won: its bosses are met, and their stories shown.

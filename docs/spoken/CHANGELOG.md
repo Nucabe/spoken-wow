@@ -5,9 +5,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 ## Unreleased
 
 - **A boss's story shows in the narrator when you kill the boss, in dungeons too.** The Bosses page no
-  longer has Show a Boss's Story: killing is the only way, because inside an instance the game hides
-  which boss a target is. A boss is also met when you kill it, so its page unlocks in the Compendium
-  even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
+  longer has Show a Boss's Story: killing is the way, because inside an instance the game hides which
+  boss a target is. The world bosses, Baron Aquanis, Ribbly Screwspigot and Plugger Spazzring, whose
+  fight the game sends no kill for, show it when you target them. A boss is also met when you kill it,
+  so its page unlocks in the Compendium even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:

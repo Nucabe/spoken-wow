@@ -25,8 +25,10 @@ The search finds bosses, dungeons and zones by name.
 
 A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
 killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
-`ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it: inside an instance
-the client hides a unit's GUID, name and model from addons, so no boss is known from the target there.
+`ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it in an instance: the
+client hides a unit's GUID, name and model from addons there, so no boss is known from the target. An
+`onTarget` boss (the world bosses, Baron Aquanis, Ribbly, Plugger) shows its story when targeted instead,
+as Forever sends no kill for it (seen with Lord Kazzak).
 Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
 Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of

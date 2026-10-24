@@ -89,14 +89,19 @@ function NPCs:FoundEncounter(encounterID)
 	return bosses and Meet(self, bosses) or false
 end
 
---- The player targeted the boss `key` of `map`: met where it is one whose fight may start no
---- encounter (`onTarget` in Data/Bosses.lua), once it can be fought, as the Grim Guzzler's townsfolk
---- are only after a quest or a theft turns them. Returns whether it was not met before.
-function NPCs:FoundTarget(map, key)
-	if not SpokenNPCsCharacter or self:IsBossFound(map, key) then return false end
+--- Whether targeting the boss `key` of `map` counts: its fight may start no encounter (`onTarget` in
+--- Data/Bosses.lua) and it can be fought, as the Grim Guzzler's townsfolk are only after a quest or a
+--- theft turns them.
+function NPCs:MeetsOnTarget(map, key)
 	Encounters()
-	if not onTarget[Key(map, key)] then return false end
-	if not (UnitCanAttack and Spoken.NotSecret(UnitCanAttack("player", "target"))) then return false end
+	return onTarget[Key(map, key)] and UnitCanAttack and Spoken.NotSecret(UnitCanAttack("player", "target")) and true
+		or false
+end
+
+--- The player targeted the boss `key` of `map`: met where `MeetsOnTarget`. Returns whether it was not
+--- met before.
+function NPCs:FoundTarget(map, key)
+	if not SpokenNPCsCharacter or self:IsBossFound(map, key) or not self:MeetsOnTarget(map, key) then return false end
 	return Meet(self, { { map = map, key = key } })
 end
 

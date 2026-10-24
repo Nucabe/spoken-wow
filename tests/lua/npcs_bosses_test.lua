@@ -529,8 +529,20 @@ _G.GetInstanceInfo = function() return "Eastern Kingdoms", "none", 0, "", 0, 0, 
 world.npcGUID = "Creature-0-1-2-3-12397-0000ABCDEF"
 NPCs:TargetChanged()
 Clear()
-_G.GetInstanceInfo = instanceInfo
 Expect("a world boss is met when targeted in the open world, as at its pull", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|"
     .. tostring(NPCs:FoundEncounter(Listed(2789, "lord kazzak").ids[1])), "true|false")
+-- The game sends no kill for it, so targeting is what shows its story.
+_G.SpokenBossStories[2789] = { ["lord kazzak"] = "He burns." }
+NPCs:ForgetStories()
+NPCs:TargetChanged()
+Expect("...and shows its story, once", Showing(), "boss:2789:lord kazzak")
+Clear()
+NPCs:TargetChanged()
+Expect("...not again", Showing(), "nothing")
+world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
+NPCs:ForgetStories()
+NPCs:TargetChanged()
+Expect("a boss whose fight starts an encounter shows nothing when targeted", Showing(), "nothing")
+_G.GetInstanceInfo = instanceInfo
 
 if Failures() > 0 then os.exit(1) end
