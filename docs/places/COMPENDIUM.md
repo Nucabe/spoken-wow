@@ -13,8 +13,7 @@ modules add to it, so there is one copy of each piece:
 
 `Compendium.lua` also holds what every tab lays places out by: `C.WORLD` (947, Azeroth, the continents' parent), `C.CONTINENTS`
 (Kalimdor 1414 and the Eastern Kingdoms 1415), `C.CITY_IN`, `C.BATTLEGROUNDS`, `C.ContinentOf`,
-`C.OpenAround`, `C.OpenZone` and `C.PlayerZone`. The other tabs show a place's picture through
-`C.PlacePicture`.
+`C.OpenAround`, `C.OpenZone` and `C.PlayerZone`.
 
 The Places tab registers as `places` (`UI/LoreWindow.lua`, `SetupLoreWindow`), label Places, after Quests
 and before Readables. Its Unlock switch, Unlock Undiscovered Places, is on Spoken's page. The spellbook
