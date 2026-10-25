@@ -15,7 +15,6 @@ local _, NPCs = ...
 local L = NPCs.L
 
 local C = SpokenCompendium
-local VERSION = SpokenEnv and SpokenEnv.Version
 local CONTINENTS, CITY_IN = C.CONTINENTS, C.CITY_IN
 local MapName, ContinentOf = C.MapName, C.ContinentOf
 local Dungeon, DungeonName = C.Dungeon, C.DungeonName
@@ -45,6 +44,13 @@ local index
 -- (the map of world bosses in different zones lists each under its own, `bossZone["map:key"]`);
 -- byKey["map:key"] = the boss; count = every boss listed. on[continent or "lands"], the sorted
 -- zones, are kept once worked out.
+
+local function ClientHasMap(map)
+	-- Spoken NPCs shares its boss data between clients. The shared API knows which instances this
+	-- client can actually have, including Season of Discovery's instances on Era.
+	return not Spoken or not Spoken.IsDungeonOnClient or Spoken:IsDungeonOnClient(map)
+end
+
 local function Index()
 	if index then return index end
 	index = { zones = {}, zoneOf = {}, world = {}, all = {}, bossZone = {}, byKey = {}, on = {}, count = 0 }
@@ -55,25 +61,29 @@ local function Index()
 		local world = worlds[map]
 		local home = (dungeon or world) and (dungeon or world).zone
 		if home and #bosses > 0 then
-			local zone = CITY_IN[home] or home
-			if world and dungeon == nil and world.bossZones then
-				for _, boss in ipairs(bosses) do
-					local at = world.bossZones[boss.key] or home
-					at = CITY_IN[at] or at
-					index.zones[at] = index.zones[at] or {}
-					index.zones[at][map] = index.zones[at][map] or {}
-					table.insert(index.zones[at][map], boss)
-					index.bossZone[map .. ":" .. boss.key] = at
-				end
-			else
-				index.zones[zone] = index.zones[zone] or {}
-				index.zones[zone][map] = bosses
-			end
+			-- Keep the complete lookup for encounters and stories. Only the lists below are
+			-- client-visible, so a shared Forever boss entry remains usable by the module.
 			index.all[map] = bosses
 			for _, boss in ipairs(bosses) do index.byKey[map .. ":" .. boss.key] = boss end
-			index.zoneOf[map] = zone
-			index.world[map] = world ~= nil and dungeon == nil or nil
-			index.count = index.count + #bosses
+			if not dungeon or ClientHasMap(map) then
+				local zone = CITY_IN[home] or home
+				if world and dungeon == nil and world.bossZones then
+					for _, boss in ipairs(bosses) do
+						local at = world.bossZones[boss.key] or home
+						at = CITY_IN[at] or at
+						index.zones[at] = index.zones[at] or {}
+						index.zones[at][map] = index.zones[at][map] or {}
+						table.insert(index.zones[at][map], boss)
+						index.bossZone[map .. ":" .. boss.key] = at
+					end
+				else
+					index.zones[zone] = index.zones[zone] or {}
+					index.zones[zone][map] = bosses
+				end
+				index.zoneOf[map] = zone
+				index.world[map] = world ~= nil and dungeon == nil or nil
+				index.count = index.count + #bosses
+			end
 		end
 	end
 	return index
@@ -87,12 +97,13 @@ local function Unlocked()
 	return SpokenNPCsSettings ~= nil and SpokenNPCsSettings.unlockUnfound == true
 end
 
-local function AbilitiesShown()
-	return SpokenNPCsSettings ~= nil and SpokenNPCsSettings.showAbilities == true
-end
-
 local function OnlyFound()
 	return SpokenNPCsSettings ~= nil and SpokenNPCsSettings.compendiumFoundOnly == true
+end
+
+-- Whether Found Only keeps what holds `found` bosses met.
+local function Listed(found)
+	return not OnlyFound() or found > 0
 end
 
 local function Matches(text)
@@ -165,7 +176,7 @@ local function Story(map, key)
 	return type(text) == "string" and text ~= "" and text or nil
 end
 
--- What Data/Creatures.lua knows of a boss (its creature, appearance and spells), or nil.
+-- What Data/Creatures.lua knows of a boss (its creature and appearance), or nil.
 local function Creature(map, key)
 	local known = _G.SpokenBossCreatures
 	return known and known[map] and known[map][key]
@@ -213,7 +224,7 @@ local function DungeonRows(zone, map, nest, whole)
 	local name = world and "" or DungeonName(map)
 	whole = whole or (filter ~= "" and not world and Matches(name))
 	local found, total = TallyOf(map, zone)
-	if OnlyFound() and found == 0 then return {} end
+	if not Listed(found) then return {} end
 	local open = world or dungeonOpen[zone .. ":" .. map] == true or filter ~= ""
 	local inside = {}
 	local at = world and nest or nest + 1
@@ -281,7 +292,7 @@ local function Banner(item, continent, opened)
 	end
 	if filter ~= "" and #rows == 0 then return {} end
 	local found, total = Tally(ZonesOn(continent))
-	if OnlyFound() and found == 0 then return {} end
+	if not Listed(found) then return {} end
 	Group(item, found, total).style = "banner"
 	item.open = open and #rows > 0
 	return Holding(item, rows, open)
@@ -322,16 +333,6 @@ end
 --------------------------------------------------------------------------------
 -- The page
 --------------------------------------------------------------------------------
-
---- The boss named `name`, in the client's language or English, of the dungeon or raid the player
---- is in: { map, key }, or nil.
-function NPCs:BossNamed(name)
-	if type(name) ~= "string" then return nil end
-	local map = NPCs:InstanceMap()
-	for _, boss in ipairs(map and Index().all[map] or {}) do
-		if Name(boss) == name or boss[1] == name then return { map = map, key = boss.key } end
-	end
-end
 
 -- Nothing to play or to report yet: a boss's story is words alone until it is voiced.
 local PLAY = { has = function() return false end, find = function() end, start = function() end, tip = "" }
@@ -382,163 +383,26 @@ local function CountLine(where, found, total)
 	return L.BOSS_IN_FMT:format(where) .. " · " .. Count(found, total)
 end
 
--- A boss's portrait, at the left of its name, and what the database says it casts, under its story
--- in two columns: a card for each spell (Data/Creatures.lua), named and drawn by the client.
-local CARD_HEIGHT, PLATE_HEIGHT, PLATE_DROP, UNKNOWN_ICON = 64, 54, 5, 134400
--- A spell as the spellbook lays it out (numbers read from its own frames): a 40 square holding the
--- icon (36, rounded by the book's mask) with the ornate frame round it, and beside it the name and,
--- under it, what the client says of the spell. Under all of it, the book's plate, faint and brighter
--- under the pointer.
-local PLATE, ICON_MASK = "spellbook-item-backplate", "spellbook-item-spellicon-mask"
-local FRAME, FRAME_HOVER = "spellbook-item-iconframe", "spellbook-item-iconframe-hover"
-local MASK = [[Interface\CharacterFrame\TempPortraitAlphaMask]]
-local PLATE_REST, PLATE_HOVER, HOVER_ALPHA = 0.3, 0.7, 0.35
-local BUTTON, ICON, EDGE, GAP = 40, 36, 14, 12
-local NAME_SIZE, SUB_SIZE, LINE_GAP = 16, 12, 2
-local cards
-
 -- The skull in the ring's small socket, where a quest's portrait has its badge.
 if Spoken and Spoken.RegisterBullet then Spoken:RegisterBullet("boss", SKULL, 16) end
-
-local function SpellLook(id)
-	if C_Spell and C_Spell.GetSpellInfo then
-		local info = C_Spell.GetSpellInfo(id)
-		if info then return info.name, info.iconID end
-	elseif GetSpellInfo then
-		local name, _, icon = GetSpellInfo(id)
-		return name, icon
-	end
-end
-
-local function Card(position)
-	cards = cards or {}
-	if cards[position] then return cards[position] end
-	if not page then return nil end
-	local card = CreateFrame("Frame", nil, page.body.child)
-	card:SetHeight(CARD_HEIGHT)
-	local plate = card:CreateTexture(nil, "BACKGROUND")
-	plate:SetPoint("LEFT", card, "LEFT", 0, -PLATE_DROP)
-	plate:SetPoint("RIGHT", card, "RIGHT", 0, -PLATE_DROP)
-	plate:SetHeight(PLATE_HEIGHT)
-	if not C.Atlas(plate, PLATE) then plate:SetColorTexture(1, 1, 1, 0.1) end
-	plate:SetAlpha(PLATE_REST)
-	-- The 40 square the icon, frame and highlight are measured from.
-	local button = CreateFrame("Frame", nil, card)
-	button:SetSize(BUTTON, BUTTON)
-	button:SetPoint("LEFT", card, "LEFT", EDGE, 0)
-	-- Only the icon answers the pointer, as in the spellbook.
-	button:EnableMouse(true)
-	local icon = card:CreateTexture(nil, "ARTWORK")
-	icon:SetSize(ICON, ICON)
-	icon:SetPoint("CENTER", button, "CENTER")
-	local mask = card.CreateMaskTexture and card:CreateMaskTexture()
-	if type(mask) == "table" and icon.AddMaskTexture then
-		if not C.Atlas(mask, ICON_MASK) then mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") end
-		-- Leave a small margin so the mask trims any square pixels at the icon's corners.
-		mask:SetSize(ICON - 4, ICON - 4)
-		mask:SetPoint("CENTER", icon, "CENTER")
-		icon:AddMaskTexture(mask)
-	end
-	-- Era has no extra border; Forever keeps the spellbook's own frame.
-	local era = VERSION and VERSION.IsRetailVanilla and not VERSION.IsCamelot
-	if not era then
-		local frame = card:CreateTexture(nil, "OVERLAY", nil, 1)
-		if C.Atlas(frame, FRAME) then
-			frame:SetPoint("TOPLEFT", button, "TOPLEFT", -11, 1)
-			frame:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -7)
-		end
-	end
-	local glow = card:CreateTexture(nil, "OVERLAY", nil, 2)
-	if C.Atlas(glow, FRAME_HOVER) then glow:SetAllPoints(button) end
-	glow:SetAlpha(HOVER_ALPHA)
-	glow:Hide()
-	-- The spellbook's own lines: the name over what the client says of the spell, in its dark brown,
-	-- cut short with an ellipsis where the card is narrow.
-	local text = CreateFrame("Frame", nil, card)
-	text:SetPoint("LEFT", button, "RIGHT", GAP, 0)
-	text:SetPoint("RIGHT", card, "RIGHT", -6, 0)
-	text:SetHeight(NAME_SIZE + LINE_GAP + SUB_SIZE)
-	local function Line(size)
-		local line = text:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-		local file = _G.GameFontNormal and _G.GameFontNormal.GetFont and _G.GameFontNormal:GetFont()
-		if file then line:SetFont(file, size, "") end
-		line:SetTextColor(0.18, 0.11, 0.06, 1)
-		line:SetShadowColor(0, 0, 0, 0)
-		line:SetJustifyH("LEFT")
-		if line.SetWordWrap then line:SetWordWrap(false) end
-		if line.SetMaxLines then line:SetMaxLines(1) end
-		return line
-	end
-	local name, sub = Line(NAME_SIZE), Line(SUB_SIZE)
-	card.icon, card.name, card.sub, card.plate, card.glow = icon, name, sub, plate, glow
-	function card:SetLines(title, subtitle)
-		name:SetText(title)
-		sub:SetText(subtitle or "")
-		name:ClearAllPoints()
-		sub:ClearAllPoints()
-		if subtitle and subtitle ~= "" then
-			name:SetPoint("TOPLEFT", text, "TOPLEFT")
-			name:SetPoint("TOPRIGHT", text, "TOPRIGHT")
-			sub:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -LINE_GAP)
-			sub:SetPoint("TOPRIGHT", name, "BOTTOMRIGHT", 0, -LINE_GAP)
-		else
-			name:SetPoint("LEFT", text, "LEFT")
-			name:SetPoint("RIGHT", text, "RIGHT")
-		end
-	end
-	button:SetScript("OnEnter", function()
-		local self = card
-		self.plate:SetAlpha(PLATE_HOVER)
-		self.glow:Show()
-		if self.spell and GameTooltip and GameTooltip.SetSpellByID then
-			GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-			GameTooltip:SetSpellByID(self.spell)
-			GameTooltip:Show()
-		end
-	end)
-	button:SetScript("OnLeave", function()
-		local self = card
-		self.plate:SetAlpha(PLATE_REST)
-		self.glow:Hide()
-		if GameTooltip then GameTooltip:Hide() end
-	end)
-	card:Hide()
-	cards[position] = card
-	return card
-end
 
 -- One table for each picture, so the page draws a portrait again only for another one.
 local UNKNOWN = C.UnknownIcon("boss")
 local portraits = {}
 
--- A boss's portrait for the page's header and the part with its spells, either nil where there is none.
-local function Details(map, key)
+-- A boss's portrait, at the left of its name on the page's header.
+local function Portrait(map, key)
 	local entry = Creature(map, key)
-	if not (entry and (entry.creature or entry.display or (entry.spells and entry.spells[1]))) then
-		return UNKNOWN, nil
-	end
-	local spells = {}
-	for _, id in ipairs(AbilitiesShown() and entry.spells or {}) do
-		local name, icon = SpellLook(id)
-		local card = name and Card(#spells + 1)
-		if card then
-			card.spell = id
-			local sub = C_Spell and C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(id)
-			card:SetLines(name, type(sub) == "string" and sub or nil)
-			card.icon:SetTexture(icon or UNKNOWN_ICON)
-			spells[#spells + 1] = card
-		end
-	end
 	-- A portrait only from a known appearance: asked of the client, a creature it has not met answers
 	-- with the player's own face.
-	if not entry.display then return UNKNOWN, spells[1] and { cards = spells, columns = 2 } or nil end
+	if not (entry and entry.display) then return UNKNOWN end
 	local id = map .. ":" .. key
 	local portrait = portraits[id]
 	if not (portrait and portrait.creatureID == entry.creature and portrait.displayID == entry.display) then
 		portrait = { creatureID = entry.creature, displayID = entry.display, bullet = "boss" }
 		portraits[id] = portrait
 	end
-	return portrait, spells[1] and { cards = spells, columns = 2 } or nil
+	return portrait
 end
 
 local function ShowEntry()
@@ -558,18 +422,14 @@ local function ShowEntry()
 			return
 		end
 		local story = Story(map, key)
-		local words = story or C.NotWritten()
-		local portrait, abilities = Details(map, key)
-		page:Show({ title = Name(boss), subtitle = where, icon = portrait,
-			parts = abilities and { { text = words }, abilities } or nil,
-			text = not abilities and words or nil, unwritten = story == nil })
+		page:Show({ title = Name(boss), subtitle = where, icon = Portrait(map, key),
+			text = story or C.NotWritten(), unwritten = story == nil })
 		return
 	end
 	if selection.dungeon then
 		page:Show({ title = DungeonName(selection.dungeon),
 			subtitle = CountLine(MapName(selection.mapID), TallyOf(selection.dungeon)),
-			icon = C.PlaceIcon(nil, selection.dungeon),
-			picture = C.PlacePicture({ mapID = selection.mapID, dungeon = selection.dungeon }) })
+			icon = C.PlaceIcon(nil, selection.dungeon) })
 		return
 	end
 	if selection.lands then
@@ -583,7 +443,7 @@ local function ShowEntry()
 	end
 	page:Show({ title = MapName(selection.mapID),
 		subtitle = CountLine(MapName(ContinentOf(selection.mapID) or C.WORLD), Tally({ selection.mapID })),
-		icon = C.PlaceIcon(selection.mapID), picture = C.PlacePicture({ mapID = selection.mapID }) })
+		icon = C.PlaceIcon(selection.mapID) })
 end
 
 --------------------------------------------------------------------------------
@@ -598,6 +458,15 @@ local function Continents()
 	return out
 end
 
+-- The continent the player is on where the list shows it, else the first it shows.
+local function PlayerContinent()
+	local listed = {}
+	for _, continent in ipairs(Continents()) do
+		if Listed(Tally(ZonesOn(continent))) then table.insert(listed, continent) end
+	end
+	return C.PlayerContinent(listed)
+end
+
 -- The dungeon or raid the player is in, and the zone it is filed under.
 local function PlayerDungeon()
 	local map = NPCs:InstanceMap()
@@ -608,15 +477,15 @@ end
 local function OpenAround(zone) C.OpenAround(zone, continentOpen, bannerOpen) end
 
 -- Choose where the player stands: the line of the dungeon they are in, opened, else their
--- continent's banner.
+-- continent's banner. Never a line Found Only leaves out: the tab would show a page for no row.
 local function LandOnPlayer()
 	local map, zone = PlayerDungeon()
-	if map then
+	if map and Listed(TallyOf(map, zone)) then
 		selection = { mapID = zone, dungeon = map }
 		dungeonOpen[zone .. ":" .. map] = true
 		OpenAround(zone)
 	else
-		local continent = C.PlayerContinent(Continents())
+		local continent = PlayerContinent()
 		selection = continent and { mapID = continent } or nil
 		if continent then continentOpen[continent] = true end
 	end

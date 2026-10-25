@@ -33,8 +33,9 @@
 --
 -- ONE BUTTON, TWO STATES, not two buttons: this corner is the only free one on the frame (see
 -- above), so a Contribute button would need it too. The two states never fight over it --
--- Contribute.lua's HasContributionGap is true only when PageOnScreen found nothing, and this
--- button's Play/Stop state exists only once PageOnScreen found a page with audio -- so
+-- Contribute.lua's HasContributionGap is true only when PageOnScreen found nothing or only
+-- guessed the page, and this button's Play/Stop state, which wins, exists only once
+-- PageOnScreen found a page with audio (a guessed one is still gathered, unasked) -- so
 -- re-labelling what is already here is the honest arrangement rather than a second control
 -- stacked on space that does not exist.
 
