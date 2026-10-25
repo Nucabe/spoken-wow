@@ -97,7 +97,7 @@ Other caption text follows the recording language.
 
 A recording the site made with ElevenLabs after word times were kept carries them in its sound
 pack: one start per word of the text the take was cut from (`take."wordTimes"`), packed into one
-string per clip and unpacked by `Spoken:WordTimes` when the clip plays. Quests, gossip, places and
+string per clip, which `clip.present.timings` takes as it is and the captions unpack when the clip plays. Quests, gossip, places and
 readables pass them as `clip.present.timings`, but only where the captions show the recording's own
 words. A take without them, a fish.audio take, and captions in another language are estimated from word length, punctuation and the total duration. Two neighboring
 words are highlighted to give the estimate some room, in the windows; the subtitles

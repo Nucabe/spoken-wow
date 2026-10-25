@@ -86,7 +86,8 @@ end
 --                                             -- and text, for a script the game's font has no
 --                                             -- glyphs for; the player's size stays
 --       timings  = { 0, .42, .61, ... },      -- optional; when each word of the transcript starts,
---                                             -- in seconds, one per Spoken:CaptionWords(transcript)
+--                                             -- in seconds, one per Spoken:CaptionWords(transcript),
+--                                             -- or the same as one string, "0 .42 .61"
 --       bullet   = "quest-accept",            -- a RegisterBullet id
 --       tint     = { r, g, b },               -- optional row tint
 --       portrait = { kind = "model", creatureID = 196 }
@@ -718,15 +719,6 @@ end
 function Spoken:CaptionWords(transcript)
     if type(transcript) ~= "string" then return nil end
     return Transcript:Split(Transcript:CleanText(transcript))
-end
-
---- A sound pack's word times for a clip, "0 .42 1.5", as the present.timings list. Packs keep
---- them as a string so a client holds one table only for a clip that plays. Nil for no string.
-function Spoken:WordTimes(packed)
-    if type(packed) ~= "string" or packed == "" then return nil end
-    local times = {}
-    for at in packed:gmatch("%S+") do times[#times + 1] = tonumber(at) end
-    return times
 end
 
 --------------------------------------------------------------------------------

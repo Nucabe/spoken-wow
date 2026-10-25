@@ -99,7 +99,7 @@ Expect("...each word after the last, all within the recording", rising and timin
 Expect("a first page opening with its own title starts its words at once", clip.present.timings, nil)
 Expect("...and a later page, read without its title, too", B:ClipFor(262).present.timings, nil)
 Expect("a page whose take kept its word times is timed by them",
-    table.concat(B:ClipFor(265).present.timings or {}, ","), "0,0.5,2")
+    B:ClipFor(265).present.timings, "0 .5 2")
 -- On a German client, an English voice reads its own words and the captions are the client's: the
 -- title's share of the recording says nothing about words of another length.
 stub.SetLocale("deDE")

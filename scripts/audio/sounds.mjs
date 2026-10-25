@@ -34,6 +34,7 @@ import { fileURLToPath } from "node:url";
 
 import { readLines, shipped } from "../../pipelines/places/tools/lib/loredata.mjs";
 import { assignFiles } from "../../pipelines/places/tools/voice/naming.mjs";
+import { packTimes } from "../../pipelines/lib/word-times.mjs";
 import { archiveOf } from "../lib/archives.mjs";
 import { NAMED_QUESTS_SQL, namedBy } from "./relevant.mjs";
 
@@ -99,7 +100,7 @@ const listing = psql(`select "file", coalesce("archiveFile", ''),
 const takes = listing.map((row) => {
   const [file, name, times] = row.split("\t");
   const stem = file.replace(/\.mp3$/, "");
-  return { file, stem, archived: name ? join(prefix, stem, name) : "", times: times ? JSON.parse(times) : null };
+  return { file, stem, archived: name ? join(prefix, stem, name) : "", times };
 });
 
 // Quests carry only the audio a current line names (relevant.mjs), and places only the areas the
@@ -161,7 +162,9 @@ for (const { file, stem, archived } of live) {
 // The quests build reads no database (tts_cli/build.py), so the takes' word times go beside
 // their clips; places and readables read them from the take table when they write their lookup.
 if (section === "quests") {
-  const times = Object.fromEntries(live.filter((take) => take.times).map((take) => [take.stem, take.times]));
+  const times = Object.fromEntries(
+    live.filter((take) => take.times).map((take) => [take.stem, packTimes(JSON.parse(take.times))]),
+  );
   await writeFile(join(paths.out, "word-times.json"), `${JSON.stringify(times)}\n`);
 }
 

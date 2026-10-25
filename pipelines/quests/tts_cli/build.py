@@ -401,16 +401,6 @@ def locale_tables(corpus: dict, rows: list, ignored=()) -> dict:
             for kind, (filename, table_name) in LOCALE_TABLES.items()}
 
 
-def pack_times(times: list) -> str:
-    """A take's word times as one string, "0 .42 1.5": a table per clip would cost every client
-    a Lua table per voiced line, and Spoken:WordTimes unpacks only the one playing. A hundredth
-    of a second is finer than the captions can show."""
-    def short(seconds):
-        text = f"{seconds:.2f}".rstrip("0").rstrip(".")
-        return text[1:] if text.startswith("0.") else text
-    return " ".join(short(t) for t in times)
-
-
 def write_lua_table(path: str, module_name: str, table_name: str, data,
                     lang: str = None) -> None:
     """One generated table. With `lang`, a copy that exists only on a client in that locale.
@@ -528,7 +518,7 @@ def build_module(corpus: dict, store_dir: str, dist_dir: str = DEFAULT_DIST_DIR,
     # Keyed like the length table, and only for audio this pack carries: the other packs'
     # times would be dead weight in every one of them.
     stored = word_times(store_dir)
-    times = {os.path.basename(stem): pack_times(stored[stem])
+    times = {os.path.basename(stem): stored[stem]
              for stem in (os.path.splitext(rel)[0] for rel in audio) if stem in stored}
     write_lua_table(os.path.join(generated_dir, "word_times_table.lua"),
                     module_name, "WordTimesByFileName", times)

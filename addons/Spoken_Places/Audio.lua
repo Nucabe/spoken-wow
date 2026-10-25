@@ -522,8 +522,7 @@ function SpokenPlaces:NewLoreSound(mapID, areaKey)
 			label = label,
 			transcript = entry and entry.full,
 			-- Timed to the recording's own words, so not under another language's.
-			timings = entry and language == (pack.language or "enUS") and Spoken and Spoken.WordTimes
-				and Spoken:WordTimes(times) or nil,
+			timings = entry and language == (pack.language or "enUS") and times or nil,
 			font = font,
 			bullet = "zone",
 			portrait = self:Portrait(mapID),

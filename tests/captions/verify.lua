@@ -866,6 +866,12 @@ do
     source:Enqueue(Timed('t6','aaaa bbbb cccc dddd',4,{0,0/0,.4,.6})); Play(.2)
     Check(not T.timed,'...and one with a time that is not a number')
     Q:RemoveAllSoundsFromQueue(); Play(.6)
+    source:Enqueue(Timed('t7','aaaa bbbb cccc dddd',4,'0 .2 .4 .6')); Play(1)
+    Check(T.timed and T:WordAt(T:GetProgress())==4,'times packed in one string, as the sound packs keep them, are followed too')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
+    source:Enqueue(Timed('t8','aaaa bbbb cccc dddd',4,'0 .2 x .6')); Play(.2)
+    Check(not T.timed,'...but not a string with a word that is not a time')
+    Q:RemoveAllSoundsFromQueue(); Play(.6)
     local style=E.Addon:PlayerStyle()
     E.Addon:SetPlayerStyle('subtitle'); E.PlayerFrame:RefreshConfig(); T:RefreshConfig()
     cfg.SubtitleSentences=1

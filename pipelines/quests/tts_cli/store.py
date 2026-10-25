@@ -17,8 +17,8 @@ SUBFOLDERS = ("quests", "gossip", "followup")
 #: masters, as ElevenLabs made them - but scripts/quests/package-audio.sh stages a transcoded copy
 #: and hands it to `build --store`, and that copy is ogg for the packs this project ships.
 AUDIO_EXTENSIONS = (".mp3", ".ogg")
-#: Each live take's word times, by store-relative stem, as sounds.mjs read them off the take
-#: table: the one thing a build needs that the corpus and the audio cannot give it.
+#: Each live take's word times, by store-relative stem, packed by sounds.mjs as the addon reads
+#: them: the one thing a build needs that the corpus and the audio cannot give it.
 WORD_TIMES_FILE = "word-times.json"
 
 
@@ -54,7 +54,7 @@ def audio_extension(store_dir: str) -> str:
 
 
 def word_times(store_dir: str) -> dict:
-    """{stem: [seconds, ...]} for the takes that have times, empty for a store without the file."""
+    """{stem: "0 .42 1.5"} for the takes that have times, empty for a store without the file."""
     path = os.path.join(store_dir, WORD_TIMES_FILE)
     if not os.path.isfile(path):
         return {}

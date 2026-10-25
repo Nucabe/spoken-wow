@@ -250,6 +250,13 @@ function SpokenReadables:ClipFor(pageId)
 				local text, shown, recorded = self:CaptionText(pageId, language, entry.text)
 				local title = self:TitleIn(place.book, pageId, shown) or (book and book.title) or ""
 				local length = (entry.len and entry.len > 0) and entry.len or nil
+				-- Only where the words are the ones the recording says: any others have another
+				-- length. A take with no times of its own estimates, the first page starting its
+				-- words after the title is read.
+				local timings
+				if recorded then
+					timings = entry.times or place.number == 1 and TitleFirstTimings(title, text, length) or nil
+				end
 				return {
 					key = "b:" .. pageId,
 					path = [[Interface\AddOns\]] .. pack.addon .. [[\Sounds\]] .. entry.file .. ".mp3",
@@ -271,11 +278,7 @@ function SpokenReadables:ClipFor(pageId)
 						-- a letter, which is most of this corpus).
 						header = oneLine and self:KindOf(place.book) or title,
 						transcript = text,
-						-- Only where the words are the ones the recording says: any others have
-						-- another length. A take with no times of its own estimates, the first page
-						-- starting its words after the title is read.
-						timings = recorded and (Spoken and Spoken.WordTimes and Spoken:WordTimes(entry.times)
-							or place.number == 1 and TitleFirstTimings(title, text, length)) or nil,
+						timings = timings,
 						label = oneLine and (title ~= "" and title or nil)
 							or ((book and #book.pages > 1)
 								and format(L.OPT_PAGE_COUNT_FMT, place.number, #book.pages) or nil),
