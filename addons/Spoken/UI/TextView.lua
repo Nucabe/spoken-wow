@@ -15,9 +15,10 @@
 -- clean line: a strip of the page's own background (TextView:SetFadeSource), drawn over the
 -- text, clear on the inside and solid at the edge.
 
-SpokenTextView = {}
-
 local SCROLL_STEP = 28
+
+-- SCROLL_STEP for a caller's own wheel handler (AddScrollBar leaves the wheel to it).
+SpokenTextView = { SCROLL_STEP = SCROLL_STEP }
 -- Between the words (and a part's buttons) and the scroll bar, while the bar shows.
 local BAR_GAP = 14
 local BAR_WIDTH = 6

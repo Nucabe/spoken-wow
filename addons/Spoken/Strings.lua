@@ -128,6 +128,7 @@ L = {
     BIND_COMPENDIUM = "Open Azeroth's Compendium",
     GATHER_OFF = "Not collecting",
     GATHER_NONE = "Nothing collected yet",
+    GATHER_VIEW_OLDER_FMT = "%1$d older line(s) not shown here. They are still sent.",
     GATHER_BADGE_FMT = "%1$d ready to send",
     OPT_GATHER_ROW = "Collected Lines",
     OLD_FOLDERS_FMT = "Spoken switched off folders left by an older version. Delete them from Interface\\AddOns when you can:\n\n%s\n\nReload to finish (Spoken will not work until reload).",

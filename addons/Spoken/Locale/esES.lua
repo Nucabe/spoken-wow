@@ -207,6 +207,7 @@ L.OLD_FOLDERS_LATER = "Más tarde"
 L.OPT_GATHER_ROW = "Líneas recopiladas"
 L.GATHER_OFF = "Sin recopilar"
 L.GATHER_NONE = "Aún no se ha recopilado nada"
+L.GATHER_VIEW_OLDER_FMT = "%1$d línea(s) más antigua(s) no se muestran aquí. Se envían igualmente."
 L.GATHER_BADGE_FMT = "%1$d listas para enviar"
 
 -- Profiles and starting over

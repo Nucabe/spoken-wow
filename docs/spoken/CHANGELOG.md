@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Show Collected Lines, in the Contribute settings, lists the lines you have collected.** Each shows
+  where it came from and the game's text, newest 200 at most; older ones are still sent.
+  *([anon1231823](https://github.com/anon1231823))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:

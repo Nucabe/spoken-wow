@@ -54,8 +54,7 @@ Expect("...as does no context at all", box.editBox:GetText(), report)
 ------------------------------------------------------------------------------- collected text
 Spoken.Gather:SetEnabled(true)
 Spoken.Gather:Add("q:9123:accept", envelope)
-Spoken:ShowGatheredText()
-local gathered = Spoken.GatheredLinesView
+local gathered = Spoken:ShowGatheredText()
 Expect("the collected-lines button opens a separate window", gathered and gathered.frame:IsShown(), true)
 Expect("the collected window has a scrollbar", gathered and gathered.scrollView and gathered.scrollView.bar ~= nil, true)
 Expect("the collected window formats the source and field",
@@ -63,6 +62,22 @@ Expect("the collected window formats the source and field",
 Expect("...and shows the gathered text instead of the raw envelope",
     gathered.text:GetText():match("Text:\nWords%.") ~= nil
         and gathered.text:GetText():find("!SPOKEN", 1, true) == nil, true)
+
+Spoken.Gather:Clear()
+Spoken:RefreshGatheredText()
+Expect("clearing the lines empties the open window", gathered.text:GetText(), env.L.GATHER_NONE)
+
+for i = 1, 205 do
+    Spoken.Gather:Add("q:" .. i, Spoken.Contribute:Envelope("quests", { { "quest", tostring(i) } }, "Line " .. i .. "."))
+end
+Spoken:ShowGatheredText()
+local shown = gathered.text:GetText()
+Expect("a long store shows only the newest lines", shown:find("Quest: 5\n", 1, true) == nil
+    and shown:find("Quest: 6\n", 1, true) ~= nil and shown:find("Quest: 205\n", 1, true) ~= nil, true)
+Expect("...and says how many older ones it left out", shown:match("^5 older") ~= nil, true)
+Spoken.Gather:Clear()
+Spoken.Gather:SetEnabled(false)
+gathered.frame:Hide()
 
 ------------------------------------------------------------------------------- over a host
 -- A dialog window that hides UIParent (DialogueUI's) would hide the box with it, so a feature

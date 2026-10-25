@@ -204,6 +204,7 @@ L.OLD_FOLDERS_LATER = "Plus tard"
 L.OPT_GATHER_ROW = "Répliques collectées"
 L.GATHER_OFF = "Collecte désactivée"
 L.GATHER_NONE = "Rien de collecté pour l'instant"
+L.GATHER_VIEW_OLDER_FMT = "%1$d réplique(s) plus ancienne(s) non affichée(s) ici. Elles sont tout de même envoyées."
 L.GATHER_BADGE_FMT = "%1$d prêtes à envoyer"
 
 -- Profiles and starting over

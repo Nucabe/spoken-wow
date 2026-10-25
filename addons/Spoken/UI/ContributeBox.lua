@@ -19,7 +19,14 @@ local CHOICE_WIDTH = 200      -- the least either is, sized to the English label
 local CHOICE_INSET = 30       -- from the frame's side edges
 local CHOICE_GAP = 20         -- the least room kept between the two
 local LABEL_PADDING = 24      -- room a button's end caps take either side of its label
+
+-- The collected-lines window.
 local VIEW_WIDTH, VIEW_HEIGHT = 640, 480
+local VIEW_LEFT, VIEW_RIGHT = 20, 28  -- the scroll frame's insets from the window's sides
+local BAR_ROOM = 14                   -- kept free for the scrollbar whether or not it shows
+local TEXT_WIDTH = VIEW_WIDTH - VIEW_LEFT - VIEW_RIGHT - BAR_ROOM
+-- The newest this many: a full store is megabytes, more than one font string draws.
+local VIEW_MOST = 200
 
 local box
 local gatheredView
@@ -49,8 +56,12 @@ local function GatheredText()
     end
 
     local blocks = {}
-    for index, line in ipairs(lines) do
-        local source, fields, text = Contribute:Parse(line.envelope)
+    local first = math.max(1, #lines - VIEW_MOST + 1)
+    if first > 1 then
+        blocks[1] = format(L.GATHER_VIEW_OLDER_FMT, first - 1)
+    end
+    for index = first, #lines do
+        local source, fields, text = Contribute:Parse(lines[index].envelope)
         local block = { format("%d. %s", index, SOURCE_LABELS[source] or source or "Collected line") }
         if fields then
             for _, field in ipairs(fields) do
@@ -69,14 +80,15 @@ local function GatheredText()
     return table.concat(blocks, "\n\n")
 end
 
-local function Build()
+-- A movable dialog window with a title and a close button, closed by Escape.
+local function NewDialog(name, width, height, titleText)
     -- "BackdropTemplate" is what carries SetBackdrop, the mixin having moved out of the base
     -- frame. UI/PlayerFrame.lua and the Places lore window both pass it for the same reason.
-    local frame = CreateFrame("Frame", "SpokenContributeBox", UIParent, "BackdropTemplate")
-    frame:SetWidth(WIDTH)
-    frame:SetHeight(HEIGHT)
+    local frame = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
+    frame:SetWidth(width)
+    frame:SetHeight(height)
     frame:SetPoint("CENTER")
-    if UISpecialFrames then table.insert(UISpecialFrames, "SpokenContributeBox") end -- close on Escape
+    if UISpecialFrames then table.insert(UISpecialFrames, name) end -- close on Escape
     frame:SetFrameStrata("DIALOG")
     frame:SetToplevel(true)
     frame:EnableMouse(true)
@@ -102,11 +114,17 @@ local function Build()
 
     local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     title:SetPoint("TOP", frame, "TOP", 0, -16)
-    title:SetText("Spoken")
+    title:SetText(titleText)
 
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
     close:SetScript("OnClick", function() frame:Hide() end)
+
+    return frame, title
+end
+
+local function Build()
+    local frame, title = NewDialog("SpokenContributeBox", WIDTH, HEIGHT, "Spoken")
 
     -- Said once, above the box, because the box itself is a wall of key=value lines and a
     -- player who does not know what to do with it will do nothing with it.
@@ -184,71 +202,31 @@ local function Build()
 end
 
 local function BuildGatheredView()
-    local frame = CreateFrame("Frame", "SpokenGatheredLines", UIParent, "BackdropTemplate")
-    frame:SetWidth(VIEW_WIDTH)
-    frame:SetHeight(VIEW_HEIGHT)
-    frame:SetPoint("CENTER")
-    if UISpecialFrames then table.insert(UISpecialFrames, "SpokenGatheredLines") end
-    frame:SetFrameStrata("DIALOG")
-    frame:SetToplevel(true)
-    frame:EnableMouse(true)
-    frame:SetMovable(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-    frame:SetClampedToScreen(true)
-    if frame.SetBackdrop then
-        frame:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true,
-            tileSize = 32,
-            edgeSize = 32,
-            insets = { left = 11, right = 12, top = 12, bottom = 11 },
-        })
-    end
-
-    local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    title:SetPoint("TOP", frame, "TOP", 0, -16)
-    title:SetText(L.OPT_GATHER_ROW)
-
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
-    close:SetScript("OnClick", function() frame:Hide() end)
+    local frame, title = NewDialog("SpokenGatheredLines", VIEW_WIDTH, VIEW_HEIGHT, L.OPT_GATHER_ROW)
 
     local scroll = CreateFrame("ScrollFrame", "SpokenGatheredLinesScroll", frame)
-    scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -44)
-    scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -28, 20)
+    scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", VIEW_LEFT, -44)
+    scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -VIEW_RIGHT, 20)
     scroll:EnableMouseWheel(true)
 
     local content = CreateFrame("Frame", nil, scroll)
-    -- Keep room for the scrollbar when the text wraps. The shared text view adds the
-    -- actual bar only when the content runs past the viewport.
-    content:SetWidth(VIEW_WIDTH - 62)
+    content:SetWidth(TEXT_WIDTH)
     local text = content:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     text:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
-    text:SetWidth(VIEW_WIDTH - 62)
+    text:SetWidth(TEXT_WIDTH)
     text:SetJustifyH("LEFT")
     text:SetJustifyV("TOP")
     if text.SetWordWrap then text:SetWordWrap(true) end
     scroll:SetScrollChild(content)
     local scrollView = SpokenTextView.AddScrollBar(scroll, content, frame)
     scroll:SetScript("OnMouseWheel", function(_, delta)
-        scrollView:ScrollTo(scroll:GetVerticalScroll() - delta * 28)
+        scrollView:ScrollTo(scroll:GetVerticalScroll() - delta * SpokenTextView.SCROLL_STEP)
     end)
-    frame:Hide()
 
     return {
         frame = frame, title = title, scroll = scroll, scrollView = scrollView,
         content = content, text = text,
     }
-end
-
-local function EnsureGatheredView()
-    if not gatheredView then
-        gatheredView = BuildGatheredView()
-    end
-    Spoken.GatheredLinesView = gatheredView
 end
 
 -- Which of the box's three faces is up: the payload to copy, or prose with or without the
@@ -351,16 +329,28 @@ function Spoken:ShowGatherInstructions()
     ShowProse(format(L.GATHER_INSTRUCTIONS, Gather:Count(), GameFolder()), false)
 end
 
---- Show the text gathered so far in a readable, scrollable window rather than the raw envelopes.
-function Spoken:ShowGatheredText()
-    EnsureGatheredView()
-    local text = GatheredText()
-    gatheredView.text:SetText(text)
+local function FillGatheredView()
+    gatheredView.text:SetText(GatheredText())
     local height = gatheredView.text.GetStringHeight and gatheredView.text:GetStringHeight() or 0
     gatheredView.content:SetHeight(math.max(VIEW_HEIGHT - 64, height + 8))
     gatheredView.scrollView:UpdateScrollBar()
     gatheredView.scroll:SetVerticalScroll(0)
+end
+
+--- Show the text gathered so far in a readable, scrollable window rather than the raw envelopes.
+---@return table view
+function Spoken:ShowGatheredText()
+    gatheredView = gatheredView or BuildGatheredView()
+    FillGatheredView()
     gatheredView.frame:Show()
+    return gatheredView
+end
+
+--- Bring the collected-lines window up to date where it is open, after the store changed.
+function Spoken:RefreshGatheredText()
+    if gatheredView and gatheredView.frame:IsShown() then
+        FillGatheredView()
+    end
 end
 
 --- Show something ready to copy: a contribute link, or (isLink falsy) the raw envelope plus
