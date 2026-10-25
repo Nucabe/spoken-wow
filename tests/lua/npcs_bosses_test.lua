@@ -224,6 +224,8 @@ NPCs:ShowBosses()
 Shown()
 Expect("with Found Only on and none met in Westfall, the tab does not land on its line",
     RowFor("Westfall") == nil and page.title.text ~= "Westfall", true)
+Expect("...nor on its continent's banner, which the list leaves out too",
+    RowFor("Eastern Kingdoms") == nil and page.title.text ~= "Eastern Kingdoms", true)
 SpokenNPCsSettings.compendiumFoundOnly = false
 NPCs:ShowBosses()
 Shown()

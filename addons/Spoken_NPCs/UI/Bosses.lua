@@ -614,7 +614,11 @@ local function LandOnPlayer()
 			openZones[zone] = true
 			OpenAround(zone)
 		else
-			local continent = C.PlayerContinent(Continents())
+			local listed = {}
+			for _, continent in ipairs(Continents()) do
+				if not OnlyFound() or Tally(ZonesOn(continent)) > 0 then table.insert(listed, continent) end
+			end
+			local continent = C.PlayerContinent(listed)
 			selection = continent and { mapID = continent } or nil
 		end
 	end
