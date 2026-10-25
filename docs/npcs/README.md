@@ -5,34 +5,38 @@ bosses of the dungeons and raids: a Bosses tab after the Readables', laid out as
 
 ## The tab
 
-A banner for each continent, a card for each zone that has a dungeon or a raid (a zone with none is
-not listed, and no area is), the card of each dungeon or raid whose entrance is in an opened zone, and
-its bosses under an opened dungeon. A city's dungeons (the Stockade, Ragefire Chasm) are in the zone
-around the city. After the continents, Other Lands holds any zone on none. Each dungeon has a badge of
+A banner for each continent, a card for each of its dungeons and raids by name, and its bosses under
+an opened dungeon. World bosses have no card: each is listed straight under the continent of the zone
+it stands in, after the dungeons, by name. Zones are not listed; a dungeon's page names the zone of its
+entrance, a city's dungeons (the Stockade, Ragefire Chasm) the zone around the city. After the
+continents, Other Lands holds the dungeons in a zone on none. Each dungeon has a badge of
 its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's file list).
 
-A boss is found when its fight starts (`ENCOUNTER_START`, any difficulty's encounter id from the
-`ids` of `Data/Bosses.lua`), kept per character in `SpokenNPCsCharacter`. A boss whose fight may start no
-encounter in Forever is also found when the player targets it (`onTarget`, from `ON_TARGET` in
-`pipelines/lib/bosses.mjs`): Baron Aquanis, the world bosses, Ribbly Screwspigot and Plugger Spazzring,
-once the player can attack it (Ribbly and Plugger are townsfolk until a quest or a theft turns them).
+A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
+`BOSS_KILL`), by any difficulty's encounter id from the `ids` of `Data/Bosses.lua`, kept per character in
+`SpokenNPCsCharacter`. A world boss (`worldBosses` in `addons/Spoken/Data/Dungeons.lua`), whose fight
+starts no encounter in Forever, is found when it dies after the player targeted it alive or saw its
+nameplate: `Story.lua` keeps its GUID, as the client clears the target as the boss dies but still
+reports it, dead, on a nameplate or the soft target (`UNIT_HEALTH`, and once a second `UnitTokenFromGUID`).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
-Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
-do; Found Only leaves out what holds none found. A found boss's page names its dungeon and zone and
-tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name, and under the
-story, in two columns, a card in the spellbook's way for each spell it casts, named and drawn by the client (a
-tooltip on each), while Show Boss Abilities is on (the Bosses settings page, `UI/Options.lua`; `SpokenNPCsSettings.showAbilities`, on by default).
-The search finds bosses, dungeons and zones by name.
+Dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
+do; Found Only, on by default, leaves out what holds none found. A found boss's page names its dungeon and zone and
+tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
+The search finds bosses and dungeons by name.
 
-A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`): when the player
-targets the boss (known by its creature id, or by its name in the dungeon the player is in where
-`Data/Creatures.lua` has no creature for it; in a fight of several, any of them, `MEMBERS`), or when it is killed (`ENCOUNTER_END` with success), as Show a Boss's Story on the
-Bosses page says (`SpokenNPCsSettings.storyTrigger`, targeting by default). Each story shows once per
-character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until Forget Stories Shown. A story
+A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
+killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
+`ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it in an instance: the
+client hides a unit's GUID, name and model from addons there, so no boss is known from the target. A
+world boss is told by its death instead, as Forever sends no kill for it (seen with Lord Kazzak).
+An instance boss the game announces no fight for (Baron Aquanis, Ribbly, Plugger) is not found or told:
+the client hides its GUID there.
+Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
+Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
 Spoken's, "bosses", registered with `textOnly`: What Spoken Reads turns them off, and nothing is queued
 where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off).
-Opened, the tab lands on the dungeon the player is in, else the zone, else the continent.
+Opened, the tab lands on the dungeon the player is in, else the continent.
 
 The Dungeons and Raids come from `addons/Spoken/Data/Dungeons.lua`, which every tab shares
 ([COMPENDIUM.md](../places/COMPENDIUM.md)).
@@ -50,7 +54,7 @@ punctuation). The client lists a boss for each difficulty, the Season of Discove
 Blackfathom Deeps, Gnomeregan and Sunken Temple among them; a "A and B" row is dropped where A or B is
 a boss on its own, and a name the client spells two ways is one boss (`SAME`).
 
-`Data/Creatures.lua` is generated by `pipelines/places/tools/boss_creatures.py`, `boss-abilities.mjs` and
+`Data/Creatures.lua` is generated by `pipelines/places/tools/boss_creatures.py` and
 `write-boss-creatures.mjs`, with the wiki page and creature ids found for each boss in `pipelines/places/tools/boss-sources.json`. A boss's creature is the one of its name spawned on its map in the repack's database, else
 the Classic creature of that name (a boss a script spawns, like Ragnaros); its portrait is that creature's model, else the
 Adventure Guide's where Forever's client has the model. A model the client does not have is dropped, so the boss
@@ -59,9 +63,7 @@ encounter's (The Butcher is the game's The Baron, Infurnus its Magmatus, named s
 `boss-sources.json`, and a boss whose only match is a namesake from another dungeon is marked `noNameMatch` there.
 Where the database has no such creature at all, or Forever draws the boss with another model,
 `boss-creatures-manual.json` gives the creature and model, with the evidence for each. The bosses still without a
-creature, a portrait or a story, and why, are in [MISSING.md](MISSING.md). Its spells are the ones chosen by hand where the article lists abilities without ids (`boss-abilities-manual.json`), then the ones in the Abilities of its warcraft.wiki.gg
-article, then what the database casts, then the guide's abilities that name a spell, less the passive ones and those the
-client has no name for. Bosses only Forever has, and the Classic raid bosses the wiki does not list, have what is found.
+creature, a portrait or a story, and why, are in [MISSING.md](MISSING.md).
 
 `Data/Stories.lua` holds `SpokenBossStories[map][key]`, the words of a boss's story. A boss with no entry says its
 story is not written yet.
@@ -75,7 +77,7 @@ story is not written yet.
   own zone by `bossZones`: Emeriss in Duskwood, Lethon in Feralas, Taerar in Ashenvale, Ysondre in
   The Hinterlands), Scarlet Enclave (filed under Eastern Plaguelands), Karazhan Crypts (Deadwind Pass) and
   Excavation Site: Wetlands. The four world-boss maps (`worldBosses` in `dungeons.json`) have no
-  card: the zone lists the boss directly (Blasted Lands, then Lord Kazzak). Maps 13, 2720, 2921 and 3002 hold test or unnamed encounters and are
+  card: the continent lists the boss directly (Eastern Kingdoms, then Lord Kazzak). Maps 13, 2720, 2921 and 3002 hold test or unnamed encounters and are
   left out. The world database has no entrance triggers for any of them: the zones come from the
   client's area names where they have one (Ashenvale, Blasted Lands, Silithus, Wetlands) and from
   the place the boss is known in otherwise.

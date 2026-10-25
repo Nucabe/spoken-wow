@@ -769,7 +769,6 @@ local PLAY = {
 	end,
 	-- Browsing: heard here is not heard in the world (Read Only Once), nor found.
 	start = function(id) SpokenReadables:SyncTo(FirstVoiced(id), true) end,
-	tip = L.PLAY_TIP,
 }
 
 -- The page of a readable being read: the one of it in the queue. Nil where none is.
@@ -794,7 +793,6 @@ local REPORT = {
 		if pageId then SpokenReadables:ShowReport(pageId) end
 	end,
 	title = L.REPORT_PROBLEM,
-	tip = L.REPORT_LINE_TIP,
 }
 
 -- Where a readable is, under its title: its first two zones, and how many more. One line: a book
@@ -898,8 +896,7 @@ local function ShowEntry()
 	if selection.dungeon then
 		DungeonReadables(selection.mapID, selection.dungeon, set)
 		page:Show({ title = DungeonName(selection.dungeon), subtitle = InAndCount(MapName(selection.mapID), Tally(set)),
-			icon = C.PlaceIcon(nil, selection.dungeon),
-			picture = C.PlacePicture({ mapID = selection.mapID, dungeon = selection.dungeon }) })
+			icon = C.PlaceIcon(nil, selection.dungeon) })
 		return
 	end
 	if selection.dungeons then
@@ -941,8 +938,7 @@ local function ShowEntry()
 		ReadablesIn(selection.mapID, set)
 	end
 	page:Show({ title = MapName(selection.mapID), subtitle = InAndCount(MapName(Above(selection.mapID)), Tally(set)),
-		icon = C.PlaceIcon(selection.mapID),
-		picture = C.PlacePicture({ mapID = selection.mapID }) })
+		icon = C.PlaceIcon(selection.mapID) })
 end
 
 --------------------------------------------------------------------------------
