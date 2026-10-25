@@ -26,8 +26,8 @@ function NPCs:InitDB()
 	for key, value in pairs(defaults) do
 		if SpokenNPCsSettings[key] == nil then SpokenNPCsSettings[key] = value end
 	end
-	-- Found Only was off by default, and every start stored that off: turned on once. A choice made
-	-- after that is kept.
+	-- A Found Only saved off before it was on by default would read as the player's choice: turned
+	-- on once behind this marker. An off set after that is kept.
 	if not SpokenNPCsSettings.foundOnlyDefaultOn then
 		SpokenNPCsSettings.foundOnlyDefaultOn = true
 		SpokenNPCsSettings.compendiumFoundOnly = true

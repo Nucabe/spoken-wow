@@ -98,8 +98,8 @@ local function MergeDefaults()
 		SpokenPlacesSettings.autoplayExplored = true
 		SpokenPlacesSettings.autoplayExploredTurnedOn = true
 	end
-	-- Discovered Only was off by default, and every start stored that off: turned on once. A choice
-	-- made after that is kept.
+	-- A Discovered Only saved off before it was on by default would read as the player's choice:
+	-- turned on once behind this marker. An off set after that is kept.
 	if not SpokenPlacesSettings.discoveredOnlyDefaultOn then
 		SpokenPlacesSettings.discoveredOnlyDefaultOn = true
 		SpokenPlacesSettings.loreDiscoveredOnly = true

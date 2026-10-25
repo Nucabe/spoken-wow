@@ -78,8 +78,8 @@ local function FillDefaults()
 			SpokenReadablesSettings[key] = value
 		end
 	end
-	-- Found Only was off by default, and every start stored that off: turned on once, so a profile
-	-- from before it was on has it too. A choice made after that is kept.
+	-- A Found Only saved off before it was on by default would read as the player's choice: turned
+	-- on once behind this marker. An off set after that is kept.
 	if not SpokenReadablesSettings.foundOnlyDefaultOn then
 		SpokenReadablesSettings.foundOnlyDefaultOn = true
 		SpokenReadablesSettings.compendiumFoundOnly = true
