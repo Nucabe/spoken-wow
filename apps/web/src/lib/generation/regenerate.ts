@@ -237,7 +237,7 @@ export async function regenerateLine(
         leadInSec: speech.leadInSec,
         createdBy,
         // `source`, not spokenText: the addon shows the line before its rules and directions.
-        wordTimes: speech.words ? timesFor(source, speech.words) : null,
+        wordTimes: timesFor(source, speech.words),
       },
       { lang, batchId: options.batchId },
     );

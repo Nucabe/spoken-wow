@@ -123,7 +123,7 @@ export async function regenerateNarrated(
           leadIn: speech.leadIn,
           leadInSec: speech.leadInSec,
           createdBy,
-          wordTimes: speech.words ? timesFor(line.shown, speech.words) : null,
+          wordTimes: timesFor(line.shown, speech.words),
         },
         { lang, measure: durationOf, batchId: options.batchId },
       );

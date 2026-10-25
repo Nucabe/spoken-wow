@@ -69,10 +69,10 @@ export type Spoken =
        */
       costUsd: number | null;
       /**
-       * Each spoken word's start in `audio`, from a provider that says. Absent or null, the
-       * take is stored without times and the captions estimate them.
+       * Each spoken word's start in `audio`, from a provider that says. Null, the take is
+       * stored without times and the captions estimate them.
        */
-      words?: WordStart[] | null;
+      words: WordStart[] | null;
       made: Made;
     }
   | { ok: false; failure: Failure };

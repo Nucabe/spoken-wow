@@ -55,14 +55,16 @@ function bare(word: string): string {
 }
 
 /**
- * One start per word of `shown`, or null when the spoken words cannot be matched to them.
+ * One start per word of `shown`, or null when there are no spoken words or they cannot be
+ * matched to them.
  *
  * Equal counts are matched by position and not by spelling, because a pronunciation rule or a
  * spoken $N changes the spelling and not the count. More spoken words than shown is a book's
  * first page, read with its title ahead of the words the page holds: kept only when the shown
  * words end the spoken ones word for word.
  */
-export function timesFor(shown: string, spoken: readonly WordStart[]): number[] | null {
+export function timesFor(shown: string, spoken: readonly WordStart[] | null): number[] | null {
+  if (!spoken) return null;
   const words = shown.split(/\s+/).filter(Boolean);
   if (words.length === 0) return null;
   let matched = spoken;
