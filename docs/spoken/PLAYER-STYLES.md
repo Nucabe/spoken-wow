@@ -74,7 +74,10 @@ All of it is in `addons/Spoken/UI/`, one copy for every module.
   (`Addon:StopWhereNotRead`). A line you ask for with Play, a command or the Compendium is read.
 - **Preview** on Spoken's page shows the chosen style with a sample line while no line plays,
   until it is turned off.
-- With a DialogueUI dialog open, the windows step aside (`Actions.DialogCovers`).
+- With a DialogueUI dialog or Immersion's window open, the windows step aside
+  (`Actions.DialogCovers`): the dialog shows the line. The subtitles step aside for Immersion
+  (`Actions.ImmersionOpen`); DialogueUI hides them with the rest of the interface. They come back
+  for a line still playing once the dialog closes.
 
 ## Settings by style
 

@@ -9,6 +9,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   which boss a target is. The world bosses, whose fight the game sends no kill for, count when they die
   after you targeted them or saw their nameplate. A boss is also met when you kill it, so its page unlocks in the
   Compendium even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
+- **Spoken steps aside for Immersion.** While Immersion's window shows a quest, gossip or a book,
+  Spoken's window and subtitles stay hidden, as they do for DialogueUI, and the voice plays on.
+  They come back once the window closes, for a line still playing and for one you start with Play.
+  *([Aleph-Null-Zero](https://github.com/Aleph-Null-Zero))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:
