@@ -66,16 +66,19 @@ end
 
 -- Tracker integrations are optional and arrive in several incompatible shapes. Keep one refresh
 -- entry point for the settings page and the player's profile callbacks, then let each adapter
--- register its own sweep below.
+-- register its own sweep below. Adapters hook the guarded sweep, so a failure is logged instead of
+-- raised inside Blizzard's or Questie's update.
 local trackerUpdaters = {}
 local function RegisterTrackerUpdater(updater)
-    table.insert(trackerUpdaters, updater)
+    local function guarded()
+        local ok, err = pcall(updater)
+        if not ok then Debug:Note("quest tracker", tostring(err), "a tracker adapter failed: %s", tostring(err)) end
+    end
+    table.insert(trackerUpdaters, guarded)
+    return guarded
 end
 local function SweepTrackerButtons()
-    for _, updater in ipairs(trackerUpdaters) do
-        local ok, err = pcall(updater)
-        if not ok then Debug:Note("quest tracker", "refresh", "a tracker adapter failed: %s", tostring(err)) end
-    end
+    for _, updater in ipairs(trackerUpdaters) do updater() end
 end
 QuestOverlayUI.UpdateTrackerButtons = SweepTrackerButtons
 
@@ -107,7 +110,7 @@ do
             local lines = {}
             for index = 1, MAX_QUESTWATCH_LINES or 100 do
                 local line = _G["QuestWatchLine" .. index] or _G["WatchFrameLine" .. index]
-                if line then table.insert(lines, { frame = line, index = index }) end
+                if line and line:IsShown() then table.insert(lines, { frame = line, index = index }) end
             end
             return lines
         end
@@ -141,7 +144,7 @@ do
             QuestOverlayUI:SetPlayButtonState(button)
         end
         local function Sweep()
-            local lines, nextLine = Lines(), 1
+            local lines, nextLine, dressed = Lines(), 1, {}
             for watchIndex = 1, GetNumQuestWatches() do
                 local questIndex = GetQuestIndexForWatch(watchIndex)
                 local questID, title
@@ -149,21 +152,15 @@ do
                 local titleLine = questIndex and FindTitle(lines, nextLine, title, questIndex, questID)
                 if titleLine and type(questID) == "number" then
                     nextLine = titleLine + 1
+                    dressed[questID] = true
                     Dress(questID, title, lines[titleLine].frame)
                 end
             end
             for questID, button in pairs(buttons) do
-                local stillShown = false
-                for watchIndex = 1, GetNumQuestWatches() do
-                    local questIndex = GetQuestIndexForWatch(watchIndex)
-                    local currentID = questIndex and QuestInfo(questIndex)
-                    if currentID == questID then stillShown = true; break end
-                end
-                if not stillShown then Hide(button) end
+                if not dressed[questID] then Hide(button) end
             end
         end
-        RegisterTrackerUpdater(Sweep)
-        hooksecurefunc(updateName, Sweep)
+        hooksecurefunc(updateName, RegisterTrackerUpdater(Sweep))
         local waiter = CreateFrame("Frame")
         waiter:RegisterEvent("PLAYER_LOGIN")
         waiter:SetScript("OnEvent", function()
@@ -206,15 +203,6 @@ do
             end
             return ""
         end
-        local function SetState(button)
-            if button.SetState then return end
-            function button:SetState(state)
-                self.state = state
-                self:SetNormalTexture((state == "stop" or state == "replay") and
-                    "Interface\\Addons\\Spoken_Quests\\Textures\\QuestLogStopButton" or
-                    "Interface\\Addons\\Spoken_Quests\\Textures\\QuestLogPlayButton")
-            end
-        end
         local function Dress(line)
             local quest = line and line.Quest
             local questID = quest and (quest.Id or quest.questID)
@@ -233,14 +221,15 @@ do
                 end
                 line.spokenPlayButton = button
             end
+            -- Questie reuses lines, so a clip bound to the line's previous quest must not answer a click.
+            if button.questID ~= questID then button.soundData = nil end
+            button.questID = questID
             if not Addon:IsPartOn() or (Addon.db and Addon.db.profile.TrackerPlayButton == false)
                 or not DataModules:PrepareSound({ event = Enums.SoundEvent.QuestAccept, questID = questID }) then
                 button:Hide()
                 return
             end
-            SetState(button)
             button.setPlayState = QuestOverlayUI.FollowQueue
-            button.questID = questID
             button:SetAlpha(1)
             button:Show()
             QuestOverlayUI:BindPlayButton(button, questID, QuestTitle(questID),
@@ -251,11 +240,9 @@ do
             if not frame or (seen and seen[frame]) then return end
             seen = seen or {}
             seen[frame] = true
-            if frame.mode == "quest" and frame.Quest and (frame.label or frame.playButton) then
-                Dress(frame)
-            elseif frame.spokenPlayButton then
-                -- Questie reuses line frames: a title line can become a zone or objective row
-                -- on the next redraw, so a button from its previous quest must not remain behind.
+            -- Title lines are dressed through the pool. Questie reuses line frames, so one that became
+            -- a zone or objective row must not keep the button from its previous quest.
+            if not (frame.mode == "quest" and frame.Quest) and frame.spokenPlayButton then
                 frame.spokenPlayButton:Hide()
             end
             if frame.GetChildren then
@@ -271,13 +258,17 @@ do
         end
 
         installed = true
-        RegisterTrackerUpdater(Sweep)
-        hooksecurefunc(pool, "UpdateQuestTitleLines", Sweep)
-        if tracker and type(tracker.Update) == "function" then hooksecurefunc(tracker, "Update", Sweep) end
+        local sweep = RegisterTrackerUpdater(Sweep)
+        -- One Questie Update calls UpdateQuestTitleLines, then UpdateVoiceOverPlayButtons last, once
+        -- the lines are laid out. Hook only the latest of them this Questie has.
         if trackerUtils and type(trackerUtils.UpdateVoiceOverPlayButtons) == "function" then
-            hooksecurefunc(trackerUtils, "UpdateVoiceOverPlayButtons", Sweep)
+            hooksecurefunc(trackerUtils, "UpdateVoiceOverPlayButtons", sweep)
+        elseif tracker and type(tracker.Update) == "function" then
+            hooksecurefunc(tracker, "Update", sweep)
+        else
+            hooksecurefunc(pool, "UpdateQuestTitleLines", sweep)
         end
-        Sweep()
+        sweep()
     end
     local waiter = CreateFrame("Frame")
     waiter:RegisterEvent("PLAYER_LOGIN")

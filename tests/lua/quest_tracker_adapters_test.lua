@@ -77,9 +77,28 @@ local _, _, _, xOffset = line.spokenPlayButton:GetPoint()
 Expect("...sits right next to minimize", xOffset, -1)
 Expect("...is slightly smaller", line.spokenPlayButton:GetWidth(), 18)
 
+line.spokenPlayButton.soundData = { questID = 748 }
+line.Quest = { Id = 749 }
+questieTracker:Update()
+Expect("a Questie line reused for another quest drops the old quest's clip", line.spokenPlayButton.soundData, nil)
+line.Quest = { Id = 748 }
+questieTracker:Update()
+
 line.mode = "objective"
 questieTracker:Update()
 Expect("a reused Questie objective line hides its old Play button", line.spokenPlayButton:IsShown(), false)
+
+QuestWatchLine1:Hide()
+VO.QuestOverlayUI.UpdateTrackerButtons()
+Expect("an Era title on a hidden line loses its Play button", classicButton:IsShown(), false)
+QuestWatch_Update()
+Expect("...and gets it back once the line is drawn", classicButton:IsShown(), true)
+
+local realPrepare = VO.DataModules.PrepareSound
+VO.DataModules.PrepareSound = function() error("adapter boom") end
+local raised = not pcall(QuestWatch_Update)
+VO.DataModules.PrepareSound = realPrepare
+Expect("an adapter failure is not raised inside the tracker's update", raised, false)
 
 VO.Addon.db.profile.TrackerPlayButton = false
 VO.QuestOverlayUI.UpdateTrackerButtons()
