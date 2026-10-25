@@ -114,12 +114,6 @@ function SpokenPlaces:SetupAudio()
 		return
 	end
 
-	-- The Compendium's other tabs show a place's picture above its page too, and reach it through
-	-- Spoken: this namespace is the addon's own.
-	Spoken.PlacePicture = function(_, mapID, key)
-		if self.Picture then return self:Picture(mapID, key) end
-	end
-
 	self.source = Spoken:RegisterSource("places", {
 		title = L.OPT_PAGE_TITLE,
 		addon = ADDON_NAME,
@@ -422,7 +416,7 @@ function SpokenPlaces:GetAudioClip(mapID, areaKey)
 		end
 		if clip and clip.file then
 			return "Interface\\AddOns\\" .. pack.addon .. "\\Sounds\\" .. clip.file .. ".mp3",
-				clip.len, pack, clip.file
+				clip.len, pack, clip.file, clip.times
 		end
 	end
 
@@ -483,7 +477,7 @@ end
 -- s:{mapID}:{key} -- and it is frozen: it is what the player dedups on, what a report
 -- names, and what audio-history is keyed by.
 function SpokenPlaces:NewLoreSound(mapID, areaKey)
-	local path, length, pack, fileName = self:GetAudioClip(mapID, areaKey)
+	local path, length, pack, fileName, times = self:GetAudioClip(mapID, areaKey)
 	if not path then
 		return nil
 	end
@@ -492,11 +486,20 @@ function SpokenPlaces:NewLoreSound(mapID, areaKey)
 	-- The place's picture and its frayed edge, for a window that shows one over the words.
 	local picture, mask
 	if self.Picture then picture, mask = self:Picture(mapID, areaKey) end
-	local language = pack.language or "enUS"
-	local data = self.CaptionLore and self.CaptionLore[language]
-	local entries = data and (areaKey and data.subzones or data.zones)
-	local entry = entries and entries[mapID]
-	if areaKey then entry = entry and entry[areaKey] end
+	-- The words are in the Text Language the player picked, whatever the voice: French words under
+	-- an English voice. The pack's own language only where the Text Language has no such entry.
+	local language, entry
+	for _, code in ipairs({ self:GetLanguage(), pack.language or "enUS" }) do
+		local data = self.CaptionLore and self.CaptionLore[code]
+		local entries = data and (areaKey and data.subzones or data.zones)
+		local found = entries and entries[mapID]
+		if areaKey then found = found and found[areaKey] end
+		if found and found.full then
+			language, entry = code, found
+			break
+		end
+	end
+	language = language or pack.language or "enUS"
 	-- Captions set a font file, which has none of the font object's fallbacks: lore in a script
 	-- the client's file cannot draw names the file that can. Otherwise the window's own is kept.
 	local font = self.FontFor and self:FontFor(GameFontNormal, language)
@@ -518,6 +521,8 @@ function SpokenPlaces:NewLoreSound(mapID, areaKey)
 			header = areaKey and (self:GetMapName(zone) or label) or self:GetMapName(self:PlaceAbove(mapID)),
 			label = label,
 			transcript = entry and entry.full,
+			-- Timed to the recording's own words, so not under another language's.
+			timings = entry and language == (pack.language or "enUS") and times or nil,
 			font = font,
 			bullet = "zone",
 			portrait = self:Portrait(mapID),
@@ -526,8 +531,8 @@ function SpokenPlaces:NewLoreSound(mapID, areaKey)
 		},
 		-- Recorded when the clip starts rather than when it is queued, so that
 		-- every route to a clip counts and a backlog that overflows does not spend
-		-- areas on silence. Only the autoplayExplored option reads it; see
-		-- Autoplay.lua.
+		-- areas on silence. Include Places Found Before, the check on a discovery and a
+		-- dungeon's once-per-character story all read it.
 		startCallback = function(item)
 			if SpokenPlaces.MarkHeard then
 				SpokenPlaces:MarkHeard(item.mapID, item.areaKey)

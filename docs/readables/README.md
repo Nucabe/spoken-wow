@@ -174,8 +174,31 @@ three.
 it is showing. Title, page number and a checksum of the text; then the checksum alone,
 where no other page shares it; then, for a page the client filled with the reader's name,
 class or gender word, its words against the captions that hold a token, where exactly one
-fits; then nothing. Nothing is the right last answer: the alternative is reading the wrong
-page's words aloud.
+fits. Then two steps for a server that lays out or words a page differently from the corpus:
+
+- **What opened the frame.** `Opener.lua` notes the item used from the bags
+  (`C_Container.UseContainerItem`), the object a tooltip was last on and the interact key's
+  object. `Books.lua`'s `owners` maps the id to its book, and the page number picks the page.
+  Refused where the book has no page at that number, or where the title on screen is another
+  corpus book's, which means the id was something touched before the click. Where the page at
+  that number shares under 60% of the words on screen and another page of the book shares
+  more, that page: Forever's Sargeras and the Betrayal skips a page, so each later page shows
+  a number early. Text in another language matches no page's words and keeps the number.
+- **Title, page number and most of the words.** At least 60% of the distinct words in common,
+  and the client's next-page arrow agreeing with where the book ends, unless 90% are in common:
+  Forever ends some chains early. Where nothing at the number is close, the numbers either side.
+  The words are the guard: the server may hold a book of the same name that the corpus lacks
+  ("Proof of Deed" is many bosses' deeds).
+
+Either way the clip is the corpus page's, so a page the server rewords plays the corpus's words.
+The words on screen are still news to the corpus, so the page stays a contribution gap.
+
+A stale candidate is not caught where the title on screen is one the corpus lacks, as in a
+client in another language: the interact key's target stays a candidate however long ago it
+was picked, and a book opened by a way `Opener.lua` does not hear (a bag addon's buttons, an
+action bar, `/use`) falls back on it.
+Then nothing. Nothing is the right last answer: the alternative is reading the wrong page's
+words aloud.
 
 **The checksum is the load-bearing part.** `pipelines/readables/tools/lib/naming.mjs` and
 `addons/Spoken_Readables/Checksum.lua` must produce the same number for the same text, over
@@ -280,7 +303,12 @@ envelope and the address to paste. The player copies it, opens it, and sees exac
 about to be sent before it goes — the same page, submitted again by the same or another
 reader, bumps a count on one row at `/contributions` rather than filing a second. The first
 click ever also offers Spoken's **Collect Missing Lines**, which keeps such pages in
-`SpokenContributions.lua` for the player to upload at `/contribute`.
+`SpokenContributions.lua` for the player to upload at `/contribute`. The page goes with the
+reader's name, class and race as `$N`, `$C` and `$R` (`Detemplate`); the name is matched as
+written and in capitals, as the client writes it into some pages ("GRIMBALOR,"). Pages kept
+before that are not rewritten at login: the file is the account's and holds no record of which
+character kept a page, so a character's name cannot be taken out of one without risking another's
+words ("The Light keeps you.").
 
 ### The Readables tab
 
@@ -291,7 +319,14 @@ every book, letter, note, scroll, tablet, plaque, gravestone, exhibit and pictur
 reads, found or not, with the words of each on the right, on the spellbook's parchment, to read
 and to listen to wherever you are. Which readables exist and where they are comes from
 `Data/Places.lua` (`pipelines/readables/tools/places.mjs`); what this character has found, from
-`SpokenReadablesCharacter` (`Core.lua`); the words, from `Data/Books.lua`. `make readables-places` reads
+`SpokenReadablesCharacter` (`Core.lua`); the words, from `Data/Books.lua`. On a client in another
+language, a page is in that language where a pack in it has the page's words, or where the client
+showed the page this session (`SpokenReadables:ClientPageText`), and in English otherwise. That is
+decided page by page, so one readable can be in two languages. Its title follows the same way
+(`SpokenReadables:TitleIn`). A caption is in the same words whatever the voice, English on an
+English client, and in the recording's language only where the client's has none
+(`SpokenReadables:CaptionText`). An Italian or Vietnamese voice, which no client runs in, is
+captioned in its own words first. `make readables-places` reads
 the repack's world DB (`PLACES_MYSQL_*`) and its map files (`PLACES_MAPS`, the repack's `data/maps`
 folder; it stops without them). A quest places a readable only when the quests corpus or the
 client's QuestV2 has it: the repack also carries Cataclysm's quest rows.
@@ -330,7 +365,7 @@ else the continent's banner.
 **The page.** A readable's page has its name, the places it is in under it (its first two zones, and
 how many more; a click goes up to its kind in its place, then the zone and the continent), and
 then its words, all its pages one after another. A zone's, city's, continent's
-or dungeon's page has its count and Places' picture of the place above it; the other lines (a kind,
+or dungeon's page has its count and the faction's seal; the other lines (a kind,
 a banner) show their count alone. Play starts the readable from its first page with a recording and becomes Stop and then
 Replay while it is read, as every Play of the Compendium's; browsing here does not count as hearing
 it in the world (Read Only Once), nor as finding it. Report is there on every page, voiced or
@@ -410,6 +445,11 @@ make readables-lookup LOCALE=esMX         # build/readables/esMX/Data/Sounds.lua
 LOCALE=esMX ./scripts/readables/package-audio.sh  # dist/SpokenReadablesAudio_esMX-<v>.zip
 make readables-release-audio LOCALE=esMX  # uploads it, CurseForge only
 ```
+
+A page whose take kept its word times carries them as `times` in its `Data/Sounds.lua` entry,
+counted against the page's words as the captions show them: a first page's title, read ahead of
+its words, is left out. The captions follow them only where they show the recording's own
+words. A page without them is estimated, a first page starting its words after the title's share.
 
 The addon finds a page by its title and a checksum of its words, and a client in another
 locale shows neither in English. So a language's `Data/Sounds.lua` also carries that

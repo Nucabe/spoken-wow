@@ -78,9 +78,20 @@ local function Books()
 	return data and data.books or {}
 end
 
+-- Each readable's title for the rows being built: they are asked for it while sorting and for
+-- every keystroke of a search, and on another language's client each answer walks the packs.
+local titles = {}
+-- In this client's language where Spoken has it, as the page's words are.
 local function Title(id)
+	local title = titles[id]
+	if title then return title end
 	local book = Books()[id]
-	return book and book.title or tostring(id)
+	if not book then return tostring(id) end
+	local client = SpokenReadables:GetClientLanguage()
+	title = client ~= SpokenReadables.BASE_LANGUAGE and SpokenReadables:TitleIn(id, book.pages[1], client)
+		or book.title or tostring(id)
+	titles[id] = title
+	return title
 end
 
 -- The dungeons and raids, by instance map (Spoken's Data/Dungeons.lua): `zone`, the zone of
@@ -201,8 +212,8 @@ end
 
 -- A readable's name in the list and on its page: its title, numbered where others share it.
 local function Name(id)
-	local n = Nth()[id]
-	return n and L.BOOKS_TITLE_NTH_FMT:format(Title(id), n) or Title(id)
+	local n, title = Nth()[id], Title(id)
+	return n and L.BOOKS_TITLE_NTH_FMT:format(title, n) or title
 end
 
 local function Found(id)
@@ -389,11 +400,12 @@ local function AsLeft(named, build)
 	return rows
 end
 
--- each(text) for every page of a readable that has words, in order, until it returns true.
+-- each(text) for every page of a readable that has words, in order, until it returns true. A page
+-- is in this client's language where Spoken has its words, else in the corpus's English.
 local function EachText(id, each)
 	local data = SpokenReadables:Data()
 	for _, pageId in ipairs(Books()[id].pages) do
-		local text = data.pages[pageId] and data.pages[pageId].text
+		local text = SpokenReadables:ClientPageText(pageId) or (data.pages[pageId] and data.pages[pageId].text)
 		if text and text ~= "" and each(text) then return true end
 	end
 	return false
@@ -407,7 +419,13 @@ local function Words(id)
 	return table.concat(words, "\n\n")
 end
 
+-- The corpus's words answer first: they need no pack walked, and most pages have them.
 local function HasWords(id)
+	local data = SpokenReadables:Data()
+	for _, pageId in ipairs(Books()[id].pages) do
+		local place = data.pages[pageId]
+		if place and place.text and place.text ~= "" then return true end
+	end
 	return EachText(id, function() return true end)
 end
 
@@ -674,6 +692,7 @@ end
 -- the groups' banners.
 local function BuildRows()
 	voiced = {}
+	titles = {}
 	if not ByZone() then return TypeRows() end
 	local out = {}
 	local function Add(rows) for _, row in ipairs(rows) do table.insert(out, row) end end
@@ -879,8 +898,7 @@ local function ShowEntry()
 	if selection.dungeon then
 		DungeonReadables(selection.mapID, selection.dungeon, set)
 		page:Show({ title = DungeonName(selection.dungeon), subtitle = InAndCount(MapName(selection.mapID), Tally(set)),
-			icon = C.PlaceIcon(nil, selection.dungeon),
-			picture = C.PlacePicture({ mapID = selection.mapID, dungeon = selection.dungeon }) })
+			icon = C.PlaceIcon(nil, selection.dungeon) })
 		return
 	end
 	if selection.dungeons then
@@ -922,8 +940,7 @@ local function ShowEntry()
 		ReadablesIn(selection.mapID, set)
 	end
 	page:Show({ title = MapName(selection.mapID), subtitle = InAndCount(MapName(Above(selection.mapID)), Tally(set)),
-		icon = C.PlaceIcon(selection.mapID),
-		picture = C.PlacePicture({ mapID = selection.mapID }) })
+		icon = C.PlaceIcon(selection.mapID) })
 end
 
 --------------------------------------------------------------------------------

@@ -58,6 +58,7 @@ Expect("StoryPlace names where a story found at a map is kept",
 
 -- With Autoplay Explored Areas on, standing in it is enough.
 Z:Set("autoplayExplored", true)
+stub.Advance(2)
 stub.FireEvent("ZONE_CHANGED")
 local clip = Spoken:GetCurrent()
 Expect("standing at its entrance plays its story by its own id", clip and clip.key, "s:1441:razorfen downs")

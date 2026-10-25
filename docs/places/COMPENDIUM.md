@@ -13,8 +13,7 @@ modules add to it, so there is one copy of each piece:
 
 `Compendium.lua` also holds what every tab lays places out by: `C.WORLD` (947, Azeroth, the continents' parent), `C.CONTINENTS`
 (Kalimdor 1414 and the Eastern Kingdoms 1415), `C.CITY_IN`, `C.BATTLEGROUNDS`, `C.ContinentOf`,
-`C.OpenAround`, `C.OpenZone` and `C.PlayerZone`. The other tabs show a place's picture through
-`C.PlacePicture`.
+`C.OpenAround`, `C.OpenZone` and `C.PlayerZone`.
 
 The Places tab registers as `places` (`UI/LoreWindow.lua`, `SetupLoreWindow`), label Places, after Quests
 and before Readables. Its Unlock switch, Unlock Undiscovered Places, is on Spoken's page. The spellbook
@@ -161,6 +160,18 @@ folds it.
 - It is hidden while the map is maximised, while Spoken's Enable switch is off and while
   Show Story Beside Map is off. Under the gamepad UI it is a child of `UIParent` instead of the
   map, because the Forever client takes every button inside the open map into its own navigation.
+  Inside the map the panel and the button fade with the map as its children. Beside it each reads
+  the map's alpha in its own `OnUpdate`, only while it is beside the map: a hook on
+  `WorldMapFrame:SetAlpha`, which the game's movement fader calls every frame, raised errors on
+  Forever (#497).
+- The panel stands clear of the side tabs down the map's right edge by the widest one's reach
+  past it, and its button goes under the lowest on screen. No addon or tab is named: a tab is any
+  shown child of the quest log, the map or its border frame whose left edge is within a few pixels
+  (`COLUMN_SLACK`) of the map's edge, that sits mostly outside the map and is shorter than half of
+  it. Tabs show and hide without the quest log doing either, so every child of those frames has its
+  `OnShow` and `OnHide` hooked once, as it is first seen, and the layout runs again on the next
+  frame, after every other addon's hooks. A tab parented elsewhere, such as `UIParent`, is not
+  found.
 - `UI/SubzoneClick.lua`: a click on a zone map resolves an area through
   `MapUtil.FindBestAreaNameAtMouse`, which returns a name and no id. A continent or world map is
   left to the game. A drag is not a click. A click on a city inside the zone opens the city's map.

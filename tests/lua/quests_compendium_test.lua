@@ -678,8 +678,6 @@ do
     page.title.IsTruncated = nil
     page:Show({ title = "Nothing Written", empty = true })
     Expect("an empty page shows its mark", page.mark:IsShown(), true)
-    page:Show({ title = "Nothing Written", empty = true, picture = { file = "Interface\\Elwynn" } })
-    Expect("...but not under a place's picture", page.mark:IsShown(), false)
     ClickChain("Lost Necklace")
     ClickChain("Lost Necklace")
 end
@@ -1217,12 +1215,8 @@ Expect("...a dungeon's page in the zone of its entrance, counting its quests", p
 do
     list = Shown()
     Click("Searing Gorge")
-    -- Places' picture of the place above its page, where Places has one.
-    Expect("a place's page has no picture while Places has none", page.body.picture:IsShown(), false)
-    _G.Spoken.PlacePicture = function(_, mapID, key) return "pic" .. mapID .. (key or ""), "mask" end
-    Tab:Refresh()
-    Expect("...and Places' picture of the place when it has", page.body.picture:IsShown() and page.body.picture:GetTexture(), "pic1427")
-    _G.Spoken.PlacePicture = nil
+    -- Nothing to read there: the faction's seal, and no picture, as on the other tabs.
+    Expect("a place's page has the seal and no picture", page.mark:IsShown() and not page.body.picture:IsShown(), true)
     list = Shown()
     Click("Searing Gorge")
     list = Shown()
@@ -1396,6 +1390,24 @@ plainCard = RowFor("Elwynn Forest")
 Expect("...chosen, the list's own light full with its gold edge", plainCard.selected and plainCard.wash:IsShown()
     and plainCard.wash.alpha == 1 and plainCard.edge:IsShown(), true)
 _G.C_Texture = { GetAtlasInfo = stub.ListAtlas }
+
+---------------------------------------------------------------- the page in EllesmereUI's look
+-- A quest's page as EllesmereUI's look dresses it (what its login callback runs for every page): no
+-- parchment, the window's backdrop behind it, the title and the parts' headings white.
+do
+    local skin = { GetAccentColor = function() return 0.05, 0.82, 0.62 end,
+        GetPanelColor = function() return 0.08, 0.08, 0.08, 0.92 end,
+        GetFont = function() return [[Fonts\EUI.ttf]], "" end, Button = function() end, WhiteButtonLabel = function() end }
+    local colour
+    page.title.SetTextColor = function(_, r, g, b) colour = r .. " " .. g .. " " .. b end
+    page:Darken(skin)
+    Tab:Refresh()
+    Expect("a quest's page in EllesmereUI's look has no parchment, its title white",
+        page.bg:GetAlpha() .. " " .. tostring(colour), "0 1 1 1")
+    Expect("...its parts' headings white, its words light, fading into the backdrop's colour",
+        table.concat(page.body.headInk, " ") .. " | " .. table.concat(page.body.ink, " ") .. " | "
+        .. table.concat(page.body.fadeSource.colors.TOP, " "), "1 1 1 | 0.9 0.9 0.9 | 0.094 0.082 0.069")
+end
 
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quests compendium tests passed")

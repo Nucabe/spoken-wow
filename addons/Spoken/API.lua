@@ -86,7 +86,8 @@ end
 --                                             -- and text, for a script the game's font has no
 --                                             -- glyphs for; the player's size stays
 --       timings  = { 0, .42, .61, ... },      -- optional; when each word of the transcript starts,
---                                             -- in seconds, one per Spoken:CaptionWords(transcript)
+--                                             -- in seconds, one per Spoken:CaptionWords(transcript),
+--                                             -- or the same as one string, "0 .42 .61"
 --       bullet   = "quest-accept",            -- a RegisterBullet id
 --       tint     = { r, g, b },               -- optional row tint
 --       portrait = { kind = "model", creatureID = 196 }
@@ -461,6 +462,12 @@ function Spoken:LanguageName(code)
     return Options:LanguageName(code)
 end
 
+--- Whether a font draws the language `code`, as the lists test it before they name it natively:
+--- the settings' font object, or the font file `path`.
+function Spoken:LanguageDraws(code, path)
+    return Options:LanguageDraws(code, path)
+end
+
 --- The voice language as it plays: the one chosen on Spoken's page, "auto" being the client's.
 function Spoken:VoiceLanguage()
     local voice = self:GetLanguageChoice()
@@ -489,6 +496,12 @@ end
 --- addon goes on with the table it keeps itself.
 function Spoken:BindModuleSettings(name, legacy, bind, skip)
     return Addon:BindModuleSettings(name, legacy, bind, skip)
+end
+
+--- The profile chosen for new characters, when Spoken started this character on it at this login;
+--- else nil. A feature addon passes it as its own AceDB default profile, so both start on it.
+function Spoken:NewCharacterStartProfile()
+    return Addon.newCharacterProfile
 end
 
 --- Whether Spoken's page and minimap menu open Azeroth's Compendium and hold its Unlock switches,
@@ -613,18 +626,26 @@ end
 --- The source is about to queue a line: silence the game's NPC dialogue now rather than
 --- when the line starts, so an NPC's greeting is never heard instead of being cut short.
 --- Honours the player's "mute game dialogue" setting, and lifts itself if nothing comes.
+---@return boolean? muted whether the dialogue was muted now; additive, guard on the field
 function Spoken:MuteGameDialogueAhead(source)
     -- Where Read in Battlegrounds keeps Spoken quiet no line follows, so the greeting is left alone.
     if not Addon:ReadsHere() then
-        return
+        return false
     end
-    SoundQueue:MuteGameDialogueAhead(source:GetChannel())
+    return SoundQueue:MuteGameDialogueAhead(source:GetChannel())
 end
 
 --- The read that MuteGameDialogueAhead was taken for found no line: the game's dialogue comes
 --- back at once, unless a line is speaking.
 function Spoken:EndMuteGameDialogueAhead()
     SoundQueue:EndMuteGameDialogueAhead()
+end
+
+--- Whether the mute MuteGameDialogueAhead took still holds for a line to come: false once its
+--- deadline passed or a read gave the game's dialogue back.
+---@return boolean
+function Spoken:IsMutingGameDialogueAhead()
+    return SoundQueue:IsMutingGameDialogueAhead()
 end
 
 --- A gate that applies to every source: fn(clip) -> reason | nil.
