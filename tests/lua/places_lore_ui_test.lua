@@ -47,8 +47,8 @@ _G.CreateFrame = function(kind, name, parent, template)
         function frame:SetTitle(text) self.title = text end
         function frame:SetPortraitToAsset(path) self.portrait = path end
         frame.CloseButton = createFrame("Button", nil, frame)
-        -- Forever's shared templates size Close and the arrows' frame 28 by 28.
-        frame.CloseButton:SetSize(28, 28)
+        -- This file runs as Era, whose shared templates size Close 32 by 32.
+        frame.CloseButton:SetSize(32, 32)
         frame.PortraitContainer = createFrame("Frame", nil, frame)
         frame.TitleContainer = { TitleText = frame:CreateFontString() }
     elseif template == "MaximizeMinimizeButtonFrameTemplate" then
@@ -157,25 +157,34 @@ Expect("built at login, hidden, and not made the tab the window first opens on",
     tostring(window ~= nil) .. "|" .. tostring(compendium:IsShown()) .. "|" .. tostring(_G.SpokenCompendium:Active()), "true|false|nil")
 Expect("the places are a tab of Azeroth's Compendium, the game's portrait frame", compendium.template, "PortraitFrameTemplate")
 Expect("...titled, with the Compendium's tome in its portrait", compendium.title .. "|" .. tostring(compendium.portrait),
-    SpokenEnv.L.OPT_COMPENDIUM_TITLE .. "|5341597")
-Expect("...closed by Escape", _G.UISpecialFrames[#_G.UISpecialFrames], "SpokenCompendiumWindow")
--- Close is cut 2 smaller than the template's 28; the arrows' frame must follow it, or the arrow centred
--- in it sits off Close's row.
-do
-    local close = compendium.CloseButton
-    local point, relativeTo, relativePoint, x, y = maxMin:GetPoint()
-    Expect("...its minimise arrow's frame the size of Close, beside it on its top edge",
-        maxMin:GetWidth() .. "x" .. maxMin:GetHeight() .. " " .. point .. " " .. tostring(relativeTo == close) .. " "
-            .. relativePoint .. " " .. x .. "," .. y,
-        close:GetWidth() .. "x" .. close:GetHeight() .. " TOPRIGHT true TOPLEFT 0,0")
-    Expect("...and the arrows Close's size, centred in it",
-        maxMin.MinimizeButton:GetWidth() .. "x" .. maxMin.MinimizeButton:GetHeight() .. " "
-            .. (select(1, maxMin.MinimizeButton:GetPoint())) .. " " .. tostring(select(2, maxMin.MinimizeButton:GetPoint()) == maxMin),
-        close:GetWidth() .. "x" .. close:GetHeight() .. " CENTER true")
+    SpokenEnv.L.OPT_COMPENDIUM_TITLE .. "|Interface\\Icons\\INV_Misc_Book_11")
+local close = compendium.CloseButton
+local minimizeFrame
+for _, child in ipairs(compendium.children or {}) do
+    if type(child.MinimizeButton) == "table" then
+        minimizeFrame = child
+        break
+    end
 end
+local minimize = minimizeFrame and minimizeFrame.MinimizeButton
+local closePoint, closeRelative, closeRelativePoint, closeX, closeY = close:GetPoint()
+local minimizeFramePoint, minimizeFrameRelative, minimizeFrameRelativePoint, minimizeFrameX, minimizeFrameY = minimizeFrame:GetPoint()
+local minimizePoint, minimizeRelative, minimizeRelativePoint, minimizeX, minimizeY = minimize:GetPoint()
+Expect("...the Era close button uses the Classic portrait-frame rail", close:GetWidth() .. "x" .. close:GetHeight()
+    .. "|" .. closePoint .. "|" .. tostring(closeRelative == compendium) .. "|" .. closeRelativePoint
+    .. "|" .. closeX .. "," .. closeY, "32x32|TOPRIGHT|true|TOPRIGHT|4,5")
+Expect("...the Era minimize frame moves beside Close",
+    minimizeFramePoint .. "|" .. tostring(minimizeFrameRelative == close) .. "|" .. minimizeFrameRelativePoint .. "|"
+    .. minimizeFrameX .. "," .. minimizeFrameY, "TOPRIGHT|true|TOPLEFT|12,0")
+Expect("...the minimize button keeps master's template child placement",
+    minimize:GetWidth() .. "x" .. minimize:GetHeight() .. "|" .. minimizePoint .. "|"
+    .. tostring(minimizeRelative == minimizeFrame) .. "|" .. minimizeRelativePoint .. "|" .. minimizeX .. "," .. minimizeY,
+    "30x30|CENTER|true|CENTER|0,0")
+Expect("...closed by Escape", _G.UISpecialFrames[#_G.UISpecialFrames], "SpokenCompendiumWindow")
 local page = window.page
 Expect("its story is on the spellbook's parchment", page.parchment, "spellbook-Page-Right-C60")
-Expect("...in an inset of its own, as the list is, so their borders part them", window.pageInset.template, "InsetFrameTemplate")
+Expect("...in an inset of its own, as the list is, so their borders part them", window.pageInset.template,
+    SpokenEnv.Version.Variant == "era" and "BackdropTemplate" or "InsetFrameTemplate")
 Expect("...with no credit line on the page", page.credit, nil)
 Expect("Report is the player's round button, the ring round the bug", page.report.ring ~= nil and page.report.glyph ~= nil, true)
 Expect("...under the spellbook's divider", page.divider.atlas or page.divider.layoutAtlas or true, true)
@@ -882,7 +891,7 @@ Expect("...counting only what it lists", RowFor("Durotar").count.text, "1/1")
 Expect("...its continent's banner the same", RowFor("Kalimdor").count.text, "1/1")
 Expect("...all of it found: the gold tick after its numbers, no share", RowFor("Durotar").status:IsShown()
     and RowFor("Durotar").count.text == "1/1" and RowFor("Durotar").row.tick, true)
-Expect("...15 by 13, as a line's tick is", RowFor("Durotar").status.width .. "x" .. RowFor("Durotar").status.height, "15x13")
+Expect("...14 by 14, as an Era line's tick is", RowFor("Durotar").status.width .. "x" .. RowFor("Durotar").status.height, "14x14")
 Expect("...and is remembered", Z:Get("loreVoicedOnly"), true)
 Voiced().func()
 Expect("...off, everything again", Shown(), "Eastern Kingdoms|Dun Morogh|Kalimdor|Durotar|Orgrimmar|Sen'jin Village|Valley of Trials")
