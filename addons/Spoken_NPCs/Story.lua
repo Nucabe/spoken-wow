@@ -34,14 +34,19 @@ function NPCs:SetupStories()
 	})
 end
 
+--- Whether this character has been shown the story of the boss `key` of `map`.
+function NPCs:IsStoryRead(map, key)
+	return SpokenNPCsCharacter ~= nil and SpokenNPCsCharacter.storiesRead[NPCs.Key(map, key)] == true
+end
+
 --- Shows the story of the boss `key` of `map` in the narrator. Nothing when this character has
 --- been shown it, the narrator would not show it, or the boss has none. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
 --- once it starts, so one dropped or cleared shows the next time.
 function NPCs:ReadStory(map, key)
 	if not (source and SpokenNPCsCharacter) then return false end
-	local id = map .. ":" .. key
-	if SpokenNPCsCharacter.storiesRead[id] or not Spoken:ShowsNarratorFor("bosses") then return false end
+	local id = NPCs.Key(map, key)
+	if self:IsStoryRead(map, key) or not Spoken:ShowsNarratorFor("bosses") then return false end
 	local clip = self:StoryClip(map, key)
 	if not clip then return false end
 	clip.priority = "low"
@@ -140,7 +145,7 @@ function NPCs:TargetChanged(unit)
 	local id = Spoken.CreatureID(guid)
 	local boss = id and Creatures()[id]
 	if not (boss and self:IsUnannounced(boss.map, boss.key)) or Dead(unit) ~= false then return end
-	if self:IsBossFound(boss.map, boss.key) and SpokenNPCsCharacter.storiesRead[boss.map .. ":" .. boss.key] then return end
+	if self:IsBossFound(boss.map, boss.key) and self:IsStoryRead(boss.map, boss.key) then return end
 	Watch(boss, guid)
 end
 

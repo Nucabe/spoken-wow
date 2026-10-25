@@ -66,7 +66,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   opened there are now on Shift-right-click. *([Nucabe](https://github.com/Nucabe))*
 - **World bosses are found when they die.** Lord Kazzak, Azuregos, Prince Thunderaan and the four
   Emerald Dragons could stay locked after you fought them.
-  Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
+  Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again, locked unless Unlock
+  Unfound Bosses is on, as inside an instance the game names no boss to Spoken. Blackfathom Deeps and
   Gnomeregan list their bosses in Forever's order, not the Season of Discovery raid's.
   *([Nucabe](https://github.com/Nucabe))*
 - **The Compendium's quest list follows live Forever more closely.** Skyborne and other races

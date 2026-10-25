@@ -35,9 +35,11 @@ function NPCs:ResetOptions()
 	end
 end
 
-local function Key(map, key)
+--- How the boss `key` of `map` is filed in what a character has met and been told: "map:key".
+function NPCs.Key(map, key)
 	return map .. ":" .. key
 end
+local Key = NPCs.Key
 
 -- [encounter id] = { { map, key }, ... }, from Data/Bosses.lua, built on first use. A fight against
 -- two bosses at once (the Weaver and Dreamscythe) is one encounter of both. onTarget["map:key"] =
