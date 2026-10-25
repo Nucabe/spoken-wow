@@ -174,13 +174,23 @@ fits. Then two steps for a server that lays out or words a page differently from
   (`C_Container.UseContainerItem`), the object a tooltip was last on and the interact key's
   object. `Books.lua`'s `owners` maps the id to its book, and the page number picks the page.
   Refused where the book has no page at that number, or where the title on screen is another
-  corpus book's, which means the id was something touched before the click.
+  corpus book's, which means the id was something touched before the click. Where the page at
+  that number shares under 60% of the words on screen and another page of the book shares
+  more, that page: Forever's Sargeras and the Betrayal skips a page, so each later page shows
+  a number early. Text in another language matches no page's words and keeps the number.
 - **Title, page number and most of the words.** At least 60% of the distinct words in common,
-  and the client's next-page arrow agreeing with where the book ends. The words are the guard:
-  the server may hold a book of the same name that the corpus lacks ("Proof of Deed" is many
-  bosses' deeds).
+  and the client's next-page arrow agreeing with where the book ends, unless 90% are in common:
+  Forever ends some chains early. Where nothing at the number is close, the numbers either side.
+  The words are the guard: the server may hold a book of the same name that the corpus lacks
+  ("Proof of Deed" is many bosses' deeds).
 
 Either way the clip is the corpus page's, so a page the server rewords plays the corpus's words.
+The words on screen are still news to the corpus, so the page stays a contribution gap.
+
+A stale candidate is not caught where the title on screen is one the corpus lacks, as in a
+client in another language: the interact key's target stays a candidate however long ago it
+was picked, and a book opened by a way `Opener.lua` does not hear (a bag addon's buttons, an
+action bar, `/use`) falls back on it.
 Then nothing. Nothing is the right last answer: the alternative is reading the wrong page's
 words aloud.
 

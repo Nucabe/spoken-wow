@@ -35,6 +35,7 @@ local REGISTRY_1 = "Hillsbrad Town Registry\n\nWe the people of Hillsbrad do sol
 ---------------------------------------------------------------- the normal path
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_1, hasNext = true })
 Expect("a page is found by title, number and checksum", B:PageOnScreen(), 261)
+Expect("...as the corpus's own text", select(2, B:PageOnScreen()), true)
 
 local book, number = B:PlaceOf(261)
 Expect("...and knows which book it is in", book, 261)
@@ -92,8 +93,22 @@ local REGISTRY_REWORDED = string.gsub(REGISTRY_1, "solemny swear our faith and d
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_REWORDED, hasNext = true })
 Expect("...and one with a sentence reworded", B:PageOnScreen(), 261)
 
+Expect("...which is not the corpus's own text", select(2, B:PageOnScreen()), false)
+
+-- Forever's chain ends the Registry early, so its last page offers no next page.
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_RELAID, hasNext = false })
+Expect("all but the same words are the page where the screen ends a book the corpus goes on with", B:PageOnScreen(), 261)
+
+local REGISTRY_REWRITTEN = string.gsub(REGISTRY_REWORDED, "for purposes of governing this fair city in the foothills", "kept to run this town below")
+stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_REWRITTEN, hasNext = true })
+Expect("most of the words are the page", B:PageOnScreen(), 261)
+stub.ShowPage({ title = "Hillsbrad Town Registry", number = 1, text = REGISTRY_REWRITTEN, hasNext = false })
 Expect("...but not where the screen ends a book the corpus goes on with", B:PageOnScreen(), nil)
+
+-- Forever's Sargeras and the Betrayal has no 1774, so its second page is the corpus's third.
+local SARGERAS_3 = string.gsub(B:Data().pages[1775].text, "%. ", ".\n")
+stub.ShowPage({ title = "Sargeras and the Betrayal", number = 2, text = SARGERAS_3, hasNext = true })
+Expect("a page a place early is found at the number after", B:PageOnScreen(), 1775)
 
 stub.ShowPage({ title = "Proof of Deed", number = 1, text = "This proof of deed is to verify that Torno slew Onyxia, the Black Dragonflight's broodmother." })
 Expect("a book of the same name with other words is not the corpus's", B:PageOnScreen(), nil)
@@ -113,6 +128,16 @@ Expect("...nor under another corpus book's title: that item was not what was cli
 B:OnOpenerClosed()
 stub.ShowPage({ title = "Hillsbrad Town Registry", number = 2, text = "Words the corpus never had.", hasNext = true })
 Expect("closing the frame forgets what opened it", B:PageOnScreen(), nil)
+
+-- Object 175724 is Sargeras and the Betrayal, whose page 2 Forever shows the corpus's page 3 as.
+B:NoteOpener("object", 175724)
+B:OnTextBegin()
+stub.ShowPage({ title = "Sargeras and the Betrayal", number = 2, text = SARGERAS_3, hasNext = true })
+Expect("an opener's page with other words gives way to the page of its book that has them", B:PageOnScreen(), 1775)
+Expect("...which is not the corpus's own text", select(2, B:PageOnScreen()), false)
+stub.ShowPage({ title = "Sargeras et la Trahison", number = 2, text = "Des mots en français.", hasNext = true })
+Expect("...while words in another language keep the number", B:PageOnScreen(), 1774)
+B:OnOpenerClosed()
 
 world.time = 100
 B:NoteOpener("item", 3657)
