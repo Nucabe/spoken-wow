@@ -63,6 +63,17 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **A right-click on a window's words skips the line**, in the Small Window, the Large Window and the
   DialogueUI window: a larger target than the Skip button. The menu and the settings that right-click
   opened there are now on Shift-right-click. *([Nucabe](https://github.com/Nucabe))*
+- **Spoken's windows follow EllesmereUI's look.** With EllesmereUI installed and its EllesmereUI Style
+  in use, the Small and Large Window and the welcome and contribution windows take its dark windows
+  and its font in white, and Spoken's settings pages its thin scroll bars. Portraits are round
+  in a thin grey edge, and Spoken's round buttons, on the subtitles and the quest windows too, are its
+  square ones. The DialogueUI window keeps DialogueUI's look, and under EllesmereUI's other looks
+  nothing changes; its own settings turn this off for Spoken, under Window Skins > Third-Party Addons.
+  *([Nucabe](https://github.com/Nucabe))*
+- **Azeroth's Compendium and the story beside the map follow it too.** In EllesmereUI's look they go
+  dark with no parchment: white words in its font, a thin line for each divider, flat boxes for the
+  list's headings and the tabs, and place pictures with straight edges in a thin border.
+  *([Nucabe](https://github.com/Nucabe))*
 - **Bosses whose fight the game may not announce are found when you target them.** Baron Aquanis, Lord
   Kazzak, Azuregos, Prince Thunderaan and the four Emerald Dragons could stay locked after you fought them.
   Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again. Blackfathom Deeps and
