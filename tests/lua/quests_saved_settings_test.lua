@@ -63,5 +63,15 @@ Expect("a part switched off is saved in Spoken's profile", _G.Spoken:IsPartOn("g
 Expect("...and leaves the quests settings as they were", second.GossipFrequency, VO.Enums.GossipFrequency.Always)
 _G.Spoken:SetPartOn("gossip", true)
 
+-- Started Only, saved off by an earlier version, is turned on once; an off after that is kept.
+_G.SpokenQuestsSettings.global = { Compendium = { FoundOnly = false, UnlockUnfound = true } }
+VO.Addon:OnInitialize()
+local compendium = VO.Addon.db.global.Compendium
+Expect("a Started Only saved off before it was on by default reads as on again", compendium.FoundOnly, nil)
+Expect("...leaving Unlock Unstarted Quests as it was", compendium.UnlockUnfound, true)
+compendium.FoundOnly = false
+VO.Addon:OnInitialize()
+Expect("...and turned off again, it stays off", VO.Addon.db.global.Compendium.FoundOnly, false)
+
 if Failures() > 0 then print(string.format("\n%d failure(s)", Failures())); os.exit(1) end
 print("\nAll quests saved settings tests passed")

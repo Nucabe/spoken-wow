@@ -526,6 +526,13 @@ function Addon:OnInitialize()
     -- two stay one profile. AceDB uses it only where these settings have not seen the character.
     local profile = Spoken and Spoken.NewCharacterStartProfile and Spoken:NewCharacterStartProfile()
     self.db = LibStub("AceDB-3.0"):New("SpokenQuestsSettings", defaults, profile)
+    -- A Started Only saved off before it was on by default would read as the player's choice:
+    -- cleared once behind this marker, as unset reads as on. An off set after that is kept.
+    local compendium = self.db.global.Compendium
+    if not self.db.global.startedOnlyDefaultOn then
+        self.db.global.startedOnlyDefaultOn = true
+        if compendium then compendium.FoundOnly = nil end
+    end
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
     self.db.RegisterCallback(self, "OnProfileReset", "RefreshConfig")
 
