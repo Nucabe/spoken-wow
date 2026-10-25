@@ -43,7 +43,7 @@ local VERSION = _G.SpokenEnv and _G.SpokenEnv.Version
 -- The shared Compendium data contains Forever's added quests, whose IDs start above the vanilla
 -- quest range. The other clients have no quest data for those, even when Forever files one under
 -- one of their zones.
-local QUEST_LIMIT = VERSION and VERSION.Variant ~= "forever" and 10000 or nil
+local QUEST_LIMIT = 10000
 
 local list, page
 local selection          -- { quest = id } | { mapID = id } | { sort = id } | { group = "elsewhere" }
@@ -198,7 +198,7 @@ local function Allowed(quest)
 end
 
 local function OnThisClient(id)
-    return not QUEST_LIMIT or id < QUEST_LIMIT
+    return not VERSION or VERSION.Variant == "forever" or id < QUEST_LIMIT
 end
 
 -- What the game says this character has completed, read again on each refresh: the whole list
@@ -1571,6 +1571,11 @@ local function OnHidden()
         selection = nil
     end
     QuestsTab:Refresh(true)
+end
+
+--- Forget what Index() and Following() worked out, for a test that changes the client under them.
+function QuestsTab:Reindex()
+    index, following = nil, nil
 end
 
 function QuestsTab:Refresh(scrollToSelection)

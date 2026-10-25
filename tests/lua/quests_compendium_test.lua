@@ -379,7 +379,7 @@ Expect("Era leaves out Forever's Camping quests", Has(Shown(), "Camping"), false
 Click("Professions")
 Click("Other")
 list = Shown()
-Expect("Other holds the Commendation Signets' hand-ins, the Argent Dawn's and the library books, under those names",
+Expect("Other holds the Commendation Signets' hand-ins and the Argent Dawn's under those names, on Era no library books",
     Has(list, "Commendation Signets") and Has(list, "Argent Dawn") and not Has(list, "Library Books")
     and not Has(list, "Reputation"), true)
 Expect("...and no Place Unknown: CLUCK!, its last quest, is in Westfall and Tirisfal Glades, where its feed is sold",
@@ -397,6 +397,35 @@ Expect("the zones on no continent a banner after the continents, then the battle
     list:find("|Battlegrounds|Classes|", 1, true) ~= nil
     and RowFor(L.QUESTS_SECTION_LANDS) == nil, true)
 Expect("...closed, Zephras Isle not shown", Has(list, "Zephras Isle"), false)
+
+-- On Forever, its own quests are listed: Zephras Isle is on no continent, under a banner of its
+-- own after them, closed with it; Camping and the library books are there too.
+local function OnClient(variant)
+    SpokenEnv.Version.Variant = variant
+    Tab:Reindex()
+    Tab:Refresh()
+end
+OnClient("forever")
+Expect("Forever lists its own quests", Tab:Lists(ERA_FOREVER_QUEST), true)
+list = Shown()
+Expect("...the zones on no continent a banner after the continents, then the battlegrounds' banner",
+    list:find("|" .. L.QUESTS_SECTION_LANDS .. "|Battlegrounds|Classes|", 1, true) ~= nil
+    and RowFor(L.QUESTS_SECTION_LANDS).row.style, "banner")
+Expect("...closed, Zephras Isle not shown", Has(list, "Zephras Isle"), false)
+Click(L.QUESTS_SECTION_LANDS)
+Expect("...opened, Zephras Isle a line inside it", RowFor("Zephras Isle") ~= nil and RowFor("Zephras Isle").row.style == "group"
+    and RowFor("Zephras Isle").row.nest, 0)
+Expect("...its page in Azeroth, as a continent's, counting their quests", page.title.text == L.QUESTS_SECTION_LANDS
+    and page.sub.text.text:match("^In Azeroth · 0 of %d+ completed$") ~= nil, true)
+Click(L.QUESTS_SECTION_LANDS)
+Expect("...and closed again", Has(Shown(), "Zephras Isle"), false)
+Click("Professions")
+Expect("...Professions holds Camping, whose quests are Camping 101 for one profession or another", Has(Shown(), "Camping"), true)
+Click("Professions")
+Click("Other")
+Expect("...Other the library books", Has(Shown(), "Library Books"), true)
+Click("Other")
+OnClient("era")
 list = Shown()
 Expect("...the battlegrounds a banner", RowFor("Battlegrounds").row.style, "banner")
 Expect("...no battleground among its continent's zones", Has(list, "Alterac Valley"), false)
