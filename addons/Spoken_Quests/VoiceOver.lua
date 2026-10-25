@@ -1093,7 +1093,7 @@ end
 
 function Addon:RefreshConfig()
     Player:RefreshConfig()
-    if QuestOverlayUI.UpdateTrackerButtons then QuestOverlayUI.UpdateTrackerButtons() end
+    QuestOverlayUI.UpdateTrackerButtons()
 end
 
 local function GossipSoundDataAdded(soundData)

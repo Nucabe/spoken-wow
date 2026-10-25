@@ -26,7 +26,6 @@ end
 -- Questie exposes its tracker modules only through QuestieLoader.
 local questieLines = {}
 local questiePool = {
-    active = questieLines,
     UpdateQuestTitleLines = function(callback)
         for _, line in ipairs(questieLines) do
             if line.mode == "quest" then callback(line) end
@@ -43,7 +42,7 @@ _G.QuestieLoader = {
 local VO = stub.LoadQuestsOverlay(QUESTS, SPOKEN)
 VO.Addon:OnInitialize()
 VO.DataModules:Register("TestPack", {
-    SoundLengthLookupByFileName = { ["748-accept"] = 1 },
+    SoundLengthLookupByFileName = { ["748-accept"] = 1, ["749-accept"] = 1 },
     GetSoundPath = function(_, fileName) return fileName .. ".ogg" end,
 })
 stub.Advance(2)
@@ -51,11 +50,7 @@ stub.Advance(2)
 QuestWatch_Update()
 Expect("the Era tracker adapter is installed", VO.QuestOverlayUI.legacyTrackerPlayButtons ~= nil, true)
 Expect("the watch title was drawn", QuestWatchLine1:GetText(), "Poison Water")
-Expect("the watch quest is available", GetQuestIndexForWatch(1), 1)
-Expect("the watch log title is available", select(1, GetQuestLogTitle(1)), "Poison Water")
-Expect("the watch log quest id is available", select(8, GetQuestLogTitle(1)), 748)
-local classicButton
-classicButton = VO.QuestOverlayUI.legacyTrackerPlayButtons[748]
+local classicButton = VO.QuestOverlayUI.legacyTrackerPlayButtons[748]
 Expect("the Era watch frame gets a Play button", classicButton and classicButton:IsShown(), true)
 Expect("the Era Play button is 18 pixels square", classicButton:GetWidth(), 18)
 

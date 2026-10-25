@@ -81,9 +81,8 @@ function SettingsPanel:Setup()
         return _G.QuestLogFrame ~= nil or QuestLogQuests_Update ~= nil
     end
     local function HasObjectiveTracker()
-        return (QuestOverlayUI.UpdateTrackerButtons ~= nil
-                and (_G.QuestObjectiveTracker ~= nil or _G.CampaignQuestObjectiveTracker ~= nil))
-            or QuestWatch_Update ~= nil or WatchFrame_Update ~= nil
+        return _G.QuestObjectiveTracker ~= nil or _G.CampaignQuestObjectiveTracker ~= nil
+            or QuestWatch_Update ~= nil
             or (_G.QuestieLoader and _G.QuestieLoader.ImportModule ~= nil)
     end
     layout:Section(L.OPT_SECTION_TRACKER)
@@ -99,7 +98,7 @@ function SettingsPanel:Setup()
         function() return Addon.db.profile.TrackerPlayButton ~= false end,
         function(value)
             Addon.db.profile.TrackerPlayButton = value
-            if QuestOverlayUI.UpdateTrackerButtons then QuestOverlayUI.UpdateTrackerButtons() end
+            QuestOverlayUI.UpdateTrackerButtons()
         end)
     layout:ShowWhen(trackerPlay, HasObjectiveTracker)
 
