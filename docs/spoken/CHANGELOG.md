@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **The contribute box names TBC Anniversary's game folder.** On Anniversary it says where the
+  saved variables are, under `_anniversary_`, instead of offering `_classic_era_` first.
+  *([rusty-key](https://github.com/rusty-key))*
 - **Captions follow the voice word by word.** Quest, gossip, place and book recordings made from
   now on carry when each word is spoken, so the highlighted word keeps pace with the voice instead
   of an estimate. Older recordings, and captions in another language than the voice's, are

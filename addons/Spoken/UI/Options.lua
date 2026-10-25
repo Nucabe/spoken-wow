@@ -711,7 +711,7 @@ local function Build()
     Requires(progress, function() return not Subtitles() or Narrator() end, L.REASON_NARRATOR)
     -- Forever only, where it matches the game's own frames: every frame Spoken draws, whatever
     -- the style.
-    if Version.IsCamelot then
+    if Version.Variant == "forever" then
         layout:Checkbox(L.OPT_BRONZE_TINT, nil,
             function() return cfg().BronzeTint end, function(v) cfg().BronzeTint = v end, refresh)
     end

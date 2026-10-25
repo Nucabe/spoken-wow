@@ -39,7 +39,7 @@ print("PASS: Lua 5.1 syntax for " .. files .. " addon/library files")
 run(read(here .. "/fixture.lua"), "fixture.lua")
 load("Environment.lua")
 run([[
-SpokenEnv.Version={IsRetailVanilla=false}]], "version stub")
+SpokenEnv.Version={Variant="anniversary"}]], "version stub")
 load("Core.lua")
 run([[
 

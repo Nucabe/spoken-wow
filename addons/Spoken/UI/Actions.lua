@@ -46,7 +46,7 @@ local BOX_LIT = 0.7
 -- The Forever client's bronze, as its own frames wear it: the round buttons' rings and the small
 -- window's metal take it while Bronze Border is on. Every ring made, to tint again when the setting
 -- changes.
-local BRONZE = Version.IsCamelot and { .95, .68, .35 } or nil
+local BRONZE = Version.Variant == "forever" and { .95, .68, .35 } or nil
 Actions.BRONZE = BRONZE
 local rings = setmetatable({}, { __mode = "k" })
 
