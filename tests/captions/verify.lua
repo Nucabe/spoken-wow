@@ -34,7 +34,7 @@ end
 
 dofile(addons .. 'Spoken/Environment.lua')
 local E=SpokenEnv
-E.Version={IsCamelot=true}
+E.Version={Variant="forever"}
 dofile(addons .. 'Spoken/Core.lua')
 dofile(addons .. 'Spoken/Callbacks.lua')
 dofile(addons .. 'Spoken/SoundQueue.lua')
