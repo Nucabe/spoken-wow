@@ -42,19 +42,17 @@ end
 local Key = NPCs.Key
 
 -- [encounter id] = { { map, key }, ... }, from Data/Bosses.lua, built on first use. A fight against
--- two bosses at once (the Weaver and Dreamscythe) is one encounter of both. onTarget["map:key"] =
--- true for a boss whose fight may start no encounter, built alongside.
-local byEncounter, onTarget
+-- two bosses at once (the Weaver and Dreamscythe) is one encounter of both.
+local byEncounter
 local function Encounters()
 	if byEncounter then return byEncounter end
-	byEncounter, onTarget = {}, {}
+	byEncounter = {}
 	for map, bosses in pairs(_G.SpokenBosses and SpokenBosses.maps or {}) do
 		for _, boss in ipairs(bosses) do
 			for _, id in ipairs(boss.ids) do
 				byEncounter[id] = byEncounter[id] or {}
 				table.insert(byEncounter[id], { map = map, key = boss.key })
 			end
-			if boss.onTarget then onTarget[Key(map, boss.key)] = true end
 		end
 	end
 	return byEncounter
@@ -89,13 +87,6 @@ end
 function NPCs:FoundEncounter(encounterID)
 	local bosses = SpokenNPCsCharacter and encounterID and Encounters()[encounterID]
 	return bosses and Meet(self, bosses) or false
-end
-
---- Whether the boss `key` of `map` is one whose fight may start no encounter (`onTarget` in
---- Data/Bosses.lua): the game sends no kill for it, so its death is watched after the player targets it or sees its nameplate.
-function NPCs:IsUnannounced(map, key)
-	Encounters()
-	return onTarget[Key(map, key)] == true
 end
 
 --- The boss `key` of `map` is met. Returns whether it was not met before.

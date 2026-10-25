@@ -29,12 +29,12 @@ frame:SetScript("OnEvent", function(self, event, arg1, _, _, _, arg5)
 		-- Forever reports a won dungeon fight as ENCOUNTER_END with success 0; this event names the kill.
 		NPCs:EncounterEnded(arg1, 1)
 	elseif event == "PLAYER_TARGET_CHANGED" then
-		NPCs:TargetChanged()
+		NPCs:UnitSeen()
 	elseif event == "NAME_PLATE_UNIT_ADDED" then
-		NPCs:TargetChanged(arg1)
+		NPCs:UnitSeen(arg1)
 	else
 		-- A reload mid-fight keeps the target without a change to report.
-		NPCs:TargetChanged()
+		NPCs:UnitSeen()
 		if NPCs.SetupBosses then NPCs:SetupBosses() end
 		if NPCs.SetupOptions then NPCs:SetupOptions() end
 		self:UnregisterEvent("PLAYER_ENTERING_WORLD")

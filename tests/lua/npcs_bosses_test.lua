@@ -417,7 +417,7 @@ local function Clear() Q:RemoveAllSoundsFromQueue(); stub.Advance(2) end
 local EDWIN = "boss:36:edwin vancleef"
 world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 Expect("targeting a boss shows no story", Showing(), "nothing")
 NPCs:EncounterEnded(edwin.id, 0)
 Expect("...nor does a fight the party lost", Showing(), "nothing")
@@ -472,7 +472,7 @@ for _, queued in ipairs(Q.sounds) do both[#both + 1] = queued.key end
 Expect("...and both for one kill show it once", table.concat(both, "|"), EDWIN)
 Clear(); NPCs:ForgetStories()
 
-local instanceInfo, unitName = _G.GetInstanceInfo, _G.UnitName
+local instanceInfo = _G.GetInstanceInfo
 local sunkenMap
 for map, bosses in pairs(SpokenBosses.maps) do
     for _, boss in ipairs(bosses) do
@@ -496,11 +496,6 @@ local function Listed(map, key)
 end
 Expect("Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths",
     tostring(Listed(230, "ribbly screwspigot") ~= nil) .. "|" .. tostring(Listed(230, "plugger spazzring") ~= nil), "true|true")
-Expect("the world bosses are watched for their death; Baron Aquanis, Ribbly, Plugger and Edwin VanCleef, inside instances, are not",
-    tostring(NPCs:IsUnannounced(2789, "lord kazzak")) .. "|" .. tostring(NPCs:IsUnannounced(2832, "ysondre")) .. "|"
-        .. tostring(NPCs:IsUnannounced(48, "baron aquanis")) .. "|" .. tostring(NPCs:IsUnannounced(230, "ribbly screwspigot")) .. "|"
-        .. tostring(NPCs:IsUnannounced(230, "plugger spazzring")) .. "|" .. tostring(NPCs:IsUnannounced(36, "edwin vancleef")),
-    "true|true|false|false|false|false")
 -- What each unit is: the client clears the target as the boss dies, and still reports it, dead, on a
 -- nameplate or the soft target.
 local units, dead = {}, false
@@ -521,14 +516,14 @@ _G.GetInstanceInfo = function() return "Eastern Kingdoms", "none", 0, "", 0, 0, 
 _G.SpokenBossStories[2789] = { ["lord kazzak"] = "He burns." }
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 Expect("a world boss targeted alive is not met and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
 Health("target")
 Expect("...nor does its health changing while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
 units.target = nil
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.nameplate1 = KAZZAK
 dead = true
 Health("nameplate2")
@@ -545,7 +540,7 @@ dead = false
 units.nameplate1 = nil
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target = nil
 stub.Advance(2)
 Expect("a boss no unit shows is not a kill", Showing(), "nothing")
@@ -563,9 +558,9 @@ stub.SetZone({ zone = "Azshara" })
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target = AZUREGOS
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
@@ -579,7 +574,7 @@ units.nameplate1 = nil
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 stub.Advance(1801, 1)
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
@@ -590,7 +585,7 @@ units.nameplate1 = nil
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target = nil
 stub.Advance(1801, 1)
 units.nameplate1 = KAZZAK
@@ -600,7 +595,7 @@ Expect("a watch ends half an hour after the boss was last seen", Showing(), "not
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 stub.SetZone({ zone = "" })
 stub.Advance(2, 1)
 stub.SetZone({ zone = "Azshara" })
@@ -612,7 +607,7 @@ Clear()
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 stub.SetZone({ zone = "Orgrimmar" })
 stub.Advance(2, 1)
 units.target, units.nameplate1 = nil, KAZZAK
@@ -639,7 +634,7 @@ units.boss1 = nil
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 stub.Secrets(true)
@@ -655,7 +650,7 @@ _G.UnitTokenFromGUID = nil
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target = nil
 stub.Advance(2, 1)
 units.nameplate1 = KAZZAK
@@ -670,7 +665,7 @@ NPCs.FoundBoss = function() error("the list failed to draw") end
 dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
@@ -683,18 +678,18 @@ units.nameplate1 = nil
 dead = true
 NPCs:ForgetStories()
 units.target = KAZZAK
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 Health("target")
 Expect("a corpse targeted is not a kill", Showing(), "nothing")
 dead = false
 units.target = EDWIN_GUID
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 dead = true
 Health("target")
 Expect("a boss whose fight starts an encounter is not watched", Showing(), "nothing")
 dead = false
 units.target = "Player-1-0000ABCD"
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 dead = true
 Health("target")
 Expect("a player is not watched", Showing(), "nothing")
@@ -704,13 +699,13 @@ dead = false
 NPCs:ForgetStories()
 units.target = KAZZAK
 stub.Secrets(KAZZAK)
-NPCs:TargetChanged()
+NPCs:UnitSeen()
 stub.Secrets()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
 Expect("a boss whose GUID the client hides is not watched", Showing(), "nothing")
 _G.UnitGUID, _G.UnitTokenFromGUID, _G.UnitIsDead = unitGUID, unitTokenFromGUID, unitIsDead
-_G.GetInstanceInfo, _G.UnitName = instanceInfo, unitName
+_G.GetInstanceInfo = instanceInfo
 
 if Failures() > 0 then os.exit(1) end

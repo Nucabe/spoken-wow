@@ -1,21 +1,26 @@
 local _, NPCs = ...
 
 -- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
--- is killed. The game sends no kill for a boss whose fight it may not announce (`onTarget`), so its
--- death is watched after the player targets it.
+-- is killed. The game sends no kill for a world boss, so its death is watched once the player targets
+-- it or sees its nameplate.
 
 local L = NPCs.L
 
 local source
 
--- [creature id] = { map, key }, from Data/Creatures.lua, built on first use.
+-- [creature id] = { map, key } of the world bosses (`worldBosses` in Spoken's Data/Dungeons.lua), from
+-- Data/Creatures.lua, built on first use. Their rows are on instanced maps while Forever spawns them in
+-- the open world, so their fight starts no encounter.
 local byCreature
-local function Creatures()
+local function WorldBosses()
 	if byCreature then return byCreature end
 	byCreature = {}
+	local worlds = _G.SpokenDungeons and SpokenDungeons.worldBosses or {}
 	for map, bosses in pairs(_G.SpokenBossCreatures or {}) do
-		for key, entry in pairs(bosses) do
-			if entry.creature then byCreature[entry.creature] = { map = map, key = key } end
+		if worlds[map] then
+			for key, entry in pairs(bosses) do
+				if entry.creature then byCreature[entry.creature] = { map = map, key = key } end
+			end
 		end
 	end
 	return byCreature
@@ -46,7 +51,7 @@ end
 function NPCs:ReadStory(map, key)
 	if not (source and SpokenNPCsCharacter) then return false end
 	local id = NPCs.Key(map, key)
-	if self:IsStoryRead(map, key) or not Spoken:ShowsNarratorFor("bosses") then return false end
+	if SpokenNPCsCharacter.storiesRead[id] or not Spoken:ShowsNarratorFor("bosses") then return false end
 	local clip = self:StoryClip(map, key)
 	if not clip then return false end
 	clip.priority = "low"
@@ -54,7 +59,7 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
--- The bosses the player met alive, of those whose fight may start no encounter: [guid] = { boss, since,
+-- The world bosses the player met alive: [guid] = { boss, since,
 -- zone }. The client clears the target as the boss dies, so the target is no help then; the boss is
 -- found by its GUID on any unit the client reports it on (a nameplate, the soft target, the mouse),
 -- whose health event and dead flag are still readable.
@@ -74,7 +79,9 @@ end
 -- Whether `unit` is dead, or nil when the client hides it.
 local function Dead(unit)
 	local dead = UnitIsDead(unit)
-	if issecretvalue and issecretvalue(dead) then return nil end
+	-- Not Spoken.NotSecret: a hidden flag must stay apart from nil, which is alive.
+	local issecret = rawget(_G, "issecretvalue")
+	if issecret and issecret(dead) then return nil end
 	return dead and true or false
 end
 
@@ -135,16 +142,15 @@ local function Watch(boss, guid)
 	if not polling then polling = true; C_Timer.After(POLL_SECONDS, Poll) end
 end
 
---- The player targeted a unit, or one came into view (`unit`): a boss whose fight may start no
---- encounter, alive and not yet told, is watched until it dies. A target cleared, as it is when the
---- boss dies, leaves the watch as it was.
-function NPCs:TargetChanged(unit)
+--- The player targeted a unit, or one came into view (`unit`): a world boss, alive and not yet told,
+--- is watched until it dies. A target cleared, as it is when the boss dies, leaves the watch as it was.
+function NPCs:UnitSeen(unit)
 	unit = unit or "target"
 	local guid = Spoken.NotSecret(UnitGUID and UnitGUID(unit))
 	if not guid or watched[guid] then return end
 	local id = Spoken.CreatureID(guid)
-	local boss = id and Creatures()[id]
-	if not (boss and self:IsUnannounced(boss.map, boss.key)) or Dead(unit) ~= false then return end
+	local boss = id and WorldBosses()[id]
+	if not boss or Dead(unit) ~= false then return end
 	if self:IsBossFound(boss.map, boss.key) and self:IsStoryRead(boss.map, boss.key) then return end
 	Watch(boss, guid)
 end

@@ -13,9 +13,9 @@ its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's fil
 
 A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
 `BOSS_KILL`), by any difficulty's encounter id from the `ids` of `Data/Bosses.lua`, kept per character in
-`SpokenNPCsCharacter`. A boss whose fight may start no encounter in Forever (`onTarget`, from `ON_TARGET`
-in `pipelines/lib/bosses.mjs`: the world bosses) is found when it dies after the player targeted it alive
-or saw its nameplate: `Story.lua` keeps its GUID, as the client clears the target as the boss dies but still
+`SpokenNPCsCharacter`. A world boss (`worldBosses` in `addons/Spoken/Data/Dungeons.lua`), whose fight
+starts no encounter in Forever, is found when it dies after the player targeted it alive or saw its
+nameplate: `Story.lua` keeps its GUID, as the client clears the target as the boss dies but still
 reports it, dead, on a nameplate or the soft target (`UNIT_HEALTH`, and once a second `UnitTokenFromGUID`).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
 Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
@@ -26,8 +26,8 @@ The search finds bosses, dungeons and zones by name.
 A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
 killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
 `ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it in an instance: the
-client hides a unit's GUID, name and model from addons there, so no boss is known from the target. An
-`onTarget` boss is told by its death instead, as Forever sends no kill for it (seen with Lord Kazzak).
+client hides a unit's GUID, name and model from addons there, so no boss is known from the target. A
+world boss is told by its death instead, as Forever sends no kill for it (seen with Lord Kazzak).
 An instance boss the game announces no fight for (Baron Aquanis, Ribbly, Plugger) is not found or told:
 the client hides its GUID there.
 Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until

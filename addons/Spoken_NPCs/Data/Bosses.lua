@@ -5,8 +5,7 @@
 -- the client's encounter, `ids` every encounter the client has for it, one for each difficulty
 -- (the ids ENCOUNTER_START gives), `key` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
--- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). `onTarget` marks a boss found when it dies after the player targeted it, as its
--- fight may start no encounter. Regenerate with:
+-- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). Regenerate with:
 --   make bosses
 --
 -- A global rather than a private namespace: a data file cannot reach into the addon's environment.
@@ -319,19 +318,19 @@ SpokenBosses = {
 			{ id = 3080, ids = { 3080 }, key = "azgaloth", "Azgaloth", ruRU = "Азгалот", koKR = "아즈갈로스", zhCN = "阿兹加洛斯", zhTW = "亞茲加洛斯" },
 		},
 		[2789] = {
-			{ id = 3026, ids = { 3026 }, key = "lord kazzak", "Lord Kazzak", frFR = "Seigneur Kazzak", ptBR = "Lorde Kazzak", ruRU = "Владыка Каззак", koKR = "군주 카자크", zhCN = "卡扎克", zhTW = "卡札克領主", onTarget = true },
+			{ id = 3026, ids = { 3026 }, key = "lord kazzak", "Lord Kazzak", frFR = "Seigneur Kazzak", ptBR = "Lorde Kazzak", ruRU = "Владыка Каззак", koKR = "군주 카자크", zhCN = "卡扎克", zhTW = "卡札克領主" },
 		},
 		[2791] = {
-			{ id = 3027, ids = { 3027 }, key = "azuregos", "Azuregos", ruRU = "Азурегос", koKR = "아주어고스", zhCN = "艾索雷葛斯", zhTW = "艾索雷苟斯", onTarget = true },
+			{ id = 3027, ids = { 3027 }, key = "azuregos", "Azuregos", ruRU = "Азурегос", koKR = "아주어고스", zhCN = "艾索雷葛斯", zhTW = "艾索雷苟斯" },
 		},
 		[2804] = {
-			{ id = 3079, ids = { 3079 }, key = "prince thunderaan", "Prince Thunderaan", deDE = "Prinz Donneraan", esES = "Príncipe Thunderaan", esMX = "Príncipe Thunderaan", frFR = "Prince Tonneraan", ptBR = "Príncipe Trovejardus", ruRU = "Принц Громораан", koKR = "왕자 썬더란", zhCN = "桑德兰王子", zhTW = "桑德蘭王子", onTarget = true },
+			{ id = 3079, ids = { 3079 }, key = "prince thunderaan", "Prince Thunderaan", deDE = "Prinz Donneraan", esES = "Príncipe Thunderaan", esMX = "Príncipe Thunderaan", frFR = "Prince Tonneraan", ptBR = "Príncipe Trovejardus", ruRU = "Принц Громораан", koKR = "왕자 썬더란", zhCN = "桑德兰王子", zhTW = "桑德蘭王子" },
 		},
 		[2832] = {
-			{ id = 3111, ids = { 3111 }, key = "emeriss", "Emeriss", ruRU = "Эмерисс", koKR = "에메리스", zhCN = "艾莫莉丝", zhTW = "艾莫莉絲", onTarget = true },
-			{ id = 3112, ids = { 3112 }, key = "lethon", "Lethon", frFR = "Léthon", ruRU = "Летон", koKR = "레손", zhCN = "莱索恩", zhTW = "雷索", onTarget = true },
-			{ id = 3113, ids = { 3113 }, key = "taerar", "Taerar", ruRU = "Таэрар", koKR = "타에라", zhCN = "泰拉尔", zhTW = "泰拉爾", onTarget = true },
-			{ id = 3114, ids = { 3114 }, key = "ysondre", "Ysondre", ptBR = "Ysondra", ruRU = "Исондра", koKR = "이손드레", zhCN = "伊森德雷", zhTW = "伊索德雷", onTarget = true },
+			{ id = 3111, ids = { 3111 }, key = "emeriss", "Emeriss", ruRU = "Эмерисс", koKR = "에메리스", zhCN = "艾莫莉丝", zhTW = "艾莫莉絲" },
+			{ id = 3112, ids = { 3112 }, key = "lethon", "Lethon", frFR = "Léthon", ruRU = "Летон", koKR = "레손", zhCN = "莱索恩", zhTW = "雷索" },
+			{ id = 3113, ids = { 3113 }, key = "taerar", "Taerar", ruRU = "Таэрар", koKR = "타에라", zhCN = "泰拉尔", zhTW = "泰拉爾" },
+			{ id = 3114, ids = { 3114 }, key = "ysondre", "Ysondre", ptBR = "Ysondra", ruRU = "Исондра", koKR = "이손드레", zhCN = "伊森德雷", zhTW = "伊索德雷" },
 		},
 		[2856] = {
 			{ id = 3185, ids = { 3185 }, key = "balnazzar", "Balnazzar", ruRU = "Балназзар", koKR = "발나자르", zhCN = "巴纳扎尔", zhTW = "巴納札爾" },
