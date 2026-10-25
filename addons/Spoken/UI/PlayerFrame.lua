@@ -314,7 +314,6 @@ function PlayerFrame:RefreshConfig()
             self.frame.container.name:SetTextColor(1, 1, 1)
             -- The shell's own dark behind the words: ApplyArt has just drawn Spoken's box again.
             self.frame.background:SetAlpha(0)
-            -- The portrait flat: no ring or ornate frame round it, no art behind it.
             local portrait = self.frame.portrait
             portrait.border.texture:SetAlpha(0)
             portrait.background:SetAlpha(0)
@@ -554,7 +553,6 @@ function PlayerFrame:FitPortrait()
     if not (portrait and portrait.box) then return end
     local round = portrait.active ~= "model"
     Ellesmere.Shape(portrait.box, portrait.disc, round)
-    -- A picture cut round as the captured face is.
     if round and portrait.active == "texture" and portrait.texture then StaticPortrait:Mask(portrait, portrait.texture) end
 end
 
