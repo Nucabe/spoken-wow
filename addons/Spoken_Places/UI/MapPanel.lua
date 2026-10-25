@@ -43,7 +43,9 @@ end
 
 local function LeatrixFrame()
 	local db = _G.LeaMapsDB
-	return type(db) == "table" and db.SimpleMapFrame ~= "Off" and IsAddOnLoaded("Leatrix_Maps")
+	-- Spoken's environment has IsAddOnLoaded on every client; the game's own global is gone.
+	return type(db) == "table" and db.SimpleMapFrame ~= "Off"
+		and SpokenEnv.IsAddOnLoaded("Leatrix_Maps")
 end
 
 local edge

@@ -548,11 +548,13 @@ end
 WorldMapFrame.MiniBorderFrame, WorldMapFrame.BorderFrame = nil, nil
 Relaid()
 Expect("...returns to the default map edge when no alternate map is active", panel.anchor.relativeTo, WorldMapFrame)
--- Leatrix Maps loaded, its simple frame on.
+-- Leatrix Maps loaded, its simple frame on. The client has no global IsAddOnLoaded: only Spoken's
+-- environment answers.
 local loadedAddon = _G.IsAddOnLoaded
 WorldMapFrame.ScrollContainer = CreateFrame("Frame", nil, WorldMapFrame)
 _G.LeaMapsDB = { SimpleMapFrame = "On" }
-_G.IsAddOnLoaded = function(name) return name == "Leatrix_Maps" or loadedAddon(name) end
+_G.IsAddOnLoaded = nil
+rawset(SpokenEnv, "IsAddOnLoaded", function(name) return name == "Leatrix_Maps" or loadedAddon(name) end)
 Relaid()
 Expect("on Era, Leatrix's frame is the map's edge", panel.anchor.relativeTo ~= WorldMapFrame, true)
 Expect("...on Era with the panel against the gold border, not stepped back over the game's", panel.anchor.x, 2)
@@ -561,6 +563,7 @@ SpokenEnv.Version.Variant = "forever"
 Relaid()
 Expect("Forever selects Leatrix's map edge too", panel.anchor.relativeTo ~= WorldMapFrame, true)
 _G.IsAddOnLoaded, _G.LeaMapsDB = loadedAddon, nil
+rawset(SpokenEnv, "IsAddOnLoaded", nil)
 Relaid()
 Expect("...and without Leatrix keeps the small gap, the default border having no clear edge there",
     panel.anchor.x, 2)
