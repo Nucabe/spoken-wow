@@ -4,6 +4,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Spoken steps aside for Immersion.** While Immersion's window shows a quest, gossip or a book,
+  Spoken's window and subtitles stay hidden, as they do for DialogueUI, and the voice plays on.
+  They come back once the window closes, for a line still playing and for one you start with Play.
+  *([Aleph-Null-Zero](https://github.com/Aleph-Null-Zero))*
 - **Captions are in the language you read, not the voice's.** A place's story is captioned in the
   Places page's Text Language, so French text with an English voice shows French words. Books and
   letters follow your client's language the same way, whichever voice or fallback recording plays:

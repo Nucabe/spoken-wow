@@ -960,25 +960,44 @@ function Actions:HeaderControls(frame, controls, first, clip)
     return row
 end
 
---- Whether a DialogueUI dialog (its quest window or its book view) is open with the windows not
---- put over it (Show Spoken Over DialogueUI off): DialogueUI then hides the interface, and a window
---- left showing would leave its 3D portrait over the dialog, which takes no alpha from it.
+-- DialogueUI's quest window and book view, and Immersion's window, which shows quests, gossip and
+-- books in its own talking box.
+local DIALOGUEUI_DIALOGS = { "DUIQuestFrame", "DUIBookFrame" }
+local DIALOGS = { "DUIQuestFrame", "DUIBookFrame", "ImmersionFrame" }
+
+local function Open(name)
+    local dialog = _G[name]
+    return type(dialog) == "table" and dialog.IsShown and dialog:IsShown() and true or false
+end
+
+--- Whether Immersion's window is open. The subtitles ask only this: DialogueUI hides them with
+--- the rest of the interface.
+function Actions.ImmersionOpen()
+    return Open("ImmersionFrame")
+end
+
+--- Whether another addon's dialog is open and showing the line itself, so Spoken's windows stay
+--- away rather than cover it. DialogueUI's, unless the windows are put over it
+--- (Show Spoken Over DialogueUI): DialogueUI hides the interface, and a window left showing would
+--- leave its 3D portrait over the dialog, which takes no alpha from it. Immersion's always: it
+--- keeps the interface unless its Hide Interface is on, so the window would sit beside its box.
 function Actions.DialogCovers()
+    if Actions.ImmersionOpen() then return true end
     if Addon.playerHost then return false end
-    for _, name in ipairs({ "DUIQuestFrame", "DUIBookFrame" }) do
-        local dialog = _G[name]
-        if type(dialog) == "table" and dialog.IsShown and dialog:IsShown() then return true end
+    for _, name in ipairs(DIALOGUEUI_DIALOGS) do
+        if Open(name) then return true end
     end
     return false
 end
 
---- Calls `fn` a frame after a DialogueUI dialog opens or closes, once DialogueUI's bridge has put
---- the windows over it or not.
+--- Calls `fn` a frame after a dialog opens or closes, once DialogueUI's bridge has put the windows
+--- over it or not. Immersion's window hides half a second after its last page, once it has faded:
+--- the window comes back then. Between one page and the next it never hides.
 function Actions.WatchDialogs(fn)
     local function Later()
         C_Timer.After(0, fn)
     end
-    for _, name in ipairs({ "DUIQuestFrame", "DUIBookFrame" }) do
+    for _, name in ipairs(DIALOGS) do
         local dialog = _G[name]
         if type(dialog) == "table" and dialog.GetEffectiveScale then
             local watch = CreateFrame("Frame", nil, dialog)

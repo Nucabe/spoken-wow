@@ -97,7 +97,7 @@ function PlayerFrame:Initialize()
     end
     self:RefreshConfig()
     Callbacks:Register("AUDIO_CHANGED", function() PlayerFrame:Update() end)
-    Actions.WatchDialogs(function() PlayerFrame:Update() end)
+    Actions.WatchDialogs(function() PlayerFrame:Update(); Subtitle:Update() end)
 end
 
 function PlayerFrame:InitDisplay()
