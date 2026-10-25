@@ -4,8 +4,13 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Show Play Button covers the Quest Log, Blizzard's tracker and Questie's tracker.**
+  The Quest Log and Tracker suboptions are available wherever their respective buttons can appear,
+  including Era's classic quest log and default tracker.
+  *([anon1231823](https://github.com/anon1231823))*
 - **On Classic Era, the story beside the map sits against the map.** It follows the small map's
   border, with the same narrow gap as on Forever, instead of hanging off the hidden large map's.
+  *([rusty-key](https://github.com/rusty-key))*
 - **Show Collected Lines, in the Contribute settings, lists the lines you have collected.** Each shows
   where it came from and the game's text, newest 200 at most; older ones are still sent.
   *([anon1231823](https://github.com/anon1231823))*
