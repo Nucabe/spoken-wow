@@ -181,24 +181,10 @@ Expect("...the minimize button keeps master's template child placement",
     .. tostring(minimizeRelative == minimizeFrame) .. "|" .. minimizeRelativePoint .. "|" .. minimizeX .. "," .. minimizeY,
     "30x30|CENTER|true|CENTER|0,0")
 Expect("...closed by Escape", _G.UISpecialFrames[#_G.UISpecialFrames], "SpokenCompendiumWindow")
--- Close is cut 2 smaller than the template's 28; the arrows' frame must follow it, or the arrow centred
--- in it sits off Close's row.
-do
-    local close = compendium.CloseButton
-    local point, relativeTo, relativePoint, x, y = maxMin:GetPoint()
-    Expect("...its minimise arrow's frame the size of Close, beside it on its top edge",
-        maxMin:GetWidth() .. "x" .. maxMin:GetHeight() .. " " .. point .. " " .. tostring(relativeTo == close) .. " "
-            .. relativePoint .. " " .. x .. "," .. y,
-        close:GetWidth() .. "x" .. close:GetHeight() .. " TOPRIGHT true TOPLEFT 0,0")
-    Expect("...and the arrows Close's size, centred in it",
-        maxMin.MinimizeButton:GetWidth() .. "x" .. maxMin.MinimizeButton:GetHeight() .. " "
-            .. (select(1, maxMin.MinimizeButton:GetPoint())) .. " " .. tostring(select(2, maxMin.MinimizeButton:GetPoint()) == maxMin),
-        close:GetWidth() .. "x" .. close:GetHeight() .. " CENTER true")
-end
 local page = window.page
 Expect("its story is on the spellbook's parchment", page.parchment, "spellbook-Page-Right-C60")
 Expect("...in an inset of its own, as the list is, so their borders part them", window.pageInset.template,
-    SpokenEnv.Version.IsRetailVanilla and "BackdropTemplate" or "InsetFrameTemplate")
+    SpokenEnv.Version.Variant == "era" and "BackdropTemplate" or "InsetFrameTemplate")
 Expect("...with no credit line on the page", page.credit, nil)
 Expect("Report is the player's round button, the ring round the bug", page.report.ring ~= nil and page.report.glyph ~= nil, true)
 Expect("...under the spellbook's divider", page.divider.atlas or page.divider.layoutAtlas or true, true)

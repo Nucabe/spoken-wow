@@ -8,18 +8,22 @@ setfenv(1, SpokenEnv)
 Spoken.API_VERSION = 1
 Spoken.ADDON_VERSION = AddonVersion
 
--- The shared dungeon data contains instances from every Classic-era client. Era's vanilla
--- instances end at map 533; 2784 is the first Season of Discovery/Forever instance in the
--- generated table. Anniversary uses the same Classic project flag but has its own client maps.
-local FIRST_NON_ERA_DUNGEON = 2784
+-- The shared dungeon data is Forever's, which holds every instance of the Classic-era clients.
+-- The vanilla instances end at map 533; every later one is Season of Discovery's or Forever's own.
+local LAST_VANILLA_DUNGEON = 533
+-- Demon Fall Canyon, Scarlet Enclave and Karazhan Crypts.
+local SOD_DUNGEONS = { [2784] = true, [2856] = true, [2875] = true }
 
 --- Whether the client can have the dungeon instance map `map`.
 ---
---- The Era client does not expose the instance maps of Season of Discovery or Forever through
---- C_Map, so callers must apply the client boundary to shared Compendium data themselves.
+--- The data lists instances a client may not have, and the clients without them expose no
+--- C_Map for them, so callers apply this to shared Compendium data themselves.
 function Spoken:IsDungeonOnClient(map)
-    local era = Version and Version.IsRetailVanilla and not Version.IsCamelot
-    return not era or type(map) ~= "number" or map < FIRST_NON_ERA_DUNGEON
+    local variant = Version and Version.Variant
+    if variant == "forever" or type(map) ~= "number" or map <= LAST_VANILLA_DUNGEON then
+        return true
+    end
+    return variant == "sod" and SOD_DUNGEONS[map] or false
 end
 
 -- The site every module's report, contribute and help links point at. The old hosts

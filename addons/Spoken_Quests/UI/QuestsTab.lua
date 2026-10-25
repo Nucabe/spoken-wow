@@ -40,10 +40,10 @@ VO.QuestsTab = QuestsTab
 local L = VO.L
 local C
 local VERSION = _G.SpokenEnv and _G.SpokenEnv.Version
-local IS_ERA = VERSION and VERSION.IsRetailVanilla
 -- The shared Compendium data contains Forever's added quests, whose IDs start above the vanilla
--- quest range. Era has no quest data for those, even when Forever files one under an Era zone.
-local ERA_QUEST_LIMIT = 10000
+-- quest range. The other clients have no quest data for those, even when Forever files one under
+-- one of their zones.
+local QUEST_LIMIT = VERSION and VERSION.Variant ~= "forever" and 10000 or nil
 
 local list, page
 local selection          -- { quest = id } | { mapID = id } | { sort = id } | { group = "elsewhere" }
@@ -198,7 +198,7 @@ local function Allowed(quest)
 end
 
 local function OnThisClient(id)
-    return not IS_ERA or id < ERA_QUEST_LIMIT
+    return not QUEST_LIMIT or id < QUEST_LIMIT
 end
 
 -- What the game says this character has completed, read again on each refresh: the whole list

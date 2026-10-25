@@ -124,7 +124,7 @@ _G.GameFontHighlight = _G.GameFontHighlight or { GetFont = function() return "fo
 _G.hooksecurefunc = _G.hooksecurefunc or function() end
 
 -- Keep the modern stub APIs used by this test, but exercise the Classic Era map filter.
-SpokenEnv.Version.IsRetailVanilla = true
+SpokenEnv.Version.Variant = "era"
 
 local MAPS = { [947] = "Azeroth", [1414] = "Kalimdor", [1415] = "Eastern Kingdoms", [1411] = "Durotar",
     [1413] = "The Barrens", [1416] = "Alterac Mountains", [1418] = "Badlands", [1420] = "Tirisfal Glades",
@@ -190,6 +190,18 @@ Expect("Era leaves out Forever-only dungeons from the bosses tab", Has(Shown(), 
 Expect("Era leaves out Demon Fall Canyon", Has(Shown(), "Demon Fall Canyon"), false)
 Expect("Era leaves out Scarlet Enclave", Has(Shown(), "Scarlet Enclave"), false)
 Expect("Era leaves out Karazhan Crypts", Has(Shown(), "Karazhan Crypts"), false)
+local function OnClient(variant)
+    SpokenEnv.Version.Variant = variant
+    local maps = {}
+    for _, map in ipairs({ 36, 533, 2784, 2856, 2875, 2959, 3065 }) do
+        if _G.Spoken:IsDungeonOnClient(map) then table.insert(maps, map) end
+    end
+    SpokenEnv.Version.Variant = "era"
+    return table.concat(maps, " ")
+end
+Expect("the vanilla dungeons are on every client", OnClient("era") .. "|" .. OnClient("anniversary"), "36 533|36 533")
+Expect("...Season of Discovery has its own three as well", OnClient("sod"), "36 533 2784 2856 2875")
+Expect("...and Forever every one", OnClient("forever"), "36 533 2784 2856 2875 2959 3065")
 Expect("...a boss not met greyed, with the padlock", RowFor("Edwin VanCleef").row.locked, true)
 -- Back out in Westfall: the line chosen for the player gives way to the zone's.
 here_map = 1436
