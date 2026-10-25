@@ -5,10 +5,11 @@ bosses of the dungeons and raids: a Bosses tab after the Readables', laid out as
 
 ## The tab
 
-A banner for each continent, a card for each zone that has a dungeon or a raid (a zone with none is
-not listed, and no area is), the card of each dungeon or raid whose entrance is in an opened zone, and
-its bosses under an opened dungeon. A city's dungeons (the Stockade, Ragefire Chasm) are in the zone
-around the city. After the continents, Other Lands holds any zone on none. Each dungeon has a badge of
+A banner for each continent, a card for each of its dungeons and raids by name, and its bosses under
+an opened dungeon. World bosses have no card: each is listed straight under the continent of the zone
+it stands in, after the dungeons, by name. Zones are not listed; a dungeon's page names the zone of its
+entrance, a city's dungeons (the Stockade, Ragefire Chasm) the zone around the city. After the
+continents, Other Lands holds the dungeons in a zone on none. Each dungeon has a badge of
 its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's file list).
 
 A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
@@ -18,10 +19,10 @@ starts no encounter in Forever, is found when it dies after the player targeted 
 nameplate: `Story.lua` keeps its GUID, as the client clears the target as the boss dies but still
 reports it, dead, on a nameplate or the soft target (`UNIT_HEALTH`, and once a second `UnitTokenFromGUID`).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
-Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
+Dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
 do; Found Only, on by default, leaves out what holds none found. A found boss's page names its dungeon and zone and
 tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
-The search finds bosses, dungeons and zones by name.
+The search finds bosses and dungeons by name.
 
 A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
 killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
@@ -35,7 +36,7 @@ Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
 Spoken's, "bosses", registered with `textOnly`: What Spoken Reads turns them off, and nothing is queued
 where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off).
-Opened, the tab lands on the dungeon the player is in, else the zone, else the continent.
+Opened, the tab lands on the dungeon the player is in, else the continent.
 
 The Dungeons and Raids come from `addons/Spoken/Data/Dungeons.lua`, which every tab shares
 ([COMPENDIUM.md](../places/COMPENDIUM.md)).
@@ -76,7 +77,7 @@ story is not written yet.
   own zone by `bossZones`: Emeriss in Duskwood, Lethon in Feralas, Taerar in Ashenvale, Ysondre in
   The Hinterlands), Scarlet Enclave (filed under Eastern Plaguelands), Karazhan Crypts (Deadwind Pass) and
   Excavation Site: Wetlands. The four world-boss maps (`worldBosses` in `dungeons.json`) have no
-  card: the zone lists the boss directly (Blasted Lands, then Lord Kazzak). Maps 13, 2720, 2921 and 3002 hold test or unnamed encounters and are
+  card: the continent lists the boss directly (Eastern Kingdoms, then Lord Kazzak). Maps 13, 2720, 2921 and 3002 hold test or unnamed encounters and are
   left out. The world database has no entrance triggers for any of them: the zones come from the
   client's area names where they have one (Ashenvale, Blasted Lands, Silithus, Wetlands) and from
   the place the boss is known in otherwise.

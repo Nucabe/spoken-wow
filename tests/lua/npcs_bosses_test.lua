@@ -359,6 +359,8 @@ Expect("Nightmare Grove's dragons are listed without their zones",
     Has(dragons, "Emeriss") and Has(dragons, "Lethon") and Has(dragons, "Taerar") and Has(dragons, "Ysondre")
         and not Has(dragons, "Duskwood") and not Has(dragons, "Feralas") and not Has(dragons, "Ashenvale")
         and not Has(dragons, "The Hinterlands"), true)
+Expect("...and in the order of the names shown: Lethon (Feralas) before Taerar (Ashenvale)",
+    dragons:find("Lethon", 1, true) < dragons:find("Taerar", 1, true), true)
 for _, boss in ipairs(SpokenBosses.maps[2832]) do
     if boss.key == "lethon" then NPCs:FoundEncounter(boss.ids[1]) end
 end
