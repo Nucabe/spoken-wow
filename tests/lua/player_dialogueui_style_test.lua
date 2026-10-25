@@ -14,7 +14,6 @@ local BROWN, DARK = "Interface/AddOns/DialogueUI/Art/Theme_Brown/", "Interface/A
 ---------------------------------------------------------------- a fake DialogueUI
 local loaded = false
 -- Current clients have only C_AddOns.IsAddOnLoaded; Compat.lua shims the global from it.
-_G.IsAddOnLoaded = nil
 _G.C_AddOns = { IsAddOnLoaded = function(name) return name == "DialogueUI" and loaded end }
 local function FakeDialogueUI()
     _G.DialogueUI_DB = { Theme = 1, FrameSize = 2 }
