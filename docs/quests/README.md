@@ -225,6 +225,12 @@ later a re-run rather than a second purchase.
 Durations stay honest for free: `build` computes the length table from the files it just
 copied, and mutagen reads a VBR mp3's Xing header and an Ogg page's granule position alike.
 
+Word times come from the take table, which `build` never reads, so `scripts/audio/sounds.mjs`
+writes the live takes' `wordTimes` into `audio/word-times.json` when it assembles the store, and
+`package-audio.sh` stages that file with the clips. `build` writes `word_times_table.lua`
+(`WordTimesByFileName`) for the clips the pack carries. A pack built without the file ships an
+empty table, and its captions are estimated.
+
 `install` moves any existing install aside to `<module>.replaced` rather than deleting it.
 
 **Icons.** Every addon here carries an `icon.tga` and a `## IconTexture:` line naming
@@ -1631,7 +1637,7 @@ after where it is on its page; zone and group counts include it, and a page's co
 are in progress. The list follows the log while it is open (`QUEST_LOG_UPDATE`,
 `QUEST_ACCEPTED`, `QUEST_REMOVED`, drawn again once a burst is over and only when the log's
 quests changed). The rest are locked unless Unlock Unstarted Quests is on, which Spoken's page
-shows in its Compendium section. The filter menu holds Started Only and Voiced Only, which leaves
+shows in its Compendium section. The filter menu holds Started Only, on until it is turned off (`FoundOnly` unset reads as on; the setting is the account's), and Voiced Only, which leaves
 out the quests no voice pack has the offer or the hand-in of, with any line or banner left with nothing, and counts
 only what it lists. That switch and both filters are kept in
 `SpokenQuestsSettings.global.Compendium`.
