@@ -64,10 +64,8 @@ if not _G.SetDesaturation then
     end
 end
 
--- Tracker integrations are optional and arrive in several incompatible shapes. Keep one refresh
--- entry point for the settings page and the player's profile callbacks, then let each adapter
--- register its own sweep below. Adapters hook the guarded sweep, so a failure is logged instead of
--- raised inside Blizzard's or Questie's update.
+-- Each tracker adapter registers its sweep here. Hooks call the guarded copy, so a failing adapter
+-- logs instead of raising inside Blizzard's or Questie's update.
 local trackerUpdaters = {}
 local function RegisterTrackerUpdater(updater)
     local function guarded()
@@ -82,9 +80,8 @@ local function SweepTrackerButtons()
 end
 QuestOverlayUI.UpdateTrackerButtons = SweepTrackerButtons
 
--- Classic Era's built-in tracker is the old WatchFrame, not the pooled ObjectiveTracker modules
--- used by current clients. Its update function writes title font strings named QuestWatchLineN,
--- so the adapter finds each watched quest's title after Blizzard has laid the lines out.
+-- Classic Era's tracker is the old WatchFrame. Its titles are font strings named QuestWatchLineN,
+-- so the adapter matches each watched quest to its line after Blizzard lays them out.
 do
     local updateName = QuestWatch_Update and "QuestWatch_Update" or WatchFrame_Update and "WatchFrame_Update"
     local trackerFrame = _G.QuestWatchFrame or _G.WatchFrame or _G.ObjectiveTrackerFrame
@@ -175,10 +172,9 @@ do
     end
 end
 
--- Questie owns its tracker instead of using Blizzard's blocks. Current Questie versions keep a
--- pooled `line.playButton` on each quest title, but their built-in VoiceOver bridge only recognizes
--- the retired AI_VoiceOver addon names. Give each title line its own Spoken button so Questie
--- cannot hide it, and leave Questie's own button and layout untouched.
+-- Questie draws its own tracker, and its built-in `line.playButton` only answers the retired
+-- AI_VoiceOver addon, which also decides when Questie hides it. Each title line gets a separate
+-- Spoken button instead, leaving Questie's button and layout alone.
 do
     local installed
     local callbacks
@@ -207,9 +203,6 @@ do
             local quest = line and line.Quest
             local questID = quest and (quest.Id or quest.questID)
             if type(questID) ~= "number" then return end
-            -- Questie's own line.playButton is still governed by its legacy AI_VoiceOver
-            -- visibility checks. Keep Spoken's button separate so Questie cannot hide it after
-            -- this adapter has bound it.
             local button = line.spokenPlayButton
             if not button then
                 button = QuestOverlayUI:MakePlayButton(line)
@@ -459,7 +452,7 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             button:Hide()
         end
         table.wipe(self.displayedButtons)
-        -- Switched off, the part or its quest buttons puts nothing on the log.
+        -- With the part or the quest log's Play button off, the log shows no buttons.
         if not ShowQuestButtons() then return end
 
         for row in QuestScrollFrame.titleFramePool:EnumerateActive() do

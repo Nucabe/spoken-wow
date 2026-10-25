@@ -288,7 +288,7 @@ function QuestOverlayUI:Update()
     for _, button in pairs(self.displayedButtons) do
         button:Hide()
     end
-    -- Switched off, the part or its quest buttons puts nothing on the log.
+    -- With the part or the quest log's Play button off, the log shows no buttons.
     if not Addon:IsPartOn() or (Addon.db and Addon.db.profile.QuestLogPlayButton == false) then
         table.wipe(self.displayedButtons)
         return

@@ -23,7 +23,7 @@ _G.QuestWatch_Update = function()
     QuestWatchLine1:Show()
 end
 
--- Questie exposes its current title lines through this module, but not the module itself globally.
+-- Questie exposes its tracker modules only through QuestieLoader.
 local questieLines = {}
 local questiePool = {
     active = questieLines,
