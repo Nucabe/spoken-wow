@@ -177,6 +177,13 @@ end
 -- A timings list that does not fit the words exactly is ignored for the estimate: words drifting
 -- a little beat words lit at random.
 local function ApplyTimings(words, timings, length)
+    -- A sound pack keeps a clip's times as one string, "0 .42 1.5", so a client holds a table
+    -- only for the clip that plays.
+    if type(timings) == "string" then
+        local list = {}
+        for at in timings:gmatch("%S+") do list[#list + 1] = tonumber(at) end
+        timings = list
+    end
     if type(timings) ~= "table" or #words == 0 or #timings ~= #words or not length or length <= 0 then
         return false
     end

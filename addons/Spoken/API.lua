@@ -86,7 +86,8 @@ end
 --                                             -- and text, for a script the game's font has no
 --                                             -- glyphs for; the player's size stays
 --       timings  = { 0, .42, .61, ... },      -- optional; when each word of the transcript starts,
---                                             -- in seconds, one per Spoken:CaptionWords(transcript)
+--                                             -- in seconds, one per Spoken:CaptionWords(transcript),
+--                                             -- or the same as one string, "0 .42 .61"
 --       bullet   = "quest-accept",            -- a RegisterBullet id
 --       tint     = { r, g, b },               -- optional row tint
 --       portrait = { kind = "model", creatureID = 196 }
