@@ -1150,7 +1150,10 @@ function DataModules:ResolveSoundFile(soundData, instead)
                             module.GetSoundPath and module:GetSoundPath(fileName, soundData.event) or
                             fileName)
                         soundData.length = length
-                        soundData.timings = module.WordTimesByFileName and module.WordTimesByFileName[fileName]
+                        -- Timed to the recording's words, which the window shows only in the
+                        -- client's own language.
+                        soundData.timings = language == Language:GetClientLanguage()
+                            and module.WordTimesByFileName and module.WordTimesByFileName[fileName] or nil
                         soundData.module = module
                         soundData.language = language
                         EasterEggs:Apply(soundData)

@@ -69,6 +69,16 @@ Expect("...the original fields survive for the dispatcher", clip.questID .. "/" 
 Expect("the watcher's stage is recorded", VO.Debug.runtime.stage, "playing")
 Expect("the player shows it", env.PlayerFrame.frame.container.name:GetText(), "Innkeeper Test")
 
+---------------------------------------------------------------- word times under other words
+stub.SetLocale("deDE")
+VO, env, Spoken = Boot()
+world.questID = 101
+stub.ShowPanel("QuestFrameDetailPanel")
+VO.Addon:QUEST_DETAIL()
+Expect("an English recording on a German client plays", Spoken:GetCurrent() and Spoken:GetCurrent().fileName, "101-accept")
+Expect("...untimed, the window's words being German", Spoken:GetCurrent() and Spoken:GetCurrent().present.timings, nil)
+stub.SetLocale("enUS")
+
 ---------------------------------------------------------------- a quest from an object or an item
 -- A wanted poster's line shows a posted notice, never a captured face (the game paints an object
 -- black). A quest from an item shows the item's icon.
