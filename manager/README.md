@@ -30,9 +30,10 @@ Linux: download `Spoken-Manager-<version>-linux.AppImage`, make it runnable and 
     chmod +x Spoken-Manager-*-linux.AppImage
     ./Spoken-Manager-*-linux.AppImage
 
-The AppImage updates itself. On Ubuntu 24.04 and later the window may not open because AppArmor
-blocks the browser sandbox. Start it with `--no-sandbox` in that case; this turns the sandbox off for
-that run. Debian/Ubuntu users can install the `.deb` with `sudo apt install ./Spoken-Manager-*-linux.deb`;
+The AppImage updates itself. On Ubuntu 24.04 and later the AppImage's window may not open because
+AppArmor blocks the browser sandbox. Start it with `--no-sandbox` in that case; this turns the
+sandbox off for that run. The `.deb` and `.rpm` set up the sandbox when they install and do not
+need it. Debian/Ubuntu users can install the `.deb` with `sudo apt install ./Spoken-Manager-*-linux.deb`;
 Fedora users can install the `.rpm` with `sudo dnf install ./Spoken-Manager-*-linux.rpm`. The
 `.tar.gz`, `.deb` and `.rpm` builds work without the AppImage updater and should be updated through
 their package manager or by downloading a newer release.
