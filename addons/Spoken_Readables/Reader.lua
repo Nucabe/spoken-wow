@@ -70,12 +70,16 @@ local PLAYER_TOKEN = "%$[nNcCrR]"
 -- $gmale:female; -- the client keeps one side for the reader's sex.
 local GENDER_TOKEN = "%$[gG]([^:;]*):([^;]*);"
 
+--- A page in lower case, with $B, the client's line break, as a space.
+local function Unmarked(text)
+	return string.lower((string.gsub(text, "%$[Bb]", " ")))
+end
+
 --- Letters and digits only, in lower case: a page with its layout, spacing and punctuation
 --- gone, so the client's text and the corpus caption compare as words. Bytes past ASCII stay,
 --- so a name or a page in any script keeps its letters.
 local function Flat(text)
-	text = string.gsub(text, "%$[Bb]", " ")
-	return (string.gsub(string.lower(text), "[^%w\128-\255]", ""))
+	return (string.gsub(Unmarked(text), "[^%w\128-\255]", ""))
 end
 
 --- The corpus pages that hold a token, each as the words between its tokens, once per side
@@ -203,8 +207,7 @@ end
 --- script keeps its letters. Its count beside it.
 local function Words(text)
 	local words, count = {}, 0
-	text = string.gsub(string.lower(text), "%$[bB]", " ")
-	for word in string.gmatch(text, "[%w\128-\255]+") do
+	for word in string.gmatch(Unmarked(text), "[%w\128-\255]+") do
 		if not words[word] then
 			words[word] = true
 			count = count + 1
@@ -244,6 +247,21 @@ local function Score(data, pageId, screen, screenCount)
 	return Overlap(screen, screenCount, Words(place.text))
 end
 
+--- Of these pages, the one with the most of the words on screen, if it has at least
+--- SAME_WORDS of them and `fits` (given the page and its score) does not refuse it. The lower id
+--- on a tie.
+local function Closest(data, pageIds, screen, screenCount, fits)
+	local best, bestScore
+	for _, pageId in pairs(pageIds or {}) do
+		local score = Score(data, pageId, screen, screenCount)
+		if score >= SAME_WORDS and (not fits or fits(pageId, score)) and (not best or score > bestScore
+			or (score == bestScore and type(pageId) == type(best) and pageId < best)) then
+			best, bestScore = pageId, score
+		end
+	end
+	return best
+end
+
 --- The page the item or object that opened the frame holds at `number`. Refused where the
 --- title on screen is another corpus book's: the candidate was something touched before the
 --- click, not what was clicked.
@@ -258,21 +276,14 @@ function SpokenReadables:OwnerPageOf(title, number, text)
 	if not owners then
 		return nil
 	end
+	local screen, screenCount = Words(text)
 	for _, opener in ipairs(self.openedBy or {}) do
 		local bookId = owners[opener.kind] and owners[opener.kind][opener.id]
 		local book = bookId and data.books[bookId]
 		local pageId = book and PageAt(data, bookId, number)
 		if pageId and (not title or title == book.title or not (data.index and data.index[title])) then
-			local screen, screenCount = Words(text)
 			if Score(data, pageId, screen, screenCount) < SAME_WORDS then
-				local best, bestScore
-				for _, other in ipairs(book.pages) do
-					local score = Score(data, other, screen, screenCount)
-					if score >= SAME_WORDS and (not best or score > bestScore) then
-						best, bestScore = other, score
-					end
-				end
-				pageId = best or pageId
+				return Closest(data, book.pages, screen, screenCount) or pageId
 			end
 			return pageId
 		end
@@ -292,23 +303,15 @@ function SpokenReadables:TitlePageOf(title, number, text)
 	end
 	local hasNext = ItemTextHasNextPage and NotSecret(ItemTextHasNextPage())
 	local screen, screenCount = Words(text)
-	local function Closest(at)
-		local best, bestScore
-		for _, pageId in pairs(byTitle[at] or {}) do
-			local place = data.pages[pageId]
-			local book = place and data.books[place.book]
-			local score = book and Score(data, pageId, screen, screenCount) or 0
+	local function At(at)
+		return Closest(data, byTitle[at], screen, screenCount, function(pageId, score)
 			-- A book that ends here while the screen offers a next page, or the reverse, is
 			-- another book, unless the words all but settle it.
-			local fits = book and (hasNext == nil or hasNext == (at < #book.pages) or score >= NEAR_EXACT)
-			if fits and score >= SAME_WORDS and (not best or score > bestScore
-				or (score == bestScore and type(pageId) == type(best) and pageId < best)) then
-				best, bestScore = pageId, score
-			end
-		end
-		return best
+			local book = data.books[data.pages[pageId].book]
+			return book and (hasNext == nil or hasNext == (at < #book.pages) or score >= NEAR_EXACT)
+		end)
 	end
-	return Closest(number) or Closest(number - 1) or Closest(number + 1)
+	return At(number) or At(number - 1) or At(number + 1)
 end
 
 --- The page id the client is showing, or nil. True beside it where the text is the corpus's
@@ -352,25 +355,19 @@ function SpokenReadables:PageOnScreen()
 			end
 		end
 	end
-	local found = FindAny(data) or self:TokenPageOf(text)
-	if found then
-		self:RememberPageText(found, self.BASE_LANGUAGE, text, title)
-		return found, true
+	local found, language, exact = FindAny(data) or self:TokenPageOf(text), self.BASE_LANGUAGE, true
+	if not found then
+		-- What the reader clicked: right whatever the text, in the client's own language.
+		found, language, exact = self:OwnerPageOf(title, number, text), client, false
 	end
-
-	-- What the reader clicked: right whatever the text, in the client's own language.
-	found = self:OwnerPageOf(title, number, text)
-	if found then
-		self:RememberPageText(found, client, text, title)
-		return found, false
+	if not found then
+		found, language = self:TitlePageOf(title, number, text), self.BASE_LANGUAGE
 	end
-
-	found = self:TitlePageOf(title, number, text)
 	if not found then
 		return nil
 	end
-	self:RememberPageText(found, self.BASE_LANGUAGE, text, title)
-	return found, false
+	self:RememberPageText(found, language, text, title)
+	return found, exact
 end
 
 -- Older translated packs have an index but no caption text. Remember only pages

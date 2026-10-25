@@ -132,14 +132,15 @@ export function ownersLua(entries) {
   const owners = { item: new Map(), object: new Map() };
   for (const entry of entries) {
     const byId = owners[entry.ownerKind];
-    for (const id of byId ? entry.ownerIds ?? [] : []) {
+    if (!byId) continue;
+    for (const id of entry.ownerIds ?? []) {
       byId.set(id, byId.has(id) && byId.get(id) !== entry.bookId ? null : entry.bookId);
     }
   }
   const lines = ["\towners = {"];
   for (const kind of ["item", "object"]) {
     lines.push(`\t\t${kind} = {`);
-    for (const [id, bookId] of [...owners[kind].entries()].sort(([a], [b]) => a - b)) {
+    for (const [id, bookId] of [...owners[kind].entries()].sort(([a], [b]) => compareIds(a, b))) {
       if (bookId !== null) lines.push(`\t\t\t[${id}] = ${luaId(bookId)},`);
     }
     lines.push("\t\t},");
