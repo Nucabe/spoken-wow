@@ -1,14 +1,15 @@
 # Narrator styles
 
 How Spoken shows the line it is reading is one setting, **Narrator Style** (`Frame.Style`), with
-five values: `"subtitle"` (Subtitles Only, the default without DialogueUI), `"minimal"` (Small Window),
+five values: `"subtitle"` (Subtitles Only, the default unless DialogueUI is installed), `"minimal"` (Small Window),
 `"classic"` (Large Window), `"dialogueui"` (DialogueUI, with the DialogueUI addon installed) and
 `"none"` (Voice Only). They are tiles on Spoken's settings page and in the welcome window, in that
 order. `/sp style subtitles | small | large | dialogueui | voice` switches between them and says
 why when it cannot; `/sp player <style>` with the stored names still works. `Addon:PlayerStyle()`
 answers what is drawn where the chosen style is not on offer: `"dialogueui"` is drawn as the Small
 Window while DialogueUI is missing, and the setting is kept, so the window comes back with
-DialogueUI. The setting replaced three switches, `SubtitlePlayer`, `HideFrame` and `MinimalPlayer`;
+DialogueUI. The default is `"dialogueui"` when `DialogueUITheme:Available()` at `Addon:InitDB`,
+else `"subtitle"`; a profile that never stored a style follows it on every login. The setting replaced three switches, `SubtitlePlayer`, `HideFrame` and `MinimalPlayer`;
 `Addon:InitDB` carries a profile that set them over to the style they showed, and removes them.
 
 Forever is the client this describes.
