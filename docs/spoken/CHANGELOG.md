@@ -6,6 +6,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 - **On Classic Era, the story beside the map sits against the map.** It follows the small map's
   border, with the same narrow gap as on Forever, instead of hanging off the hidden large map's.
+- **Show Collected Lines, in the Contribute settings, lists the lines you have collected.** Each shows
+  where it came from and the game's text, newest 200 at most; older ones are still sent.
   *([anon1231823](https://github.com/anon1231823))*
 - **The Bosses tab lists dungeons straight under their continent.** The zone lines are gone: each
   continent shows its dungeons and raids by name, then its world bosses, and the search finds bosses
