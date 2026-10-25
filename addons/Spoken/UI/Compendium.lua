@@ -1587,8 +1587,7 @@ end
 local Page = {}
 Page.__index = Page
 
---- A Play button's tooltip for `state`, as every Play of the Compendium's has it: the state's name
---- in Spoken's words, and why it is greyed where it is.
+--- The state's name in Spoken's words, and why the button is greyed where it is.
 function C.PlayTooltip(button, state)
 	local words = _G.SpokenEnv and _G.SpokenEnv.L
 	if not (words and GameTooltip) then return end
@@ -1601,7 +1600,6 @@ function C.PlayTooltip(button, state)
 	GameTooltip:Show()
 end
 
---- A Report button's tooltip: `title`.
 function C.ReportTooltip(button, title)
 	if not GameTooltip then return end
 	GameTooltip:SetOwner(button, "ANCHOR_LEFT")
@@ -1615,8 +1613,8 @@ local SPELLBOOK_PAGE = { file = ZONES_ART .. "spellbook-Page-Right-C60", coords 
 --- A page of parchment filling `parent`: a title, the line under it, the divider, the words in a
 --- scrolling view (UI/TextView.lua, in `addon`'s font for its language), and Report and Play on the
 --- title's right, as the places' page has them. `play` = { has(target), find(target) -> the line in
---- the queue or nil, start(target), tip }, what Play does for whatever Show was given (C.PlayState,
---- C.PlayClick); `report` = { has(target), open(target), title, tip }, what Report does, hidden where
+--- the queue or nil, start(target) }, what Play does for whatever Show was given (C.PlayState,
+--- C.PlayClick); `report` = { has(target), open(target), title }, what Report does, hidden where
 --- it has nothing to report or the player hides Report buttons.
 ---
 --- `look`, where given, changes the page's art from the spellbook's for the Compendium:

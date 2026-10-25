@@ -178,7 +178,7 @@ Z:RefreshLoreWindow()
 Expect("...and gives it back when it is off", page.report:IsShown(), true)
 _G.Spoken = spoken
 
--- Play and Report keep their short titles without the explanatory hover text.
+-- Play and Report tooltips: titles only.
 do
     local env, state = _G.SpokenEnv, { started = false, paused = false }
     local clip = {}

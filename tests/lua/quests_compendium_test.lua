@@ -891,7 +891,7 @@ Expect("...named and pictured for its giver", Who(), Npc("Marshal McBride", MCBR
 local playing = Spoken:GetQueue()[1]
 Expect("...with the offer's words, for the window to show and highlight",
     playing and type(playing.text) == "string" and playing.text ~= "" and PageWords():find(playing.text, 1, true) ~= nil, true)
--- Play and Report tooltips: their titles, no description.
+-- Play and Report tooltips: titles only.
 local function Tip(button, asIs)
     if not asIs then
         GameTooltip.lines = nil
