@@ -4,6 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **A boss's story shows in the narrator when you kill the boss, in dungeons too.** The Bosses page no
+  longer has Show a Boss's Story: killing is the only way, because inside an instance the game hides
+  which boss a target is. The world bosses, whose fight the game sends no kill for, count when they die
+  after you targeted them or saw their nameplate. A boss is also met when you kill it, so its page unlocks in the
+  Compendium even if its pull was missed. *([Nucabe](https://github.com/Nucabe))*
 - **Spoken steps aside for Immersion.** While Immersion's window shows a quest, gossip or a book,
   Spoken's window and subtitles stay hidden, as they do for DialogueUI, and the voice plays on.
   They come back once the window closes, for a line still playing and for one you start with Play.
@@ -63,6 +68,12 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **A right-click on a window's words skips the line**, in the Small Window, the Large Window and the
   DialogueUI window: a larger target than the Skip button. The menu and the settings that right-click
   opened there are now on Shift-right-click. *([Nucabe](https://github.com/Nucabe))*
+- **World bosses are found when they die.** Lord Kazzak, Azuregos, Prince Thunderaan and the four
+  Emerald Dragons could stay locked after you fought them.
+  Ribbly Screwspigot and Plugger Spazzring are listed in Blackrock Depths again, locked unless Unlock
+  Unfound Bosses is on, as inside an instance the game names no boss to Spoken. Blackfathom Deeps and
+  Gnomeregan list their bosses in Forever's order, not the Season of Discovery raid's.
+  *([Nucabe](https://github.com/Nucabe))*
 - **Spoken's windows follow EllesmereUI's look.** With EllesmereUI installed and its EllesmereUI Style
   in use, the Small and Large Window and the welcome and contribution windows take its dark windows
   and its font in white, and Spoken's settings pages its thin scroll bars. Portraits are round
@@ -129,9 +140,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   with no known face shows the question mark instead of an empty portrait, and targeting Balnazzar in Stratholme no
   longer shows the Scarlet Enclave's story. Five bosses take the name the game gives them: The Baron, Magmatus,
   Kirtonos the Herald, Ras Frostwhisper and C'Thun. *([Nucabe](https://github.com/Nucabe))*
-- **A boss's story shows in the narrator when you target the boss.** It shows once per character, as words
-  with no voice. On the Bosses settings page, Show a Boss's Story picks targeting or killing it, and Forget
-  Stories Shown shows each again. *([Nucabe](https://github.com/Nucabe))*
+- **A boss's story shows in the narrator.** It shows once per character, as words with no voice. On the
+  Bosses settings page, Forget Stories Shown shows each again. *([Nucabe](https://github.com/Nucabe))*
 - **Quest givers show their own face.** The quest portraits in the Compendium and the narrator's quest-giver
   face are drawn from appearances that ship with Spoken, so a creature the client has not met yet no longer
   shows your own face or another creature's. *([Nucabe](https://github.com/Nucabe))*

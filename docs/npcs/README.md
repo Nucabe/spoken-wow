@@ -11,22 +11,27 @@ its bosses under an opened dungeon. A city's dungeons (the Stockade, Ragefire Ch
 around the city. After the continents, Other Lands holds any zone on none. Each dungeon has a badge of
 its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's file list).
 
-A boss is found when its fight starts (`ENCOUNTER_START`, any difficulty's encounter id from the
-`ids` of `Data/Bosses.lua`), kept per character in `SpokenNPCsCharacter`. A boss whose fight may start no
-encounter in Forever is also found when the player targets it (`onTarget`, from `ON_TARGET` in
-`pipelines/lib/bosses.mjs`): Baron Aquanis, the world bosses, Ribbly Screwspigot and Plugger Spazzring,
-once the player can attack it (Ribbly and Plugger are townsfolk until a quest or a theft turns them).
+A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
+`BOSS_KILL`), by any difficulty's encounter id from the `ids` of `Data/Bosses.lua`, kept per character in
+`SpokenNPCsCharacter`. A world boss (`worldBosses` in `addons/Spoken/Data/Dungeons.lua`), whose fight
+starts no encounter in Forever, is found when it dies after the player targeted it alive or saw its
+nameplate: `Story.lua` keeps its GUID, as the client clears the target as the boss dies but still
+reports it, dead, on a nameplate or the soft target (`UNIT_HEALTH`, and once a second `UnitTokenFromGUID`).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
 Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
 do; Found Only leaves out what holds none found. A found boss's page names its dungeon and zone and
 tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
 The search finds bosses, dungeons and zones by name.
 
-A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`): when the player
-targets the boss (known by its creature id, or by its name in the dungeon the player is in where
-`Data/Creatures.lua` has no creature for it; in a fight of several, any of them, `MEMBERS`), or when it is killed (`ENCOUNTER_END` with success), as Show a Boss's Story on the
-Bosses page says (`SpokenNPCsSettings.storyTrigger`, targeting by default). Each story shows once per
-character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until Forget Stories Shown. A story
+A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
+killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
+`ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it in an instance: the
+client hides a unit's GUID, name and model from addons there, so no boss is known from the target. A
+world boss is told by its death instead, as Forever sends no kill for it (seen with Lord Kazzak).
+An instance boss the game announces no fight for (Baron Aquanis, Ribbly, Plugger) is not found or told:
+the client hides its GUID there.
+Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
+Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
 Spoken's, "bosses", registered with `textOnly`: What Spoken Reads turns them off, and nothing is queued
 where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off).
