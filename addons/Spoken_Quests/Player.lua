@@ -239,6 +239,7 @@ function Player:Prepare(soundData)
         tint = gossip and { 1, 1, 1 } or nil,
         portrait = PortraitFor(soundData),
         actions = ACTIONS,
+        timings = soundData.timings,
     }
     return soundData
 end

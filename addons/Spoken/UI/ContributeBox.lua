@@ -131,6 +131,14 @@ local function Build()
     frame:SetWidth(frameWidth)
     editBox:SetWidth(frameWidth - 60)
     body:SetWidth(frameWidth - 40)
+    Ellesmere:When(function(skin)
+        skin.Shell(frame, { noTopBar = true })
+        skin.CloseButton(close)
+        for _, button in ipairs({ justThis, gather }) do
+            skin.Button(button)
+            skin.WhiteButtonLabel(button)
+        end
+    end)
 
     return { frame = frame, editBox = editBox, address = address, title = title, hint = hint,
         scroll = scroll, body = body, justThis = justThis, gather = gather }
@@ -151,14 +159,9 @@ end
 -- than left as a placeholder because hunting for the right one of four is where a player
 -- gives up; a guess that is wrong on some install is still a better start than none.
 local function GameFolder()
-    if Version.IsCamelot then
-        return "_classic_beta_"
-    elseif Version.IsRetailMainline then
-        return "_retail_"
-    elseif Version.IsRetailVanilla then
-        return "_classic_era_ (or _anniversary_)"
-    end
-    return "<your game folder>"
+    local folders = { forever = "_classic_beta_", era = "_classic_era_", sod = "_classic_era_",
+        anniversary = "_anniversary_" }
+    return folders[Version.Variant] or "<your game folder>"
 end
 
 -- The window the box shows over (Spoken:SetContributeHost), or nil.

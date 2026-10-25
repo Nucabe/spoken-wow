@@ -80,6 +80,7 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/api_contract_test.lua
 	@$(LUA) tests/lua/contribute_envelope_test.lua
 	@$(LUA) tests/lua/report_url_contract_test.lua
+	@$(LUA) tests/lua/client_variant_test.lua
 	@$(LUA) tests/lua/interface_numbers_test.lua
 	@$(LUA) tests/lua/contribute_box_test.lua
 	@$(LUA) tests/lua/quests_contribute_test.lua
@@ -88,6 +89,9 @@ test-player: ## Run the addons' Lua tests (needs luajit)
 	@$(LUA) tests/lua/snap_test.lua
 	@$(LUA) tests/lua/player_dialogueui_style_test.lua
 	@$(LUA) tests/lua/minimal_window_test.lua
+	@$(LUA) tests/lua/ellesmere_look_test.lua
+	@$(LUA) tests/lua/text_only_test.lua
+	@$(LUA) tests/lua/places_aliases_test.lua
 	@$(LUA) tests/minimal-classic/verify.lua
 	@$(LUA) tests/captions/verify.lua
 	@$(LUA) tests/lua/places_source_test.lua
