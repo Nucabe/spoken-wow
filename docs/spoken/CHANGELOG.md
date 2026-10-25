@@ -4,6 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Captions follow the voice word by word.** Quest, gossip, place and book recordings made from
+  now on carry when each word is spoken, so the highlighted word keeps pace with the voice instead
+  of an estimate. Older recordings, and captions in another language than the voice's, are
+  estimated as before. Takes effect with sound packs released after this version.
+  *([rusty-key](https://github.com/rusty-key))*
 - **A boss's story shows in the narrator when you kill the boss, in dungeons too.** The Bosses page no
   longer has Show a Boss's Story: killing is the only way, because inside an instance the game hides
   which boss a target is. The world bosses, whose fight the game sends no kill for, count when they die

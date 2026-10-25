@@ -86,18 +86,20 @@ function psql(sql) {
     .filter(Boolean);
 }
 
-// file <tab> archiveFile, for every live take. A quests file carries its extension and the
-// other two do not; the archive directory is the file without it either way.
-const listing = psql(`select "file", coalesce("archiveFile", '') from "take"
+// file <tab> archiveFile <tab> wordTimes, for every live take. A quests file carries its
+// extension and the other two do not; the archive directory is the file without it either way.
+const listing = psql(`select "file", coalesce("archiveFile", ''),
+                             coalesce(array_to_json("wordTimes")::text, '')
+                        from "take"
                        where "source" = :'source' and "lang" = :'lang' and "isCurrent"
                        order by "file"`);
 
 // The archive path of a live take: the take's own directory -- its file without the
 // extension -- holding the archive file. Blank when the take's clip was never kept.
 const takes = listing.map((row) => {
-  const [file, name] = row.split("\t");
+  const [file, name, times] = row.split("\t");
   const stem = file.replace(/\.mp3$/, "");
-  return { file, stem, archived: name ? join(prefix, stem, name) : "" };
+  return { file, stem, archived: name ? join(prefix, stem, name) : "", times: times ? JSON.parse(times) : null };
 });
 
 // Quests carry only the audio a current line names (relevant.mjs), and places only the areas the
@@ -154,6 +156,13 @@ for (const { file, stem, archived } of live) {
     if (error.code !== "ENOENT") throw error;
     missing.push(source);
   }
+}
+
+// The quests build reads no database (tts_cli/build.py), so the takes' word times go beside
+// their clips; places and readables read them from the take table when they write their lookup.
+if (section === "quests") {
+  const times = Object.fromEntries(live.filter((take) => take.times).map((take) => [take.stem, take.times]));
+  await writeFile(join(paths.out, "word-times.json"), `${JSON.stringify(times)}\n`);
 }
 
 console.log(`${section}: ${copied} clips in ${paths.out.slice(ROOT.length + 1)}`);

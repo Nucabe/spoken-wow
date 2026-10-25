@@ -423,6 +423,11 @@ LOCALE=esMX ./scripts/readables/package-audio.sh  # dist/SpokenReadablesAudio_es
 make readables-release-audio LOCALE=esMX  # uploads it, CurseForge only
 ```
 
+A page whose take kept its word times carries them as `times` in its `Data/Sounds.lua` entry,
+counted against the page's words as the captions show them: a first page's title, read ahead of
+its words, is left out. The captions follow them only where they show the recording's own
+words. A page without them is estimated, a first page starting its words after the title's share.
+
 The addon finds a page by its title and a checksum of its words, and a client in another
 locale shows neither in English. So a language's `Data/Sounds.lua` also carries that
 language's `index` and `loose`, in the shape of `Spoken_Readables/Data/Books.lua`'s: every page

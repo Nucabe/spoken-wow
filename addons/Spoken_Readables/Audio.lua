@@ -271,10 +271,11 @@ function SpokenReadables:ClipFor(pageId)
 						-- a letter, which is most of this corpus).
 						header = oneLine and self:KindOf(place.book) or title,
 						transcript = text,
-						-- The first page's words start after its title is read. Only where the words
-						-- are the ones the recording says: any others have another length.
-						timings = place.number == 1 and recorded
-							and TitleFirstTimings(title, text, length) or nil,
+						-- Only where the words are the ones the recording says: any others have
+						-- another length. A take with no times of its own estimates, the first page
+						-- starting its words after the title is read.
+						timings = recorded and (Spoken and Spoken.WordTimes and Spoken:WordTimes(entry.times)
+							or place.number == 1 and TitleFirstTimings(title, text, length)) or nil,
 						label = oneLine and (title ~= "" and title or nil)
 							or ((book and #book.pages > 1)
 								and format(L.OPT_PAGE_COUNT_FMT, place.number, #book.pages) or nil),

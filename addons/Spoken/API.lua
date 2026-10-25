@@ -720,6 +720,15 @@ function Spoken:CaptionWords(transcript)
     return Transcript:Split(Transcript:CleanText(transcript))
 end
 
+--- A sound pack's word times for a clip, "0 .42 1.5", as the present.timings list. Packs keep
+--- them as a string so a client holds one table only for a clip that plays. Nil for no string.
+function Spoken:WordTimes(packed)
+    if type(packed) ~= "string" or packed == "" then return nil end
+    local times = {}
+    for at in packed:gmatch("%S+") do times[#times + 1] = tonumber(at) end
+    return times
+end
+
 --------------------------------------------------------------------------------
 -- Callbacks
 --------------------------------------------------------------------------------
