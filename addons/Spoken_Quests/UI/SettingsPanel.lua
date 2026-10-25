@@ -76,7 +76,6 @@ function SettingsPanel:Setup()
         function(value) audio().ReadAfterClose = value end),
         function() return Addon:IsAutoplayOn() end, L.REASON_AUTOPLAY)
 
-    -- The two controls cover the classic/modern Quest Log and either name of the objective tracker.
     local function HasQuestLog()
         return _G.QuestLogFrame ~= nil or QuestLogQuests_Update ~= nil
     end
@@ -90,8 +89,7 @@ function SettingsPanel:Setup()
         function() return Addon.db.profile.QuestLogPlayButton ~= false end,
         function(value)
             Addon.db.profile.QuestLogPlayButton = value
-            if QuestLog_Update then QuestLog_Update()
-            elseif QuestLogQuests_Update then QuestLogQuests_Update() end
+            QuestOverlayUI:RefreshQuestLog()
         end)
     layout:ShowWhen(questLogPlay, HasQuestLog)
     local trackerPlay = layout:Checkbox(L.OPT_TRACKER_OBJECTIVE, nil,

@@ -294,11 +294,12 @@ do
     Expect("a classic client has the Show Play Button section", heading and heading:IsShown(), true)
     Expect("...with a Quest Log suboption", box and box:IsShown(), true)
     local updated = 0
-    _G.QuestLog_Update = function() updated = updated + 1 end
+    -- Spoken's own buttons, never the client's QuestLog_Update, which would taint the log.
+    VO.QuestOverlayUI.RefreshQuestLog = function() updated = updated + 1 end
     box:SetChecked(false)
     box:GetScript("OnClick")(box)
     Expect("unticking Quest Log turns its buttons off", VO.Addon.db.profile.QuestLogPlayButton, false)
-    Expect("...and redraws the quest log", updated, 1)
+    Expect("...and redraws Spoken's quest log buttons", updated, 1)
     _G.QuestLog_Update, _G.QuestLogFrame = nil, nil
 end
 

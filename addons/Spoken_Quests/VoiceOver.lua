@@ -1093,6 +1093,7 @@ end
 
 function Addon:RefreshConfig()
     Player:RefreshConfig()
+    QuestOverlayUI:RefreshQuestLog()
     QuestOverlayUI.UpdateTrackerButtons()
 end
 

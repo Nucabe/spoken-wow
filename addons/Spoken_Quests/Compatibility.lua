@@ -413,7 +413,6 @@ if QuestLogQuests_Update and QuestScrollFrame and QuestScrollFrame.titleFramePoo
             button:Hide()
         end
         table.wipe(self.displayedButtons)
-        -- With the part or the quest log's Play button off, the log shows no buttons.
         if not QuestOverlayUI:ShowsQuestLogButtons() then return end
 
         for row in QuestScrollFrame.titleFramePool:EnumerateActive() do
@@ -679,7 +678,6 @@ do
                 hooksecurefunc(module, "AddBlock", function(_, block) Dress(block) end)
             end
         end
-        Sweep()
     end
     Install()
     RegisterTrackerUpdater(Sweep)

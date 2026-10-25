@@ -123,6 +123,12 @@ function QuestOverlayUI:ShowsQuestLogButtons()
     return Addon:IsPartOn() and (not Addon.db or Addon.db.profile.QuestLogPlayButton ~= false)
 end
 
+--- Redraws only Spoken's quest log buttons. Calling the client's own QuestLog_Update or
+--- QuestLogQuests_Update from here would taint the log's later protected actions.
+function QuestOverlayUI:RefreshQuestLog()
+    if _G.QuestLogFrame or QuestLogQuests_Update then self:Update() end
+end
+
 --- Whether a tracker shows Play on this quest: the part and the setting are on and a pack voices it.
 function QuestOverlayUI:ShowsTrackerButton(questID)
     return Addon:IsPartOn() and (not Addon.db or Addon.db.profile.TrackerPlayButton ~= false)
@@ -300,7 +306,6 @@ function QuestOverlayUI:Update()
     for _, button in pairs(self.displayedButtons) do
         button:Hide()
     end
-    -- With the part or the quest log's Play button off, the log shows no buttons.
     if not self:ShowsQuestLogButtons() then
         table.wipe(self.displayedButtons)
         return
