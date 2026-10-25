@@ -19,7 +19,7 @@ nameplate: `Story.lua` keeps its GUID, as the client clears the target as the bo
 reports it, dead, on a nameplate or the soft target (`UNIT_HEALTH`, and once a second `UnitTokenFromGUID`).
 One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
 Zones, dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
-do; Found Only leaves out what holds none found. A found boss's page names its dungeon and zone and
+do; Found Only, on by default, leaves out what holds none found. A found boss's page names its dungeon and zone and
 tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
 The search finds bosses, dungeons and zones by name.
 

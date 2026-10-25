@@ -102,6 +102,11 @@ local function OnlyFound()
 	return SpokenNPCsSettings ~= nil and SpokenNPCsSettings.compendiumFoundOnly == true
 end
 
+-- Whether Found Only keeps what holds `found` bosses met.
+local function Listed(found)
+	return not OnlyFound() or found > 0
+end
+
 local function Matches(text)
 	return filter == "" or (text and string.find(string.lower(text), filter, 1, true) ~= nil)
 end
@@ -229,7 +234,7 @@ local function DungeonRows(zone, map, nest, whole)
 	local name = world and "" or DungeonName(map)
 	whole = whole or (filter ~= "" and not world and Matches(name))
 	local found, total = TallyOf(map, zone)
-	if OnlyFound() and found == 0 then return {} end
+	if not Listed(found) then return {} end
 	local open = world or dungeonOpen[zone .. ":" .. map] == true or filter ~= ""
 	local inside = {}
 	local at = world and nest or nest + 1
@@ -262,7 +267,7 @@ local function ZoneRows(zone, nest, whole)
 	local name = MapName(zone)
 	whole = whole or (filter ~= "" and Matches(name))
 	local found, total = Tally({ zone })
-	if OnlyFound() and found == 0 then return {} end
+	if not Listed(found) then return {} end
 	local open = openZones[zone] == true or filter ~= ""
 	local inside = open and DungeonsIn(zone, nest + 1, whole) or {}
 	if filter ~= "" and #inside == 0 then return {} end
@@ -282,7 +287,7 @@ local function Banner(item, zones, opened)
 	end
 	if filter ~= "" and #rows == 0 then return {} end
 	local found, total = Tally(zones)
-	if OnlyFound() and found == 0 then return {} end
+	if not Listed(found) then return {} end
 	Group(item, found, total).style = "banner"
 	item.open = open and #rows > 0
 	return Holding(item, rows, open)
@@ -449,6 +454,15 @@ local function Continents()
 	return out
 end
 
+-- The continent the player is on where the list shows it, else the first it shows.
+local function PlayerContinent()
+	local listed = {}
+	for _, continent in ipairs(Continents()) do
+		if Listed(Tally(ZonesOn(continent))) then table.insert(listed, continent) end
+	end
+	return C.PlayerContinent(listed)
+end
+
 -- The dungeon or raid the player is in, and the zone it is filed under.
 local function PlayerDungeon()
 	local map = NPCs:InstanceMap()
@@ -459,22 +473,23 @@ end
 local function OpenAround(zone) C.OpenAround(zone, continentOpen, bannerOpen) end
 
 -- Choose where the player stands: the line of the dungeon they are in, opened, else their zone's
--- if it has a dungeon, else their continent's banner.
+-- if it has a dungeon, else their continent's banner. Never a line Found Only leaves out: the tab
+-- would show a page for no row.
 local function LandOnPlayer()
 	local map, zone = PlayerDungeon()
-	if map then
+	if map and Listed(TallyOf(map, zone)) then
 		selection = { mapID = zone, dungeon = map }
 		openZones[zone], dungeonOpen[zone .. ":" .. map] = true, true
 		OpenAround(zone)
 	else
 		local here = C.PlayerZone(function(candidate) return Index().zones[CITY_IN[candidate] or candidate] ~= nil end)
-		if here then
+		if here and Listed(Tally({ CITY_IN[here] or here })) then
 			zone = CITY_IN[here] or here
 			selection = { mapID = zone }
 			openZones[zone] = true
 			OpenAround(zone)
 		else
-			local continent = C.PlayerContinent(Continents())
+			local continent = PlayerContinent()
 			selection = continent and { mapID = continent } or nil
 		end
 	end

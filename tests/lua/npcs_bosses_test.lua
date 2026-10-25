@@ -153,6 +153,19 @@ local tab = SpokenCompendium:Tab("bosses")
 Expect("...after Setup", tab ~= nil and tab.label, "Bosses")
 Expect("...a tab of its own after the readables'", tab.order, 3)
 Expect("...with Unlock Unfound Bosses, off", tab.unlock ~= nil and tab.unlock.get(), false)
+Expect("Found Only is on in a fresh profile", SpokenNPCsSettings.compendiumFoundOnly, true)
+Expect("Unlock Unfound Bosses is off in a fresh profile", SpokenNPCsSettings.unlockUnfound, false)
+SpokenNPCsSettings.compendiumFoundOnly = false
+NPCs:InitDB()
+Expect("...and an explicit off stays off through the next start", SpokenNPCsSettings.compendiumFoundOnly, false)
+-- A profile saved before the marker existed.
+SpokenNPCsSettings.foundOnlyDefaultOn = nil
+NPCs:InitDB()
+Expect("...an off stored before it was on by default is turned on once", SpokenNPCsSettings.compendiumFoundOnly, true)
+SpokenNPCsSettings.compendiumFoundOnly = false
+NPCs:InitDB()
+Expect("...and turned off again, it stays off", SpokenNPCsSettings.compendiumFoundOnly, false)
+-- The tests below are about the unfiltered list, so Found Only stays off.
 
 local window
 local rows = {}
@@ -222,6 +235,18 @@ Expect("...with the zone's round portrait left of the title, the zone badge on i
 Expect("...a line with what is met out of all and the share, no picture or bar",
     RowFor("Westfall").row.style .. "|" .. RowFor("Westfall").count.text, "group|0/" .. westfall .. " • 0%")
 Expect("...the continent's banner counts them too", RowFor("Kalimdor").count.text:match("^0/%d+$") ~= nil, true)
+
+SpokenNPCsSettings.compendiumFoundOnly = true
+NPCs:ShowBosses()
+Shown()
+Expect("with Found Only on and none met in Westfall, the tab does not land on its line",
+    RowFor("Westfall") == nil and page.title.text ~= "Westfall", true)
+Expect("...nor on its continent's banner, which the list leaves out too",
+    RowFor("Eastern Kingdoms") == nil and page.title.text ~= "Eastern Kingdoms", true)
+SpokenNPCsSettings.compendiumFoundOnly = false
+NPCs:ShowBosses()
+Shown()
+Expect("...and off, it lands on Westfall again", RowFor("Westfall") ~= nil and RowFor("Westfall").selected, true)
 
 Click("Westfall")
 Expect("a click on an open zone's line closes it", Has(Shown(), "Deadmines"), false)
@@ -405,12 +430,12 @@ NPCs:SetupOptions()
 local panel = NPCs.optionsPanel
 Expect("the Bosses page is built", panel ~= nil and panel.layout ~= nil, true)
 SpokenNPCsSettings.unlockUnfound = true
-SpokenNPCsSettings.compendiumFoundOnly = true
+SpokenNPCsSettings.compendiumFoundOnly = false
 SpokenNPCsCharacter.found["36:edwin vancleef"] = true
 local reset = panel.layout.defaults
 reset.scripts.OnClick(reset)
 stub.popups[#stub.popups].dialog.OnAccept()
-Expect("its Defaults put Found Only back off", SpokenNPCsSettings.compendiumFoundOnly, false)
+Expect("its Defaults put Found Only back on", SpokenNPCsSettings.compendiumFoundOnly, true)
 Expect("...and leave Unlock Unfound Bosses, which Spoken's page resets", SpokenNPCsSettings.unlockUnfound, true)
 Expect("...and keep the bosses this character has met", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
 

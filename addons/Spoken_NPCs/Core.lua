@@ -11,7 +11,7 @@ NPCs.ICON = [[Interface\Icons\INV_Misc_Head_Dragon_01]]
 local defaults = {
 	-- Every boss openable, met or not (on Spoken's page); and the list leaving out those not met.
 	unlockUnfound = false,
-	compendiumFoundOnly = false,
+	compendiumFoundOnly = true,
 }
 
 --- The settings and what this character has met. The settings are how the tab behaves, and the
@@ -20,6 +20,12 @@ function NPCs:InitDB()
 	SpokenNPCsSettings = SpokenNPCsSettings or {}
 	for key, value in pairs(defaults) do
 		if SpokenNPCsSettings[key] == nil then SpokenNPCsSettings[key] = value end
+	end
+	-- A Found Only saved off before it was on by default would read as the player's choice: turned
+	-- on once behind this marker. An off set after that is kept.
+	if not SpokenNPCsSettings.foundOnlyDefaultOn then
+		SpokenNPCsSettings.foundOnlyDefaultOn = true
+		SpokenNPCsSettings.compendiumFoundOnly = true
 	end
 	SpokenNPCsCharacter = SpokenNPCsCharacter or {}
 	SpokenNPCsCharacter.found = SpokenNPCsCharacter.found or {}
