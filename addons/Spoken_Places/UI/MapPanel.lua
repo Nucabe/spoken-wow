@@ -43,9 +43,7 @@ end
 
 local function LeatrixFrame()
 	local db = _G.LeaMapsDB
-	local isAddOnLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or _G.IsAddOnLoaded
-	return type(db) == "table" and db.SimpleMapFrame ~= "Off" and isAddOnLoaded
-		and isAddOnLoaded("Leatrix_Maps")
+	return type(db) == "table" and db.SimpleMapFrame ~= "Off" and IsAddOnLoaded("Leatrix_Maps")
 end
 
 local edge
@@ -81,12 +79,10 @@ local function MapEdge()
 		FitLeatrixEdge()
 		return edge
 	end
-	-- Era uses MiniBorderFrame for the windowed map. BorderFrame is still present there, but it is
-	-- the frame for the other map size and can be hidden, leaving the panel detached from the map.
-	local mini = WorldMapFrame.MiniBorderFrame
-	local border = WorldMapFrame.BorderFrame
-	if IsShown(mini) then return mini end
-	if IsShown(border) then return border end
+	-- Era's windowed map uses MiniBorderFrame; BorderFrame belongs to the other map size and may be
+	-- hidden.
+	local mini, border = WorldMapFrame.MiniBorderFrame, WorldMapFrame.BorderFrame
+	if IsShown(border) and not IsShown(mini) then return border end
 	if type(mini) == "table" and mini.SetPoint then return mini end
 	if type(border) == "table" and border.SetPoint then return border end
 	return WorldMapFrame
@@ -95,9 +91,9 @@ end
 -- Space between the map's frame and the panel's: a small gap, so the two read as neighbours
 -- rather than one frame.
 local GAP = 2
--- The default Era border has 12 of transparent space on its right edge; step back over it there, so
--- the same small gap shows between the visible borders without changing Forever's layout.
-local DEFAULT_MAP_GAP = GAP - 12
+-- Era's default border has 12 of clear space on its right: step back over it, so the visible gap is
+-- GAP.
+local ERA_BORDER_CLEAR = 12
 
 -- The action slot border's opening is 36/66 of its image, so the icon fills it at about
 -- BORDER_SIZE * 36 / 66; larger, the border overlaps the icon's edge, smaller leaves a gap.
@@ -395,8 +391,7 @@ end
 function ApplyAnchors()
 	local mapEdge = MapEdge()
 	local tab, reach = SideTabs(mapEdge)
-	local gap = (LeatrixFrame() or not IsEra()) and GAP or DEFAULT_MAP_GAP
-	gap = gap + reach
+	local gap = GAP + reach - ((mapEdge ~= edge and IsEra()) and ERA_BORDER_CLEAR or 0)
 	panel:ClearAllPoints()
 	panel:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", gap, 0)
 	panel:SetPoint("BOTTOMLEFT", mapEdge, "BOTTOMRIGHT", gap, 0)
@@ -572,12 +567,8 @@ function SpokenPlaces:SetupMapPanel()
 	-- resize it. Its script, not its Maximize and Minimize: hooked, those raise an error inside
 	-- the Forever client's own Minimize as the map opens under the gamepad UI.
 	WorldMapFrame:HookScript("OnSizeChanged", function()
-		Relayout()
 		Refresh(SpokenPlaces:GetDisplayedMapID())
 	end)
-	-- Leatrix may finish rebuilding its map after Places has constructed this panel. Re-check the
-	-- visible edge when the map opens, so the first layout cannot leave us on Blizzard's border.
-	WorldMapFrame:HookScript("OnShow", Relayout)
 	WorldMapFrame:HookScript("OnHide", function()
 		panel:Hide()
 		toggle:Hide()

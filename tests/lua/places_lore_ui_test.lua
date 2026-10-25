@@ -525,8 +525,7 @@ local mapSetAlpha = WorldMapFrame.SetAlpha
 -- The quest log beside the map, shown.
 _G.QuestMapFrame = CreateFrame("Frame", "QuestMapFrame", WorldMapFrame)
 QuestMapFrame:Show()
--- Era keeps both map borders around: the minimized map uses MiniBorderFrame while BorderFrame is
--- hidden. The panel must follow the one the player can actually see.
+-- Era's windowed map shows MiniBorderFrame, with BorderFrame hidden.
 local miniBorder = CreateFrame("Frame", nil, WorldMapFrame)
 local fullBorder = CreateFrame("Frame", nil, WorldMapFrame)
 WorldMapFrame.MiniBorderFrame, WorldMapFrame.BorderFrame = miniBorder, fullBorder
@@ -539,32 +538,34 @@ Expect("the story beside the map wears the quest log's frame", panel ~= nil, tru
 -- on the Forever client.
 Expect("...and leaves the map's SetAlpha unhooked", WorldMapFrame.SetAlpha == mapSetAlpha, true)
 Expect("...and follows Era's visible minimized-map border", panel.anchor.relativeTo, miniBorder)
+-- The panel laid out with the map open, which then closes again.
+local function Relaid()
+    WorldMapFrame:Show()
+    Z:RefreshPanel()
+    WorldMapFrame:Hide()
+end
 -- The remaining layout checks model the older stub map, which has neither named border.
-miniBorder:Hide()
 WorldMapFrame.MiniBorderFrame, WorldMapFrame.BorderFrame = nil, nil
-for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
+Relaid()
 Expect("...returns to the default map edge when no alternate map is active", panel.anchor.relativeTo, WorldMapFrame)
--- Classic Era exposes the older global addon API rather than C_AddOns. Leatrix must still select
--- its synthetic edge when that is the only addon-loaded answer available.
+-- Leatrix Maps loaded, its simple frame on.
 local loadedAddon = _G.IsAddOnLoaded
-local leatrixMap = CreateFrame("Frame", nil, WorldMapFrame)
-WorldMapFrame.ScrollContainer = leatrixMap
+WorldMapFrame.ScrollContainer = CreateFrame("Frame", nil, WorldMapFrame)
 _G.LeaMapsDB = { SimpleMapFrame = "On" }
 _G.IsAddOnLoaded = function(name) return name == "Leatrix_Maps" or loadedAddon(name) end
-for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
-Expect("Era's global addon API still selects Leatrix's map edge", panel.anchor.relativeTo ~= WorldMapFrame, true)
+Relaid()
+Expect("on Era, Leatrix's frame is the map's edge", panel.anchor.relativeTo ~= WorldMapFrame, true)
 Expect("...on Era with the panel against the gold border, not stepped back over the game's", panel.anchor.x, 2)
--- Leatrix's simple frame is the edge on every client, not on Era alone.
 local variant = SpokenEnv.Version.Variant
 SpokenEnv.Version.Variant = "forever"
-for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
+Relaid()
 Expect("Forever selects Leatrix's map edge too", panel.anchor.relativeTo ~= WorldMapFrame, true)
 _G.IsAddOnLoaded, _G.LeaMapsDB = loadedAddon, nil
-for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
+Relaid()
 Expect("...and without Leatrix keeps the small gap, the default border having no clear edge there",
     panel.anchor.x, 2)
 SpokenEnv.Version.Variant = variant
-for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
+Relaid()
 Expect("on Era without Leatrix, the panel steps back over the default border's clear edge", panel.anchor.x, -10)
 WorldMapFrame.ScrollContainer = nil
 Z:RefreshPanel()
