@@ -815,10 +815,10 @@ end
 -- Shown once the audio has begun: the typing is paced to the voice, and before it starts there
 -- is nothing to type. A stopped queue and a line held back are the exceptions. With no window on
 -- screen, a subtitle saying "Stopped" or why the line waits (a fight, the NPC's own greeting) is
--- the only sign of why nothing is being read.
+-- the only sign of why nothing is being read. Not while Immersion's window shows the line.
 function Subtitle:Wanted()
     return Addon:ShowsNarrator(Transcript.clip) and Addon:DisplayStyle() == "subtitle" and Transcript.clip ~= nil
-        and Transcript.text ~= "" and (Transcript.hasStarted or SoundQueue:IsPaused()
+        and Transcript.text ~= "" and not Actions.ImmersionOpen() and (Transcript.hasStarted or SoundQueue:IsPaused()
         or SoundQueue:GetHeldReason(Transcript.clip) ~= nil)
 end
 
