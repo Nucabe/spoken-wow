@@ -41,7 +41,7 @@ local defaults = {
 	highlightOpacity = 0.35,
 	-- Off, so Azeroth's Compendium opens only the places this character has found (Discovery.lua).
 	showUndiscovered = false,
-	-- Azeroth's Compendium's Discovered Only, under its list: on, so only the places this character has found are listed.
+	-- Azeroth's Compendium's Discovered Only, in its filter menu.
 	loreDiscoveredOnly = true,
 	loreVoicedOnly = false,
 	voiceEnabled = true,

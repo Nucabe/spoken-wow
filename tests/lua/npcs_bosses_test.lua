@@ -156,7 +156,7 @@ Expect("Unlock Unfound Bosses is off in a fresh profile", SpokenNPCsSettings.unl
 SpokenNPCsSettings.compendiumFoundOnly = false
 NPCs:InitDB()
 Expect("...and an explicit off stays off through the next start", SpokenNPCsSettings.compendiumFoundOnly, false)
--- A table an earlier version saved, with the off every start stored then.
+-- A profile saved before the marker existed.
 SpokenNPCsSettings.foundOnlyDefaultOn = nil
 NPCs:InitDB()
 Expect("...an off stored before it was on by default is turned on once", SpokenNPCsSettings.compendiumFoundOnly, true)
@@ -218,7 +218,6 @@ Expect("...a line with what is met out of all and the share, no picture or bar",
     RowFor("Westfall").row.style .. "|" .. RowFor("Westfall").count.text, "group|0/" .. westfall .. " • 0%")
 Expect("...the continent's banner counts them too", RowFor("Kalimdor").count.text:match("^0/%d+$") ~= nil, true)
 
--- With Found Only on and no boss met there, the tab does not land on a line the list leaves out.
 SpokenNPCsSettings.compendiumFoundOnly = true
 NPCs:ShowBosses()
 Shown()
