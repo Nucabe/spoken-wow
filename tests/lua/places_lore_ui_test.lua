@@ -610,7 +610,7 @@ Expect("folded, its button goes under the lowest side tab on the map's edge",
     toggle.anchor.relativeTo == guideTab and (toggle.anchor.relativePoint .. " " .. toggle.anchor.y), "BOTTOMLEFT -3")
 Z:SetMapPanelCollapsed(false)
 Expect("...and open, the panel stands clear of the widest, though not of a panel beside the map",
-    panel.anchor.x, 48)
+    panel.anchor.x, 50)
 besidePanel:Hide()
 -- The tabs are the quest log's and go with it. Closing or opening it refreshes nothing else.
 local function CloseQuestLog()
@@ -621,30 +621,30 @@ Z:SetMapPanelCollapsed(true)
 CloseQuestLog()
 Expect("with the quest log closed, the button is back on the map's edge",
     toggle.anchor.relativeTo == WorldMapFrame and toggle.anchor.relativePoint, "TOPRIGHT")
-Expect("...and the panel against the map", panel.anchor.x, -12)
+Expect("...and the panel against the map", panel.anchor.x, -10)
 QuestMapFrame:Show()
 Expect("opening the quest log puts the button back under its tabs", toggle.anchor.relativeTo == guideTab, true)
-Expect("...and the panel past them", panel.anchor.x, 48)
+Expect("...and the panel past them", panel.anchor.x, 50)
 -- The game's own tabs show and hide on their own: switching the gamepad UI off shows them under the
 -- open log, and the log checking its tabs hides them again, neither through the log's show or hide.
 -- Here one hangs lowest of all, reaching 80, and has not been laid out when first seen.
 local gameTab = SideTab(49, 29, 80)
 gameTab.unplaced, gameTab.shown = true, false
 Z:RefreshPanel()
-Expect("a side tab that is not shown moves nothing", panel.anchor.x, 48)
+Expect("a side tab that is not shown moves nothing", panel.anchor.x, 50)
 gameTab.unplaced = nil
 gameTab:Show()
 stub.Advance(0.1)
-Expect("a side tab shown by itself puts the panel past it on the next frame", panel.anchor.x, 68)
+Expect("a side tab shown by itself puts the panel past it on the next frame", panel.anchor.x, 70)
 gameTab.shown = false
 for _, hook in ipairs(gameTab.hooks.OnHide or {}) do hook(gameTab) end
 stub.Advance(0.1)
-Expect("...and hidden again, back past the others", panel.anchor.x, 48)
+Expect("...and hidden again, back past the others", panel.anchor.x, 50)
 -- Made after the quest log opened, by an addon whose hook on it ran after Spoken's.
 local lateTab = SideTab(26, 6, 70)
 lateTab:Show()
 Z:RefreshPanel()
-Expect("a side tab made later is found on the next refresh", panel.anchor.x, 58)
+Expect("a side tab made later is found on the next refresh", panel.anchor.x, 60)
 lateTab:Hide()
 CloseQuestLog()
 Z:SetMapPanelCollapsed(false)

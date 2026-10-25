@@ -102,9 +102,9 @@ end
 -- Space between the map's frame and the panel's: a small gap, so the two read as neighbours
 -- rather than one frame.
 local GAP = 2
--- The default Era border has transparent space on its right edge; compensate only there so the
--- lore frame's visible border sits close to the map without changing Forever's layout.
-local DEFAULT_MAP_GAP = -12
+-- The default Era border has 12 of transparent space on its right edge; step back over it there, so
+-- the same small gap shows between the visible borders without changing Forever's layout.
+local DEFAULT_MAP_GAP = GAP - 12
 
 -- The action slot border's opening is 36/66 of its image, so the icon fills it at about
 -- BORDER_SIZE * 36 / 66; larger, the border overlaps the icon's edge, smaller leaves a gap.
