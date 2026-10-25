@@ -4,6 +4,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **The Bosses section uses its dragon icon and skull badge in the Compendium**, matching its
+  settings page and dungeon icon instead of using the generic book portrait.
+  *([rusty-key](https://github.com/rusty-key))*
 - **The Bosses tab lists dungeons straight under their continent.** The zone lines are gone: each
   continent shows its dungeons and raids by name, then its world bosses, and the search finds bosses
   and dungeons. A dungeon's page still names its zone.
