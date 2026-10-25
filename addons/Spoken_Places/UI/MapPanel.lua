@@ -30,28 +30,21 @@ local function Host()
 	return WorldMapFrame
 end
 
--- Leatrix Maps' simple map frame draws its own title bar and gold border round the map and the
--- quest log, and hides the game's border. Its title bar is above the map canvas; the lore panel
--- follows the canvas, while the gold border reaches 5 past the black frame 1 outside it.
-local LEATRIX_FRAME, LEATRIX_BORDER = 1, 5
-local LEATRIX_VERTICAL_EXTRA = 5
+-- Leatrix Maps' simple map frame draws its own title bar and gold border round the map and the quest
+-- log, and hides the game's: the game's border frame then lies beyond what is drawn. The title bar
+-- is 22 high and its black frame lies 1 outside the map; the gold border reaches 5 past that.
+local LEATRIX_TITLE, LEATRIX_FRAME, LEATRIX_BORDER = 22, 1, 5
 
-local function IsClassicEra()
-	local _, _, _, interface = GetBuildInfo()
-	return WOW_PROJECT_ID == WOW_PROJECT_CLASSIC or interface == 11509
-end
+local VERSION = SpokenEnv.Version
 
-local function LeatrixMap()
-	-- ScrollContainer is used by newer clients. Classic Era keeps the older global map
-	-- frames instead, even though Leatrix still draws the same simple-map chrome around them.
-	return WorldMapFrame.ScrollContainer or _G.WorldMapScrollFrame or _G.WorldMapDetailFrame
-		or WorldMapFrame
+local function IsEra()
+	return VERSION.Variant == "era" or VERSION.Variant == "sod"
 end
 
 local function LeatrixFrame()
 	local db = _G.LeaMapsDB
 	local isAddOnLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or _G.IsAddOnLoaded
-	return IsClassicEra() and type(db) == "table" and db.SimpleMapFrame ~= "Off" and isAddOnLoaded
+	return type(db) == "table" and db.SimpleMapFrame ~= "Off" and isAddOnLoaded
 		and isAddOnLoaded("Leatrix_Maps")
 end
 
@@ -62,11 +55,11 @@ local function FitLeatrixEdge()
 	if not edge then return end
 	local questWidth = 0
 	if QuestMapFrame and QuestMapFrame:IsShown() then questWidth = WorldMapFrame.questLogWidth or 0 end
-	local map = LeatrixMap()
+	local map = WorldMapFrame.ScrollContainer
 	edge:ClearAllPoints()
 	local out = LEATRIX_FRAME + LEATRIX_BORDER
-	edge:SetPoint("TOPLEFT", map, "TOPLEFT", -out, LEATRIX_VERTICAL_EXTRA)
-	edge:SetPoint("BOTTOMRIGHT", map, "BOTTOMRIGHT", questWidth + out, -(out + LEATRIX_VERTICAL_EXTRA))
+	edge:SetPoint("TOPLEFT", map, "TOPLEFT", -out, LEATRIX_TITLE + LEATRIX_FRAME)
+	edge:SetPoint("BOTTOMRIGHT", map, "BOTTOMRIGHT", questWidth + out, -out)
 end
 
 local function IsShown(frame)
@@ -402,7 +395,7 @@ end
 function ApplyAnchors()
 	local mapEdge = MapEdge()
 	local tab, reach = SideTabs(mapEdge)
-	local gap = (LeatrixFrame() or not IsClassicEra()) and GAP or DEFAULT_MAP_GAP
+	local gap = (LeatrixFrame() or not IsEra()) and GAP or DEFAULT_MAP_GAP
 	gap = gap + reach
 	panel:ClearAllPoints()
 	panel:SetPoint("TOPLEFT", mapEdge, "TOPRIGHT", gap, 0)

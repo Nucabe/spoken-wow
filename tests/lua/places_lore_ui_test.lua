@@ -553,12 +553,20 @@ _G.LeaMapsDB = { SimpleMapFrame = "On" }
 _G.IsAddOnLoaded = function(name) return name == "Leatrix_Maps" or loadedAddon(name) end
 for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
 Expect("Era's global addon API still selects Leatrix's map edge", panel.anchor.relativeTo ~= WorldMapFrame, true)
-WorldMapFrame.ScrollContainer = nil
-local legacyScroll = CreateFrame("Frame", nil, WorldMapFrame)
-_G.WorldMapScrollFrame = legacyScroll
+Expect("...on Era with the panel against the gold border, not stepped back over the game's", panel.anchor.x, 2)
+-- Leatrix's simple frame is the edge on every client, not on Era alone.
+local variant = SpokenEnv.Version.Variant
+SpokenEnv.Version.Variant = "forever"
 for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
-Expect("Era's legacy map canvas selects Leatrix's map edge", panel.anchor.relativeTo ~= WorldMapFrame, true)
-_G.IsAddOnLoaded, _G.LeaMapsDB, _G.WorldMapScrollFrame = loadedAddon, nil, nil
+Expect("Forever selects Leatrix's map edge too", panel.anchor.relativeTo ~= WorldMapFrame, true)
+_G.IsAddOnLoaded, _G.LeaMapsDB = loadedAddon, nil
+for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
+Expect("...and without Leatrix keeps the small gap, the default border having no clear edge there",
+    panel.anchor.x, 2)
+SpokenEnv.Version.Variant = variant
+for _, hook in ipairs(WorldMapFrame.hooks.OnSizeChanged or {}) do hook(WorldMapFrame) end
+Expect("on Era without Leatrix, the panel steps back over the default border's clear edge", panel.anchor.x, -10)
+WorldMapFrame.ScrollContainer = nil
 Z:RefreshPanel()
 -- A frame drawn: the OnUpdate of whichever of the panel and its button is shown.
 local function NextFrame()
