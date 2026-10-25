@@ -2,7 +2,7 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
-## 3.6.0-alpha.1 — 2026-10-23
+## 3.6.0-alpha.2 — 2026-10-25
 
 - **The Bosses section uses its dragon icon and skull badge in the Compendium**, matching its
   settings page and dungeon icon instead of using the generic book portrait.
