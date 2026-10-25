@@ -148,6 +148,6 @@ L.OPT_PAGE_TITLE = "Places"
 L.OPT_DEV_DEBUG = "Places Debug Messages"
 L.OPT_DEV_PREVIEW = "Offer Unfinished Translations"
 
-L.OPEN_IN_COMPENDIUM = "Open in the Azeroth Compendium"
+L.OPEN_IN_COMPENDIUM = "Open in Azeroth's Compendium"
 
 SpokenPlaces:RegisterStrings("enUS", L)

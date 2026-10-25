@@ -170,7 +170,7 @@ L.OPT_NEXT_GOSSIP = "Next Gossip"
 --------------------------------------------------------------------------------
 
 L.COMPENDIUM_QUESTS = "Quests"
-L.OPEN_IN_COMPENDIUM = "Open in the Azeroth Compendium"
+L.OPEN_IN_COMPENDIUM = "Open in Azeroth's Compendium"
 L.QUESTS_SEARCH = "Search quests"
 L.QUESTS_NONE = "Nothing matches."
 L.QUESTS_FOUND_ONLY = "Started Only"

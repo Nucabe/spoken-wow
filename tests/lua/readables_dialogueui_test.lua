@@ -155,7 +155,7 @@ Book:Draw()
 Expect("...and turns to Stop while it reads", row.play.state, "stop")
 Expect("...Skip lit", row.skip:IsEnabled(), true)
 row.play.scripts.OnEnter(row.play)
-Expect("its tooltip keeps the Play title", row.play.tooltip ~= nil and row.play.tooltip:GetParent() == view
+Expect("its tooltip names Stop", row.play.tooltip ~= nil and row.play.tooltip:GetParent() == view
     and row.play.tooltip.text, B.L.STOP_TIP)
 row.play.scripts.OnLeave(row.play)
 row.report.scripts.OnClick(row.report)

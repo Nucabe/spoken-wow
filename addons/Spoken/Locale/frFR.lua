@@ -29,6 +29,7 @@ L.MIN_MENU_HINT = "Clic droit pour les options de lecture. Glissez le nom de l'i
 L.MIN_SKIP = "Passer la réplique"
 L.MIN_STOP_ALL = "Tout arrêter"
 L.REPLAY = "Rejouer"
+L.PLAY_NO_VOICE = "Pas encore de voix pour ceci."
 L.STOP_REPLAY = "Arrêter ou rejouer"
 L.BIND_PLAYPAUSE = "Arrêter ou rejouer"
 L.SUBTITLE_STOPPED = "Arrêté"

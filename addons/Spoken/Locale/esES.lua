@@ -30,6 +30,7 @@ L.MIN_MENU_HINT = "Clic derecho para opciones de reproducción. Arrastra el nomb
 L.MIN_SKIP = "Omitir línea"
 L.MIN_STOP_ALL = "Detener todo"
 L.REPLAY = "Repetir"
+L.PLAY_NO_VOICE = "Aún no hay voz para esto."
 L.STOP_REPLAY = "Detener o repetir"
 L.BIND_PLAYPAUSE = "Detener o repetir"
 L.SUBTITLE_STOPPED = "Detenido"

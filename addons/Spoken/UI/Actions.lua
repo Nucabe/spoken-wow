@@ -126,12 +126,6 @@ function Actions.OfferLogMenu(button, isReport)
     end)
 end
 
---- The line a Report button's tooltip ends with, where the menu exists.
-function Actions.AddLogMenuHint(tooltip)
-    local hint = Developer:MenuHint()
-    if hint then tooltip:AddLine(hint, 0.6, 0.6, 0.6, true) end
-end
-
 --- The subtitle's round button, the one every window shows: 24 across, the player's ring,
 --- `glyphSize` square glyph centred in it (or reaching the rim with none). Made without a parent
 --- and given one after, which a button on the open quest log needs (taint), and which costs the
@@ -760,8 +754,9 @@ local DialogRow = {}
 
 --- Play, Skip and, with `report`, Report in a row on one of DialogueUI's dialogs (its quest window
 --- or its book view), as Spoken Quests and Spoken Readables put them there: children of the dialog,
---- drawn over it, so they show while DialogueUI hides UIParent and close with it. Skip skips and
---- names itself; Play and Report keep their short titles without explanatory tooltip text.
+--- drawn over it, so they show while DialogueUI hides UIParent and close with it. `tooltip()`
+--- returns the tooltip to use on the dialog, the game's being a child of UIParent. Skip skips and
+--- names itself; the caller gives Play and Report their clicks and their tooltips (Row:SetTip).
 function Actions.DialogRow(dialog, tooltip, report)
     local holder = CreateFrame("Frame", nil, dialog)
     holder:SetFrameStrata("FULLSCREEN")

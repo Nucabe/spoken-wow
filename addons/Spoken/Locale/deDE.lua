@@ -29,6 +29,7 @@ L.MIN_MENU_HINT = "Rechtsklick für Wiedergabeoptionen. Den Sprechernamen ziehen
 L.MIN_SKIP = "Zeile überspringen"
 L.MIN_STOP_ALL = "Alles stoppen"
 L.REPLAY = "Wiederholen"
+L.PLAY_NO_VOICE = "Dafür gibt es noch keine Stimme."
 L.STOP_REPLAY = "Stopp oder Wiederholen"
 L.BIND_PLAYPAUSE = "Stopp oder Wiederholen"
 L.SUBTITLE_STOPPED = "Gestoppt"

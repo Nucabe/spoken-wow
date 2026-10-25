@@ -891,7 +891,7 @@ Expect("...named and pictured for its giver", Who(), Npc("Marshal McBride", MCBR
 local playing = Spoken:GetQueue()[1]
 Expect("...with the offer's words, for the window to show and highlight",
     playing and type(playing.text) == "string" and playing.text ~= "" and PageWords():find(playing.text, 1, true) ~= nil, true)
--- Play and Report have no hover tooltip.
+-- Play and Report tooltips: their titles, no description.
 local function Tip(button, asIs)
     if not asIs then
         GameTooltip.lines = nil
@@ -955,6 +955,7 @@ Spoken:RegisterDeveloper(nil)
 Click("Kobold Candles")
 Expect("a quest no pack has has a greyed Play", PartButton(L.QUEST_PART_ACCEPT, "play") ~= nil
     and PartButton(L.QUEST_PART_ACCEPT, "play"):IsShown() and not PartButton(L.QUEST_PART_ACCEPT, "play"):IsEnabled(), true)
+Expect("...whose tooltip says why", Tip(PartButton(L.QUEST_PART_ACCEPT, "play")), S.PLAY .. "|" .. S.PLAY_NO_VOICE)
 Expect("...but Report: a line no pack voices can be wrong too", PartButton(L.QUEST_PART_ACCEPT, "report") ~= nil
     and PartButton(L.QUEST_PART_ACCEPT, "report"):IsShown(), true)
 Expect("...and, no one known to say it, the book in its face and no name over its heading",

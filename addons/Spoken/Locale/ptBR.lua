@@ -29,6 +29,7 @@ L.MIN_MENU_HINT = "Clique direito para opções de reprodução. Arraste o nome 
 L.MIN_SKIP = "Pular fala"
 L.MIN_STOP_ALL = "Parar tudo"
 L.REPLAY = "Repetir"
+L.PLAY_NO_VOICE = "Ainda não há voz para isto."
 L.STOP_REPLAY = "Parar ou repetir"
 L.BIND_PLAYPAUSE = "Parar ou repetir"
 L.SUBTITLE_STOPPED = "Parado"

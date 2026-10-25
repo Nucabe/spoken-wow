@@ -29,6 +29,7 @@ L.MIN_MENU_HINT = "Правый щелчок — параметры воспро
 L.MIN_SKIP = "Пропустить реплику"
 L.MIN_STOP_ALL = "Остановить всё"
 L.REPLAY = "Повтор"
+L.PLAY_NO_VOICE = "Для этого пока нет озвучки."
 L.STOP_REPLAY = "Стоп или повтор"
 L.BIND_PLAYPAUSE = "Стоп или повтор"
 L.SUBTITLE_STOPPED = "Остановлено"

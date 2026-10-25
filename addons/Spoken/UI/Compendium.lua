@@ -1587,16 +1587,22 @@ end
 local Page = {}
 Page.__index = Page
 
-local function PlayTooltip(button, state)
+--- A Play button's tooltip for `state`, as every Play of the Compendium's has it: the state's name
+--- in Spoken's words, and why it is greyed where it is.
+function C.PlayTooltip(button, state)
 	local words = _G.SpokenEnv and _G.SpokenEnv.L
 	if not (words and GameTooltip) then return end
 	GameTooltip:SetOwner(button, "ANCHOR_LEFT")
 	local key = state == "stop" and "STOP" or state == "replay" and "REPLAY" or "PLAY"
 	GameTooltip:SetText(words[key])
+	if button.IsEnabled and not button:IsEnabled() then
+		GameTooltip:AddLine(words.PLAY_NO_VOICE, 1, 0.8, 0.2, true)
+	end
 	GameTooltip:Show()
 end
 
-local function ReportTooltip(button, title)
+--- A Report button's tooltip: `title`.
+function C.ReportTooltip(button, title)
 	if not GameTooltip then return end
 	GameTooltip:SetOwner(button, "ANCHOR_LEFT")
 	GameTooltip:SetText(title or "")
@@ -1804,7 +1810,7 @@ function C.NewPage(parent, addon, play, report, look)
 		button:SetScript("OnClick", function()
 			if self.target ~= nil then report.open(self.target) end
 		end)
-		button:HookScript("OnEnter", function(b) ReportTooltip(b, report.title) end)
+		button:HookScript("OnEnter", function(b) C.ReportTooltip(b, report.title) end)
 		button:HookScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
 		button:Hide()
 		self.report = button
@@ -1822,9 +1828,9 @@ function C.NewPage(parent, addon, play, report, look)
 			-- Looked up each click: a line that has since finished is no longer in the queue.
 			C.PlayClick(play.find(target), function() play.start(target) end)
 			self:RefreshPlay()
-			if GameTooltip and GameTooltip:GetOwner() == button then PlayTooltip(button, button.pageState) end
+			if GameTooltip and GameTooltip:GetOwner() == button then C.PlayTooltip(button, button.pageState) end
 		end)
-		button:HookScript("OnEnter", function(b) PlayTooltip(b, b.pageState) end)
+		button:HookScript("OnEnter", function(b) C.PlayTooltip(b, b.pageState) end)
 		button:HookScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
 		button:Hide()
 		self.play = button

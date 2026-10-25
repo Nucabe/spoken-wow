@@ -26,7 +26,6 @@ L.DUI_PLAY_RIGHT_CLICK = "Rechtsklick schaltet „Automatisch vorlesen“ ein od
 L.CONTRIBUTE = "Mitwirken"
 L.REPORT = "Melden"
 L.REPORT_PROBLEM = "Problem melden"
-L.REPORT_LINE_TIP = "Erhalte einen Link, um eine falsche Lesung, einen falsch ausgesprochenen Namen oder eine Vertonung, die nicht zur Seite passt, zu melden."
 L.REPORT_LINE_ADDRESS = "Kopiere diese Adresse und öffne sie in deinem Browser, um ein Problem mit dieser Seite zu melden."
 L.NO_LINE = "Keine Zeile für diese Seite"
 L.NO_LINE_TIP = "Sende den Text deines eigenen Clients, damit er hinzugefügt werden kann."

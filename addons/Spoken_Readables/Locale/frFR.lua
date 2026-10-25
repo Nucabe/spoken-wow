@@ -26,7 +26,6 @@ L.DUI_PLAY_RIGHT_CLICK = "Clic droit pour activer ou désactiver « Lire automat
 L.CONTRIBUTE = "Contribuer"
 L.REPORT = "Signaler"
 L.REPORT_PROBLEM = "Signaler un problème"
-L.REPORT_LINE_TIP = "Obtenez un lien pour signaler une lecture erronée, un nom mal prononcé ou une narration qui ne correspond pas à la page."
 L.REPORT_LINE_ADDRESS = "Copiez cette adresse et ouvrez-la dans votre navigateur pour signaler un problème avec cette page."
 L.NO_LINE = "Aucune réplique pour cette page"
 L.NO_LINE_TIP = "Envoyez le texte de votre propre client pour l'ajouter."

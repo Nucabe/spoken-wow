@@ -838,7 +838,7 @@ do
         if not voiced[p] then return nil end
         return { key = "b:" .. p, path = "page" .. p .. ".mp3", length = 5, pageId = p, present = { header = "" } }
     end
-    -- Play and Report have no hover tooltip.
+    -- Play and Report tooltips: their titles, no description.
     local function Tip(asIs, button)
         button = button or page.play
         if not asIs then
