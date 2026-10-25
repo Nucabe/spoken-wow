@@ -145,8 +145,7 @@ function Addon:InitDB()
     if self.db then
         return
     end
-    -- The DialogueUI window is the default when DialogueUI is here and recognised. Decided now:
-    -- DialogueUITheme and Compat.lua's IsAddOnLoaded load after Core.lua.
+    -- Not in Defaults: DialogueUITheme and Compat.lua's IsAddOnLoaded load after Core.lua.
     if DialogueUITheme and DialogueUITheme:Available() then Defaults.profile.Frame.Style = "dialogueui" end
     self.db = LibStub("AceDB-3.0"):New("SpokenSettings", Defaults)
     -- A saved AutoScroll = false predates ScrollMode: carry it over as "off", in every profile.
