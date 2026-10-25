@@ -5,10 +5,7 @@
   "description": "Installs and updates Spoken and its voice packs.",
   "private": true,
   "main": "./out/main/index.js",
-  "author": {
-    "name": "Spoken",
-    "email": "rusty-key@users.noreply.github.com"
-  },
+  "author": "Spoken",
   "homepage": "https://github.com/rusty-key/spoken-wow/tree/master/manager",
   "desktopName": "spoken-manager",
   "license": "MIT",

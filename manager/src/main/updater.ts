@@ -5,9 +5,9 @@
 // Windows (NSIS installer), macOS (signed and notarized, updated from the zip) and a Linux AppImage
 // use electron-updater's generic provider: it downloads the update and installs it when the
 // manager quits. Outside an AppImage on Linux (the tar.gz, deb and rpm) the manager does not use
-// electron-updater at all: it reads the feed's `latest-linux.yml`,
-// compares the version and reports the page to download from. Does nothing when the app is not packaged or the player switched it off; it
-// never throws.
+// electron-updater at all: it reads the feed's `latest-linux.yml`, compares the version and reports
+// the page to download from. Does nothing when the app is not packaged or the player switched it
+// off; it never throws.
 import { compareVersions } from '../shared/version'
 import type { UpdaterState } from '../shared/api'
 import { log } from './state'

@@ -186,6 +186,8 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.files }}
           if-no-files-found: error
+          # Every installer is compressed already.
+          compression-level: 0
 
   release:
     name: Release
@@ -226,12 +228,12 @@ jobs:
           flags=""
           case "${GITHUB_REF_NAME}" in *-*) flags="--prerelease" ;; esac
           # The installers only: the update feed files and block maps go to manager-latest.
-          installers="dist/*.exe dist/*.dmg dist/*.zip dist/*.AppImage dist/*.tar.gz dist/*.deb dist/*.rpm"
+          mapfile -t installers < <(find dist -type f ! -name 'latest*.yml' ! -name '*.blockmap' | sort)
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             # A re-run: the release is there already, so only its files are replaced.
-            gh release upload "${GITHUB_REF_NAME}" $installers --clobber
+            gh release upload "${GITHUB_REF_NAME}" "${installers[@]}" --clobber
           else
-            gh release create "${GITHUB_REF_NAME}" $installers \
+            gh release create "${GITHUB_REF_NAME}" "${installers[@]}" \
               --title "Spoken Manager ${GITHUB_REF_NAME#manager/v}" \
               --notes "Installers for Windows, macOS and Linux. See manager/README.md for how to install them." \
               --verify-tag --latest=false $flags
