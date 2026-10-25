@@ -962,7 +962,6 @@ end
 
 -- DialogueUI's quest window and book view, and Immersion's window, which shows quests, gossip and
 -- books in its own talking box.
-local DIALOGUEUI_DIALOGS = { "DUIQuestFrame", "DUIBookFrame" }
 local DIALOGS = { "DUIQuestFrame", "DUIBookFrame", "ImmersionFrame" }
 
 local function Open(name)
@@ -982,9 +981,8 @@ end
 --- leave its 3D portrait over the dialog, which takes no alpha from it. Immersion's always: it
 --- keeps the interface unless its Hide Interface is on, so the window would sit beside its box.
 function Actions.DialogCovers()
-    if Actions.ImmersionOpen() then return true end
-    if Addon.playerHost then return false end
-    for _, name in ipairs(DIALOGUEUI_DIALOGS) do
+    if Addon.playerHost then return Actions.ImmersionOpen() end
+    for _, name in ipairs(DIALOGS) do
         if Open(name) then return true end
     end
     return false
