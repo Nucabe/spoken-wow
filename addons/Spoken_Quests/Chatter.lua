@@ -5,7 +5,8 @@ setfenv(1, VoiceOver)
 -- gives no sound of its own, by speaker. They arrive as chat, so the speaker's creature id (from
 -- the event's GUID) and the exact text say which line it is. Followup.lua does the same for the
 -- chat a quest sets off; this is the chat that needs no quest, so nothing is armed: a message from a
--- speaker with no lines is one table lookup.
+-- speaker with no lines is one table lookup. A line a quest's script makes the NPC say is left to
+-- Followup.lua, which plays it for the player's own quest only.
 --
 -- The line plays as low priority, as gossip does: only when nothing else is being read, and a
 -- quest line coming drops it. The same line from the same NPC is not played again for two minutes.
@@ -50,11 +51,12 @@ function Chatter:Match(npcID, message, sender)
         return nil
     end
     if not Followup.ClientSpeaksExportLanguage() then
-        return not lines[2] and lines[1] or nil
+        local only = not lines[2] and lines[1] or nil
+        return only and not Followup.IsScripted(npcID, only.id) and only or nil
     end
     local said = string.lower(Followup.Normalize(message))
     for _, line in ipairs(lines) do
-        if string.lower(Followup.Render(line.text, sender)) == said then
+        if string.lower(Followup.Render(line.text, sender)) == said and not Followup.IsScripted(npcID, line.id) then
             return line
         end
     end

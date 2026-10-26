@@ -1513,6 +1513,10 @@ with NPC chat: there the speaker is found by the name in the event (each speaker
 the text, English clients only, since a translated name matches nothing. A message the client hides (a
 dungeon's chat can come as secrets) is not matched.
 
+A line that a quest's script makes the NPC say (`FollowupLines.lua` lists the same speaker and id) is not
+played here: heard with nothing armed it is another player's quest, and the follow-up part plays it for the
+player's own.
+
 The lines are the world DB's `creature_text` rows of type say, yell, whisper and boss whisper with `Sound = 0`
 (the game already voices the rest), a broadcast text id, and a speaker with a spawn on the open-world maps; in an
 instance the client hides the GUID. Each line is kept once per speaker. The broadcast text id names the

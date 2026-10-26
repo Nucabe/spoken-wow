@@ -65,6 +65,27 @@ local function ClientSpeaksExportLanguage()
 end
 Followup.ClientSpeaksExportLanguage = ClientSpeaksExportLanguage
 
+local scripted
+
+--- Whether `speaker` says line `id` only because a quest's script makes them: the lines this file
+--- arms after the player's own accept or turn-in. Heard with nothing armed, such a line is another
+--- player's quest.
+function Followup.IsScripted(speaker, id)
+    if not scripted then
+        scripted = {}
+        for _, byQuest in pairs(FollowupLines or {}) do
+            for _, lines in pairs(byQuest) do
+                for _, line in ipairs(lines) do
+                    if line.speaker and line.id then
+                        scripted[line.speaker .. ":" .. line.id] = true
+                    end
+                end
+            end
+        end
+    end
+    return scripted[speaker .. ":" .. id] or false
+end
+
 --- The text a line is matched by, rendered when it is armed: nothing in it changes before
 --- it is said. Except a %s, which is the sender, known only when the line arrives - such a
 --- line keeps `raw` and renders per message.

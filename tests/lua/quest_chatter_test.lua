@@ -18,6 +18,8 @@ local SPEAKER = 600
 local SPEAKER_GUID = "Creature-0-0-0-0-600-0"
 local LONE = 601
 local LONE_GUID = "Creature-0-0-0-0-601-0"
+local SCRIPTED = 602
+local SCRIPTED_GUID = "Creature-0-0-0-0-602-0"
 local FOLLOWUP_DIR = [[generated\sounds\followup\]]
 
 -- The shape ChatterLines.lua is generated in; a fixture rather than the real export.
@@ -31,13 +33,18 @@ local FIXTURE = {
     [LONE] = {
         { id = 110, text = "Only line." },
     },
+    [SCRIPTED] = {
+        name = "Scripted Test",
+        { id = 120, text = "Here goes nothing..." },
+    },
 }
 
 local PACK = {
     folder = "TestPack",
     module = {
-        FollowupLookup = { [SPEAKER] = { [101] = "chat-101", [102] = "chat-102" }, [LONE] = { [110] = "chat-110" } },
-        SoundLengthLookupByFileName = { ["chat-101"] = 2, ["chat-102"] = 2, ["chat-110"] = 2 },
+        FollowupLookup = { [SPEAKER] = { [101] = "chat-101", [102] = "chat-102" }, [LONE] = { [110] = "chat-110" },
+            [SCRIPTED] = { [120] = "chat-120" } },
+        SoundLengthLookupByFileName = { ["chat-101"] = 2, ["chat-102"] = 2, ["chat-110"] = 2, ["chat-120"] = 2 },
         GetSoundPath = function(_, fileName)
             return FOLLOWUP_DIR .. fileName .. ".ogg"
         end,
@@ -56,7 +63,8 @@ local function Boot(locale)
     stub.SetAddOns({ { folder = PACK.folder, meta = { ["X-VoiceOver-DataModule-Version"] = "1", Version = "1.2.1", Title = PACK.folder } } })
     _G.SpokenQuestsSettings = nil
     local vo = stub.LoadQuests(QUESTS, SPOKEN)
-    vo.FollowupLines = { ["end"] = {}, start = {} }
+    vo.FollowupLines = { ["end"] = { [114] = { { id = 120, step = 1, speaker = SCRIPTED, delay = 2, chat = "say",
+        male = "Here goes nothing..." } } }, start = {} }
     vo.ChatterLines = FIXTURE
     dofile(QUESTS .. "Followup.lua")
     dofile(QUESTS .. "Chatter.lua")
@@ -130,6 +138,18 @@ for _, event in ipairs({ "CHAT_MSG_MONSTER_YELL", "CHAT_MSG_MONSTER_WHISPER", "C
     Say("I sense evil brewing. . . .", SPEAKER_GUID, nil, event)
     Expect(event .. " is heard too", Keys(), "chat-101")
 end
+
+-- A line a quest's script makes the NPC say belongs to Followup.lua, which plays it for the player's
+-- own quest: said after somebody else's turn-in, it is not this player's to hear.
+Reset()
+Say("Here goes nothing...", SCRIPTED_GUID)
+Expect("a line a quest script makes an NPC say is not played by NPC Chat", Keys(), "")
+Say("Here goes nothing...", nil, "Scripted Test")
+Expect("...whether or not the event names the speaker", Keys(), "")
+Reset()
+stub.SetLocale("deDE")
+Say("Hier geht's los...", SCRIPTED_GUID)
+Expect("...nor on a client in another language", Keys(), "")
 
 ---------------------------------------------------------------- not repeated
 Reset()
