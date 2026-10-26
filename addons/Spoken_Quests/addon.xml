@@ -33,6 +33,7 @@
     <Include file="Followup.lua"/>
     <Include file="ChatterLines.lua"/>
     <Include file="Chatter.lua"/>
+    <Include file="ChatBubble.lua"/>
 
     <Include file="Compatibility.lua"/>
 </Ui>

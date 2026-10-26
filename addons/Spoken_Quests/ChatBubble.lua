@@ -1,0 +1,153 @@
+setfenv(1, VoiceOver)
+
+-- The game's chat bubble is the narrator for NPC Chat: while a line is read, the word being read is
+-- lit in the bubble's own text, as the captions light it, and the text is put back when the line
+-- ends. Spoken works out which word that is (Spoken:GetCaption) and how to mark it in another
+-- window's text (Spoken:WordMarks); this finds the bubble and draws.
+--
+-- The bubble comes from C_ChatBubbles as an outer frame whose only child holds the text in `String`.
+-- Inside an instance the client forbids the frame and every read of it raises, so each is guarded.
+ChatBubble = {}
+
+local TICK = 0.05
+
+-- The bubble being marked: { fs, text (as the game set it), shown (as last set here), para, map, span, color,
+-- lit, neighbor }, and the clip it was found for.
+local state = {}
+local frame
+
+local function Marks()
+    return Spoken and Spoken.WordMarks and Spoken:WordMarks()
+end
+
+-- The bubble's text and FontString, or nil when the frame is forbidden or its text is a secret.
+local function Read(outer)
+    local ok, fs, text = pcall(function()
+        local child = outer:GetChildren()
+        local label = child and child.String
+        return label, label and label:GetText()
+    end)
+    text = ok and NotSecret(text) or nil
+    if fs and type(text) == "string" then
+        return fs, text
+    end
+end
+
+--- The FontString of the bubble showing `wanted` (a line's text as Followup.Normalize leaves it, in lower case).
+local function FindBubble(wanted)
+    if not (C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles) then
+        return nil
+    end
+    local ok, list = pcall(C_ChatBubbles.GetAllChatBubbles)
+    if not ok or type(list) ~= "table" then
+        return nil
+    end
+    for _, outer in ipairs(list) do
+        local fs, text = Read(outer)
+        if fs and string.lower(Followup.Normalize(text)) == wanted then
+            return fs, text
+        end
+    end
+end
+
+-- The colour that reads on the bubble's text: gold on pale text, as the captions do.
+local function ColorOf(fs)
+    local marks = Marks()
+    local ok, r, g, b = pcall(fs.GetTextColor, fs)
+    r, g, b = NotSecret(r), NotSecret(g), NotSecret(b)
+    return ok and r and g and b and marks.ColorFor(r, g, b) or marks.ON_DARK
+end
+
+--- Put the bubble's own text back, where it still shows what this file set.
+function ChatBubble:Restore()
+    local fs = state.fs
+    if fs and state.shown ~= state.text then
+        local ok, now = pcall(fs.GetText, fs)
+        if ok and now == state.shown then
+            pcall(fs.SetText, fs, state.text)
+        end
+    end
+    state = {}
+end
+
+-- Whether the line playing is NPC chat with its words marked; false once there is nothing left to mark.
+local function Tick()
+    local marks = Marks()
+    local caption = marks and Spoken:GetCaption()
+    local clip = caption and caption.clip
+    if not (clip and clip.event == Enums.SoundEvent.NPCChatter and caption.highlight
+        and caption.progress and caption.progress < 1) then
+        ChatBubble:Restore()
+        return false
+    end
+    if clip ~= state.clip then
+        ChatBubble:Restore()
+        state.clip, state.wanted = clip, string.lower(Followup.Normalize(clip.text or ""))
+    end
+    if not state.fs then
+        -- The bubble can come a moment after the line starts.
+        local fs, text = FindBubble(state.wanted)
+        local words = fs and Spoken:SplitCaption(text)
+        if not (words and words[1]) then
+            return true
+        end
+        local para = { fs = fs, text = text, words = marks.MarkLinks(text, words) }
+        local map, span = marks.Align(caption.words, { para })
+        if not map then
+            return true
+        end
+        state.fs, state.text, state.shown, state.para, state.map, state.span = fs, text, text, para, map, span
+        state.color = ColorOf(fs)
+    end
+    local lit, neighbor = marks.Pick(state.map, caption.speaking and caption.activeWord or nil)
+    if lit ~= state.lit or neighbor ~= state.neighbor then
+        local spans = marks.Spans(state.map, { state.para }, lit, neighbor)
+        local want = marks.Want(state.para, 1, state.span, nil, nil, spans, state.color)
+        local ok, now = pcall(state.fs.GetText, state.fs)
+        if not ok or now ~= state.shown then
+            -- The game reused the bubble for something else: leave it alone.
+            state = {}
+            return true
+        end
+        pcall(state.fs.SetText, state.fs, want)
+        state.shown, state.lit, state.neighbor = want, lit, neighbor
+    end
+    return true
+end
+
+ChatBubble.Tick = Tick
+
+local function Run()
+    if not frame then
+        return
+    end
+    local since = 0
+    frame:SetScript("OnUpdate", function(self, elapsed)
+        since = since + elapsed
+        if since < TICK then
+            return
+        end
+        since = 0
+        if not Tick() then
+            self:SetScript("OnUpdate", nil)
+        end
+    end)
+end
+
+function ChatBubble:Setup()
+    if frame or not (Spoken and Spoken.RegisterCallback) then
+        return
+    end
+    frame = CreateFrame("Frame")
+    Spoken:RegisterCallback("CLIP_STARTED", function(clip)
+        if clip.event == Enums.SoundEvent.NPCChatter then
+            Run()
+        end
+    end)
+    -- A stop leaves the voice mid-line: the bubble gets its own text back at once.
+    Spoken:RegisterCallback("CLIP_STOPPED", function(clip)
+        if clip == state.clip then
+            ChatBubble:Restore()
+        end
+    end)
+end

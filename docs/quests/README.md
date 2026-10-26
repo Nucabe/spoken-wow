@@ -1521,7 +1521,11 @@ recording the way a follow-up line's does: `FollowupLookup[speaker][id]`, resolv
 silent (`chatter-no-recording` in the debug log). A line is played as low priority, as gossip is: only when
 nothing else is being read, and a quest line arriving drops it. The same line from the same NPC does not play
 again for two minutes. The narrator never shows these lines (`noNarrator` on the source): the game's chat
-bubble already shows the words, so only the voice is added.
+bubble already shows the words, so only the voice is added. `ChatBubble.lua` lights the word being read in that
+bubble's own text, as the captions light it (Spoken:GetCaption and Spoken:WordMarks do the matching): it finds
+the bubble through `C_ChatBubbles` by its text, rewrites it with the word in colour, and puts the text back when
+the line ends or stops. It follows Highlight Words and is off with Show Narrator off. A bubble the client
+forbids (an instance's) or whose text is a secret is left alone.
 
 NPC Chat is a part of Spoken of its own (`chatter`, third on Spoken's page, with a page and a switch beside
 Quests' and Gossip's). `/spq chatter [NPC id]` replays an NPC's lines three seconds apart through the same match

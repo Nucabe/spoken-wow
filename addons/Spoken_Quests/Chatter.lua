@@ -158,4 +158,7 @@ function Chatter:Setup()
     frame:SetScript("OnEvent", function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
         Chatter:OnChat(event, a1, a2, a12)
     end)
+    if ChatBubble then
+        ChatBubble:Setup()
+    end
 end

@@ -6,8 +6,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 - **NPC Chat can voice what NPCs say out loud in the world.** Guards, farmers and other NPCs that talk
   without a quest are matched by who says what, and the line plays when a voice pack has it, only when
-  nothing else is being read. The game's chat bubble stays the only thing on screen. It is a part of its
-  own on Spoken's page, with a switch and a page, and `/spq chatter` replays an NPC's lines. *([Nucabe](https://github.com/Nucabe))*
+  nothing else is being read. The game's chat bubble stays the only thing on screen, and lights the word
+  being read. It is a part of its own on Spoken's page, with a switch and a page, and `/spq chatter`
+  replays an NPC's lines. *([Nucabe](https://github.com/Nucabe))*
 - **The Bosses section uses its dragon icon and skull badge in the Compendium**, matching its
   settings page and dungeon icon instead of using the generic book portrait.
   *([anon1231823](https://github.com/anon1231823))*
