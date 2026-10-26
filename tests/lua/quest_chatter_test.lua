@@ -32,6 +32,7 @@ local FIXTURE = {
         { id = 103, text = "Nobody recorded this one." },
     },
     [LONE] = {
+        name = "Lone Test",
         { id = 110, text = "Only line." },
     },
     [TWIN_A] = { name = "Twin Guard", { id = 130, text = "Halt!" } },
@@ -234,6 +235,7 @@ stub.Secrets(SPEAKER_GUID)
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
 stub.Secrets()
 Expect("...but a speaker's GUID it hides leaves the name to go by", Keys(), "chat-101")
+Reset()
 Say("I sense evil brewing. . . .", nil)
 Expect("with no GUID the speaker is found by the name in the event", Keys(), "chat-101")
 Reset()
@@ -246,6 +248,10 @@ Reset()
 stub.SetLocale("deDE")
 Say("Ich spuere, dass etwas Boeses braut.", nil)
 Expect("...nor on a client in another language, where the name is translated", Keys(), "")
+Reset()
+stub.SetLocale("deDE")
+Say("Eine ganz andere Zeile.", nil, "Lone Test")
+Expect("...even for an NPC with a single line, whose name might be the same in both", Keys(), "")
 
 ---------------------------------------------------------------- another language
 Reset()
