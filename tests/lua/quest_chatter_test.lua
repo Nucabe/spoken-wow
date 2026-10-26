@@ -19,6 +19,7 @@ local SPEAKER_GUID = "Creature-0-0-0-0-600-0"
 local LONE = 601
 local LONE_GUID = "Creature-0-0-0-0-601-0"
 local SCRIPTED = 602
+local TWIN_A, TWIN_B = 603, 604
 local SCRIPTED_GUID = "Creature-0-0-0-0-602-0"
 local FOLLOWUP_DIR = [[generated\sounds\followup\]]
 
@@ -33,6 +34,8 @@ local FIXTURE = {
     [LONE] = {
         { id = 110, text = "Only line." },
     },
+    [TWIN_A] = { name = "Twin Guard", { id = 130, text = "Halt!" } },
+    [TWIN_B] = { name = "Twin Guard", { id = 131, text = "Halt!" } },
     [SCRIPTED] = {
         name = "Scripted Test",
         { id = 120, text = "Here goes nothing..." },
@@ -43,8 +46,9 @@ local PACK = {
     folder = "TestPack",
     module = {
         FollowupLookup = { [SPEAKER] = { [101] = "chat-101", [102] = "chat-102" }, [LONE] = { [110] = "chat-110" },
-            [SCRIPTED] = { [120] = "chat-120" } },
-        SoundLengthLookupByFileName = { ["chat-101"] = 2, ["chat-102"] = 2, ["chat-110"] = 2, ["chat-120"] = 2 },
+            [SCRIPTED] = { [120] = "chat-120" }, [TWIN_B] = { [131] = "chat-131" } },
+        SoundLengthLookupByFileName = { ["chat-101"] = 2, ["chat-102"] = 2, ["chat-110"] = 2, ["chat-120"] = 2,
+            ["chat-131"] = 2 },
         GetSoundPath = function(_, fileName)
             return FOLLOWUP_DIR .. fileName .. ".ogg"
         end,
@@ -138,6 +142,11 @@ for _, event in ipairs({ "CHAT_MSG_MONSTER_YELL", "CHAT_MSG_MONSTER_WHISPER", "C
     Say("I sense evil brewing. . . .", SPEAKER_GUID, nil, event)
     Expect(event .. " is heard too", Keys(), "chat-101")
 end
+
+-- Two entries can share a name and a line: only one of them may have a recording.
+Reset()
+Say("Halt!", nil, "Twin Guard")
+Expect("of two NPCs of one name saying the same words, the one with a recording is told", Keys(), "chat-131")
 
 -- A line a quest's script makes the NPC say belongs to Followup.lua, which plays it for the player's
 -- own quest: said after somebody else's turn-in, it is not this player's to hear.

@@ -64,19 +64,24 @@ function Chatter:Match(npcID, message, sender)
 end
 
 --- The speaker and line of a message that came with no GUID: an NPC of that name with a line of that
---- text. On a client in another language the name is translated and the text cannot be compared, so
---- there is no evidence of who spoke.
+--- text. Several entries can share both; the one a pack has a recording for is the one told. On a client
+--- in another language the name is translated and the text cannot be compared, so there is no evidence
+--- of who spoke.
 function Chatter:MatchByName(message, sender)
     if not (sender and Followup.ClientSpeaksExportLanguage()) then
         return nil
     end
+    local firstID, firstLine
     for _, npcID in ipairs(SpeakersNamed(sender) or {}) do
         local line = self:Match(npcID, message, sender)
         if line then
-            return npcID, line
+            if Followup.OwnClip({ id = line.id, speaker = npcID }, npcID) then
+                return npcID, line
+            end
+            firstID, firstLine = firstID or npcID, firstLine or line
         end
     end
-    return nil
+    return firstID, firstLine
 end
 
 --- A chat message from an NPC: `asked` when /spq chatter replays it.
