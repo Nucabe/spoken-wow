@@ -162,6 +162,16 @@ stub.Advance(61)
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
 Expect("...and does after them", Keys(), "chat-101")
 
+-- Heard when it starts to play, not when it is queued: a line dropped before it was read was never heard.
+Reset()
+Say("I sense evil brewing. . . .", SPEAKER_GUID)
+Say("Welcome, Tester!", SPEAKER_GUID)
+Expect("a line queued behind the one speaking is not held against the next time", VO.Chatter.heard[SPEAKER .. ":102"], nil)
+Spoken:GetSource("quests"):Enqueue({ key = "reading", path = [[Interface\AddOns\TestPack\reading.ogg]], length = 8, priority = "normal" })
+Spoken:StopAll()
+Say("Welcome, Tester!", SPEAKER_GUID)
+Expect("...so when a quest line has dropped it, it plays when said again", Keys(), "chat-101, chat-102, chat-102")
+
 ---------------------------------------------------------------- waits for what is being read
 Reset()
 Spoken:GetSource("quests"):Enqueue({ key = "reading", path = [[Interface\AddOns\TestPack\reading.ogg]], length = 8, priority = "normal" })

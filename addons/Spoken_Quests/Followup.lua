@@ -324,6 +324,7 @@ function Followup:Play(entry, message, sender, guid, npcID, asked, event)
         event = event or Enums.SoundEvent.QuestFollowup,
         name = sender or (speaker and DataModules:GetObjectName(Enums.GUID.Creature, speaker)) or "",
         title = entry.title,
+        lineKey = entry.lineKey,
         text = message,
         unitGUID = guid,
         unitIsObjectOrItem = false,

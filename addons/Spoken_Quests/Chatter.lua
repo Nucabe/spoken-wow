@@ -11,7 +11,7 @@ setfenv(1, VoiceOver)
 -- The line plays as low priority, as gossip does: only when nothing else is being read, and a
 -- quest line coming drops it. The same line from the same NPC is not played again for two minutes.
 Chatter = {
-    -- [speaker .. ":" .. line id] = when it last played.
+    -- [speaker .. ":" .. line id] = when it last started.
     heard = {},
 }
 
@@ -100,15 +100,13 @@ function Chatter:OnChat(event, message, sender, guid, asked)
         return
     end
     local key = npcID .. ":" .. line.id
-    local now = GetTime()
-    if not asked and self.heard[key] and now - self.heard[key] < REPEAT_SECONDS then
+    if not asked and self.heard[key] and GetTime() - self.heard[key] < REPEAT_SECONDS then
         return
     end
     Debug:Record("chatter-matched", format("Line %d from %s (NPC %d)", line.id, tostring(sender), npcID))
-    if Followup:Play({ line = { id = line.id, speaker = npcID } }, message, sender, guid, npcID, asked,
-        Enums.SoundEvent.NPCChatter) then
-        self.heard[key] = now
-    end
+    -- Counted from when it starts, not when it is queued: a line dropped from the queue was never heard.
+    Followup:Play({ line = { id = line.id, speaker = npcID }, lineKey = key }, message, sender, guid, npcID, asked,
+        Enums.SoundEvent.NPCChatter)
 end
 
 --- `/spq chatter [NPC id]`: replay what the NPC says, three seconds apart, through the same match
@@ -159,6 +157,11 @@ function Chatter:Setup()
     end
     frame:SetScript("OnEvent", function(_, event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
         Chatter:OnChat(event, a1, a2, a12)
+    end)
+    Spoken:RegisterCallback("CLIP_STARTED", function(clip)
+        if clip.lineKey and clip.event == Enums.SoundEvent.NPCChatter then
+            Chatter.heard[clip.lineKey] = GetTime()
+        end
     end)
     if ChatBubble then
         ChatBubble:Setup()
