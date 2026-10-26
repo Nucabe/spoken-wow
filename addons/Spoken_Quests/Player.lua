@@ -481,7 +481,8 @@ function Player:Setup()
         title = L.OPT_CHATTER_PAGE_TITLE,
         addon = AddonFolder,
         icon = [[Interface\Icons\Spell_Shadow_PsychicHorrors]],
-        order = 3,
+        -- Between Bosses (5) and the Developer page (6): a page is opened by its order, so it is not shared.
+        order = 5.5,
         interClipGap = 0.55,
         -- The game's own chat bubble shows the words.
         noNarrator = true,

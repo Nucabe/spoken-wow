@@ -101,6 +101,12 @@ for _, page in ipairs(env.Options.pages or {}) do
     table.insert(pages, { name = page.name, layout = page.layout })
 end
 Expect("General, the five parts' pages, Contribute and the Developer page are all here", #pages, 8)
+local ordered, shared = {}, {}
+for _, page in ipairs(env.Options.pages or {}) do
+    if ordered[page.order] then table.insert(shared, page.name) end
+    ordered[page.order] = true
+end
+Expect("no two pages share an order, which is how Settings opens one", table.concat(shared, ", "), "")
 
 local BOX = Layout.BOX_MARGIN
 local function Label(row)

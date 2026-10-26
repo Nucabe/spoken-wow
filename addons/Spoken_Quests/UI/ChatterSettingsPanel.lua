@@ -40,7 +40,7 @@ function ChatterSettingsPanel:Setup()
     panel.content = content
 
     layout:Refresh()
-    self.page = Spoken:AddSettingsPage(panel, L.OPT_CHATTER_PAGE_TITLE, 3, layout, scroller)
+    self.page = Spoken:AddSettingsPage(panel, L.OPT_CHATTER_PAGE_TITLE, 5.5, layout, scroller)
     self.panel = panel
 end
 
