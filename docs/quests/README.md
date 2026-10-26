@@ -1508,8 +1508,10 @@ town crier. `ChatterLines.lua` is the export of those lines (`pipelines/quests/t
 keyed by the speaker's creature entry, and `Chatter.lua` reads it. Nothing is armed: a message is looked up by
 the creature id in the event's GUID, so chat from a speaker with no lines costs one table lookup. On an English
 client the text must equal a line once `$n`, `$r`, `$c` and `$g...;` are filled in for the local player; on any
-other the text is translated, so only an NPC with a single line is told by who said it. A message the client
-hides (a dungeon's chat can come as secrets) or one with no GUID is not matched.
+other the text is translated, so only an NPC with a single line is told by who said it. Forever sends no GUID
+with NPC chat: there the speaker is found by the name in the event (each speaker's `name` in the export) and
+the text, English clients only, since a translated name matches nothing. A message the client hides (a
+dungeon's chat can come as secrets) is not matched.
 
 The lines are the world DB's `creature_text` rows of type say, yell, whisper and boss whisper with `Sound = 0`
 (the game already voices the rest), a broadcast text id, and a speaker with a spawn on the open-world maps; in an

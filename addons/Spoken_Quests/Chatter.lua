@@ -16,6 +16,27 @@ Chatter = {
 
 local REPEAT_SECONDS = 120
 
+-- The creature entries by lower-case name, built when first needed. Forever sends no GUID with NPC
+-- chat, which leaves the name the event gives as the only evidence of who spoke.
+local speakersByName
+
+local function SpeakersNamed(name)
+    if not speakersByName then
+        speakersByName = {}
+        for npcID, lines in pairs(ChatterLines or {}) do
+            local key = lines.name and string.lower(lines.name)
+            if key then
+                speakersByName[key] = speakersByName[key] or {}
+                table.insert(speakersByName[key], npcID)
+            end
+        end
+        for _, ids in pairs(speakersByName) do
+            table.sort(ids)
+        end
+    end
+    return speakersByName[string.lower(Followup.Normalize(name))]
+end
+
 function Chatter:IsEnabled()
     return Addon and Addon.db and Addon:IsPartOn("chatter") or false
 end
@@ -40,6 +61,22 @@ function Chatter:Match(npcID, message, sender)
     return nil
 end
 
+--- The speaker and line of a message that came with no GUID: an NPC of that name with a line of that
+--- text. On a client in another language the name is translated and the text cannot be compared, so
+--- there is no evidence of who spoke.
+function Chatter:MatchByName(message, sender)
+    if not (sender and Followup.ClientSpeaksExportLanguage()) then
+        return nil
+    end
+    for _, npcID in ipairs(SpeakersNamed(sender) or {}) do
+        local line = self:Match(npcID, message, sender)
+        if line then
+            return npcID, line
+        end
+    end
+    return nil
+end
+
 --- A chat message from an NPC: `asked` when /spq chatter replays it.
 function Chatter:OnChat(event, message, sender, guid, asked)
     if not self:IsEnabled() then
@@ -47,11 +84,16 @@ function Chatter:OnChat(event, message, sender, guid, asked)
     end
     -- In a dungeon the server's NPC chat can come as secrets, which cannot be matched.
     message, sender, guid = NotSecret(message), NotSecret(sender), NotSecret(guid)
-    if not (message and guid) then
+    if not message then
         return
     end
-    local npcID = Utils:GetCreatureIDFromGUID(guid)
-    local line = npcID and self:Match(npcID, message, sender)
+    local npcID = guid and Utils:GetCreatureIDFromGUID(guid)
+    local line
+    if npcID then
+        line = self:Match(npcID, message, sender)
+    else
+        npcID, line = self:MatchByName(message, sender)
+    end
     if not line then
         return
     end

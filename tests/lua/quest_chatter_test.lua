@@ -23,6 +23,7 @@ local FOLLOWUP_DIR = [[generated\sounds\followup\]]
 -- The shape ChatterLines.lua is generated in; a fixture rather than the real export.
 local FIXTURE = {
     [SPEAKER] = {
+        name = "Madame Test",
         { id = 101, text = "I sense evil brewing. . . ." },
         { id = 102, text = "Welcome, $n!" },
         { id = 103, text = "Nobody recorded this one." },
@@ -167,9 +168,19 @@ Expect("a message the client hides is not matched", Keys(), "")
 stub.Secrets(SPEAKER_GUID)
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
 stub.Secrets()
-Expect("...nor is a speaker it hides", Keys(), "")
+Expect("...but a speaker's GUID it hides leaves the name to go by", Keys(), "chat-101")
 Say("I sense evil brewing. . . .", nil)
-Expect("...nor one with no GUID, which is no evidence of who spoke", Keys(), "")
+Expect("with no GUID the speaker is found by the name in the event", Keys(), "chat-101")
+Reset()
+Say("I sense evil brewing. . . .", nil, "Somebody Else")
+Expect("...and a line from a speaker of another name is nobody's", Keys(), "")
+Reset()
+Say("Somebody else's words.", nil)
+Expect("...and the right name with other words is not matched", Keys(), "")
+Reset()
+stub.SetLocale("deDE")
+Say("Ich spuere, dass etwas Boeses braut.", nil)
+Expect("...nor on a client in another language, where the name is translated", Keys(), "")
 
 ---------------------------------------------------------------- another language
 Reset()
