@@ -67,7 +67,8 @@ end
 --- Whether the narrator would show a line of the source `key`: a narrator style that shows words,
 --- Show Narrator on, and not off for that source. A text-only line is worth queueing only then.
 function Spoken:ShowsNarratorFor(key)
-    return Addon:PlayerStyle() ~= "none" and Addon:ShowsNarrator({ source = { key = key } }) and true or false
+    return Addon:PlayerStyle() ~= "none" and Addon:ShowsNarrator({ source = Sources:Get(key) or { key = key } })
+        and true or false
 end
 
 function Spoken:GetSource(key)

@@ -441,12 +441,12 @@ function Addon:SetPlayerHost(host)
     end
 end
 
---- Whether the window or subtitles show `clip`: Show Narrator is on, and not off for the clip's module.
---- The voice plays either way.
+--- Whether the window or subtitles show `clip`: Show Narrator is on, and not off for the clip's module,
+--- which may never show its words (Sources.noNarrator). The voice plays either way.
 function Addon:ShowsNarrator(clip)
     local cfg = self.db.profile.Transcript
-    local key = clip and clip.source and clip.source.key
-    return cfg.Enabled and not (key and cfg.WordsOff[key])
+    local source = clip and clip.source
+    return cfg.Enabled and not (source and (source.noNarrator or (source.key and cfg.WordsOff[source.key])))
 end
 
 --- What is on screen: the chosen style, or one previewed from the welcome window or the settings

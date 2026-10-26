@@ -1518,7 +1518,8 @@ recording the way a follow-up line's does: `FollowupLookup[speaker][id]`, resolv
 `DataModules:ResolveSoundFile` like any other file, so a pack that has the file plays it and one that has not is
 silent (`chatter-no-recording` in the debug log). A line is played as low priority, as gossip is: only when
 nothing else is being read, and a quest line arriving drops it. The same line from the same NPC does not play
-again for two minutes.
+again for two minutes. The narrator never shows these lines (`noNarrator` on the source): the game's chat
+bubble already shows the words, so only the voice is added.
 
 NPC Chat is a part of Spoken of its own (`chatter`, third on Spoken's page, with a page and a switch beside
 Quests' and Gossip's). `/spq chatter [NPC id]` replays an NPC's lines three seconds apart through the same match

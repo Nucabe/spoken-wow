@@ -482,6 +482,8 @@ function Player:Setup()
         addon = AddonFolder,
         order = 3,
         interClipGap = 0.55,
+        -- The game's own chat bubble shows the words.
+        noNarrator = true,
         testBeforeQueue = true,
         profiles = function() return Addon.db end,
         packs = function()
