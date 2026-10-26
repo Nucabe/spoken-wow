@@ -1501,6 +1501,29 @@ amber speech bubble and "after quest {id}", and the source filter calls them "fo
 cannot say whether the line follows the accept or the turn-in, since the corpus row keeps only
 the quest.
 
+### What NPCs say in the world
+
+The same chat events carry what NPCs say with no quest behind it: a guard's warning, a farmer's complaint, a
+town crier. `ChatterLines.lua` is the export of those lines (`pipelines/quests/tools/export_chatter_lines.py`),
+keyed by the speaker's creature entry, and `Chatter.lua` reads it. Nothing is armed: a message is looked up by
+the creature id in the event's GUID, so chat from a speaker with no lines costs one table lookup. On an English
+client the text must equal a line once `$n`, `$r`, `$c` and `$g...;` are filled in for the local player; on any
+other the text is translated, so only an NPC with a single line is told by who said it. A message the client
+hides (a dungeon's chat can come as secrets) or one with no GUID is not matched.
+
+The lines are the world DB's `creature_text` rows of type say, yell, whisper and boss whisper with `Sound = 0`
+(the game already voices the rest), a broadcast text id, and a speaker with a spawn on the open-world maps; in an
+instance the client hides the GUID. Each line is kept once per speaker. The broadcast text id names the
+recording the way a follow-up line's does: `FollowupLookup[speaker][id]`, resolved by
+`DataModules:ResolveSoundFile` like any other file, so a pack that has the file plays it and one that has not is
+silent (`chatter-no-recording` in the debug log). A line is played as low priority, as gossip is: only when
+nothing else is being read, and a quest line arriving drops it. The same line from the same NPC does not play
+again for two minutes.
+
+NPC Chat is a part of Spoken of its own (`chatter`, third on Spoken's page, with a page and a switch beside
+Quests' and Gossip's). `/spq chatter [NPC id]` replays an NPC's lines three seconds apart through the same match
+and play path, the target's when no id is given, and marks a line with no recording as silent.
+
 ### The Quests tab of Azeroth's Compendium
 
 Azeroth's Compendium is Spoken's window (`addons/Spoken/UI/Compendium.lua`, its pages scrolling
