@@ -6,7 +6,9 @@ schema the repack and export_compendium.py read), by speaker: ChatterLines[creat
 "...", { id, text }, ... }. The name is what a chat event names the speaker by on a client that sends no GUID.
 
 Which rows are kept:
-  - say, yell, whisper and boss whisper (creature_text.Type 12, 14, 15, 42). Emotes have no voice.
+  - say, yell, whisper and boss whisper (creature_text.Type 12, 14, 15, 42). Emotes have no voice,
+    and some are stored as say or yell: a text that starts with %s is the speaker's name and an
+    action ("%s becomes enraged!"), which is dropped.
   - Sound = 0. A line the game plays its own recording for is already voiced.
   - BroadcastTextId <> 0. It is the line's id, as in FollowupLines.lua, and names its recording
     ({broadcastTextId}-{voice}) in the packs' FollowupLookup.
@@ -62,6 +64,8 @@ def collect(rows):
     lines = {}
     for speaker, broadcast_id, text in rows:
         text = " ".join(text.split())
+        if text.startswith("%s"):
+            continue
         seen = lines.setdefault(speaker, {})
         seen.setdefault(broadcast_id, text)
     return {speaker: list(seen.items()) for speaker, seen in lines.items()}
@@ -106,8 +110,10 @@ def main():
         cursor.execute(QUERY)
         lines = collect(cursor.fetchall())
         ids = sorted(lines)
-        cursor.execute(NAMES.format(", ".join(["%s"] * len(ids))), ids)
-        names = dict(cursor.fetchall())
+        names = {}
+        if ids:
+            cursor.execute(NAMES.format(", ".join(["%s"] * len(ids))), ids)
+            names = dict(cursor.fetchall())
     db.close()
 
     with open(args.out, "w", encoding="utf-8", newline="\n") as f:
