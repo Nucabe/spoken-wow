@@ -87,7 +87,8 @@ end
 
 --- A chat message from an NPC: `asked` when /spq chatter replays it.
 function Chatter:OnChat(event, message, sender, guid, asked)
-    if not self:IsEnabled() then
+    -- These lines read themselves, so Read Automatically silences them, as it does the follow-up lines.
+    if not self:IsEnabled() or not (asked or Addon:IsAutoplayOn()) then
         return
     end
     -- In a dungeon the server's NPC chat can come as secrets, which cannot be matched.

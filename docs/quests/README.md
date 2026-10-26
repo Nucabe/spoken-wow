@@ -1511,7 +1511,8 @@ client the text must equal a line once `$n`, `$r`, `$c` and `$g...;` are filled 
 other the text is translated, so only an NPC with a single line is told by who said it. Forever sends no GUID
 with NPC chat: there the speaker is found by the name in the event (each speaker's `name` in the export) and
 the text, English clients only, since a translated name matches nothing. A message the client hides (a
-dungeon's chat can come as secrets) is not matched.
+dungeon's chat can come as secrets) is not matched. These lines read themselves, so Read Automatically off
+silences them, as it does the follow-up lines.
 
 A line that a quest's script makes the NPC say (`FollowupLines.lua` lists the same speaker and id) is not
 played here: heard with nothing armed it is another player's quest, and the follow-up part plays it for the

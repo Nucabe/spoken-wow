@@ -217,6 +217,11 @@ Expect("...naming it", VO.Debug.runtime.message:find("line 103 ", 1, true) ~= ni
 
 ---------------------------------------------------------------- off, and secret values
 Reset()
+VO.Addon.db.profile.Audio.Autoplay = false
+Say("I sense evil brewing. . . .", SPEAKER_GUID)
+VO.Addon.db.profile.Audio.Autoplay = true
+Expect("with Read Automatically off, chat is not read: it reads itself", Keys(), "")
+Reset()
 Spoken:SetPartOn("chatter", false)
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
 Expect("with NPC Chat off, nothing plays", Keys(), "")
