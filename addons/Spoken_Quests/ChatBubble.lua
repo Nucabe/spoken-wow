@@ -10,6 +10,9 @@ setfenv(1, VoiceOver)
 ChatBubble = {}
 
 local TICK = 0.05
+-- How long a line that has started waits for the captions to reach it: a window fading out its
+-- last line holds the new one back for a moment.
+local CATCH_UP = 2
 
 -- The bubble being marked: { fs, text (as the game set it), shown (as last set here), para, map, span, color,
 -- lit, neighbor }, and the clip it was found for.
@@ -17,6 +20,8 @@ local state = {}
 local frame
 -- The line that stopped: the captions keep it while the queue holds it, so it is not marked again.
 local halted
+-- The chat line that has started, and until when the captions may still show another: { clip, untilTime }.
+local started
 
 local function Marks()
     return Spoken and Spoken.WordMarks and Spoken:WordMarks()
@@ -77,11 +82,15 @@ local function Tick()
     local marks = Marks()
     local caption = marks and Spoken:GetCaption()
     local clip = caption and caption.clip
+    if Spoken:IsPaused() then
+        started = nil
+    end
     if not (clip and clip ~= halted and clip.event == Enums.SoundEvent.NPCChatter and caption.highlight
         and caption.progress and caption.progress < 1 and not Spoken:IsPaused()) then
         ChatBubble:Restore()
-        return false
+        return started ~= nil and GetTime() < started.untilTime
     end
+    started = nil
     if clip ~= state.clip then
         ChatBubble:Restore()
         state.clip, state.wanted = clip, string.lower(Followup.Normalize(clip.text or ""))
@@ -144,14 +153,14 @@ function ChatBubble:Setup()
     ChatBubble.frame = frame
     Spoken:RegisterCallback("CLIP_STARTED", function(clip)
         if clip.event == Enums.SoundEvent.NPCChatter then
-            halted = nil
+            halted, started = nil, { clip = clip, untilTime = GetTime() + CATCH_UP }
             Run()
         end
     end)
     -- A stop leaves the voice mid-line: the bubble gets its own text back at once.
     Spoken:RegisterCallback("CLIP_STOPPED", function(clip)
         if clip.event == Enums.SoundEvent.NPCChatter then
-            halted = clip
+            halted, started = clip, nil
             ChatBubble:Restore()
         end
     end)

@@ -129,6 +129,29 @@ Expect("a stop that keeps the line at the head puts the text back", fs.text, TEX
 Expect("...and the tick does not mark it again", VO.ChatBubble.Tick(), false)
 Expect("...leaving it as the game wrote it", fs.text, TEXT)
 
+---------------------------------------------------------------- the captions are a moment behind
+-- A window fading out the line before holds the new one back: the captions still show the old clip
+-- when the loop first looks, and the loop must wait for them instead of giving up.
+Reset()
+fs = Bubble(TEXT)
+env.Transcript.holdFor = function() return true end
+Say()
+env.Transcript.holdFor = nil
+local before = Spoken:GetCaption()
+Expect("the captions are not on the chat line yet", before == nil or before.clip.event ~= VO.Enums.SoundEvent.NPCChatter, true)
+Expect("...and the loop waits for them", VO.ChatBubble.Tick(), true)
+Expect("...leaving the bubble alone meanwhile", fs.text, TEXT)
+env.Transcript:Release()
+Expect("once they are on it the bubble is marked", VO.ChatBubble.Tick() and fs.text ~= TEXT, true)
+Reset()
+fs = Bubble(TEXT)
+env.Transcript.holdFor = function() return true end
+Say()
+env.Transcript.holdFor = nil
+stub.Advance(2.5)
+Expect("a line the captions never reach is given up on", VO.ChatBubble.Tick(), false)
+env.Transcript:Release()
+
 ---------------------------------------------------------------- the loop that drives it
 Reset()
 fs = Bubble(TEXT)
