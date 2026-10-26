@@ -603,12 +603,13 @@ function Addon:Enable()
 end
 
 -- Said the first time a line waits behind a stop with nothing on screen to show it: with voice
--- only, or Show Narrator off for the line, a stopped queue looks like a broken addon.
+-- only, or Show Narrator off for the line, a stopped queue looks like a broken addon. Not for a
+-- source whose words the game shows itself: its silence is not a missing window.
 local pauseReminded = false
 -- Registered at login, not at load: this file loads before Callbacks.lua does.
 local function WatchPausedQueue()
     Callbacks:Register("CLIP_QUEUED", function(clip)
-        if pauseReminded or not SoundQueue:IsPaused() then return end
+        if pauseReminded or not SoundQueue:IsPaused() or (clip.source and clip.source.noNarrator) then return end
         if Addon:PlayerStyle() == "none" or not Addon:ShowsNarrator(clip) then
             pauseReminded = true
             print("|cff66bbffSpoken:|r " .. L.STOPPED_REMINDER)

@@ -188,6 +188,19 @@ for i = 1, 8 do
 end
 Expect("lines pile up behind the one speaking only to a limit", Spoken:GetQueueSize(), 4)
 
+-- Stopped, a chat line waits like any other, but says nothing about the narrator it never had.
+Reset()
+stub.FireEvent("PLAYER_LOGIN")
+local said = {}
+local realPrint = _G.print
+_G.print = function(text) table.insert(said, text) end
+Spoken:Pause()
+Say("I sense evil brewing. . . .", SPEAKER_GUID)
+_G.print = realPrint
+Spoken:Resume()
+Expect("a chat line queued behind Stop is held", Keys(), "chat-101")
+Expect("...without the reminder about a narrator that is not there to show it", #said, 0)
+
 ---------------------------------------------------------------- waits for what is being read
 Reset()
 Spoken:GetSource("quests"):Enqueue({ key = "reading", path = [[Interface\AddOns\TestPack\reading.ogg]], length = 8, priority = "normal" })
