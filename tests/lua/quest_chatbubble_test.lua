@@ -152,6 +152,20 @@ stub.Advance(2.5)
 Expect("a line the captions never reach is given up on", VO.ChatBubble.Tick(), false)
 env.Transcript:Release()
 
+---------------------------------------------------------------- the narrator's settings are not the bubble's
+-- Show Narrator and Highlight Words are for the narrator window, which these lines never use; the
+-- player has no way to switch the bubble's light off with them.
+for _, setting in ipairs({ "HighlightWord", "Enabled" }) do
+    Reset()
+    local profile = env.Addon:Profile("Transcript")
+    profile[setting] = false
+    fs = Bubble(TEXT)
+    Say()
+    VO.ChatBubble.Tick()
+    Expect("with the narrator's " .. setting .. " off the bubble is lit all the same", fs.text ~= TEXT, true)
+    profile[setting] = true
+end
+
 ---------------------------------------------------------------- the loop that drives it
 Reset()
 fs = Bubble(TEXT)

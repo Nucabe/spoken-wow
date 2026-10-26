@@ -1528,7 +1528,9 @@ again for two minutes. The narrator never shows these lines (`noNarrator` on the
 bubble already shows the words, so only the voice is added. `ChatBubble.lua` lights the word being read in that
 bubble's own text, as the captions light it (Spoken:GetCaption and Spoken:WordMarks do the matching): it finds
 the bubble through `C_ChatBubbles` by its text, rewrites it with the word in colour, and puts the text back when
-the line ends or stops. It follows Highlight Words and is off with Show Narrator off. A bubble the client
+the line ends or stops. Show Narrator and Highlight Words are the narrator window's and do not apply to it.
+The light waits up to two seconds for the captions to reach a line that a fading window holds back, and a line
+the Stop button holds is not lit. A bubble the client
 forbids (an instance's) or whose text is a secret is left alone.
 
 NPC Chat is a part of Spoken of its own (`chatter`, third on Spoken's page, with a page and a switch beside

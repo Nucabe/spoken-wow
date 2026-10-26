@@ -85,7 +85,8 @@ local function Tick()
     if Spoken:IsPaused() then
         started = nil
     end
-    if not (clip and clip ~= halted and clip.event == Enums.SoundEvent.NPCChatter and caption.highlight
+    -- Not caption.highlight: that is the narrator's Highlight Words, which this line never shows.
+    if not (clip and clip ~= halted and clip.event == Enums.SoundEvent.NPCChatter
         and caption.progress and caption.progress < 1 and not Spoken:IsPaused()) then
         ChatBubble:Restore()
         return started ~= nil and GetTime() < started.untilTime
