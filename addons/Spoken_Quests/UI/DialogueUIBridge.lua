@@ -213,9 +213,10 @@ local function Tick()
         return
     end
     -- A line is about to be queued for this page: its words wait blank, unless another part's
-    -- line (a zone's lore, a book page) is playing, which the quest's waits behind.
+    -- line (a zone's lore, a book page, what an NPC says in the world) is playing, which the quest's
+    -- waits behind.
     local pending = state.pending
-    local otherPart = clip ~= nil and not Player:Owns(clip)
+    local otherPart = clip ~= nil and (not Player:Owns(clip) or clip.event == Enums.SoundEvent.NPCChatter)
     if pending and not otherPart and GetTime() < pending.untilTime then
         if not pending.span then
             pending.map, pending.span = Marks.Align(pending.words, state.paragraphs)
