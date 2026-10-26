@@ -106,6 +106,42 @@ Spoken:StopAll()
 stub.Advance(0.1)
 Expect("...and stopping puts the bubble's text back at once", fs.text, TEXT)
 
+-- The Stop button holds the line in the queue instead of removing it, and a stop that keeps the
+-- line leaves the captions showing it.
+Reset()
+fs = Bubble(TEXT)
+Say()
+VO.ChatBubble.Tick()
+Spoken:Pause()
+Expect("Stop puts the bubble's text back", VO.ChatBubble.Tick(), false)
+Expect("...and the bubble shows the NPC's own text", fs.text, TEXT)
+stub.Advance(1)
+Expect("...and it stays so while the line is held", fs.text, TEXT)
+Spoken:Resume()
+Expect("a replay marks the bubble again", fs.text ~= TEXT or VO.ChatBubble.Tick(), true)
+Reset()
+fs = Bubble(TEXT)
+Say()
+VO.ChatBubble.Tick()
+local playing = Spoken:GetCurrent()
+env.Callbacks:Fire("CLIP_STOPPED", playing, false)
+Expect("a stop that keeps the line at the head puts the text back", fs.text, TEXT)
+Expect("...and the tick does not mark it again", VO.ChatBubble.Tick(), false)
+Expect("...leaving it as the game wrote it", fs.text, TEXT)
+
+---------------------------------------------------------------- the loop that drives it
+Reset()
+fs = Bubble(TEXT)
+Say()
+local loop = VO.ChatBubble.frame
+Expect("a line starting as NPC chat starts the loop", type(loop.scripts.OnUpdate), "function")
+stub.Advance(0.1)
+loop.scripts.OnUpdate(loop, 0.1)
+Expect("...which marks the bubble", fs.text ~= TEXT, true)
+Spoken:Pause()
+loop.scripts.OnUpdate(loop, 0.1)
+Expect("...and ends itself when the line is stopped", loop.scripts.OnUpdate, nil)
+
 ---------------------------------------------------------------- another NPC's bubble is left alone
 Reset()
 local other = Bubble("Somebody else's words.")

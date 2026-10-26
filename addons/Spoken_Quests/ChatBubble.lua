@@ -15,6 +15,8 @@ local TICK = 0.05
 -- lit, neighbor }, and the clip it was found for.
 local state = {}
 local frame
+-- The line that stopped: the captions keep it while the queue holds it, so it is not marked again.
+local halted
 
 local function Marks()
     return Spoken and Spoken.WordMarks and Spoken:WordMarks()
@@ -75,8 +77,8 @@ local function Tick()
     local marks = Marks()
     local caption = marks and Spoken:GetCaption()
     local clip = caption and caption.clip
-    if not (clip and clip.event == Enums.SoundEvent.NPCChatter and caption.highlight
-        and caption.progress and caption.progress < 1) then
+    if not (clip and clip ~= halted and clip.event == Enums.SoundEvent.NPCChatter and caption.highlight
+        and caption.progress and caption.progress < 1 and not Spoken:IsPaused()) then
         ChatBubble:Restore()
         return false
     end
@@ -139,14 +141,17 @@ function ChatBubble:Setup()
         return
     end
     frame = CreateFrame("Frame")
+    ChatBubble.frame = frame
     Spoken:RegisterCallback("CLIP_STARTED", function(clip)
         if clip.event == Enums.SoundEvent.NPCChatter then
+            halted = nil
             Run()
         end
     end)
     -- A stop leaves the voice mid-line: the bubble gets its own text back at once.
     Spoken:RegisterCallback("CLIP_STOPPED", function(clip)
-        if clip == state.clip then
+        if clip.event == Enums.SoundEvent.NPCChatter then
+            halted = clip
             ChatBubble:Restore()
         end
     end)
