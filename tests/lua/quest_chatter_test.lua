@@ -93,6 +93,7 @@ end
 local chatter = Spoken:GetSource("chatter")
 Expect("NPC chat is a part of Spoken's own", chatter ~= nil and chatter == VO.Player.chatterSource, true)
 Expect("...switched on by default", VO.Addon:IsPartOn("chatter"), true)
+Expect("...with its own icon on Spoken's page", chatter and chatter.icon, [[Interface\Icons\Spell_Shadow_PsychicHorrors]])
 Expect("...whose words the narrator never shows, the game's chat bubble does", Spoken:ShowsNarratorFor("chatter"), false)
 Expect("...while the words of Quests are shown", Spoken:ShowsNarratorFor("quests"), true)
 

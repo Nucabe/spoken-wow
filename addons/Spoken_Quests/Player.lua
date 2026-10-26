@@ -480,6 +480,7 @@ function Player:Setup()
     self.chatterSource = Spoken:RegisterSource("chatter", {
         title = L.OPT_CHATTER_PAGE_TITLE,
         addon = AddonFolder,
+        icon = [[Interface\Icons\Spell_Shadow_PsychicHorrors]],
         order = 3,
         interClipGap = 0.55,
         -- The game's own chat bubble shows the words.
