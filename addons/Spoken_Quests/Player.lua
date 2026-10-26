@@ -483,6 +483,9 @@ function Player:Setup()
         icon = [[Interface\Icons\Spell_Shadow_PsychicHorrors]],
         -- Between Bosses (5) and the Developer page (6): a page is opened by its order, so it is not shared.
         order = 5.5,
+        -- How many clips may wait behind the one speaking: a busy hub talks all the time, and a line
+        -- read minutes late is for a bubble that is gone.
+        queueLimit = 3,
         interClipGap = 0.55,
         -- The game's own chat bubble shows the words.
         noNarrator = true,

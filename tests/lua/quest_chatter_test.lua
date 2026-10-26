@@ -181,6 +181,13 @@ Spoken:StopAll()
 Say("Welcome, Tester!", SPEAKER_GUID)
 Expect("...so when a quest line has dropped it, it plays when said again", Keys(), "chat-101, chat-102, chat-102")
 
+-- A busy hub talks all the time: the lines waiting behind the one speaking are few.
+Reset()
+for i = 1, 8 do
+    chatter:Enqueue({ key = "crowd-" .. i, path = [[Interface\AddOns\TestPack\crowd.ogg]], length = 8, priority = "low" })
+end
+Expect("lines pile up behind the one speaking only to a limit", Spoken:GetQueueSize(), 4)
+
 ---------------------------------------------------------------- waits for what is being read
 Reset()
 Spoken:GetSource("quests"):Enqueue({ key = "reading", path = [[Interface\AddOns\TestPack\reading.ogg]], length = 8, priority = "normal" })

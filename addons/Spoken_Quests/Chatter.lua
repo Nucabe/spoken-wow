@@ -9,7 +9,8 @@ setfenv(1, VoiceOver)
 -- Followup.lua, which plays it for the player's own quest only.
 --
 -- The line plays as low priority, as gossip does: only when nothing else is being read, and a
--- quest line coming drops it. The same line from the same NPC is not played again for two minutes.
+-- quest line coming drops it. Three lines at most wait behind the one speaking. The same line from the
+-- same NPC is not played again for two minutes.
 Chatter = {
     -- [speaker .. ":" .. line id] = when it last started.
     heard = {},
