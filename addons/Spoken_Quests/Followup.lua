@@ -360,22 +360,19 @@ local CHAT_EVENTS = {
     whisper = "CHAT_MSG_MONSTER_WHISPER",
 }
 
---- `/spq followup <questID> [start] [arm]`: arm the quest as if it had just been turned in (or
---- accepted) and replay its script's chat on its own delays, one line per script step. With
---- `arm` nothing is replayed: the lines are listed as `.npc say` commands, for a GM to make the
---- real NPC say them, so the game draws its own chat bubble.
+--- `/spq followup <questID> [start]`: arm the quest as if it had just been turned in (or
+--- accepted) and replay its script's chat on its own delays, one line per script step.
 --- The lines only reach this client, never the server, but go through the same arm, match
 --- and play path as the real chat - so a line that is not heard here would not be heard in
 --- the world either, without walking a character to the NPC to find out.
 function Followup:Simulate(input)
-    local _, _, questID, kind, extra = string.find(input or "", "^%s*(%d+)%s*(%a*)%s*(%a*)")
+    local _, _, questID, kind = string.find(input or "", "^%s*(%d+)%s*(%a*)")
     questID = tonumber(questID)
-    local armOnly = kind == "arm" or extra == "arm"
     kind = (kind == "start" or kind == "accept") and "start" or "end"
     local print = function(message) DEFAULT_CHAT_FRAME:AddMessage("|cFF00CCFFSpoken follow-up:|r " .. message) end
 
     if not questID then
-        print("usage: /spq followup <questID> [start] [arm]  -- e.g. /spq followup 3364")
+        print("usage: /spq followup <questID> [start]  -- e.g. /spq followup 3364")
         return
     end
     if not self:IsEnabled() then
@@ -399,15 +396,11 @@ function Followup:Simulate(input)
             local guid = line.speaker and Utils:MakeGUID(Enums.GUID.Creature, line.speaker) or nil
             local event = CHAT_EVENTS[line.chat] or "CHAT_MSG_MONSTER_SAY"
             local text = Render(line.male, name)
-            local missing = OwnClip(line) and "" or "  |cFFFF8040(no recording yet — silent)|r"
-            if armOnly then
-                print(format("target %s: .npc say %s%s", name, text, missing))
-            else
-                print(format("line %d in %ds, %s: %s%s", line.id, line.delay or 0, name, text, missing))
-                Addon:ScheduleTimer(function()
-                    Followup:OnChat(event, text, name, guid, true)
-                end, line.delay or 0)
-            end
+            print(format("line %d in %ds, %s: %s%s", line.id, line.delay or 0, name, text,
+                OwnClip(line) and "" or "  |cFFFF8040(no recording yet — silent)|r"))
+            Addon:ScheduleTimer(function()
+                Followup:OnChat(event, text, name, guid, true)
+            end, line.delay or 0)
         end
     end
 end
