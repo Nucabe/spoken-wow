@@ -1525,8 +1525,7 @@ recording the way a follow-up line's does: `FollowupLookup[speaker][id]`, resolv
 `DataModules:ResolveSoundFile` like any other file, so a pack that has the file plays it and one that has not is
 silent (`chatter-no-recording` in the debug log). A line is played as low priority, as gossip is: only when
 nothing else is being read, and a quest line arriving drops it. At most three lines wait behind the one
-speaking (`queueLimit`). The same line from the same NPC does not play again for two minutes. The narrator never shows these lines (`noNarrator` on the source and on the clip, which follow-up lines carry
-too): the game's chat
+speaking (`queueLimit`). The same line from the same NPC does not play again for two minutes. The narrator never shows these lines (`noNarrator` on the source): the game's chat
 bubble already shows the words, so only the voice is added. `ChatBubble.lua` lights the word being read in that
 bubble's own text, as the captions light it (Spoken:GetCaption and Spoken:WordMarks do the matching): it finds
 the bubble through `C_ChatBubbles` by its text, rewrites it with the word in colour, and puts the text back when

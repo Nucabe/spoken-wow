@@ -446,8 +446,7 @@ end
 function Addon:ShowsNarrator(clip)
     local cfg = self.db.profile.Transcript
     local source = clip and clip.source
-    return cfg.Enabled and not (clip and clip.noNarrator)
-        and not (source and (source.noNarrator or (source.key and cfg.WordsOff[source.key])))
+    return cfg.Enabled and not (source and (source.noNarrator or (source.key and cfg.WordsOff[source.key])))
 end
 
 --- What is on screen: the chosen style, or one previewed from the welcome window or the settings
@@ -610,9 +609,7 @@ local pauseReminded = false
 -- Registered at login, not at load: this file loads before Callbacks.lua does.
 local function WatchPausedQueue()
     Callbacks:Register("CLIP_QUEUED", function(clip)
-        if pauseReminded or not SoundQueue:IsPaused() or clip.noNarrator or (clip.source and clip.source.noNarrator) then
-            return
-        end
+        if pauseReminded or not SoundQueue:IsPaused() or (clip.source and clip.source.noNarrator) then return end
         if Addon:PlayerStyle() == "none" or not Addon:ShowsNarrator(clip) then
             pauseReminded = true
             print("|cff66bbffSpoken:|r " .. L.STOPPED_REMINDER)

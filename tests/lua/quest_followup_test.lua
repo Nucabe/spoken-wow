@@ -198,7 +198,6 @@ Say("Thanks, Tester!", SPEAKER_GUID)
 Expect("the matching line plays", Keys(), "line-1")
 local clip = queued[1]
 Expect("...as a follow-up, not a quest or gossip line", clip and clip.event, VO.Enums.SoundEvent.QuestFollowup)
-Expect("...whose words the game's chat bubble shows, so the narrator draws none", clip and clip.noNarrator, true)
 Expect("...at normal priority, so the turn-in's own gossip rule does not drop it", clip and clip.priority, "normal")
 Expect("...headed by the NPC who said it", clip and clip.present.header, "Marshal Test")
 Expect("...carrying what was said", clip and clip.text, "Thanks, Tester!")

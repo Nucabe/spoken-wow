@@ -179,16 +179,6 @@ Spoken:Pause()
 loop.scripts.OnUpdate(loop, 0.1)
 Expect("...and ends itself when the line is stopped", loop.scripts.OnUpdate, nil)
 
----------------------------------------------------------------- a follow-up line is lit in the bubble too
-Reset()
-fs = Bubble(TEXT)
-VO.Followup:Play({ line = { id = 101, speaker = SPEAKER } }, TEXT, "Madame Test", SPEAKER_GUID, SPEAKER, false)
-env.Transcript:Sync()
-Expect("the line is a quest follow-up", Spoken:GetCaption().clip.event, VO.Enums.SoundEvent.QuestFollowup)
-Expect("...which the narrator does not show", env.Addon:ShowsNarrator(Spoken:GetCaption().clip), false)
-VO.ChatBubble.Tick()
-Expect("...and the game's bubble lights its words", fs.text ~= TEXT, true)
-
 ---------------------------------------------------------------- another NPC's bubble is left alone
 Reset()
 local other = Bubble("Somebody else's words.")
