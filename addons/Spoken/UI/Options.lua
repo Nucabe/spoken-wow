@@ -283,7 +283,7 @@ local function CurseForgeURL()
 end
 
 local LINKS = {
-    { name = "Website", icon = [[Interface\AddOns\Spoken\icon]], url = WebsiteURL() },
+    { name = L.OPT_LINKS_WEBSITE, icon = [[Interface\AddOns\Spoken\icon]], url = WebsiteURL() },
     { name = "GitHub", icon = [[Interface\AddOns\Spoken\Textures\LinkGitHub]],
         url = "https://github.com/rusty-key/spoken-wow" },
     { name = "Discord", icon = [[Interface\AddOns\Spoken\Textures\LinkDiscord]],
