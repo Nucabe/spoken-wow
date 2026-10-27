@@ -325,6 +325,8 @@ function Followup:Play(entry, message, sender, guid, npcID, asked, event)
         name = sender or (speaker and DataModules:GetObjectName(Enums.GUID.Creature, speaker)) or "",
         title = entry.title,
         lineKey = entry.lineKey,
+        -- The NPC says it in chat, so the game's chat bubble shows the words: the narrator never does.
+        noNarrator = true,
         text = message,
         unitGUID = guid,
         unitIsObjectOrItem = false,

@@ -86,7 +86,7 @@ local function Tick()
         started = nil
     end
     -- Not caption.highlight: that is the narrator's Highlight Words, which this line never shows.
-    if not (clip and clip ~= halted and clip.event == Enums.SoundEvent.NPCChatter
+    if not (clip and clip ~= halted and clip.noNarrator
         and caption.progress and caption.progress < 1 and not Spoken:IsPaused()) then
         ChatBubble:Restore()
         return started ~= nil and GetTime() < started.untilTime
@@ -153,14 +153,14 @@ function ChatBubble:Setup()
     frame = CreateFrame("Frame")
     ChatBubble.frame = frame
     Spoken:RegisterCallback("CLIP_STARTED", function(clip)
-        if clip.event == Enums.SoundEvent.NPCChatter then
+        if clip.noNarrator then
             halted, started = nil, { clip = clip, untilTime = GetTime() + CATCH_UP }
             Run()
         end
     end)
     -- A stop leaves the voice mid-line: the bubble gets its own text back at once.
     Spoken:RegisterCallback("CLIP_STOPPED", function(clip)
-        if clip.event == Enums.SoundEvent.NPCChatter then
+        if clip.noNarrator then
             halted, started = clip, nil
             ChatBubble:Restore()
         end

@@ -323,7 +323,7 @@ stub.HidePanels()
 stub.FireEvent("GOSSIP_CLOSED")
 Greet()
 VO.Player.chatterSource:Enqueue({ key = "chat-y", path = "chat-y.ogg", length = 12, priority = "low",
-    event = VO.Enums.SoundEvent.NPCChatter,
+    event = VO.Enums.SoundEvent.NPCChatter, noNarrator = true,
     present = { header = "Guard", transcript = "Move along.", bullet = "gossip" } })
 stub.SelectGossipOption("Where is the bank?")
 stub.ShowGossip(DIRECTIONS)
