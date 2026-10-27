@@ -343,6 +343,19 @@ stub.Advance(6)
 Expect("...and plays one line per step, not every random alternative", Keys(), "line-10, line-12")
 
 Reset()
+local listed = {}
+local chatFrame = _G.DEFAULT_CHAT_FRAME.AddMessage
+_G.DEFAULT_CHAT_FRAME.AddMessage = function(_, message) table.insert(listed, message) end
+VO.Followup:Simulate("302 arm")
+_G.DEFAULT_CHAT_FRAME.AddMessage = chatFrame
+stub.Advance(6)
+Expect("/spq followup with arm arms the quest", #VO.Followup.armed, 3)
+Expect("...replays nothing, for the real NPC to say it", Keys(), "")
+Expect("...and lists each line as a .npc say", listed[1] and listed[1]:find(".npc say ", 1, true) ~= nil, true)
+Say("Onward!", SPEAKER_GUID)
+Expect("...and a real chat line is then matched and played", Keys(), "line-10")
+
+Reset()
 VO.Followup:Simulate("305")
 stub.Advance(6)
 Expect("...and every step of one speaker's at one delay", Keys(), "line-50, line-51, line-52")
