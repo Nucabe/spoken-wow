@@ -258,7 +258,14 @@ end
 
 -- Where Spoken lives outside the game: a row each, its icon and its address to copy, the game being
 -- unable to open a web page.
+local WEBSITE = "https://spoken.rusty.one"
+local function WebsiteURL()
+    local language = Options:ClientLanguage()
+    return language == "enUS" and WEBSITE or WEBSITE .. "/" .. language
+end
+
 local LINKS = {
+    { name = "Website", icon = [[Interface\AddOns\Spoken\icon]], url = WebsiteURL() },
     { name = "GitHub", icon = [[Interface\AddOns\Spoken\Textures\LinkGitHub]],
         url = "https://github.com/rusty-key/spoken-wow" },
     { name = "Discord", icon = [[Interface\AddOns\Spoken\Textures\LinkDiscord]],
