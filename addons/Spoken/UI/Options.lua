@@ -264,6 +264,24 @@ local function WebsiteURL()
     return language == "enUS" and WEBSITE or WEBSITE .. "/" .. language
 end
 
+local CURSEFORGE = "https://www.curseforge.com/wow/addons/"
+local CURSEFORGE_PAGES = {
+    enUS = "spoken-english",
+    deDE = "spoken-german",
+    esES = "spoken-spanish-eu",
+    esMX = "spoken-spanish-al",
+    frFR = "spoken-french",
+    itIT = "spoken-italian",
+    ptBR = "spoken-portuguese",
+    ruRU = "spoken-russian",
+    koKR = "spoken-korean",
+    zhCN = "spoken-chinese-simplified",
+    zhTW = "spoken-chinese-traditional",
+}
+local function CurseForgeURL()
+    return CURSEFORGE .. (CURSEFORGE_PAGES[Options:ClientLanguage()] or "spoken")
+end
+
 local LINKS = {
     { name = "Website", icon = [[Interface\AddOns\Spoken\icon]], url = WebsiteURL() },
     { name = "GitHub", icon = [[Interface\AddOns\Spoken\Textures\LinkGitHub]],
@@ -271,7 +289,7 @@ local LINKS = {
     { name = "Discord", icon = [[Interface\AddOns\Spoken\Textures\LinkDiscord]],
         url = "https://discord.gg/HEGUgn6Yf" },
     { name = "CurseForge", icon = [[Interface\AddOns\Spoken\Textures\LinkCurseForge]],
-        url = "https://www.curseforge.com/wow/addons/spoken" },
+        url = CurseForgeURL() },
     { name = "Wago", icon = [[Interface\AddOns\Spoken\Textures\LinkWago]],
         url = "https://addons.wago.io/addons/spoken" },
     { name = "Buy Me a Coffee", icon = [[Interface\AddOns\Spoken\Textures\LinkBuyMeACoffee]],
