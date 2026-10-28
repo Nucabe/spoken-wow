@@ -35,6 +35,10 @@ export function labelFor(flavor: Flavor): string {
 
 /** What to tell a player who picked a game Spoken does not run on. */
 export function notSupportedMessage(folder: string): string {
+  // A player who knew _classic_beta_ as Forever would otherwise read this as a contradiction.
+  if (folder.toLowerCase() === '_classic_beta_') {
+    return `${folder} is the WoW: Forever beta, which has ended. Spoken runs on the released game in _forever_.`
+  }
   return `Spoken runs on WoW: Forever, Classic Era and Anniversary. ${folder} is not one of them.`
 }
 

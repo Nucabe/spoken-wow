@@ -1,7 +1,6 @@
 // Every word the window shows, in English. Other languages can follow by swapping this file's
 // object; nothing else in the window holds text a player reads (apart from names from the data).
-import type { Section, Snapshot } from '@shared/types'
-import { FLAVOR_FOLDER_LIST } from '@shared/types'
+import { FLAVOR_FOLDER_LIST, type Section, type Snapshot } from '@shared/types'
 
 export type Platform = Snapshot['platform']
 

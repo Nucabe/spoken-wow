@@ -157,6 +157,14 @@ describe('describeFlavorFolder', () => {
     }
   })
 
+  it('names a _forever_ folder without .flavor.info by its folder', async () => {
+    const base = tmpDir()
+    const forever = makeGameFolders(base)
+    fs.rmSync(path.join(forever, '.flavor.info'))
+    const g = await describeFlavorFolder(forever, 'manual')
+    expect(g).toMatchObject({ flavor: 'forever', product: 'wow_forever', gameVersion: '1.60.1.70450' })
+  })
+
   it('has no gameVersion when build.info has no row for it', async () => {
     const base = tmpDir()
     const g = await makeGame(base, { product: 'wow_forever' })
@@ -179,18 +187,10 @@ describe('resolveGamePath', () => {
     expect(res.games.map((g) => g.flavorFolder)).toEqual(['_forever_', '_classic_era_', '_anniversary_'])
   })
 
-  it('names a _forever_ folder without .flavor.info by its folder', async () => {
-    const base = tmpDir()
-    const forever = makeGameFolders(base)
-    fs.rmSync(path.join(forever, '.flavor.info'))
-    const g = await describeFlavorFolder(forever, 'manual')
-    expect(g).toMatchObject({ flavor: 'forever', product: 'wow_forever', gameVersion: '1.60.1.70450' })
-  })
-
   it('refuses the ended Forever beta in _classic_beta_ and keeps _forever_ beside it', async () => {
     const base = tmpDir()
     const beta = makeGameFolders(base, { flavorFolder: '_classic_beta_', product: 'wow_classic_beta' })
-    expect((await resolveGamePath(beta, 'manual')).error).toBe(notSupportedMessage('_classic_beta_'))
+    expect((await resolveGamePath(beta, 'manual')).error).toBe('_classic_beta_ is the WoW: Forever beta, which has ended. Spoken runs on the released game in _forever_.')
     await makeGame(base)
     const res = await resolveGamePath(path.join(base, 'World of Warcraft'), 'manual')
     expect(res.games.map((g) => g.flavorFolder)).toEqual(['_forever_'])
