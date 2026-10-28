@@ -2,6 +2,12 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## Unreleased
+
+- **On Forever, the Contribute box names the released game's folder.** It points to
+  `_forever_` for the saved file to upload, instead of the ended beta's `_classic_beta_`.
+  *([svengabr](https://github.com/svengabr))*
+
 ## 3.6.0 — 2026-10-28
 
 - **The Bosses section uses its dragon icon and skull badge in the Compendium**, matching its

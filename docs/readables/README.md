@@ -382,7 +382,7 @@ Unlock Unfound Readables on (`SpokenReadables:CompendiumHas`).
 ### Installing it in a client
 
 ```bash
-CLIENT=forever make readables-deploy   # symlink Spoken_Readables and SpokenReadablesAudio into the Forever beta (wow_classic_beta)
+CLIENT=forever make readables-deploy   # symlink Spoken_Readables and SpokenReadablesAudio into Forever (_forever_)
 make readables-status                  # what is installed where, and how many mp3s exist
 ```
 
