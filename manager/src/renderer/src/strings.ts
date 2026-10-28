@@ -62,7 +62,7 @@ export const S = {
   empty: {
     title: 'No Game for Spoken Found',
     text: (platform: Platform) =>
-      `Spoken runs on WoW: Forever, Classic Era and Anniversary. Add the folder your game is installed in: ${gameFolderExample(platform)}, a _classic_era_, _anniversary_ or _classic_beta_ folder, or an AddOns folder.`,
+      `Spoken runs on WoW: Forever, Classic Era and Anniversary. Add the folder your game is installed in: ${gameFolderExample(platform)}, a _forever_, _classic_era_ or _anniversary_ folder, or an AddOns folder.`,
     add: 'Add Game Folder',
     scan: 'Scan Again',
     scanning: 'Looking'

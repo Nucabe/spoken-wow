@@ -6,16 +6,16 @@ import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { SUPPORTED_FLAVORS, type Flavor, type GameInstall } from '../shared/types'
+import { FLAVOR_FOLDERS, SUPPORTED_FLAVORS, type Flavor, type GameInstall } from '../shared/types'
 import { canWriteQuick, foldsCase, samePath } from './guard'
 import { loadState, log, updateState } from './state'
 
 // ---------------------------------------------------------------- tables
 
-/** `_classic_beta_` -> `classic_beta`; null for anything that is not a game version Spoken runs on. */
+/** `_forever_` -> `classic_beta`; null for anything that is not a game version Spoken runs on. */
 export function flavorOfFolder(name: string): Flavor | null {
   const lower = name.toLowerCase()
-  return SUPPORTED_FLAVORS.find((f) => `_${f}_` === lower) ?? null
+  return SUPPORTED_FLAVORS.find((f) => FLAVOR_FOLDERS[f].includes(lower)) ?? null
 }
 
 /** Any Blizzard flavor folder, supported or not: `_retail_`, `_classic_ptr_`, ... */
@@ -135,7 +135,8 @@ export async function describeFlavorFolder(
   if (!flavor) return null
 
   const fromFlavorFile = parseFlavorInfo((await readText(path.join(root, '.flavor.info'))) ?? '')
-  const product = fromFlavorFile ?? `wow_${flavor}`
+  // From the folder, not the flavor: `_forever_` and `_classic_beta_` are different products in .build.info.
+  const product = fromFlavorFile ?? `wow${flavorFolder.toLowerCase().replace(/_$/, '')}`
 
   let gameVersion: string | undefined
   const buildText =
@@ -164,7 +165,7 @@ export async function describeFlavorFolder(
 
 function notWowMessage(platform: NodeJS.Platform): string {
   const addOns = platform === 'win32' ? 'Interface\\AddOns' : 'Interface/AddOns'
-  return `This does not look like a World of Warcraft folder. Choose the game folder (the one that holds _classic_beta_, _classic_era_ or _anniversary_), one of those folders, or its ${addOns} folder.`
+  return `This does not look like a World of Warcraft folder. Choose the game folder (the one that holds _forever_, _classic_era_ or _anniversary_), one of those folders, or its ${addOns} folder.`
 }
 
 /**
@@ -203,8 +204,10 @@ export async function resolveGamePath(
   } else {
     const entries = (await names(abs)) ?? []
     for (const f of SUPPORTED_FLAVORS) {
-      const real = entries.find((n) => n.toLowerCase() === `_${f}_`)
-      if (real) candidates.push(path.join(abs, real))
+      for (const folder of FLAVOR_FOLDERS[f]) {
+        const real = entries.find((n) => n.toLowerCase() === folder)
+        if (real) candidates.push(path.join(abs, real))
+      }
     }
     if (candidates.length === 0) {
       const other = entries.find((n) => isFlavorFolderName(n))

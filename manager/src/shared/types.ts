@@ -1,6 +1,6 @@
 // The one file the main process and the window both import: what the app talks about.
 
-/** The game versions Spoken runs on, by their folder: `_classic_beta_` (Forever), `_classic_era_`, `_anniversary_`. */
+/** The game versions Spoken runs on: `classic_beta` is Forever, in `_forever_` or `_classic_beta_` (FLAVOR_FOLDERS). */
 export type Flavor = 'classic_beta' | 'classic_era' | 'anniversary'
 
 /** One World of Warcraft install: a flavor folder such as `...\World of Warcraft\_classic_beta_`. */
@@ -31,6 +31,13 @@ export interface GameInstall {
  * Forever (`_classic_beta_`), and installs on Classic Era and Anniversary. The scan lists no other.
  */
 export const SUPPORTED_FLAVORS: Flavor[] = ['classic_beta', 'classic_era', 'anniversary']
+
+/** The folders each game version installs into, lower-cased. Forever's release client uses `_forever_`, its beta `_classic_beta_`. */
+export const FLAVOR_FOLDERS: Record<Flavor, readonly string[]> = {
+  classic_beta: ['_forever_', '_classic_beta_'],
+  classic_era: ['_classic_era_'],
+  anniversary: ['_anniversary_']
+}
 
 export function isSupportedFlavor(flavor: Flavor): boolean {
   return SUPPORTED_FLAVORS.includes(flavor)

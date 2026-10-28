@@ -49,6 +49,7 @@ describe('Blizzard files', () => {
 
   it('knows the supported flavor folders and no others', () => {
     expect(SUPPORTED_FLAVORS).toEqual(['classic_beta', 'classic_era', 'anniversary'])
+    expect(flavorOfFolder('_forever_')).toBe('classic_beta')
     expect(flavorOfFolder('_classic_beta_')).toBe('classic_beta')
     expect(flavorOfFolder('_CLASSIC_ERA_')).toBe('classic_era')
     expect(flavorOfFolder('_anniversary_')).toBe('anniversary')
@@ -177,6 +178,25 @@ describe('resolveGamePath', () => {
     const res = await resolveGamePath(path.join(base, 'World of Warcraft'), 'manual')
     expect(res.error).toBeUndefined()
     expect(res.games.map((g) => g.flavorFolder)).toEqual(['_classic_beta_', '_classic_era_', '_anniversary_'])
+  })
+
+  it('finds Forever in the release client folder _forever_, by the game folder or the folder itself', async () => {
+    const base = tmpDir()
+    const forever = makeGameFolders(base, { flavorFolder: '_forever_', product: 'wow_forever' })
+    for (const p of [path.join(base, 'World of Warcraft'), forever, path.join(forever, 'Interface', 'AddOns')]) {
+      const res = await resolveGamePath(p, 'manual')
+      expect(res.error).toBeUndefined()
+      expect(res.games).toHaveLength(1)
+      expect(res.games[0]).toMatchObject({ flavor: 'classic_beta', flavorFolder: '_forever_', product: 'wow_forever', label: 'WoW: Forever' })
+    }
+  })
+
+  it('names a _forever_ folder without .flavor.info by its folder', async () => {
+    const base = tmpDir()
+    const forever = makeGameFolders(base, { flavorFolder: '_forever_', product: 'wow_forever' })
+    fs.rmSync(path.join(forever, '.flavor.info'))
+    const g = await describeFlavorFolder(forever, 'manual')
+    expect(g).toMatchObject({ product: 'wow_forever', gameVersion: '1.60.1.70450' })
   })
 
   it('resolves a flavor folder, an Interface folder and an AddOns folder to the same install', async () => {
