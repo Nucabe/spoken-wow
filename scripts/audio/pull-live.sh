@@ -44,7 +44,9 @@ targets=$section
 [ "$section" = bosses ] && targets=npcs
 case "$what" in
   takes) lister="$root/scripts/audio/sounds.mjs"; next="make $targets-sounds";;
-  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $targets-package-acted";;
+  # No npcs-package-acted exists, so a bosses pull of recordings names no next step.
+  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $targets-package-acted"
+    [ "$section" = bosses ] && next="";;
   *) echo "usage: pull-live.sh <section> [lang] [recorded]" >&2; exit 2;;
 esac
 # Where sounds.mjs reads the archive from, including its SPOKEN_<SECTION>_AUDIO_HISTORY
@@ -72,4 +74,8 @@ mkdir -p "$archive"
 }
 suffix=""
 [ "$lang" = enUS ] || suffix=" LOCALE=$lang"
-echo "==> pulled into ${archive#"$root"/}. Next:  $next$suffix"
+if [ -n "$next" ]; then
+  echo "==> pulled into ${archive#"$root"/}. Next:  $next$suffix"
+else
+  echo "==> pulled into ${archive#"$root"/}."
+fi
