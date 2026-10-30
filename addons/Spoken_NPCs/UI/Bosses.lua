@@ -350,8 +350,7 @@ local function BossBullet(map)
 	return IsEliteBoss(map) and "boss-raid" or "boss"
 end
 
--- The section page has no boss selected yet, so it cannot show a creature portrait. Use the
--- Compendium's book for its round header portrait.
+-- No boss is selected yet, so there is no creature portrait to show.
 local SECTION_ICON = { objectOrItem = true, icon = C.ICON, bullet = "boss" }
 
 --- The story of the boss `key` of `map` as a line for Spoken's narrator, words with no voice; nil

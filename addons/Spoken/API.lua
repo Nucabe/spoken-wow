@@ -26,8 +26,8 @@ function Spoken:IsDungeonOnClient(map)
     return variant == "sod" and SOD_DUNGEONS[map] or false
 end
 
--- The raids among the instances: the vanilla ones and Scarlet Enclave. Season of Discovery makes
--- raids of Blackfathom Deeps, Gnomeregan and Sunken Temple too, under their old maps.
+-- Vanilla's raids and Scarlet Enclave. Season of Discovery turns Blackfathom Deeps, Gnomeregan and
+-- Sunken Temple into raids under their old maps.
 local RAIDS = {
     [249] = true, [309] = true, [409] = true, [469] = true,
     [509] = true, [531] = true, [533] = true, [2856] = true,
