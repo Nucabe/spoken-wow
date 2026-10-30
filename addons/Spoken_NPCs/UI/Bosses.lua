@@ -375,7 +375,7 @@ function NPCs:StoryClip(map, key)
 	}
 	local recording = self.GetAudioClip and self:GetAudioClip(map, key)
 	if recording then
-		clip.path, clip.length = recording.path, recording.len
+		clip.path, clip.length = recording.path, recording.len or clip.length
 		-- Timed to the recording's own words, so not under a story in another language.
 		if language == recording.language then clip.present.timings = recording.times end
 	else

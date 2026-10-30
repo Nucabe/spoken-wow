@@ -44,16 +44,17 @@ function NPCs:IsStoryRead(map, key)
 	return SpokenNPCsCharacter ~= nil and SpokenNPCsCharacter.storiesRead[NPCs.Key(map, key)] == true
 end
 
---- Shows the story of the boss `key` of `map` in the narrator. Nothing when this character has
---- been shown it, the narrator would not show it, or the boss has none. Returns whether it queued.
+--- Tells the story of the boss `key` of `map`. Nothing when this character has been told it, the
+--- boss has none, or the story is words alone and the narrator would not show it: a voiced one is
+--- heard with the narrator hidden, as every voiced line is. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
 --- once it starts, so one dropped or cleared shows the next time.
 function NPCs:ReadStory(map, key)
 	if not (source and SpokenNPCsCharacter) then return false end
 	local id = NPCs.Key(map, key)
-	if SpokenNPCsCharacter.storiesRead[id] or not Spoken:ShowsNarratorFor("bosses") then return false end
+	if SpokenNPCsCharacter.storiesRead[id] then return false end
 	local clip = self:StoryClip(map, key)
-	if not clip then return false end
+	if not clip or (clip.textOnly and not Spoken:ShowsNarratorFor("bosses")) then return false end
 	clip.priority = "low"
 	clip.startCallback = function() SpokenNPCsCharacter.storiesRead[id] = true end
 	return source:Enqueue(clip) and true or false

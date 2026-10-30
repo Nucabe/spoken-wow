@@ -34,8 +34,9 @@ the client hides its GUID there.
 Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
 Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
-Spoken's, "bosses": What Spoken Reads turns them off, and nothing is queued
-where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off).
+Spoken's, "bosses": What Spoken Reads turns them off, and a story shown as words only is not queued
+where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off). A
+voiced one is heard there all the same, as every voiced line is.
 
 A story is voiced where an installed `SpokenBossesAudio` pack has its clip (`Audio.lua`): a pack in
 Spoken's voice language first, else one in If a Voice Is Missing's language (none with Stay Silent).

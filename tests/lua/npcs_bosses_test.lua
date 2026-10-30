@@ -512,7 +512,23 @@ Expect("no boss shows its story with Show Narrator off, and the kill still meets
     Showing() .. "|" .. tostring(SpokenNPCsCharacter.storiesRead["36:edwin vancleef"]) .. "|"
         .. tostring(SpokenNPCsCharacter.found["36:edwin vancleef"]),
     "nothing|nil|true")
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+_G.SpokenBossesAudioPacks = { SpokenBossesAudio = { version = 1, addon = "SpokenBossesAudio", language = "enUS",
+    bitrate = 128, bosses = { [36] = { ["edwin vancleef"] = { file = "36\\edwin-vancleef", len = 41.2 } } } } }
+local VOICED = "Interface\\AddOns\\SpokenBossesAudio\\Sounds\\36\\edwin-vancleef.mp3"
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("with a pack and Show Narrator off, the story is still heard, as every voiced line is",
+    Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
+Clear(); NPCs:ForgetStories()
 SpokenEnv.Addon.db.profile.Transcript.Enabled = true
+local style = SpokenEnv.Addon.db.profile.Frame.Style
+SpokenEnv.Addon.db.profile.Frame.Style = "none"
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("...and in Voice Only", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
+SpokenEnv.Addon.db.profile.Frame.Style = style
+_G.SpokenBossesAudioPacks = nil
+Clear(); NPCs:ForgetStories()
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 world.cvars.Sound_EnableAllSound = "0"
 NPCs:EncounterEnded(edwin.id, 1)
