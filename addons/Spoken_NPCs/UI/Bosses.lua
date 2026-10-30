@@ -336,23 +336,10 @@ local READING_SPEED, LEAST_SECONDS = 2.5, 6
 local DUNGEON_SKULL = [[Interface\Minimap\Minimap_skull_normal]]
 local ELITE_SKULL = [[Interface\Minimap\Minimap_skull_elite]]
 
--- The vanilla instances whose bosses are raids. Scarlet Enclave is only present on Season of
--- Discovery, while Gnomeregan and Sunken Temple become raids there despite keeping their old map
--- IDs; the latter two are selected by the active client variant below.
-local RAID_MAPS = {
-	[249] = true, [309] = true, [409] = true, [469] = true,
-	[509] = true, [531] = true, [533] = true, [2856] = true,
-}
-local WORLD_BOSS_MAPS = _G.SpokenDungeons and _G.SpokenDungeons.worldBosses or {}
-
-local function IsRaid(map)
-	if RAID_MAPS[map] then return true end
-	local version = SpokenEnv and SpokenEnv.Version
-	return version and version.Variant == "sod" and (map == 90 or map == 109) or false
-end
-
+-- A raid's or a world boss's: the elite skull, where a dungeon's has the normal one.
 local function IsEliteBoss(map)
-	return IsRaid(map) or WORLD_BOSS_MAPS[map] ~= nil
+	if Spoken and Spoken.IsRaid and Spoken:IsRaid(map) then return true end
+	return _G.SpokenDungeons and SpokenDungeons.worldBosses and SpokenDungeons.worldBosses[map] ~= nil or false
 end
 
 local function Skull(map)
@@ -406,9 +393,10 @@ end
 
 -- One table for each picture, so the page draws a portrait again only for another one.
 local portraits = {}
+local unknown = { boss = C.UnknownIcon("boss"), ["boss-raid"] = C.UnknownIcon("boss-raid") }
 
 local function Unknown(map)
-	return C.UnknownIcon(BossBullet(map))
+	return unknown[BossBullet(map)]
 end
 
 -- A boss's portrait, at the left of its name on the page's header.

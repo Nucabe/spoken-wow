@@ -253,6 +253,17 @@ _G.SpokenBossStories[2789] = { ["lord kazzak"] = "A world-boss story." }
 local worldBossClip = NPCs:StoryClip(2789, "lord kazzak")
 Expect("a world-boss story uses the elite badge", worldBossClip and worldBossClip.present.bullet, "boss-raid")
 _G.SpokenBossStories[2789] = nil
+local function Raids(variant)
+    SpokenEnv.Version.Variant = variant
+    local maps = {}
+    for _, map in ipairs({ 36, 48, 90, 109, 409, 2856 }) do
+        if _G.Spoken:IsRaid(map) then table.insert(maps, map) end
+    end
+    SpokenEnv.Version.Variant = "era"
+    return table.concat(maps, " ")
+end
+Expect("Blackfathom Deeps, Gnomeregan and Sunken Temple are raids only on Season of Discovery",
+    Raids("era") .. "|" .. Raids("sod"), "409 2856|48 90 109 409 2856")
 SpokenNPCsSettings.compendiumFoundOnly = false
 NPCs:ShowBosses()
 Shown()

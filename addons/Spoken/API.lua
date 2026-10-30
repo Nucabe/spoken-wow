@@ -26,6 +26,19 @@ function Spoken:IsDungeonOnClient(map)
     return variant == "sod" and SOD_DUNGEONS[map] or false
 end
 
+-- The raids among the instances: the vanilla ones and Scarlet Enclave. Season of Discovery makes
+-- raids of Blackfathom Deeps, Gnomeregan and Sunken Temple too, under their old maps.
+local RAIDS = {
+    [249] = true, [309] = true, [409] = true, [469] = true,
+    [509] = true, [531] = true, [533] = true, [2856] = true,
+}
+local SOD_RAIDS = { [48] = true, [90] = true, [109] = true }
+
+--- Whether the instance map `map` is a raid on this client.
+function Spoken:IsRaid(map)
+    return RAIDS[map] or (Version and Version.Variant == "sod" and SOD_RAIDS[map]) or false
+end
+
 -- The site every module's report, contribute and help links point at. The old hosts
 -- (voiceover.rusty.one, lore.rusty.one) keep redirecting, so changing this breaks no copy
 -- already installed.

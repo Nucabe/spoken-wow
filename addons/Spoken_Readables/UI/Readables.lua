@@ -67,13 +67,8 @@ local TYPE_ICONS = {
 local function TypeIcon(type)
 	return { objectOrItem = true, icon = [[Interface\Icons\]] .. (TYPE_ICONS[type] or TYPE_ICONS.other), bullet = "book" }
 end
--- The tab's landing page uses the Compendium tome too, but keeps the small book badge that
--- identifies Readables on the other pages.
-local READABLES_ICON = {
-	objectOrItem = true,
-	icon = [[Interface\Icons\]] .. TYPE_ICONS.book,
-	bullet = "book",
-}
+-- The tab's landing page: the Compendium's tome, with the book badge of Readables' other pages.
+local READABLES_ICON = { objectOrItem = true, icon = C.ICON, bullet = "book" }
 local filter = ""
 
 --------------------------------------------------------------------------------
