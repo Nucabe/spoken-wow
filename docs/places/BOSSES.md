@@ -116,6 +116,32 @@ It reads `boss_instance`, `boss`, `boss_line` and `entity_name` and nothing else
   `/reports`. Bosses take no contributions.
 - With no boss rows the page says the intake has not been run.
 
+## Voice and the pack
+
+A boss's story is read aloud from `SpokenBossesAudio`, a sound pack built as the places pack is
+([VOICE.md](VOICE.md)): `addons/SpokenBossesAudio` for English, `SpokenBossesAudio_<lang>` for the
+others (`languageFolder` in `scripts/lib/packs.mjs`). The takes are cut on `/bosses`, with
+`source = 'bosses'`, and live in `SPOKEN_BOSSES_AUDIO_HISTORY` (droplet `shared/audio-history/bosses`).
+
+```sh
+make npcs-pull-live         # fetch the live takes the local database names
+make npcs-sounds            # assemble Sounds/ from them (LOCALE=xx for a language)
+make npcs-lookup            # build Data/Sounds.lua (pipelines/places/tools/bosses/build-lookup.mjs)
+make npcs-validate-audio    # lookup, files and stories agree (validate-audio.mjs); a stale take is reported
+make npcs-package-audio     # check-synced, sounds, lookup, validate, then zip into dist/
+make npcs-release-audio-dry # show what an upload would send
+make npcs-release-audio     # upload; make npcs-full-release does all of it
+```
+
+- The lookup key is `boss:{map}:{key}` and the file `{map}\{slug}`, from the same `assignFiles` the
+  site uses, so the pack and the site cannot disagree on a file.
+- The pack's page is `publishers/bosses/spoken-bosses-audio.md` and its changelog
+  `docs/bosses/CHANGELOG.md`. `release.sh` refuses until the page has its CurseForge and Wago ids.
+  `MIN_SPOKEN.bosses` is 3.7.0.
+- `Spoken_NPCs` ranks the installed packs (`Audio.lua`, [../npcs/README.md](../npcs/README.md)). A
+  story with no clip shows as words only; a voiced one plays like any other voiced line.
+- The landing page keeps its placeholder for Bosses until a take can be cut into a sample.
+
 ## Commands
 
 ```sh
