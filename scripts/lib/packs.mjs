@@ -49,6 +49,7 @@ const LANGUAGE_QUESTS_PACKS = { ...QUESTS_PACKS, all: "" };
 function englishFolder(section, pack) {
   if (section === "places") return "SpokenPlacesAudio";
   if (section === "readables") return "SpokenReadablesAudio";
+  if (section === "bosses") return "SpokenBossesAudio";
   return "SpokenQuestsAudio" + ENGLISH_QUESTS_PACKS[pack];
 }
 
