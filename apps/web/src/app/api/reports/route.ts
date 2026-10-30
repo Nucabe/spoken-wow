@@ -31,6 +31,7 @@ import { countRecentContributions, recordContributionHit } from "@/lib/contribut
 import { formatTarget, parseTarget, resolveTarget } from "@/lib/reports/target";
 import { pageById } from "@/lib/readables/catalogue";
 import { lineByPath } from "@/lib/places/catalogue";
+import { lineByPath as bossByPath } from "@/lib/bosses/catalogue";
 import { type Source, isSource } from "@/lib/sections";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
    * as a places one for the same reason: the reporter got here from a page this site rendered,
    * so an id naming nothing is a typo in the URL bar rather than a corpus that failed to load.
    *
-   * A bosses address resolves to nothing until there is a boss catalogue to look it up in.
+   * A bosses address is the boss's audio path, resolved as strictly as a places one.
    */
   const raw = typeof body.target === "string" ? body.target : null;
   const addressed =
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
       : source === "readables"
         ? await readablesTarget(raw)
         : source === "bosses"
-          ? null
+          ? await bossesTarget(raw)
           : await questsTarget(raw, body.lineId);
 
   if (!addressed) {
@@ -209,6 +210,19 @@ async function placesTarget(
 
   const [mapID, slug] = raw.split("/");
   const entry = await lineByPath(Number(mapID), slug ?? "");
+  if (!entry) return null;
+
+  return { lineId: entry.id, target: entry.file };
+}
+
+/** A bosses address: the boss's own audio path, '36/edwin-vancleef'. */
+async function bossesTarget(
+  raw: string | null,
+): Promise<{ lineId: string | null; target: string } | null> {
+  if (!raw) return null;
+
+  const [map, slug] = raw.split("/");
+  const entry = await bossByPath(Number(map), slug ?? "");
   if (!entry) return null;
 
   return { lineId: entry.id, target: entry.file };

@@ -13,6 +13,7 @@
 import { BASE_LANG, withLang, type Lang } from "@/lib/lang";
 import { noApiKeyMessage } from "@/lib/no-api-key";
 import type { ResultLine as BookLine } from "@/lib/readables/search";
+import type { ResultLine as BossLine } from "@/lib/bosses/search";
 import type { CorpusLine } from "@/lib/corpus";
 import type { ResultLine as QuestLine } from "@/lib/search";
 import type { ResultLine as ZoneLine } from "@/lib/places/search";
@@ -21,12 +22,6 @@ import { npcHref, npcPageHref, questsHref } from "@/lib/links";
 
 import { targetForLine } from "./line-target";
 import type { Source } from "@/lib/sections";
-
-/**
- * What this module reads of a boss line: the fields a boss's catalogue entry and a places
- * search result share, so a bosses report reads like a places one.
- */
-type BossLine = Pick<ZoneLine, "id" | "file" | "state" | "name" | "take"> & { instanceName: string; text: string | null };
 
 /** Whichever shape the section's search endpoint answered with. */
 export type SourceLine = QuestLine | ZoneLine | BookLine | BossLine;
