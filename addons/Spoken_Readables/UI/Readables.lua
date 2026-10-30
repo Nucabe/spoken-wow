@@ -67,6 +67,13 @@ local TYPE_ICONS = {
 local function TypeIcon(type)
 	return { objectOrItem = true, icon = [[Interface\Icons\]] .. (TYPE_ICONS[type] or TYPE_ICONS.other), bullet = "book" }
 end
+-- The tab's landing page uses the Compendium tome too, but keeps the small book badge that
+-- identifies Readables on the other pages.
+local READABLES_ICON = {
+	objectOrItem = true,
+	icon = [[Interface\Icons\]] .. TYPE_ICONS.book,
+	bullet = "book",
+}
 local filter = ""
 
 --------------------------------------------------------------------------------
@@ -849,7 +856,7 @@ end
 local function ShowEntry()
 	if not page then return end
 	if not selection then
-		page:Show({ title = L.COMPENDIUM_READABLES, subtitle = Count(Tally(Index().all)) })
+		page:Show({ title = L.COMPENDIUM_READABLES, subtitle = Count(Tally(Index().all)), icon = READABLES_ICON })
 		return
 	end
 	if selection.book then
