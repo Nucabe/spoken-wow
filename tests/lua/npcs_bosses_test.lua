@@ -142,7 +142,7 @@ _G.C_Map = {
 _G.GetInstanceInfo = function() return "Outland", "none", 0, "", 0, 0, false, 0 end
 
 local NPCs = {}
-for _, file in ipairs({ "Locale/enUS", "Core", "UI/Bosses", "UI/Options", "Events" }) do
+for _, file in ipairs({ "Locale/enUS", "Core", "Audio", "UI/Bosses", "UI/Options", "Events" }) do
     local chunk = assert(loadfile(ADDONS .. "Spoken_NPCs/" .. file .. ".lua"))
     chunk("Spoken_NPCs", NPCs)
 end
@@ -458,11 +458,11 @@ Expect("...and keep the bosses this character has met", SpokenNPCsCharacter.foun
 assert(loadfile(ADDONS .. "Spoken_NPCs/Story.lua"))("Spoken_NPCs", NPCs)
 NPCs:SetupStories()
 local storySource = Spoken:GetSource("bosses")
-Expect("the bosses' stories are a part of Spoken's, as words with no voice", storySource ~= nil and storySource.textOnly, true)
+Expect("the bosses' stories are a part of Spoken's, voiced where a pack has them", storySource ~= nil and storySource.textOnly, nil)
 _G.SpokenBossStories[36]["edwin vancleef"] = "He led the Brotherhood."
 _G.SpokenBossCreatures = creatures
 local clip = NPCs:StoryClip(36, "edwin vancleef")
-Expect("a boss's story is a line with no recording", clip.path, nil)
+Expect("with no pack, a boss's story is a line with no recording", tostring(clip.path) .. "|" .. tostring(clip.textOnly), "nil|true")
 Expect("...headed by its dungeon, named for the boss", clip.present.header .. "|" .. clip.present.label, "Deadmines|Edwin VanCleef")
 Expect("...with its story and its face", clip.present.transcript .. "|" .. tostring(clip.present.portrait.creatureID),
     "He led the Brotherhood.|639")
@@ -483,7 +483,7 @@ Expect("...nor does a fight the party lost", Showing(), "nothing")
 NPCs:EncounterEnded(edwin.id, 1)
 Expect("killing the boss shows its story", Showing(), EDWIN)
 Expect("...and the boss is met, as its page is no longer locked", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
-Expect("...as words alone, as every line of its part", Q:GetCurrentSound().textOnly, true)
+Expect("...as words alone, with no pack", Q:GetCurrentSound().textOnly, true)
 Expect("...noted for the character", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], true)
 Clear()
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
@@ -513,6 +513,12 @@ Expect("no boss shows its story with Show Narrator off, and the kill still meets
         .. tostring(SpokenNPCsCharacter.found["36:edwin vancleef"]),
     "nothing|nil|true")
 SpokenEnv.Addon.db.profile.Transcript.Enabled = true
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+world.cvars.Sound_EnableAllSound = "0"
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("with sound off and no pack, the story still shows as words", Showing(), EDWIN)
+world.cvars.Sound_EnableAllSound = nil
+Clear(); NPCs:ForgetStories()
 
 -- The events as the client sends them: Forever reports a won dungeon fight as ENCOUNTER_END with
 -- success 0 and fires BOSS_KILL.

@@ -155,13 +155,19 @@ local function Tally(zones)
 	return found, total
 end
 
--- A boss's story (key = its key): a string, or the client's language beside the English that is
--- its first.
+-- A boss's story (key = its key) and the language it is in: a string, or the client's language
+-- beside the English that is its first.
 local function Story(map, key)
 	local stories = _G.SpokenBossStories
 	local text = stories and stories[map] and stories[map][key]
-	if type(text) == "table" then text = Name(text) end
-	return type(text) == "string" and text ~= "" and text or nil
+	local language = "enUS"
+	if type(text) == "table" then
+		local locale = GetLocale and GetLocale()
+		if locale and text[locale] then language = locale end
+		text = Name(text)
+	end
+	if type(text) ~= "string" or text == "" then return nil end
+	return text, language
 end
 
 -- What Data/Creatures.lua knows of a boss (its creature and appearance), or nil.
@@ -317,7 +323,7 @@ end
 -- The page
 --------------------------------------------------------------------------------
 
--- Nothing to play or to report yet: a boss's story is words alone until it is voiced.
+-- Nothing to play or to report from the page yet: a story is heard only when its boss falls.
 local PLAY = { has = function() return false end, find = function() end, start = function() end }
 local REPORT = { has = function() return false end, open = function() end, title = "" }
 
@@ -346,16 +352,16 @@ end
 -- No boss is selected yet, so there is no creature portrait to show.
 local SECTION_ICON = { objectOrItem = true, icon = C.ICON, bullet = "boss" }
 
---- The story of the boss `key` of `map` as a line for Spoken's narrator, words with no voice; nil
---- where it has none.
+--- The story of the boss `key` of `map` as a line for Spoken's narrator: voiced where an installed
+--- pack has it (Audio.lua), else words alone; nil where it has none.
 function NPCs:StoryClip(map, key)
-	local story = Story(map, key)
+	local story, language = Story(map, key)
 	if not story then return nil end
 	local boss = Boss(map, key)
 	if not boss then return nil end
 	local _, words = story:gsub("%S+", "")
 	local entry = Creature(map, key)
-	return {
+	local clip = {
 		key = "boss:" .. map .. ":" .. key,
 		length = math.max(LEAST_SECONDS, words / READING_SPEED),
 		present = {
@@ -367,6 +373,15 @@ function NPCs:StoryClip(map, key)
 				or { kind = "texture", texture = SKULLS[BossBullet(map)] },
 		},
 	}
+	local recording = self.GetAudioClip and self:GetAudioClip(map, key)
+	if recording then
+		clip.path, clip.length = recording.path, recording.len
+		-- Timed to the recording's own words, so not under a story in another language.
+		if language == recording.language then clip.present.timings = recording.times end
+	else
+		clip.textOnly = true
+	end
+	return clip
 end
 
 local function Count(found, total)

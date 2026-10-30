@@ -1,7 +1,7 @@
 local _, NPCs = ...
 
--- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
--- is killed. The game sends no kill for a world boss, so its death is watched once the player targets
+-- A boss's story in Spoken's narrator, voiced where a pack has it and as words alone where none
+-- does, once per character, when the boss is killed. The game sends no kill for a world boss, so its death is watched once the player targets
 -- it or sees its nameplate.
 
 local L = NPCs.L
@@ -35,7 +35,7 @@ function NPCs:SetupStories()
 		icon = NPCs.ICON,
 		about = L.PART_ABOUT,
 		order = 5,
-		textOnly = true,
+		packs = function() return NPCs:PackNames() end,
 	})
 end
 

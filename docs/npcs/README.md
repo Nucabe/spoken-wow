@@ -24,7 +24,7 @@ do; Found Only, on by default, leaves out what holds none found. A found boss's 
 tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
 The search finds bosses and dungeons by name.
 
-A boss's story also shows in Spoken's narrator, as words with no voice (`Story.lua`), when the boss is
+A boss's story also shows in Spoken's narrator (`Story.lua`), when the boss is
 killed: `ENCOUNTER_END` with success, or `BOSS_KILL`, as Forever reports a won dungeon fight as
 `ENCOUNTER_END` with success 0. There is no setting for it. Targeting cannot show it in an instance: the
 client hides a unit's GUID, name and model from addons there, so no boss is known from the target. A
@@ -34,8 +34,15 @@ the client hides its GUID there.
 Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
 Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
-Spoken's, "bosses", registered with `textOnly`: What Spoken Reads turns them off, and nothing is queued
+Spoken's, "bosses": What Spoken Reads turns them off, and nothing is queued
 where the narrator would not show it (`Spoken:ShowsNarratorFor`, Voice Only or Show Narrator off).
+
+A story is voiced where an installed `SpokenBossesAudio` pack has its clip (`Audio.lua`): a pack in
+Spoken's voice language first, else one in If a Voice Is Missing's language (none with Stay Silent).
+Between packs of one language the higher bitrate wins, then the folder name; there is no saved choice.
+The narrator times the words to the recording only where the story is shown in the pack's language.
+Where no pack has the clip, the story is words alone (`textOnly`), shown for its reading time even with
+the sound off.
 Opened, the tab lands on the dungeon the player is in, else the continent.
 
 The Dungeons and Raids come from `addons/Spoken/Data/Dungeons.lua`, which every tab shares

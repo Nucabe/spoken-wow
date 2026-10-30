@@ -13,6 +13,7 @@
 ## Version: 3.6.0
 ## Author: Nucabe
 ## Dependencies: Spoken
+## OptionalDeps: SpokenBossesAudio
 ## SavedVariables: SpokenNPCsSettings
 ## SavedVariablesPerCharacter: SpokenNPCsCharacter
 # Spoken is what this module runs on, and ships in the same zip.
@@ -34,6 +35,7 @@ Core.lua
 Data/Bosses.lua
 Data/Creatures.lua
 Data/Stories.lua
+Audio.lua
 UI/Bosses.lua
 UI/Options.lua
 Story.lua
