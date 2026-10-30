@@ -1,7 +1,7 @@
 ## Interface: 11509, 20506, 16001
 ## Title: |cffb48cffSpoken|r Audio: Bosses
 ## Notes: Narrated boss stories for Spoken NPCs.|n|nKeep it enabled: it loads with the game, and Spoken NPCs plays from it.
-## Version: 3.0.0-beta.3
+## Version: 1.0.0
 ## Author: rusty
 ## IconTexture: Interface\AddOns\SpokenBossesAudio\Textures\AddonIcon.tga
 ## Group: Spoken

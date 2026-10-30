@@ -1,8 +1,8 @@
 local _, NPCs = ...
 
 -- A boss's story in Spoken's narrator, voiced where a pack has it and as words alone where none
--- does, once per character, when the boss is killed. The game sends no kill for a world boss, so its death is watched once the player targets
--- it or sees its nameplate.
+-- does, once per character, when the boss is killed. The game sends no kill for a world boss, so
+-- its death is watched once the player targets it or sees its nameplate.
 
 local L = NPCs.L
 

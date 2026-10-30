@@ -130,17 +130,18 @@ make npcs-lookup            # build Data/Sounds.lua (pipelines/places/tools/boss
 make npcs-validate-audio    # lookup, files and stories agree (validate-audio.mjs); a stale take is reported
 make npcs-package-audio     # check-synced, sounds, lookup, validate, then zip into dist/
 make npcs-release-audio-dry # show what an upload would send
-make npcs-release-audio     # upload; make npcs-full-release does all of it
+make npcs-release-audio     # upload to CurseForge; npcs-full-release also syncs, builds and does the GitHub release
 ```
 
 - The lookup key is `boss:{map}:{key}` and the file `{map}\{slug}`, from the same `assignFiles` the
   site uses, so the pack and the site cannot disagree on a file.
 - The pack's page is `publishers/bosses/spoken-bosses-audio.md` and its changelog
-  `docs/bosses/CHANGELOG.md`. `release.sh` refuses until the page has its CurseForge and Wago ids.
-  `MIN_SPOKEN.bosses` is 3.7.0.
+  `docs/bosses/CHANGELOG.md`. `release.sh` refuses until the page has its CurseForge id; Wago players
+  get the pack from the GitHub release. `MIN_SPOKEN.bosses` is 3.7.0. The page gets `manager: true`
+  in the pack's first release: `make manager-publish` checks every manager pack is built and its
+  Spoken released, so an unreleased one would block the other sections.
 - `Spoken_NPCs` ranks the installed packs (`Audio.lua`, [../npcs/README.md](../npcs/README.md)). A
   story with no clip shows as words only; a voiced one plays like any other voiced line.
-- The landing page keeps its placeholder for Bosses until a take can be cut into a sample.
 
 ## Commands
 

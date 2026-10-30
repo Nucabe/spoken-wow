@@ -137,8 +137,8 @@ function build(): Product[] {
     } else {
       out.push(voices('quests', code, 'all'))
     }
-    // Italian has quests voices only, so far, and bosses English only: a pack with no release
-    // does not show.
+    // Italian has quests voices only, so far, and bosses English only. With no release in a
+    // language, the voice packs page still shows that language's first product.
     out.push(voices('places', code, 'all'), voices('readables', code, 'all'), voices('bosses', code, 'all'))
   }
   return out
