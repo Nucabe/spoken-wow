@@ -221,8 +221,11 @@ async function bossesTarget(
 ): Promise<{ lineId: string | null; target: string } | null> {
   if (!raw) return null;
 
-  const [map, slug] = raw.split("/");
-  const entry = await bossByPath(Number(map), slug ?? "");
+  // Exactly '<map>/<slug>', as targetExplorerHref reads it: a trailing segment is no address.
+  const segments = raw.split("/");
+  if (segments.length !== 2) return null;
+  const [map, slug] = segments;
+  const entry = await bossByPath(Number(map), slug);
   if (!entry) return null;
 
   return { lineId: entry.id, target: entry.file };

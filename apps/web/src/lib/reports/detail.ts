@@ -45,7 +45,8 @@ export type Heading = {
 export type LineDetail = Heading & {
   /** The live take was made from text that has since changed. */
   stale: boolean;
-  text: string;
+  /** Null where the line has no text in the language: a boss with no story yet. */
+  text: string | null;
   /** The audio route, or null where there is no take to play. */
   audioSrc: string | null;
   /** The id this section's regenerate endpoint takes. */
@@ -231,8 +232,10 @@ function bossDetail(line: BossLine, version: number | undefined, lang: Lang): Li
     speakerIsHeading: false,
     aside: line.instanceName,
     stale: isStale("bosses", line),
-    text: line.text ?? "",
-    audioSrc: line.state === "missing" ? null : audio("bosses", `${line.file}.mp3`, version, lang),
+    text: line.text,
+    // A take of a story since withdrawn would play words the panel no longer shows.
+    audioSrc:
+      line.text === null || line.state === "missing" ? null : audio("bosses", `${line.file}.mp3`, version, lang),
     lineId: line.id,
   };
 }

@@ -54,11 +54,11 @@ import type { ResultLine as ZoneLine } from "@/lib/places/search";
 import type { ResultLine as BossLine } from "@/lib/bosses/search";
 import { placesSection } from "@/components/places/sections";
 import { bossesSection } from "@/components/bosses/sections";
+import type { Source } from "@/lib/sections";
 
 // No facets: the table plays lines, it does not narrow to them.
 const PLACES = placesSection();
 const BOSSES = bossesSection();
-import type { Source } from "@/lib/sections";
 
 const SECTION_LABELS: Record<Section, string> = {
   quests: "Quests",

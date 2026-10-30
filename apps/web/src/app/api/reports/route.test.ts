@@ -156,6 +156,8 @@ describe("POST /api/reports", () => {
       );
 
       expect((await POST(post(valid({ source: "bosses", target: `${map}/nobody-${key}` })))).status).toBe(400);
+      // Exactly '<map>/<slug>': a trailing segment is not the same boss under another address.
+      expect((await POST(post(valid({ source: "bosses", target: `${map}/${key}/extra` })))).status).toBe(400);
       expect((await POST(post(valid({ source: "bosses", target: `${map}/${key}` })))).status).toBe(200);
 
       const { rows } = await db().query(`select "lineId", "target" from "report" where "ip" = $1`, [ip]);

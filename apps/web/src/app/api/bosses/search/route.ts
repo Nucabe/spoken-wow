@@ -50,14 +50,18 @@ export async function GET(request: Request) {
   if (!recordings) filters.recorded = undefined;
   const withRecordings = { ...context, recordings };
 
-  // Every matching id, for "regenerate everything this filter matches".
+  // Every matching id, for "regenerate everything this filter matches". Only written bosses:
+  // the queue refuses one with no story, so a quote that counted it would promise a take
+  // nobody gets.
   if (params.get("ids") === "1") {
-    const all = search(entries, withRecordings, filters, 0, Number.MAX_SAFE_INTEGER);
+    const written = search(entries, withRecordings, filters, 0, Number.MAX_SAFE_INTEGER).lines.filter(
+      (line) => line.written,
+    );
     return Response.json({
-      ids: all.lines.map((line) => line.id),
-      dirtyFiles: all.lines.filter((line) => line.dirty).map((line) => line.file),
-      total: all.total,
-      totalChars: all.totalChars,
+      ids: written.map((line) => line.id),
+      dirtyFiles: written.filter((line) => line.dirty).map((line) => line.file),
+      total: written.length,
+      totalChars: written.reduce((sum, line) => sum + line.chars, 0),
     });
   }
 

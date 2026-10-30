@@ -81,4 +81,18 @@ describe("GET /api/bosses/search", () => {
   it("answers ids=1 with every matching id", async () => {
     expect(await (await get("&ids=1")).json()).toMatchObject({ ids: [`boss:${MAP}:${key}`], total: 1 });
   });
+
+  it("answers ids=1 with only the bosses written in the language, which is what the queue takes", async () => {
+    const other = id - 1;
+    await db().query(
+      `insert into "boss" ("id", "map", "key", "position", "encounterIds") values ($1, $2, $3, 1, $4)`,
+      [other, MAP, `${key} unwritten`, [other]],
+    );
+    const query = `q=${encodeURIComponent(key)}&field=name&ids=1`;
+    const response = await GET(new Request(`https://example.com/api/bosses/search?${query}`));
+    const body = (await response.json()) as { ids: string[]; total: number; totalChars: number };
+    expect(body.ids).toEqual([`boss:${MAP}:${key}`]);
+    expect(body.total).toBe(1);
+    expect(body.totalChars).toBe("An English story.".length);
+  });
 });
