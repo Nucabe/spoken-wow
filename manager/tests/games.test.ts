@@ -286,6 +286,28 @@ describe('scanGames, addGame, removeGame', () => {
     expect(fs.existsSync(path.join(retail, 'WTF'))).toBe(true)
   })
 
+  it('moves a saved Forever beta to the _forever_ folder beside it, or forgets it', async () => {
+    const data = tmpDir()
+    const base = tmpDir()
+    const beta = makeGameFolders(base, { flavorFolder: '_classic_beta_', product: 'wow_classic_beta' })
+    fs.writeFileSync(path.join(data, 'state.json'), JSON.stringify({ manualGames: [beta], installs: {} }))
+    expect(await scanGames(data, { autoPaths: [] })).toEqual([])
+    expect(loadState(data).manualGames).toEqual([])
+
+    const forever = await makeGame(base)
+    fs.writeFileSync(path.join(data, 'state.json'), JSON.stringify({ manualGames: [beta], installs: {} }))
+    expect((await scanGames(data, { autoPaths: [] })).map((g) => g.id)).toEqual([forever.id])
+    expect(loadState(data).manualGames).toEqual([forever.root])
+  })
+
+  it('names the ended Forever beta before any other game Spoken does not run on', async () => {
+    const base = tmpDir()
+    makeGameFolders(base, { flavorFolder: '_beta_', product: 'wow_beta' })
+    makeGameFolders(base, { flavorFolder: '_classic_beta_', product: 'wow_classic_beta' })
+    const res = await resolveGamePath(path.join(base, 'World of Warcraft'), 'manual')
+    expect(res.error).toMatch(/^_classic_beta_ is the WoW: Forever beta/)
+  })
+
   it('returns an error string and stores nothing for a bad folder', async () => {
     const data = tmpDir()
     const res = await addGame(data, tmpDir())
