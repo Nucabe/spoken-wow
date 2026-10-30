@@ -363,7 +363,7 @@ export default function ReportTable({
           </p>
           <ReportContextNote context={report.context}>
             {/* The text the reporter's addon saw, as the contributions page would take it. */}
-            {report.source !== "places" && report.context?.text?.trim() ? (
+            {report.source !== "places" && report.source !== "bosses" && report.context?.text?.trim() ? (
               <ReportContribution
                 report={report}
                 onFixed={(fixed) => setResolved((current) => ({ ...current, [fixed.id]: fixed }))}
@@ -519,13 +519,13 @@ export default function ReportTable({
               line={playingLine as ZoneLine}
               version={playingVersion}
             />
-          ) : (
+          ) : playing.source === "readables" ? (
             <ReadablesPlayer
               audioRef={audio}
               line={playingLine as BookLine}
               version={playingVersion}
             />
-          )}
+          ) : null}
         </div>
       ) : null}
     </>

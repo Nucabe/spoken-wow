@@ -13,6 +13,7 @@ import { readApiKey } from "@/lib/api-key";
 import { POOL_MAX } from "@/lib/db";
 
 import { afterRateLimit, budgetFor, clampToPool, maxActiveFrom, pickLane } from "./concurrency";
+import { failure } from "./errors";
 import {
   activeLanes,
   batchStopped,
@@ -160,6 +161,12 @@ export type Worker = {
   inFlight(): number;
 };
 
+/** Fatal, so a batch of boss lines stops at its first job rather than failing each in turn. */
+const regenerateBossLineUnbuilt: Generator = async () => ({
+  ok: false,
+  failure: { ...failure("bad-request", "regenerating a boss story is not implemented yet"), fatal: true },
+});
+
 export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}): Worker {
   // A source with no generator cannot have its jobs claimed, and a claim for one is a bug
   // rather than a state to handle - it fails as one, loudly, rather than being handed to
@@ -170,6 +177,7 @@ export function startWorker(isLeader: () => boolean, options: WorkerOptions = {}
     quests: options.regenerate?.quests ?? regenerateLine,
     places: options.regenerate?.places ?? regenerateZoneLine,
     readables: options.regenerate?.readables ?? regenerateBookLine,
+    bosses: options.regenerate?.bosses ?? regenerateBossLineUnbuilt,
   };
 
   const budget = options.budget ?? currentBudget;

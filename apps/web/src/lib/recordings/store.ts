@@ -59,6 +59,8 @@ const COLUMNS = `"version", "format", "durationSec"::float8 as "durationSec", "b
  * since a language's corpus can hold lines English does not -- contributed ones.
  */
 export async function recordableFiles(source: Source, lang: Lang): Promise<Map<string, string>> {
+  // No boss catalogue yet: nothing to record, rather than readables' files under the wrong key.
+  if (source === "bosses") return new Map();
   const corpus =
     source === "quests" ? await fileIndex(lang) : source === "places" ? await placesCatalogue(lang) : await readablesCatalogue(lang);
   // Derived once per corpus rather than per request: each of those is memoised and handed back

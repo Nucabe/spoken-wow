@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
   const source = body.source === undefined ? "quests" : body.source;
   if (!isSource(source)) {
     return NextResponse.json(
-      { error: "source must be 'quests', 'places' or 'readables'", kind: "bad-request" },
+      { error: "source must be 'quests', 'places', 'readables' or 'bosses'", kind: "bad-request" },
       { status: 400 },
     );
   }
@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
 
   if (source === "places") return queuePlaces(body.lineIds, label, session.user.id, lang, provider);
   if (source === "readables") return queueReadables(body.lineIds, label, session.user.id, lang, provider);
+  if (source === "bosses") return queueBosses(body.lineIds);
 
   if (typeof body.filters !== "string") {
     return NextResponse.json(
@@ -244,6 +245,20 @@ async function queueReadables(
   queueWorker()?.nudge();
 
   return NextResponse.json({ batchId, queued, skipped });
+}
+
+/**
+ * A bosses batch. There is no boss catalogue to look ids up in yet, so no id is recognised
+ * and nothing is queued: the places rule that an unknown id is dropped, applied to every id.
+ */
+async function queueBosses(lineIds: unknown): Promise<NextResponse> {
+  if (!Array.isArray(lineIds) || lineIds.some((id) => typeof id !== "string")) {
+    return NextResponse.json(
+      { error: "lineIds is required, as an array of strings", kind: "bad-request" },
+      { status: 400 },
+    );
+  }
+  return NextResponse.json({ error: "nothing to regenerate", kind: "bad-request" }, { status: 400 });
 }
 
 /**

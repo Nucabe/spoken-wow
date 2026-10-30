@@ -94,6 +94,7 @@ no longer lives in is one somebody sets on the wrong box.
 | `SPOKEN_PLACES_ROOT` | `current` | per release; the places pipeline resolves its own paths from it |
 | `SPOKEN_PLACES_AUDIO_HISTORY` | `shared/audio-history/places` | shared |
 | `SPOKEN_READABLES_AUDIO_HISTORY` | `shared/audio-history/readables` | shared; **must be set**, for the reason the quests one must |
+| `SPOKEN_BOSSES_AUDIO_HISTORY` | `shared/audio-history/bosses` | shared; **must be set**, for the reason the quests one must |
 | `SPOKEN_PLACES_MANIFEST` | `shared/manifest.json` | shared; the app rewrites it whenever a batch drains |
 
 Five more come from `shared/app.env`, which `ecosystem.config.js` parses and merges into the

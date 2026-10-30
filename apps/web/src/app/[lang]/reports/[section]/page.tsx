@@ -67,7 +67,7 @@ export default async function Page({
   const inSection = all.filter((report) => report.source === section);
   const sectionCounts = Object.fromEntries(SECTIONS.map((key) => [key, 0])) as Record<Section, number>;
   for (const report of all) {
-    if (view === "all" || report.status === view) sectionCounts[report.source]++;
+    if (isSection(report.source) && (view === "all" || report.status === view)) sectionCounts[report.source]++;
   }
   const statusCounts = Object.fromEntries(STATUS_VIEWS.map((key) => [key, 0])) as Record<StatusView, number>;
   for (const report of inSection) {

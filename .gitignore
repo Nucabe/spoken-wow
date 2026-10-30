@@ -114,6 +114,9 @@ superpowers/
 # bound -- re-cutting the whole corpus adds ~700MB.
 /pipelines/places/audio-history/
 
+# Every boss story take, pulled from the droplet.
+/pipelines/places/bosses-audio-history/
+
 # --- apps ---------------------------------------------------------------------
 
 /apps/*/.next/

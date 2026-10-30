@@ -478,6 +478,7 @@ function SourcePlayer({
 }) {
   if (source === "quests") return <QuestsPlayer ref={audio} line={line as QuestLine | null} version={version} />;
   if (source === "places") return <PlacesPlayer audioRef={audio} line={line as ZoneLine | null} version={version} />;
+  if (source === "bosses") return null;
   return <ReadablesPlayer audioRef={audio} line={line as BookLine | null} version={version} />;
 }
 
@@ -497,6 +498,7 @@ function EditDialog({
 }) {
   if (source === "places") return <LoreDialog line={line as ZoneLine} onClose={onClose} onSaved={onSaved} />;
   if (source === "readables") return <PageTextDialog line={line as BookLine} onClose={onClose} onSaved={onSaved} />;
+  if (source === "bosses") return null;
   if (lang !== BASE_LANG) {
     return <TranslateDialog subject={lineTextSubject(line as QuestLine)} onClose={onClose} onSaved={onSaved} />;
   }

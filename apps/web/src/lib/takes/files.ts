@@ -19,12 +19,14 @@ import type { Source } from "@/lib/sections";
 /**
  * Places and readables name a file without its extension; their addressable sets carry one. A
  * quests file is English's, or one only the language has. English first: nearly every file is
- * one, and its catalogue is the cheaper of the two to keep current.
+ * one, and its catalogue is the cheaper of the two to keep current. Bosses address nothing
+ * until their catalogue exists, so every take route refuses them.
  */
 export async function isAddressableFile(source: Source, file: string, lang: Lang = BASE_LANG): Promise<boolean> {
   if (source === "quests") {
     return (await fileIndex()).has(file) || (lang !== BASE_LANG && (await fileIndex(lang)).has(file));
   }
+  if (source === "bosses") return false;
   const files = source === "places" ? await placesFiles() : await readablesFiles();
   return files.has(`${file}.mp3`);
 }

@@ -1,5 +1,5 @@
 /**
- * One line of any of the three corpora, as the triage table shows it.
+ * One line of any section, as the triage table shows it.
  *
  * CLIENT-SAFE ON PURPOSE, like lib/places/filters.ts: the expanded row runs in the browser,
  * and every module that can answer "what is this line?" on the server reaches the corpus,
@@ -22,8 +22,14 @@ import { npcHref, npcPageHref, questsHref } from "@/lib/links";
 import { targetForLine } from "./line-target";
 import type { Source } from "@/lib/sections";
 
+/**
+ * What this module reads of a boss line: the fields a boss's catalogue entry and a places
+ * search result share, so a bosses report reads like a places one.
+ */
+type BossLine = Pick<ZoneLine, "id" | "file" | "state" | "name" | "take"> & { instanceName: string; text: string | null };
+
 /** Whichever shape the section's search endpoint answered with. */
-export type SourceLine = QuestLine | ZoneLine | BookLine;
+export type SourceLine = QuestLine | ZoneLine | BookLine | BossLine;
 
 /** What a line is and who says it: what LineHeading draws, for a line or for a speaker alone. */
 export type Heading = {
@@ -57,8 +63,9 @@ export type LineDetail = Heading & {
  * One per section, because the three address lines by different frozen rules and each one
  * is what its /r/ landing page already resolves: a quests address is the one the addon
  * builds out of a quest id or a unit GUID, a places address is the line's own audio path --
- * which is what /places/r/{mapID}/{slug} is -- and a readables address is the page id and
- * nothing else, because that is all the addon has to build a link from.
+ * which is what /places/r/{mapID}/{slug} is, as a bosses one is of /bosses/r/ -- and a
+ * readables address is the page id and nothing else, because that is all the addon has to
+ * build a link from.
  *
  * Only quests can answer null. Its addresses are built from what a client can see, and a
  * line neither a quest nor an NPC address can name would arrive in triage unresolvable.
@@ -67,6 +74,7 @@ const TARGETS: Record<Source, (line: SourceLine) => string | null> = {
   quests: (line) => targetForLine(line as QuestLine),
   places: (line) => (line as ZoneLine).file,
   readables: (line) => (line as BookLine).key,
+  bosses: (line) => (line as BossLine).file,
 };
 
 /**
@@ -122,6 +130,7 @@ const FILES: Record<Source, (line: SourceLine) => string> = {
   quests: (line) => (line as QuestLine).audioPath,
   places: (line) => (line as ZoneLine).file,
   readables: (line) => (line as BookLine).file,
+  bosses: (line) => (line as BossLine).file,
 };
 
 /** The store-relative file a line's takes belong to, as /api/takes addresses it. */
@@ -142,12 +151,13 @@ export function detailOf(
 ): LineDetail {
   if (source === "quests") return questDetail(line as QuestLine, version, lang);
   if (source === "places") return zoneDetail(line as ZoneLine, version, lang);
+  if (source === "bosses") return bossDetail(line as BossLine, version, lang);
   return bookDetail(line as BookLine, version, lang);
 }
 
 /** The live take was made from text that has since changed. */
 export function isStale(source: Source, line: SourceLine): boolean {
-  return source === "quests" ? (line as QuestLine).stale : (line as ZoneLine | BookLine).state === "stale";
+  return source === "quests" ? (line as QuestLine).stale : (line as ZoneLine | BookLine | BossLine).state === "stale";
 }
 
 function audio(source: Source, path: string, version: number | undefined, lang: Lang): string {
@@ -214,6 +224,20 @@ function bookDetail(line: BookLine, version: number | undefined, lang: Lang): Li
     stale: isStale("readables", line),
     text: line.text,
     audioSrc: line.state === "missing" ? null : audio("readables", `${line.file}.mp3`, version, lang),
+    lineId: line.id,
+  };
+}
+
+function bossDetail(line: BossLine, version: number | undefined, lang: Lang): LineDetail {
+  return {
+    heading: line.name,
+    headingHref: null,
+    speaker: null,
+    speakerIsHeading: false,
+    aside: line.instanceName,
+    stale: isStale("bosses", line),
+    text: line.text ?? "",
+    audioSrc: line.state === "missing" ? null : audio("bosses", `${line.file}.mp3`, version, lang),
     lineId: line.id,
   };
 }

@@ -73,6 +73,8 @@ export async function POST(request: Request) {
    * A readables address is the page id the addon built its link from, and is resolved as strictly
    * as a places one for the same reason: the reporter got here from a page this site rendered,
    * so an id naming nothing is a typo in the URL bar rather than a corpus that failed to load.
+   *
+   * A bosses address resolves to nothing until there is a boss catalogue to look it up in.
    */
   const raw = typeof body.target === "string" ? body.target : null;
   const addressed =
@@ -80,7 +82,9 @@ export async function POST(request: Request) {
       ? await placesTarget(raw)
       : source === "readables"
         ? await readablesTarget(raw)
-        : await questsTarget(raw, body.lineId);
+        : source === "bosses"
+          ? null
+          : await questsTarget(raw, body.lineId);
 
   if (!addressed) {
     return Response.json({ error: "unknown target" }, { status: 400 });

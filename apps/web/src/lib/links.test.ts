@@ -27,6 +27,7 @@ describe("reportHref", () => {
     expect(reportHref("places", "1411/razor-hill")).toBe("/places/r/1411/razor-hill");
     // A readables target is the bare page id the addon put in the address.
     expect(reportHref("readables", "261")).toBe("/readables/r/261");
+    expect(reportHref("bosses", "36/edwin-vancleef")).toBe("/bosses/r/36/edwin-vancleef");
   });
 
   it("escapes a segment without escaping the separators", () => {

@@ -80,7 +80,7 @@ export function readablesHref(options: { q?: string; field?: BookScope } = {}): 
  * form, which is what a triager wants to see.
  *
  * `target` is stored as the addon produced it: 'quest/84/accept' or 'npc/5678' for quests,
- * '<mapID>/<slug>' for places, and a bare page id for readables. All three are already
+ * '<mapID>/<slug>' for places and bosses, and a bare page id for readables. Each is already
  * path-shaped, and each section's route takes exactly its own shape.
  */
 export function reportHref(source: Source, target: string): string {

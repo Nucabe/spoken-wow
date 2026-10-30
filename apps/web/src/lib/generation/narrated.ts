@@ -55,7 +55,7 @@ function asFailure(error: unknown) {
 }
 
 export async function regenerateNarrated(
-  source: "places" | "readables",
+  source: "places" | "readables" | "bosses",
   line: NarratedLine,
   createdBy: string,
   options: { speaker: Speaker; lang?: Lang; batchId?: string },
