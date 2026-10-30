@@ -1,4 +1,4 @@
-// Data/Creatures.lua, as the export and write-boss-creatures.mjs write it.
+// Data/Creatures.lua, as the export writes it.
 
 import { quote } from "../../../lib/dungeons.mjs";
 

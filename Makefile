@@ -23,7 +23,7 @@ LUA ?= $(shell command -v luajit || command -v lua5.1)
         package-spoken package-spoken-all release-spoken release-spoken-dry \
         release-spoken-all release-spoken-all-dry \
         descriptions descriptions-check descriptions-published \
-        character-models dungeons bosses \
+        character-models dungeons bosses npcs-export npcs-check npcs-sync npcs-check-synced \
         audio-release audio-release-dry \
         manager-publish manager-publish-dry manager-gc manager-gc-dry
 
@@ -217,9 +217,26 @@ dungeons: ## Rebuild addons/Spoken/Data/Dungeons.lua from pipelines/lib/dungeons
 	@node pipelines/lib/dungeons.mjs
 
 # The bosses of those dungeons and raids, from the client's DungeonEncounter table, for the bosses'
-# tab (Spoken_NPCs/Data/Bosses.lua).
-bosses: ## Rebuild addons/Spoken_NPCs/Data/Bosses.lua from the client's DungeonEncounter table
+# tab. It writes the boss tables, not Spoken_NPCs/Data/Bosses.lua: run npcs-export after it.
+bosses: ## Bring the boss tables into step with the client's DungeonEncounter table
 	@node pipelines/lib/bosses.mjs
+
+# Spoken_NPCs' Bosses, Creatures and Stories Lua are exports of the boss tables. npcs-check needs
+# Postgres, so it stays out of lint, which has to pass on a clone without one.
+npcs-export: ## Write Spoken_NPCs' Bosses, Creatures and Stories Lua from the database
+	@node pipelines/places/tools/bosses/export.mjs
+npcs-check: ## Confirm the committed Spoken_NPCs data matches the database
+	@node pipelines/places/tools/bosses/export.mjs --check
+
+include make/droplet.mk
+
+# The site will edit boss stories and names, so production is upstream for the boss tables as it
+# is for every section's corpus. scripts/db/sync-section.sh has the recipe.
+npcs-sync: require-droplet ## Replace the local boss tables and boss names with the droplet's (DESTRUCTIVE)
+	@$(DB_ENV) scripts/db/sync-section.sh bosses boss_instance boss boss_line
+	@echo "==> bring the addon into step with:  make npcs-export"
+npcs-check-synced: ## Compare the local boss data with the droplet's, and prompt if they differ
+	@$(DB_ENV) scripts/db/check-synced.sh bosses
 
 character-models: ## Print how to regenerate apps/web/src/lib/npc/character-models.json
 	@sed -n '2,10p' scripts/character-models.mjs | sed -e 's/^\/\/ //' -e 's/^\/\/$$//'

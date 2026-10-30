@@ -79,6 +79,20 @@ export async function writeBosses({ upserts, retire }) {
   });
 }
 
+/** Sets a boss's creature and model by (map, key): 'updated', 'unchanged', or 'missing'. */
+export async function setCreature(map, key, creature, display) {
+  const { rows } = await query(
+    `update "boss" b set "creatureId" = $3::int, "displayId" = $4::int
+       from "boss" old
+      where b."id" = old."id" and old."map" = $1 and old."key" = $2
+      returning (old."creatureId" is distinct from $3::int
+                 or old."displayId" is distinct from $4::int) as "changed"`,
+    [map, key, creature ?? null, display ?? null],
+  );
+  if (rows.length === 0) return "missing";
+  return rows[0].changed ? "updated" : "unchanged";
+}
+
 /**
  * Records one name from the game under the entity_name rules: unchanged records nothing, a
  * changed name replaces an extracted one, and an edited current name stays current.
@@ -125,6 +139,30 @@ export async function readNames(kind) {
   for (const r of rows) {
     if (!out.has(r.entityId)) out.set(r.entityId, new Map());
     out.get(r.entityId).set(r.lang, r.name);
+  }
+  return out;
+}
+
+/**
+ * Where each name of one kind stands, entityId -> lang -> { name, origin, latest }: the current
+ * name and its origin, and the newest version's name, which is a game name filed under an edit.
+ * What recordName would do with a name, without writing it.
+ */
+export async function readNameState(kind) {
+  const { rows } = await query(
+    `select distinct on ("entityId", "lang") "entityId", "lang", "name" as "latest",
+            (select c."name" from "entity_name" c where c."kind" = e."kind" and c."entityId" = e."entityId"
+                and c."lang" = e."lang" and c."isCurrent") as "name",
+            (select c."origin" from "entity_name" c where c."kind" = e."kind" and c."entityId" = e."entityId"
+                and c."lang" = e."lang" and c."isCurrent") as "origin"
+       from "entity_name" e where e."kind" = $1
+      order by "entityId", "lang", "version" desc`,
+    [kind],
+  );
+  const out = new Map();
+  for (const r of rows) {
+    if (!out.has(r.entityId)) out.set(r.entityId, new Map());
+    out.get(r.entityId).set(r.lang, { name: r.name, origin: r.origin, latest: r.latest });
   }
   return out;
 }

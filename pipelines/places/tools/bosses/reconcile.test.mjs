@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { reconcileBosses } from "./reconcile.mjs";
+import { bossChanges, nameChanges, reconcileBosses } from "./reconcile.mjs";
 
 const row = (over) => ({
   id: 1,
@@ -58,4 +58,45 @@ test("a retired boss that comes back is un-retired, and one already retired is n
   );
   assert.equal(upserts[0].retired, false);
   assert.deepEqual(retire, []);
+});
+
+test("a second run against the same client changes nothing", () => {
+  const existing = [row({ id: 5, key: "x", position: 0, encounterIds: [5, 6] })];
+  const { upserts } = reconcileBosses(existing, [client({ id: 5, ids: [5, 6], position: 0 })]);
+  assert.deepEqual(bossChanges(existing, upserts), { inserted: [], updated: [] });
+});
+
+test("a boss moved in the client's order is changed, a new one inserted", () => {
+  const existing = [row({ id: 5, key: "x", position: 0, encounterIds: [5] })];
+  const { upserts } = reconcileBosses(existing, [
+    client({ id: 7, ids: [7], name: "New", position: 0 }),
+    client({ id: 5, ids: [5], position: 1 }),
+  ]);
+  const { inserted, updated } = bossChanges(existing, upserts);
+  assert.deepEqual(inserted.map((b) => b.id), [7]);
+  assert.deepEqual(updated.map((b) => b.id), [5]);
+});
+
+test("only names recordName would write are listed", () => {
+  const at = (name, origin = "extracted", latest = name) => ({ name, origin, latest });
+  const state = {
+    boss: new Map([
+      ["5", new Map([["enUS", at("X")], ["deDE", at("Ix")], ["ruRU", at("Икс", "edited", "Iks")]])],
+      ["6", new Map([["enUS", at("Y", "edited")]])],
+    ]),
+  };
+  const changed = nameChanges(state, [
+    { kind: "boss", id: "5", lang: "enUS", name: "X" },
+    { kind: "boss", id: "5", lang: "deDE", name: "Iks" },
+    { kind: "boss", id: "5", lang: "frFR", name: "Xe" },
+    { kind: "boss", id: "5", lang: "ruRU", name: "Iks" },
+    { kind: "boss", id: "6", lang: "enUS", name: "Why" },
+    { kind: "instance", id: "70", lang: "enUS", name: "Uldaman" },
+  ]);
+  assert.deepEqual(changed.map((n) => `${n.kind} ${n.id} ${n.lang}`), ["boss 5 deDE", "boss 5 frFR", "boss 6 enUS", "instance 70 enUS"]);
+});
+
+test("a new boss named as its creature is filed under the encounter's key", () => {
+  const { upserts } = reconcileBosses([], [client({ id: 3355, name: "The Baron", key: "the butcher" })]);
+  assert.equal(upserts[0].key, "the butcher");
 });

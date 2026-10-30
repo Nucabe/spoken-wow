@@ -32,7 +32,16 @@ corpus_table() {
     quests) echo quest_line ;;
     places) echo lore_line ;;
     readables) echo book_line ;;
+    bosses) echo boss_line ;;
     *) echo "unknown section: $1" >&2; return 1 ;;
+  esac
+}
+
+# The make target that syncs a section: the bosses' data ships in Spoken_NPCs, whose targets are npcs-*.
+sync_target() {
+  case "$1" in
+    bosses) echo npcs-sync ;;
+    *) echo "$1-sync" ;;
   esac
 }
 

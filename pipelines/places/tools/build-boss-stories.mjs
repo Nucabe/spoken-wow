@@ -17,7 +17,7 @@
 //
 // With --packets <file> it writes, instead of Stories.lua, the source material of every story: for each boss the
 // guide's text and the wiki's, to be rewritten into one voice (tools/apply-boss-stories.mjs puts the rewritten
-// text into Stories.lua). The guide and the wiki differ in length and in how they are written; the rewrite is what
+// text into the boss_line table). The guide and the wiki differ in length and in how they are written; the rewrite is what
 // makes the stories read as one.
 //
 // Usage: node tools/build-boss-stories.mjs [--out <file>] [--no-wiki] [--report] [--packets <file>]
