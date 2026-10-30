@@ -4,9 +4,10 @@
 // explorer components take one of these rather than asking which section they are in, so a
 // branch that only places needs is keyed on a field here, and a third section is a config.
 
+import type { ReactNode } from "react";
+
 import type { LineFilters as BossFilters } from "@/lib/bosses/filters";
 import type { ResultLine as BossLine } from "@/lib/bosses/search";
-import type { Lang } from "@/lib/lang";
 import type { LineFilters as PlaceFilters } from "@/lib/places/filters";
 import type { ResultLine as ZoneLine, SearchResult as ZoneResult } from "@/lib/places/search";
 
@@ -38,8 +39,6 @@ export type ExplorerSection<L extends ExplorerLine = ExplorerLine, F extends Exp
   facets: { value: number; label: string }[];
   /** What the first column shows: the zone or instance the line belongs to. */
   chip(line: L): string | null;
-  /** The line's report page, which is also its public address. */
-  hrefFor(lang: Lang, line: L): string;
   /**
    * Places stores a full text and a short one derived from it, so its route takes `full`;
    * bosses has one text, sent and returned as `text`.
@@ -52,8 +51,13 @@ export type ExplorerSection<L extends ExplorerLine = ExplorerLine, F extends Exp
    * name column says so and the edit dialog is headed by the chip.
    */
   ownLine?(line: L): boolean;
-  /** Where the line's name is written in the page's language; absent where it cannot be. */
-  nameKind?(line: L): string;
+  /**
+   * The entity_name row the line's name is written to in the page's language, as /api/names
+   * addresses it; absent where it cannot be.
+   */
+  nameOf?(line: L): { kind: string; entityId: string };
+  /** A line under the name: what the section knows about the row beyond its name. */
+  detail?(line: L): ReactNode;
   filters: {
     /** Where the free-text query can be matched, "any" first. */
     fields: readonly NonNullable<F["field"]>[];

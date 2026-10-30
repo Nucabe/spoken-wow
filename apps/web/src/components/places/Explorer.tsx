@@ -56,7 +56,7 @@ export function Explorer<L extends ExplorerLine, F extends ExplorerFilters>({
 }: {
   section: ExplorerSection<L, F>;
 }) {
-  const { source, api, nameKind } = section;
+  const { source, api, nameOf } = section;
   const lang = useLang();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -78,8 +78,9 @@ export function Explorer<L extends ExplorerLine, F extends ExplorerFilters>({
   const canRegenerate = may("regenerate");
   const canEdit = may("edit");
   const canTriage = canEdit;
-  // A place's name in this language, written as its own version in entity_name.
-  const [naming, setNaming] = useState<TranslateSubject | null>(null);
+  // A line's name in this language, written as its own version in entity_name, and the line
+  // to refresh once it is saved: a boss is named by its id, not by its line's.
+  const [naming, setNaming] = useState<{ subject: TranslateSubject; lineId: string } | null>(null);
 
   // FILTERS ARE REBUILT FROM THE URL EVERY RENDER rather than held in state, so the
   // back button is a working undo for a filter change and a link carries the exact
@@ -744,18 +745,18 @@ export function Explorer<L extends ExplorerLine, F extends ExplorerFilters>({
                 onReport={setReportFor}
                 onEditText={(l) => setEditFor(withEdits(l))}
                 onRename={
-                  lang !== BASE_LANG && canEdit && nameKind
+                  lang !== BASE_LANG && canEdit && nameOf
                     ? (l) =>
-                        setNaming(
-                          nameSubject({
-                            kind: nameKind(l),
-                            entityId: l.id,
+                        setNaming({
+                          lineId: l.id,
+                          subject: nameSubject({
+                            ...nameOf(l),
                             title: l.name,
                             subtitle: l.id,
                             english: l.englishName ?? l.name,
                             current: l.nameMissing ? null : l.name,
                           }),
-                        )
+                        })
                     : null
                 }
                 onRegenerate={regenerateOne}
@@ -786,11 +787,10 @@ export function Explorer<L extends ExplorerLine, F extends ExplorerFilters>({
       />
 
       <TranslateDialog
-        subject={naming}
+        subject={naming?.subject ?? null}
         onClose={() => setNaming(null)}
-        // A place is named by its line's id; see onRename.
         onSaved={() => {
-          if (naming) void refreshRows([String(naming.address.entityId)]);
+          if (naming) void refreshRows([naming.lineId]);
         }}
       />
 

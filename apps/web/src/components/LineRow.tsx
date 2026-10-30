@@ -31,6 +31,7 @@ import { cn, endsSelection } from "@/lib/utils";
 import type { LineState } from "./Explorer";
 import type { ResultLine } from "@/lib/search";
 import OutdatedNote from "@/components/OutdatedNote";
+import WowheadLink from "@/components/WowheadLink";
 import { npcPageHref } from "@/lib/links";
 import { wowheadEntityUrl, wowheadQuestUrl } from "@/lib/wowhead";
 
@@ -169,27 +170,6 @@ type Props = {
   /** Say this take is fine as it stands, despite a pronunciation having moved under it. */
   onClearDirty: (line: ResultLine) => void;
 };
-
-/**
- * The way out to Wowhead, small enough to sit inside the id line.
- *
- * stopPropagation because the row's own click handler toggles it open; the handler already
- * ignores clicks on an anchor, and this keeps that true if the markup around it changes.
- */
-function WowheadLink({ href }: { href: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      onClick={(event) => event.stopPropagation()}
-      title="Look this up on Wowhead Classic"
-      className="hover:text-foreground underline underline-offset-2"
-    >
-      wh
-    </a>
-  );
-}
 
 function SpeakerAction({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (

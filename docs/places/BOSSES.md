@@ -17,7 +17,7 @@ client tables --make bosses--> boss_instance, boss, entity_name
 write-boss-creatures.mjs -----> boss (creatureId, displayId)
 apply-boss-stories.mjs -------> boss_line
    ^ [{ map, key, lang?, text }] JSON: rewritten stories, or assemble-boss-stories.mjs' output
-the site (/bosses) -----------> boss_line, take
+the site (/bosses) -----------> boss_line, entity_name (boss names), take
                                    |
               make npcs-export --> Data/Bosses.lua, Creatures.lua, Stories.lua  (commit the diff)
 ```
@@ -103,7 +103,11 @@ It reads `boss_instance`, `boss`, `boss_line` and `entity_name` and nothing else
   English text never stands in for it. A boss with no story has no play or regenerate button, but
   a translator can write one.
 - Edits record an `edited` version of `boss_line`, with the places permissions: an editor or a
-  translator for the language edits, editors and above regenerate.
+  translator for the language edits, editors and above regenerate. Off English, the same people
+  name a boss in the language through `/api/names` (kind `boss`, the boss id), an `edited` row of
+  `entity_name`.
+- Each row shows the map, the encounter id(s) and, where there is one, the creature id with a
+  Wowhead link.
 - Regenerating cuts a take with the language's narrator through `lib/generation/narrated.ts`. The
   take's line id is `boss:{map}:{key}`, the addon's clip key, and its file is `{map}/{slug}` from
   `assignFiles` in `pipelines/places/tools/voice/naming.mjs`. The take archive is

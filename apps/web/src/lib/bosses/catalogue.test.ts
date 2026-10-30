@@ -157,6 +157,15 @@ describe("the boss catalogue", () => {
     const [german] = ofMap(await catalogue("deDE"));
     expect(german.name).toBe("Mutanus the Devourer");
     expect(german.instanceName).toBe("Test Halls");
+    expect(german).toMatchObject({ nameMissing: true, englishName: "Mutanus the Devourer" });
+
+    await name("boss", String(id), "deDE", "Mutanus der Verschlinger");
+    const [named] = ofMap(await catalogue("deDE"));
+    expect(named).toMatchObject({ name: "Mutanus der Verschlinger", nameMissing: false });
+
+    // English is the base: nothing there is missing, as on places.
+    const [english] = ofMap(await catalogue("enUS"));
+    expect(english.nameMissing).toBeUndefined();
   });
 
   it("counts each instance's bosses and written stories per language", async () => {

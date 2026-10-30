@@ -80,6 +80,18 @@ describe("search", () => {
     expect(line).toMatchObject({ text: null, spoken: null, chars: 0, written: false, short: false });
   });
 
+  it("carries the map, encounter ids and creature id the row shows", () => {
+    const [line] = search([entry({ encounterIds: [639, 640], creatureId: null })], context()).lines;
+    expect(line).toMatchObject({ mapID: 36, encounterIds: [639, 640], creatureId: null });
+  });
+
+  it("carries whether the language has its own name, only off English", () => {
+    const [german] = search([entry({ nameMissing: true, englishName: "Edwin VanCleef" })], context()).lines;
+    expect(german).toMatchObject({ nameMissing: true, englishName: "Edwin VanCleef" });
+    const [english] = search([entry()], context()).lines;
+    expect(english).not.toHaveProperty("nameMissing");
+  });
+
   it("keeps the catalogue's order: instance position, then boss position", () => {
     const entries = [
       entry({ id: "boss:36:z", name: "Zed", map: 36, instanceName: "Deadmines" }),

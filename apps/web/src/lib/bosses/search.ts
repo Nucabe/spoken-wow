@@ -19,6 +19,8 @@ export type ResultLine = {
   mapID: number;
   instanceName: string;
   kind: "dungeon" | "world";
+  encounterIds: number[];
+  creatureId: number | null;
   name: string;
   /** This language's story, or null when it has none. Never another language's. */
   text: string | null;
@@ -35,6 +37,10 @@ export type ResultLine = {
   dirty: boolean;
   madeBy: MadeBy | null;
   recording?: LiveRecording | null;
+  /** The language has no name of its own for the boss, so `name` is the English. Absent in English. */
+  nameMissing?: boolean;
+  /** The English name, for a translator. Absent in English. */
+  englishName?: string;
 };
 
 export type SearchResult = {
@@ -63,6 +69,8 @@ export function decorate(entry: BossEntry, context: SearchContext): ResultLine {
     mapID: entry.map,
     instanceName: entry.instanceName,
     kind: entry.kind,
+    encounterIds: entry.encounterIds,
+    creatureId: entry.creatureId,
     name: entry.name,
     text: entry.text,
     spoken: entry.spoken,
@@ -75,6 +83,7 @@ export function decorate(entry: BossEntry, context: SearchContext): ResultLine {
     reportsOpen: context.reports.get(entry.id) ?? 0,
     madeBy: context.madeBy?.get(entry.id) ?? null,
     ...(context.recordings && { recording: context.recordings.get(entry.file) ?? null }),
+    ...(entry.nameMissing !== undefined && { nameMissing: entry.nameMissing, englishName: entry.englishName }),
     dirty:
       take && entry.spoken !== null
         ? isDirty({ file: entry.file, text: entry.spoken, generatedAt: Date.parse(take.generatedAt) }, context.dirt)

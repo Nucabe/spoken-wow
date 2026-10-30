@@ -27,7 +27,7 @@ export type RowState =
   | { phase: "error"; message: string };
 
 type Props<L extends ExplorerLine> = {
-  section: Pick<ExplorerSection<L>, "source" | "facetLabel" | "chip" | "ownLine">;
+  section: Pick<ExplorerSection<L>, "source" | "facetLabel" | "chip" | "ownLine" | "detail">;
   line: L;
   current: boolean;
   /** Whether to draw the "Made by" cell: the search sent it, so the viewer works here. */
@@ -52,7 +52,7 @@ type Props<L extends ExplorerLine> = {
   /** An earlier take is live again, so the row and the player can catch up. */
   onRestored: (line: L, version: number) => void;
   onEditText: (line: L) => void;
-  /** Name the place in the page's language; null on the English site or without `edit`. */
+  /** Name the line's place or boss in the page's language; null in English or without `edit`. */
   onRename: ((line: L) => void) | null;
   onRegenerate: (line: L) => void;
   /** Say this take is fine as it stands, despite a pronunciation having moved under it. */
@@ -149,6 +149,9 @@ export function LineRow<L extends ExplorerLine>({
           </span>
         )}
         {onRename && <RenameButton label={`Name ${line.name}`} onClick={() => onRename(line)} />}
+        {section.detail && (
+          <span className="text-muted-foreground block text-xs">{section.detail(line)}</span>
+        )}
       </td>
 
       {/* The prose is plain markup rather than the label of a button, which is what makes it

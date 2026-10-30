@@ -45,6 +45,10 @@ export type BossEntry = {
   hash: string | null;
   /** Store-relative and extension-less, '{map}/{slug}'. The same in every language. */
   file: string;
+  /** The language has no name of its own, so `name` is the English. Absent in English. */
+  nameMissing?: boolean;
+  /** The English name, for a translator. Absent in English. */
+  englishName?: string;
 };
 
 type StructureRow = {
@@ -104,8 +108,10 @@ async function stampOf(lang: Lang): Promise<string> {
   return rows[0]?.stamp ?? "";
 }
 
-/** Current names of bosses and instances in the language, with English beneath. */
-async function namesOf(lang: Lang): Promise<(kind: "boss" | "instance", id: string) => string | undefined> {
+type Names = (kind: "boss" | "instance", id: string) => { own?: string; english?: string };
+
+/** Current names of bosses and instances in the language, and in English. */
+async function namesOf(lang: Lang): Promise<Names> {
   const rows = await query<{ kind: "boss" | "instance"; entityId: string; lang: string; name: string }>(
     `select "kind", "entityId", "lang", "name" from "entity_name"
       where "kind" in ('boss', 'instance') and "lang" in ($1, $2) and "isCurrent"`,
@@ -116,7 +122,7 @@ async function namesOf(lang: Lang): Promise<(kind: "boss" | "instance", id: stri
   for (const row of rows) {
     (row.lang === lang ? own : english).set(`${row.kind}:${row.entityId}`, row.name);
   }
-  return (kind, id) => own.get(`${kind}:${id}`) ?? english.get(`${kind}:${id}`);
+  return (kind, id) => ({ own: own.get(`${kind}:${id}`), english: english.get(`${kind}:${id}`) });
 }
 
 async function build(lang: Lang): Promise<BossEntry[]> {
@@ -140,13 +146,15 @@ async function build(lang: Lang): Promise<BossEntry[]> {
       const found = story.get(b.bossId);
       const text = found && found.text.trim() !== "" ? found.text : null;
       const spoken = text === null ? null : toSpokenText(text, rules);
+      const name = names("boss", String(b.bossId));
+      const instance = names("instance", String(b.map));
       return {
         id: bossLineId(b.map, b.key),
         bossId: b.bossId,
         map: b.map,
         key: b.key,
-        name: names("boss", String(b.bossId)) ?? b.key,
-        instanceName: names("instance", String(b.map)) ?? String(b.map),
+        name: name.own ?? name.english ?? b.key,
+        instanceName: instance.own ?? instance.english ?? String(b.map),
         kind: b.kind,
         zone: b.zone,
         encounterIds: b.encounterIds,
@@ -156,6 +164,7 @@ async function build(lang: Lang): Promise<BossEntry[]> {
         spoken,
         hash: spoken === null ? null : textHash(spoken),
         file: files.get(lineIdFor({ mapID: b.map, key: b.key }))!,
+        ...(lang !== BASE_LANG && { nameMissing: name.own === undefined, englishName: name.english ?? b.key }),
       };
     });
 }
