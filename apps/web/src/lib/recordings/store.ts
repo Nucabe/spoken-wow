@@ -26,6 +26,7 @@ import { recordedDirOf } from "@/lib/takes/adapters";
 import { archiveName, writeAtomic } from "@/lib/takes/bytes";
 import type { TakeBytes } from "@/lib/takes/store";
 import { catalogue as placesCatalogue } from "@/lib/places/catalogue";
+import { catalogue as bossesCatalogue } from "@/lib/bosses/catalogue";
 
 import { can } from "@/lib/permissions";
 import { currentSession } from "@/lib/session";
@@ -59,10 +60,14 @@ const COLUMNS = `"version", "format", "durationSec"::float8 as "durationSec", "b
  * since a language's corpus can hold lines English does not -- contributed ones.
  */
 export async function recordableFiles(source: Source, lang: Lang): Promise<Map<string, string>> {
-  // No boss catalogue yet: nothing to record, rather than readables' files under the wrong key.
-  if (source === "bosses") return new Map();
   const corpus =
-    source === "quests" ? await fileIndex(lang) : source === "places" ? await placesCatalogue(lang) : await readablesCatalogue(lang);
+    source === "quests"
+      ? await fileIndex(lang)
+      : source === "places"
+        ? await placesCatalogue(lang)
+        : source === "bosses"
+          ? await bossesCatalogue(lang)
+          : await readablesCatalogue(lang);
   // Derived once per corpus rather than per request: each of those is memoised and handed back
   // as the same object until its table moves, and every upload, play and removal asks.
   let files = derived.get(corpus);
