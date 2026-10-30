@@ -10,8 +10,7 @@
 #
 # The addon ships for three clients and the only way to know it loads on all of them is to
 # load it on each, so which client to install into is a variable rather than a
-# constant. `forever` is WoW: Forever, which Blizzard installs under `_forever_`.
-# Installing targets one client; --status and --remove walk every client
+# constant. Installing targets one client; --status and --remove walk every client
 # that is installed, because the failure they exist to catch is a stale copy left
 # behind in the one you were not thinking about.
 #
