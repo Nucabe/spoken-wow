@@ -333,21 +333,14 @@ end
 -- How fast a story is read, in words a second, and the least time one stays in the narrator.
 local READING_SPEED, LEAST_SECONDS = 2.5, 6
 
-local DUNGEON_SKULL = [[Interface\Minimap\Minimap_skull_normal]]
-local ELITE_SKULL = [[Interface\Minimap\Minimap_skull_elite]]
-
 -- A raid's or a world boss's: the elite skull, where a dungeon's has the normal one.
-local function IsEliteBoss(map)
-	if Spoken and Spoken.IsRaid and Spoken:IsRaid(map) then return true end
-	return _G.SpokenDungeons and SpokenDungeons.worldBosses and SpokenDungeons.worldBosses[map] ~= nil or false
-end
-
-local function Skull(map)
-	return IsEliteBoss(map) and ELITE_SKULL or DUNGEON_SKULL
-end
+local SKULLS = {
+	boss = [[Interface\Minimap\Minimap_skull_normal]],
+	["boss-raid"] = [[Interface\Minimap\Minimap_skull_elite]],
+}
 
 local function BossBullet(map)
-	return IsEliteBoss(map) and "boss-raid" or "boss"
+	return (Spoken:IsRaid(map) or Index().world[map]) and "boss-raid" or "boss"
 end
 
 -- No boss is selected yet, so there is no creature portrait to show.
@@ -371,7 +364,7 @@ function NPCs:StoryClip(map, key)
 			transcript = story,
 			bullet = BossBullet(map),
 			portrait = entry and entry.display and { kind = "model", creatureID = entry.creature, displayID = entry.display }
-				or { kind = "texture", texture = Skull(map) },
+				or { kind = "texture", texture = SKULLS[BossBullet(map)] },
 		},
 	}
 end
@@ -384,15 +377,14 @@ local function CountLine(where, found, total)
 	return L.BOSS_IN_FMT:format(where) .. " · " .. Count(found, total)
 end
 
--- The skull in the ring's small socket, where a quest's portrait has its badge.
-if Spoken and Spoken.RegisterBullet then
-	Spoken:RegisterBullet("boss", DUNGEON_SKULL, 16)
-	Spoken:RegisterBullet("boss-raid", ELITE_SKULL, 16)
-end
-
 -- One table for each picture, so the page draws a portrait again only for another one.
 local portraits = {}
-local unknown = { boss = C.UnknownIcon("boss"), ["boss-raid"] = C.UnknownIcon("boss-raid") }
+local unknown = {}
+-- The skull in the ring's small socket, where a quest's portrait has its badge.
+for bullet, skull in pairs(SKULLS) do
+	if Spoken and Spoken.RegisterBullet then Spoken:RegisterBullet(bullet, skull, 16) end
+	unknown[bullet] = C.UnknownIcon(bullet)
+end
 
 local function Unknown(map)
 	return unknown[BossBullet(map)]
