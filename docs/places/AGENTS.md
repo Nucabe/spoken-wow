@@ -16,6 +16,7 @@ Before changing a part, read its file:
 - the pictures: [PICTURES.md](PICTURES.md)
 - voice, the site and releases: [VOICE.md](VOICE.md)
 - adding content and finding gaps: [CONTENT.md](CONTENT.md)
+- the boss tables behind Spoken_NPCs: [BOSSES.md](BOSSES.md)
 
 ## Generated files
 
@@ -39,6 +40,12 @@ Kept by hand: `Data/AreaZones.lua`, `pipelines/places/tools/seed/forever-places.
 
 `pipelines/places/tools/voice/generate.mjs` reports on lines and cannot voice one. Keep it that
 way: takes are cut on the site.
+
+`addons/Spoken_NPCs/Data/Bosses.lua`, `Creatures.lua` and `Stories.lua` come from the `boss_instance`,
+`boss` and `boss_line` tables and the boss names in `entity_name`. The tables are the corpus and
+the Lua is an export (`make npcs-export`, checked by `make npcs-check`). Match a boss by its
+encounter id and never key on English text; keys are frozen, and a boss the client drops is
+retired, not deleted. See [BOSSES.md](BOSSES.md).
 
 Line ids (`z:<mapID>`, `s:<mapID>:<key>`) and the keys in them are frozen once a story has one. A
 renamed place keeps its key and gets an alias.

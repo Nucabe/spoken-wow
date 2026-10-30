@@ -57,9 +57,10 @@ None of this is the project's to license, and the MIT grant does not reach it.
   which article each line came from.
 - **Boss and dungeon stories** (`addons/Spoken_NPCs/Data/Stories.lua`) are written from
   Blizzard's Adventure Guide text and from Warcraft Wiki (**CC BY-SA 4.0**), rewritten
-  into one voice. The file is committed;
+  into one voice. The stories live in the `boss_line` table and the file is exported from it and
+  committed;
   `pipelines/places/tools/build-boss-stories.mjs`, `boss-history.mjs` and
-  `assemble-boss-stories.mjs` make it, and `apply-boss-stories.mjs` writes it. Where the guide has no text
+  `assemble-boss-stories.mjs` make them, and `apply-boss-stories.mjs` records them. Where the guide has no text
   for a boss, the story is that boss's History section on Warcraft Wiki, kept to Classic.
   The Forever-only dungeons' stories come from Forever's quest text (credited below), and the
   checks of the others use the vmangos quest corpus.
