@@ -1,9 +1,9 @@
 // The one file the main process and the window both import: what the app talks about.
 
-/** The game versions Spoken runs on, by their folder: `_classic_beta_` (Forever), `_classic_era_`, `_anniversary_`. */
-export type Flavor = 'classic_beta' | 'classic_era' | 'anniversary'
+/** The game versions Spoken runs on, by their folder: `_forever_` (Forever), `_classic_era_`, `_anniversary_`. */
+export type Flavor = 'forever' | 'classic_era' | 'anniversary'
 
-/** One World of Warcraft install: a flavor folder such as `...\World of Warcraft\_classic_beta_`. */
+/** One World of Warcraft install: a flavor folder such as `...\World of Warcraft\_forever_`. */
 export interface GameInstall {
   /** Stable id: the first 12 hex digits of sha1(lower-cased `root`). */
   id: string
@@ -11,10 +11,10 @@ export interface GameInstall {
   root: string
   /** `<root>\Interface\AddOns`; may not exist yet. */
   addOnsPath: string
-  /** `_classic_beta_`. */
+  /** `_forever_`. */
   flavorFolder: string
   flavor: Flavor
-  /** The Blizzard product code from `.build.info` / `.flavor.info`, e.g. `wow_classic_beta`. */
+  /** The Blizzard product code from `.build.info` / `.flavor.info`, e.g. `wow_forever`. */
   product: string
   /** What the player calls it: "WoW: Forever", "WoW: Classic Era", "WoW: Anniversary". */
   label: string
@@ -28,9 +28,12 @@ export interface GameInstall {
 
 /**
  * The game versions Spoken runs on, as publishers/spoken/spoken.md says: made and tested on
- * Forever (`_classic_beta_`), and installs on Classic Era and Anniversary. The scan lists no other.
+ * Forever (`_forever_`), and installs on Classic Era and Anniversary. The scan lists no other.
  */
-export const SUPPORTED_FLAVORS: Flavor[] = ['classic_beta', 'classic_era', 'anniversary']
+export const SUPPORTED_FLAVORS: Flavor[] = ['forever', 'classic_era', 'anniversary']
+
+/** `_forever_, _classic_era_ or _anniversary_`, for the texts that tell the player which folder to pick. */
+export const FLAVOR_FOLDER_LIST = SUPPORTED_FLAVORS.map((f) => `_${f}_`).join(', ').replace(/, ([^,]*)$/, ' or $1')
 
 export function isSupportedFlavor(flavor: Flavor): boolean {
   return SUPPORTED_FLAVORS.includes(flavor)

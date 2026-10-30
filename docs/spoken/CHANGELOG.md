@@ -4,6 +4,12 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Raid and world bosses wear the elite skull in the Compendium, dungeon bosses the plain one.**
+  On Season of Discovery, Blackfathom Deeps, Gnomeregan and Sunken Temple count as raids.
+  *([anon1231823](https://github.com/anon1231823))*
+- **The Quests, Readables and Bosses pages have an icon before anything is chosen.** Quests shows
+  its scroll; Readables and Bosses show the Compendium's book, replacing the dragon on Bosses.
+  *([anon1231823](https://github.com/anon1231823))*
 - **On Forever, the Contribute box names the released game's folder.** It points to
   `_forever_` for the saved file to upload, instead of the ended beta's `_classic_beta_`.
   *([svengabr](https://github.com/svengabr))*

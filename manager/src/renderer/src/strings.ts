@@ -1,6 +1,6 @@
 // Every word the window shows, in English. Other languages can follow by swapping this file's
 // object; nothing else in the window holds text a player reads (apart from names from the data).
-import type { Section, Snapshot } from '@shared/types'
+import { FLAVOR_FOLDER_LIST, type Section, type Snapshot } from '@shared/types'
 
 export type Platform = Snapshot['platform']
 
@@ -62,7 +62,7 @@ export const S = {
   empty: {
     title: 'No Game for Spoken Found',
     text: (platform: Platform) =>
-      `Spoken runs on WoW: Forever, Classic Era and Anniversary. Add the folder your game is installed in: ${gameFolderExample(platform)}, a _classic_era_, _anniversary_ or _classic_beta_ folder, or an AddOns folder.`,
+      `Spoken runs on WoW: Forever, Classic Era and Anniversary. Add the folder your game is installed in: ${gameFolderExample(platform)}, a ${FLAVOR_FOLDER_LIST} folder, or an AddOns folder.`,
     add: 'Add Game Folder',
     scan: 'Scan Again',
     scanning: 'Looking'
