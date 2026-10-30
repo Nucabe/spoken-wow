@@ -223,7 +223,7 @@ export function LineRow<L extends ExplorerLine>({
           <span className="text-emerald-400">v{state.version}</span>
         ) : STATE_LABEL[line.state] ? (
           <span className={STATE_STYLE[line.state]}>{STATE_LABEL[line.state]}</span>
-        ) : (
+        ) : unwritten ? null : (
           // Which take is live, and the way to any other. The label IS the control, so
           // there is no second icon for a history nobody knew was there.
           <TakeSelector
@@ -237,7 +237,7 @@ export function LineRow<L extends ExplorerLine>({
         )}
         {/* Beneath the state rather than inside it: the text has not moved, so this line is
             `current` and dirty at once, and one word cannot say both. */}
-        {line.dirty && (
+        {line.dirty && !unwritten && (
           <div className="text-amber-300" title="Cut before a pronunciation it speaks was changed">
             pronunciation
           </div>
@@ -296,7 +296,7 @@ export function LineRow<L extends ExplorerLine>({
 
               {/* Only on a dirty row. A clean one keeps the control it would do nothing to,
                   and the mark is the whole reason this button exists. */}
-              {line.dirty && (
+              {line.dirty && !unwritten && (
                 <Button
                   variant="ghost"
                   size="icon"

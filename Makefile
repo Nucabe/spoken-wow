@@ -232,7 +232,7 @@ include make/droplet.mk
 
 # The site will edit boss stories and names, so production is upstream for the boss tables as it
 # is for every section's corpus. scripts/db/sync-section.sh has the recipe.
-npcs-sync: require-droplet ## Replace the local boss tables and boss names with the droplet's (DESTRUCTIVE)
+npcs-sync: require-droplet ## Replace the local boss tables, boss names and boss takes with the droplet's (DESTRUCTIVE)
 	@$(DB_ENV) scripts/db/sync-section.sh bosses boss_instance boss boss_line
 	@echo "==> bring the addon into step with:  make npcs-export"
 npcs-check-synced: ## Compare the local boss data with the droplet's, and prompt if they differ

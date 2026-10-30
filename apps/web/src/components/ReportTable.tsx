@@ -64,6 +64,7 @@ const SECTION_LABELS: Record<Section, string> = {
   quests: "Quests",
   readables: "Readables",
   places: "Places",
+  bosses: "Bosses",
 };
 
 const VIEW_LABELS: Record<StatusView, string> = { ...STATUS_LABELS, all: "All" };

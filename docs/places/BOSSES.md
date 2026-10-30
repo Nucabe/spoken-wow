@@ -17,7 +17,7 @@ client tables --make bosses--> boss_instance, boss, entity_name
 write-boss-creatures.mjs -----> boss (creatureId, displayId)
 apply-boss-stories.mjs -------> boss_line
    ^ [{ map, key, lang?, text }] JSON: rewritten stories, or assemble-boss-stories.mjs' output
-the site (a later change) ----> boss_line, entity_name
+the site (/bosses) -----------> boss_line, take
                                    |
               make npcs-export --> Data/Bosses.lua, Creatures.lua, Stories.lua  (commit the diff)
 ```
@@ -79,18 +79,38 @@ it with the variable set inline, never exported:
 
 ```sh
 DATABASE_URL=$PROD_DATABASE_URL node pipelines/places/tools/apply-boss-stories.mjs <dir>
-make npcs-sync       # replaces the local boss tables and boss names with the droplet's
+make npcs-sync       # replaces the local boss tables, boss names and boss takes with the droplet's
 make npcs-export
 make npcs-check
 ```
 
 `make npcs-sync` is destructive; confirm before running it. It goes through
-`scripts/db/sync-section.sh bosses`, and `make npcs-check-synced` compares the local data with the
+`scripts/db/sync-section.sh bosses`, which also brings the `take`, `recording` and `take_ack` rows
+with source `bosses`, and `make npcs-check-synced` compares the local data with the
 droplet's through `scripts/db/check-synced.sh bosses`, using the digest in
 `deploy/web/sql/bosses_stamp.sql` because the boss tables have no serial id to stamp.
 
 The tables were seeded from the committed Lua by a one-off intake, kept outside this repository
 (`import-boss-lore.mts`, run from `apps/web` with `npx tsx`). It is not part of the build.
+
+## The site
+
+`/bosses` lists every live boss under its instance, in the order the addon's Bosses tab uses, and
+is built from the places explorer with a bosses section config (`components/bosses/sections.ts`).
+It reads `boss_instance`, `boss`, `boss_line` and `entity_name` and nothing else (`lib/bosses/`).
+
+- A language's page shows that language's current story or says "No story in this language yet."
+  English text never stands in for it. A boss with no story has no play or regenerate button, but
+  a translator can write one.
+- Edits record an `edited` version of `boss_line`, with the places permissions: an editor or a
+  translator for the language edits, editors and above regenerate.
+- Regenerating cuts a take with the language's narrator through `lib/generation/narrated.ts`. The
+  take's line id is `boss:{map}:{key}`, the addon's clip key, and its file is `{map}/{slug}` from
+  `assignFiles` in `pipelines/places/tools/voice/naming.mjs`. The take archive is
+  `SPOKEN_BOSSES_AUDIO_HISTORY`.
+- `/bosses/r/{map}/{slug}` is the report page for one boss. Reports land under the Bosses tab of
+  `/reports`. Bosses take no contributions.
+- With no boss rows the page says the intake has not been run.
 
 ## Commands
 

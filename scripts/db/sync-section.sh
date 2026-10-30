@@ -6,12 +6,12 @@
 #   scripts/db/sync-section.sh bosses boss_instance boss boss_line
 #
 # Production is upstream for everything the site writes -- corpus edits and takes -- so
-# data only ever flows droplet -> here. This is the one recipe for all three sections: the
-# section's corpus tables whole, and its rows of the shared tables -- `take`, and the voice
-# actors' `recording` (migration 0062), which the acted packs are built from. It replaced a
-# quests `sync`, a books `db-pull` that fetched takes but not the text they were cut from,
-# and a zones `db-pull`/`db-push` pair written against a table and a Docker database that
-# no longer exist.
+# data only ever flows droplet -> here. This is the one recipe for every section: the
+# section's corpus tables whole, and its rows of the shared tables -- `take`, the voice
+# actors' `recording` (migration 0062), which the acted packs are built from, and `take_ack`.
+# It replaced a quests `sync`, a books `db-pull` that fetched takes but not the text they
+# were cut from, and a zones `db-pull`/`db-push` pair written against a table and a Docker
+# database that no longer exist.
 #
 # Environment, as the Makefiles pass it:
 #   DROPLET, SSH, REMOTE_ROOT   how to reach production (make/droplet.mk)
@@ -29,7 +29,11 @@ tables=("$@")
 : "${LOCAL_DB:?LOCAL_DB is not set}"
 
 # Keyed on `source` and synced per section, unlike the corpus tables, which are copied whole.
-shared=(take recording)
+# `take_ack` is the cleared pronunciation mark: without it every take production cleared reads
+# as dirty here again.
+shared=(take recording take_ack)
+# The shared tables with an id, which is one sequence across every section.
+serial=(take recording)
 
 # The section's rows of entity_name, which holds every section's names and which no sync
 # copies whole: bosses' names live there, by kind.
@@ -141,7 +145,7 @@ SQL
   # the count says which section to sync next. A warning, not a notice: the dump sets
   # client_min_messages to warning, and a notice would never be seen.
   # The same holds for recording ids, which are one sequence too.
-  for table in "${shared[@]}"; do
+  for table in "${serial[@]}"; do
     cat <<SQL
 do \$\$
 declare r record;

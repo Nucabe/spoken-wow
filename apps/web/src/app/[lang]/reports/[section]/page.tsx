@@ -10,6 +10,7 @@ import { viewerOf } from "@/lib/grants/store";
 import { can, isAdmin } from "@/lib/permissions";
 import { isCategory, type Category, type Status } from "@/lib/reports/reports";
 import {
+  isSection,
   isStatusView,
   matchesReportSearch,
   pageOf,
@@ -22,7 +23,7 @@ import {
 } from "@/lib/reports/query";
 import { npcDetails } from "@/lib/reports/npc";
 import { listReports } from "@/lib/reports/store";
-import { isSection, queryOf } from "@/lib/contributions/query";
+import { queryOf } from "@/lib/contributions/query";
 import { localeHref } from "@/lib/lang";
 import { Contained, Wide } from "@/components/Width";
 

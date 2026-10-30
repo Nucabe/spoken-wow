@@ -62,6 +62,13 @@ export function placesHref(options: { q?: string; mapID?: number; field?: ZoneSc
   return params.size ? `/places?${params}` : "/places";
 }
 
+/** The bosses explorer, narrowed to one instance. Bosses calls its map filter `instance`. */
+export function bossesHref(options: { mapID?: number } = {}): string {
+  const params = new URLSearchParams();
+  if (options.mapID !== undefined) params.set("instance", String(options.mapID));
+  return params.size ? `/bosses?${params}` : "/bosses";
+}
+
 /** The readables explorer, narrowed. `field` as in placesHref: readables says `field` too. */
 export function readablesHref(options: { q?: string; field?: BookScope } = {}): string {
   const params = new URLSearchParams();
@@ -136,11 +143,12 @@ export function targetExplorerHref(source: Source, target: string): string | nul
     return null;
   }
 
-  if (source === "places") {
-    // '<mapID>/<slug>': the zone filter takes the id, and the slug is the page within it,
-    // which no filter addresses.
+  if (source === "places" || source === "bosses") {
+    // '<mapID>/<slug>': the zone or instance filter takes the id, and the slug is the line
+    // within it, which no filter addresses.
     if (segments.length === 2 && /^\d+$/.test(segments[0])) {
-      return placesHref({ mapID: Number(segments[0]) });
+      const mapID = Number(segments[0]);
+      return source === "places" ? placesHref({ mapID }) : bossesHref({ mapID });
     }
     return null;
   }
