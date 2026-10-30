@@ -1,7 +1,56 @@
-// Data/Stories.lua, as every boss story tool writes it.
+// Data/Stories.lua as the export writes it, and the story tools' shared input and output rules.
+
+import { isAbsolute, join, relative, resolve } from "node:path";
 
 import { LOCALES } from "../../../lib/dungeons.mjs";
-import { luaString } from "./wiki.mjs";
+import { ROOT, luaString } from "./wiki.mjs";
+
+/** Where the story tools write by default: gitignored scratch, never the addon. */
+export const SCRATCH = join(ROOT, "build/boss-stories");
+
+/**
+ * `file`, resolved against `from`, unless it lies under addons/: the addon's Lua is an export of the
+ * boss tables (make npcs-export), and a tool writing it would drop what the tables hold.
+ */
+export function outsideAddons(file, from = process.cwd()) {
+  const path = resolve(from, file);
+  const rel = relative(join(ROOT, "addons"), path);
+  if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel))) {
+    throw new Error(`refusing to write ${path}: the story tools never write under addons/, whose boss data is exported from the boss tables (make npcs-export)`);
+  }
+  return path;
+}
+
+/** { map: { key: story } } as apply-boss-stories' input: { map, key, lang, text } per language. */
+export function storyRows(stories) {
+  const rows = [];
+  for (const map of Object.keys(stories).map(Number).sort((a, b) => a - b)) {
+    for (const key of Object.keys(stories[map]).sort()) {
+      const story = stories[map][key];
+      if (typeof story === "string") {
+        rows.push({ map, key, lang: "enUS", text: story });
+        continue;
+      }
+      if (story[1] !== undefined) rows.push({ map, key, lang: "enUS", text: story[1] });
+      for (const lang of LOCALES) if (story[lang] !== undefined) rows.push({ map, key, lang, text: story[lang] });
+    }
+  }
+  return rows;
+}
+
+/**
+ * One row of apply-boss-stories' input, `lang` defaulting to enUS: null for an empty story or a
+ * dungeon's own ("_"). Throws on a language the project does not have.
+ */
+export function storyInput(row) {
+  const text = String(row.text ?? "").trim();
+  if (!text || row.key === "_") return null;
+  const lang = row.lang ?? "enUS";
+  if (lang !== "enUS" && !LOCALES.includes(lang)) {
+    throw new Error(`${row.map} "${row.key}": unknown lang ${JSON.stringify(lang)}`);
+  }
+  return { map: row.map, key: row.key, lang, text };
+}
 
 /** A story as Lua: English, or { 1?: English, deDE: ... } as { "English", deDE = "..." }, locales in LOCALES order. */
 function entry(story) {

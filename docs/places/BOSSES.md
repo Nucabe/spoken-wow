@@ -16,6 +16,7 @@ them, committed so that the addon builds on a clone with no Postgres.
 client tables --make bosses--> boss_instance, boss, entity_name
 write-boss-creatures.mjs -----> boss (creatureId, displayId)
 apply-boss-stories.mjs -------> boss_line
+   ^ [{ map, key, lang?, text }] JSON: rewritten stories, or assemble-boss-stories.mjs' output
 the site (a later change) ----> boss_line, entity_name
                                    |
               make npcs-export --> Data/Bosses.lua, Creatures.lua, Stories.lua  (commit the diff)
@@ -26,6 +27,10 @@ There is no file fallback: a tool that writes boss data fails with a message whe
 is unset and never writes Lua. `bosses/reconcile.mjs` decides which rows the client's encounter
 list means, `bosses/shape.mjs` turns rows into what the three files hold, and `bosses/export.mjs`
 writes them.
+
+`build-boss-stories.mjs` and `assemble-boss-stories.mjs` gather source text and never write under
+`addons/`: they write to `build/boss-stories/` (gitignored) by default and refuse an `--out` under
+`addons/`. Their stories reach the addon only through `apply-boss-stories.mjs` and the export.
 
 ## Stories in every language
 
@@ -44,8 +49,12 @@ English is `{ deDE = "..." }`.
 | `rewritten` | Text a tool wrote (`apply-boss-stories.mjs`). | A rewrite or an edit. |
 | `edited` | Written or corrected by a person. | Only another edit. A tool write lands underneath as a version that is not live. |
 
-Names follow the `entity_name` rules: an unchanged name records nothing, a changed game name
-replaces an extracted one, and an edited current name stays current. Text that has not changed is
+Names have their own two origins: `extracted`, written from the client's tables by `make bosses`,
+and `edited`, changed on the site. They follow the `entity_name` rules: an unchanged name records
+nothing, a changed game name replaces an extracted one, and an edited current name stays current.
+A boss newly added to `pipelines/lib/boss-names.json` takes its creature's names where the
+database has them; a language its creature has no name in keeps the name already recorded for the
+encounter until someone edits it. Text that has not changed is
 not recorded again, so version numbers count changes. A second run of a tool on a database where
 someone has since edited a story changes nothing.
 
@@ -89,14 +98,15 @@ The tables were seeded from the committed Lua by a one-off intake, kept outside 
 make bosses          # bring boss_instance, boss and the names into step with the client
 node pipelines/lib/bosses.mjs --check   # list what the client would change; fails if anything
 node pipelines/places/tools/write-boss-creatures.mjs <boss_creatures.json>
-node pipelines/places/tools/apply-boss-stories.mjs <dir of rewritten *.json>
+node pipelines/places/tools/apply-boss-stories.mjs <dir of *.json>   # { map, key, lang?, text }, lang enUS if left out
 make npcs-export     # write Bosses.lua, Creatures.lua and Stories.lua from the database
 make npcs-check      # do the committed files match the database?
 make npcs-sync       # replace the local boss tables with the droplet's (DESTRUCTIVE)
 make npcs-check-synced
 ```
 
-The tools that write boss data need `DATABASE_URL`. `make bosses` writes the tables and not
+The tools that write boss data need `DATABASE_URL`, and so do `node pipelines/lib/bosses.mjs
+--check` and `make npcs-check`, which read the tables. `make bosses` writes the tables and not
 `Bosses.lua`; run `make npcs-export` after it. `write-boss-creatures.mjs` sets every live boss, to
 null where nothing gives it a creature. `Creatures.lua` keeps its `\r\n` line endings.
 
@@ -105,7 +115,7 @@ null where nothing gives it a creature. `Creatures.lua` keeps its `\r\n` line en
 | Command | Fails when |
 | --- | --- |
 | `make npcs-check` | A committed file differs from the database. It ignores each file's leading comment lines and line endings. Needs `DATABASE_URL`. |
-| `node pipelines/lib/bosses.mjs --check` | The client's encounter table would change the boss tables. |
+| `node pipelines/lib/bosses.mjs --check` | The client's encounter table would change the boss tables. Needs `DATABASE_URL`. |
 | `pnpm --filter @spoken/places-pipeline test` | Reconciling, shaping or exporting changes behaviour. |
 | `make test-player` | `tests/lua/npcs_bosses_test.lua` and the rest of the addon's Lua tests fail. |
 
