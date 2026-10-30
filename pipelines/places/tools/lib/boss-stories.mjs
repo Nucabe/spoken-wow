@@ -1,13 +1,15 @@
 // Data/Stories.lua, as every boss story tool writes it.
 
+import { LOCALES } from "../../../lib/dungeons.mjs";
 import { luaString } from "./wiki.mjs";
 
-/** A story as Lua: English, or { 1: English, deDE: ... } as { "English", deDE = "..." }. */
+/** A story as Lua: English, or { 1?: English, deDE: ... } as { "English", deDE = "..." }, locales in LOCALES order. */
 function entry(story) {
   if (typeof story === "string") return luaString(story);
-  const extra = Object.keys(story).filter((k) => k !== "1");
-  if (extra.length === 0) return luaString(story[1]);
-  return `{ ${luaString(story[1])}, ${extra.map((k) => `${k} = ${luaString(story[k])}`).join(", ")} }`;
+  const parts = [];
+  if (story[1] !== undefined) parts.push(luaString(story[1]));
+  for (const locale of LOCALES) if (story[locale] !== undefined) parts.push(`${locale} = ${luaString(story[locale])}`);
+  return parts.length === 1 && story[1] !== undefined ? luaString(story[1]) : `{ ${parts.join(", ")} }`;
 }
 
 /** The Lua file: `stories` is { map: { key: story } }. */
@@ -25,7 +27,7 @@ export function renderStories(stories) {
 --   SpokenBossStories[map][key] = "The words of its story."
 -- Written from the Adventure Guide's text and from warcraft.wiki.gg (CC BY-SA 4.0), rewritten in one
 -- voice and kept to Classic (THIRD_PARTY.md). A boss with no entry shows that its story is not written yet.
--- Built by pipelines/places/tools/assemble-boss-stories.mjs and apply-boss-stories.mjs.
+-- Exported from the boss tables by pipelines/places/tools/bosses/export.mjs (make npcs-export).
 
 SpokenBossStories = SpokenBossStories or {}
 for map, stories in pairs({
