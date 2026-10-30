@@ -10,6 +10,9 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 - **The Quests, Readables and Bosses pages have an icon before anything is chosen.** Quests shows
   its scroll; Readables and Bosses show the Compendium's book, replacing the dragon on Bosses.
   *([anon1231823](https://github.com/anon1231823))*
+- **On Forever, the Contribute box names the released game's folder.** It points to
+  `_forever_` for the saved file to upload, instead of the ended beta's `_classic_beta_`.
+  *([svengabr](https://github.com/svengabr))*
 
 ## 3.6.0 — 2026-10-28
 
