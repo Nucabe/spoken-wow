@@ -8,7 +8,8 @@
 # Production is upstream for everything the site writes -- corpus edits and takes -- so
 # data only ever flows droplet -> here. This is the one recipe for every section: the
 # section's corpus tables whole, and its rows of the shared tables -- `take`, the voice
-# actors' `recording` (migration 0062), which the acted packs are built from, and `take_ack`.
+# actors' `recording` (migration 0062), which the acted packs are built from, and for bosses
+# `take_ack`.
 # It replaced a quests `sync`, a books `db-pull` that fetched takes but not the text they
 # were cut from, and a zones `db-pull`/`db-push` pair written against a table and a Docker
 # database that no longer exist.
@@ -29,23 +30,27 @@ tables=("$@")
 : "${LOCAL_DB:?LOCAL_DB is not set}"
 
 # Keyed on `source` and synced per section, unlike the corpus tables, which are copied whole.
-# `take_ack` is the cleared pronunciation mark: without it every take production cleared reads
-# as dirty here again.
-shared=(take recording take_ack)
+shared=(take recording)
 # The shared tables with an id, which is one sequence across every section.
 serial=(take recording)
 
 # The section's rows of entity_name, which holds every section's names and which no sync
-# copies whole: bosses' names live there, by kind.
+# copies whole: bosses' names live there, by kind. Bosses also take `take_ack`, the cleared
+# pronunciation mark, so a take production cleared does not read as dirty here again.
 names_where=
 case "$source_name" in
-  bosses) names_where="\"kind\" in ('boss', 'instance')" ;;
+  bosses)
+    names_where="\"kind\" in ('boss', 'instance')"
+    shared+=(take_ack)
+    ;;
 esac
 
 counts="select (select count(*) from \"${tables[0]}\") || ' ${tables[0]} rows, '
                || (select count(*) from \"take\" where \"source\" = '$source_name') || ' $source_name takes, '
                || (select count(*) from \"recording\" where \"source\" = '$source_name') || ' recordings'"
 [ -z "$names_where" ] || counts="$counts || ', ' || (select count(*) from \"entity_name\" where $names_where) || ' names'"
+[[ " ${shared[*]} " != *" take_ack "* ]] \
+  || counts="$counts || ', ' || (select count(*) from \"take_ack\" where \"source\" = '$source_name') || ' acks'"
 echo "local:    $(psql "$LOCAL_DB" -tAc "$counts")"
 # On stdin rather than inside the command, so the query's quotes never pass through ssh.
 echo "upstream: $(upstream 'psql "$DATABASE_URL" -tA -f -' <<<"$counts")"

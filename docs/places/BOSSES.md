@@ -121,7 +121,7 @@ node pipelines/places/tools/write-boss-creatures.mjs <boss_creatures.json>
 node pipelines/places/tools/apply-boss-stories.mjs <dir of *.json>   # { map, key, lang?, text }, lang enUS if left out
 make npcs-export     # write Bosses.lua, Creatures.lua and Stories.lua from the database
 make npcs-check      # do the committed files match the database?
-make npcs-sync       # replace the local boss tables with the droplet's (DESTRUCTIVE)
+make npcs-sync       # replace the local boss tables and boss takes/recordings/acks with the droplet's (DESTRUCTIVE)
 make npcs-check-synced
 ```
 
