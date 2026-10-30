@@ -333,7 +333,35 @@ end
 -- How fast a story is read, in words a second, and the least time one stays in the narrator.
 local READING_SPEED, LEAST_SECONDS = 2.5, 6
 
-local SKULL = [[Interface\Minimap\Minimap_skull_normal]]
+local DUNGEON_SKULL = [[Interface\Minimap\Minimap_skull_normal]]
+local ELITE_SKULL = [[Interface\Minimap\Minimap_skull_elite]]
+
+-- The vanilla instances whose bosses are raids. Scarlet Enclave is only present on Season of
+-- Discovery, while Gnomeregan and Sunken Temple become raids there despite keeping their old map
+-- IDs; the latter two are selected by the active client variant below.
+local RAID_MAPS = {
+	[249] = true, [309] = true, [409] = true, [469] = true,
+	[509] = true, [531] = true, [533] = true, [2856] = true,
+}
+local WORLD_BOSS_MAPS = _G.SpokenDungeons and _G.SpokenDungeons.worldBosses or {}
+
+local function IsRaid(map)
+	if RAID_MAPS[map] then return true end
+	local version = SpokenEnv and SpokenEnv.Version
+	return version and version.Variant == "sod" and (map == 90 or map == 109) or false
+end
+
+local function IsEliteBoss(map)
+	return IsRaid(map) or WORLD_BOSS_MAPS[map] ~= nil
+end
+
+local function Skull(map)
+	return IsEliteBoss(map) and ELITE_SKULL or DUNGEON_SKULL
+end
+
+local function BossBullet(map)
+	return IsEliteBoss(map) and "boss-raid" or "boss"
+end
 
 -- The section page has no boss selected yet, so it cannot show a creature portrait. Use the
 -- Compendium's book for its round header portrait.
@@ -355,9 +383,9 @@ function NPCs:StoryClip(map, key)
 			header = Index().world[map] and MapName(BossZone(map, key)) or DungeonName(map),
 			label = Name(boss),
 			transcript = story,
-			bullet = "boss",
+			bullet = BossBullet(map),
 			portrait = entry and entry.display and { kind = "model", creatureID = entry.creature, displayID = entry.display }
-				or { kind = "texture", texture = SKULL },
+				or { kind = "texture", texture = Skull(map) },
 		},
 	}
 end
@@ -371,22 +399,28 @@ local function CountLine(where, found, total)
 end
 
 -- The skull in the ring's small socket, where a quest's portrait has its badge.
-if Spoken and Spoken.RegisterBullet then Spoken:RegisterBullet("boss", SKULL, 16) end
+if Spoken and Spoken.RegisterBullet then
+	Spoken:RegisterBullet("boss", DUNGEON_SKULL, 16)
+	Spoken:RegisterBullet("boss-raid", ELITE_SKULL, 16)
+end
 
 -- One table for each picture, so the page draws a portrait again only for another one.
-local UNKNOWN = C.UnknownIcon("boss")
 local portraits = {}
+
+local function Unknown(map)
+	return C.UnknownIcon(BossBullet(map))
+end
 
 -- A boss's portrait, at the left of its name on the page's header.
 local function Portrait(map, key)
 	local entry = Creature(map, key)
 	-- A portrait only from a known appearance: asked of the client, a creature it has not met answers
 	-- with the player's own face.
-	if not (entry and entry.display) then return UNKNOWN end
+	if not (entry and entry.display) then return Unknown(map) end
 	local id = map .. ":" .. key
 	local portrait = portraits[id]
 	if not (portrait and portrait.creatureID == entry.creature and portrait.displayID == entry.display) then
-		portrait = { creatureID = entry.creature, displayID = entry.display, bullet = "boss" }
+		portrait = { creatureID = entry.creature, displayID = entry.display, bullet = BossBullet(map) }
 		portraits[id] = portrait
 	end
 	return portrait
@@ -405,7 +439,7 @@ local function ShowEntry()
 		local where = Index().world[map] and L.BOSS_IN_FMT:format(MapName(BossZone(map, key)))
 			or (L.BOSS_IN_FMT:format(DungeonName(map)) .. " · " .. MapName(Index().zoneOf[map]))
 		if not Found(map, key) and not Unlocked() then
-			page:Show({ title = Name(boss), subtitle = where, text = L.BOSS_NOT_FOUND, icon = UNKNOWN })
+			page:Show({ title = Name(boss), subtitle = where, text = L.BOSS_NOT_FOUND, icon = Unknown(map) })
 			return
 		end
 		local story = Story(map, key)
