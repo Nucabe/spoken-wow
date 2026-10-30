@@ -100,3 +100,21 @@ test("a new boss named as its creature is filed under the encounter's key", () =
   const { upserts } = reconcileBosses([], [client({ id: 3355, name: "The Baron", key: "the butcher" })]);
   assert.equal(upserts[0].key, "the butcher");
 });
+
+test("a new encounter whose key another boss holds fails, naming the boss to extend", () => {
+  assert.throws(
+    () => reconcileBosses(
+      [row({ id: 2756, key: "targorr the dread", retired: true })],
+      [client({ id: 9001, name: "Targorr the Dread" })],
+    ),
+    { message: 'key "targorr the dread" on map 70 already belongs to boss 2756; add encounter 9001 to its encounterIds' },
+  );
+});
+
+test("the same key on another map is no clash", () => {
+  const { upserts } = reconcileBosses(
+    [row({ id: 2756, map: 34, key: "targorr the dread" })],
+    [client({ id: 9001, name: "Targorr the Dread" })],
+  );
+  assert.equal(upserts.find((u) => u.id === 9001).key, "targorr the dread");
+});

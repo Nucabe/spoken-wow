@@ -13,11 +13,15 @@ import { keyOf } from "../../../lib/bosses.mjs";
  *   encounter's key (bosses.mjs renameAsCreatures). Else the key is minted from `name`.
  * @returns upserts (rows to write, existing keys kept) and retire (ids of live bosses the
  *   client no longer lists)
+ * @throws when a new boss's (map, key) is already held by another boss, retired or not: the
+ *   client has most likely renumbered that boss's encounter.
  */
 export function reconcileBosses(existing, fromClient) {
   const byEncounter = new Map();
+  const holder = new Map();
   for (const row of existing) {
     for (const id of new Set([row.id, ...row.encounterIds])) byEncounter.set(id, row);
+    holder.set(`${row.map}\t${row.key}`, row.id);
   }
 
   const upserts = [];
@@ -35,10 +39,18 @@ export function reconcileBosses(existing, fromClient) {
         retired: false,
       });
     } else {
+      const key = boss.key ?? keyOf(boss.name);
+      const held = holder.get(`${boss.map}\t${key}`);
+      if (held !== undefined) {
+        throw new Error(
+          `key "${key}" on map ${boss.map} already belongs to boss ${held}; add encounter ${boss.id} to its encounterIds`,
+        );
+      }
+      holder.set(`${boss.map}\t${key}`, boss.id);
       upserts.push({
         id: boss.id,
         map: boss.map,
-        key: boss.key ?? keyOf(boss.name),
+        key,
         position: boss.position,
         encounterIds: ids,
         creatureId: null,
