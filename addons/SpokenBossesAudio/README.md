@@ -1,3 +1,5 @@
+<!-- GENERATED from publishers/bosses/spoken-bosses-audio.md by scripts/descriptions.mjs. Do not edit by hand. -->
+
 Narrated boss stories for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s NPCs module. This addon is data only: it does nothing on its own.
 
 ## Installing
@@ -6,7 +8,7 @@ Install **Spoken** first; this pack is inert without it. Extract into `Interface
 
 ## Compatibility
 
-For **WoW Forever**, Classic Era and Anniversary, with Spoken 3.0.0 or later.
+For **WoW Forever**, Classic Era and Anniversary, with Spoken 3.7.0 or later.
 
 ## Credits
 

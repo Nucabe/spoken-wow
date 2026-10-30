@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  actedFolder,
+  actedFolder, englishFolder, languageFolder,
   changelogSection, findPack, isLanguageHeading, managerFolders, loadPacks, MIN_SPOKEN, packsFor,
 } from "./packs.mjs";
 
@@ -195,5 +195,20 @@ test("manager may only be true", () => {
 });
 
 test("every section names the oldest Spoken its packs need", () => {
-  for (const section of ["quests", "places", "readables"]) assert.match(MIN_SPOKEN[section], /^\d+\.\d+\.\d+$/);
+  for (const section of ["quests", "places", "readables", "bosses"]) assert.match(MIN_SPOKEN[section], /^\d+\.\d+\.\d+$/);
+});
+
+test("the bosses pack is SpokenBossesAudio, and a language's is that plus its code", () => {
+  assert.equal(englishFolder("bosses"), "SpokenBossesAudio");
+  assert.equal(`${languageFolder("bosses", null)}_deDE`, "SpokenBossesAudio_deDE");
+  const en = ["bosses", "a.md", { section: "bosses", lang: "enUS", release: "bosses-audio",
+    slug: "spoken-audio-bosses", name: "Spoken Audio: Bosses", manager: "true" }];
+  const de = ["bosses", "b.md", { section: "bosses", lang: "deDE", version: "1.0.0",
+    release: "bosses-audio-deDE", slug: "spoken-german-audio-bosses", name: "Spoken German Audio: Bosses" }];
+  const packs = loadPacks(tree([en, de]));
+  assert.equal(findPack("bosses", "enUS", null, packs).folder, "SpokenBossesAudio");
+  const german = findPack("bosses", "deDE", null, packs);
+  assert.equal(german.folder, "SpokenBossesAudio_deDE");
+  assert.equal(german.tag, "bosses-audio-deDE/v1.0.0");
+  assert.deepEqual(managerFolders(packs), [{ folder: "SpokenBossesAudio", section: "bosses", lang: "enUS" }]);
 });

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fetch the archived takes a section's pack is built from, and no others.
 #
-#   scripts/audio/pull-live.sh <quests|places|readables>
+#   scripts/audio/pull-live.sh <quests|places|readables|bosses>
 #   scripts/audio/pull-live.sh <section> <lang>   another language's pack
 #   scripts/audio/pull-live.sh <section> <lang> recorded
 #                                                 the voice actors' live recordings instead,
@@ -26,7 +26,7 @@
 #   RSYNC                       an rsync 3.x; macOS's openrsync lacks --info
 set -euo pipefail
 
-section=${1:?usage: pull-live.sh <quests|places|readables> [lang]}
+section=${1:?usage: pull-live.sh <quests|places|readables|bosses> [lang]}
 # A language's takes live under <lang>/ in the same archive, and the list sounds.mjs prints
 # already carries that prefix, so the rsync below is the same for every language and lands
 # them beside English's rather than over them.
@@ -39,15 +39,20 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 # The recordings sit in the same archive, under recorded/<lang>/, and acted.mjs prints them
 # relative to its root the same way, so only the lister changes.
 what=${3:-takes}
+# The make targets' prefix: the bosses' pack ships beside Spoken_NPCs, whose targets are npcs-*.
+targets=$section
+[ "$section" = bosses ] && targets=npcs
 case "$what" in
-  takes) lister="$root/scripts/audio/sounds.mjs"; next="make $section-sounds";;
-  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $section-package-acted";;
+  takes) lister="$root/scripts/audio/sounds.mjs"; next="make $targets-sounds";;
+  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $targets-package-acted";;
   *) echo "usage: pull-live.sh <section> [lang] [recorded]" >&2; exit 2;;
 esac
 # Where sounds.mjs reads the archive from, including its SPOKEN_<SECTION>_AUDIO_HISTORY
-# override, so the pull lands where the build looks.
-override="SPOKEN_$(printf '%s' "$section" | tr '[:lower:]' '[:upper:]')_AUDIO_HISTORY"
-archive=${!override:-$root/pipelines/$section/audio-history}
+# override, so the pull lands where the build looks: asked of the same function, since bosses'
+# default is not under a pipeline of their own.
+archive=$(node --input-type=module -e \
+  'const { archiveOf } = await import(process.argv[1]); console.log(archiveOf(process.argv[2]))' \
+  "$root/scripts/lib/archives.mjs" "$section")
 
 list=$(mktemp)
 trap 'rm -f "$list"' EXIT
@@ -61,7 +66,7 @@ mkdir -p "$archive"
   status=$?
   if [ "$status" = 23 ]; then
     echo "Some live takes are not in production's archive. If this database has not been" >&2
-    echo "synced lately, those rows are ones production has moved past: make $section-sync" >&2
+    echo "synced lately, those rows are ones production has moved past: make $targets-sync" >&2
   fi
   exit "$status"
 }

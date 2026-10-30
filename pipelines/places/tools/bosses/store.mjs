@@ -214,7 +214,7 @@ export async function readStories() {
 /** Live boss takes for one language: what the pack's lookup lists. lineId is boss:{map}:{key}. */
 export async function readLiveTakes(lang) {
   const { rows } = await query(
-    `select "lineId", "file", "durationSec", "wordTimes" from "take"
+    `select "lineId", "file", "durationSec", "wordTimes", "spokenHash" from "take"
       where "source" = 'bosses' and "lang" = $1 and "isCurrent"`,
     [lang],
   );
