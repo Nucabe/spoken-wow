@@ -37,6 +37,13 @@ import type { ResultLine as QuestLine } from "@/lib/search";
 import type { Source } from "@/lib/sections";
 import { cn, endsSelection } from "@/lib/utils";
 import type { ResultLine as ZoneLine } from "@/lib/places/search";
+import type { ResultLine as BossLine } from "@/lib/bosses/search";
+import { placesSection } from "@/components/places/sections";
+import { bossesSection } from "@/components/bosses/sections";
+
+// No facets: the card shows one line, with nothing to narrow.
+const PLACES = placesSection();
+const BOSSES = bossesSection();
 
 /** Enough to read a typical complaint whole without pushing the actions off a phone screen. */
 const PREVIEW = 3;
@@ -477,8 +484,12 @@ function SourcePlayer({
   audio: React.RefObject<HTMLAudioElement | null>;
 }) {
   if (source === "quests") return <QuestsPlayer ref={audio} line={line as QuestLine | null} version={version} />;
-  if (source === "places") return <PlacesPlayer audioRef={audio} line={line as ZoneLine | null} version={version} />;
-  if (source === "bosses") return null;
+  if (source === "places") {
+    return <PlacesPlayer section={PLACES} audioRef={audio} line={line as ZoneLine | null} version={version} />;
+  }
+  if (source === "bosses") {
+    return <PlacesPlayer section={BOSSES} audioRef={audio} line={line as BossLine | null} version={version} />;
+  }
   return <ReadablesPlayer audioRef={audio} line={line as BookLine | null} version={version} />;
 }
 
@@ -496,9 +507,13 @@ function EditDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  if (source === "places") return <LoreDialog line={line as ZoneLine} onClose={onClose} onSaved={onSaved} />;
+  if (source === "places") {
+    return <LoreDialog section={PLACES} line={line as ZoneLine} onClose={onClose} onSaved={onSaved} />;
+  }
+  if (source === "bosses") {
+    return <LoreDialog section={BOSSES} line={line as BossLine} onClose={onClose} onSaved={onSaved} />;
+  }
   if (source === "readables") return <PageTextDialog line={line as BookLine} onClose={onClose} onSaved={onSaved} />;
-  if (source === "bosses") return null;
   if (lang !== BASE_LANG) {
     return <TranslateDialog subject={lineTextSubject(line as QuestLine)} onClose={onClose} onSaved={onSaved} />;
   }
