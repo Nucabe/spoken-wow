@@ -444,6 +444,61 @@ Expect("clearing it brings the list back", Has(Shown(), "Deadmines") and not Has
 NPCs:SetupOptions()
 local panel = NPCs.optionsPanel
 Expect("the Bosses page is built", panel ~= nil and panel.layout ~= nil, true)
+do
+    -- The voice packs, as on the Places and Readables pages: English's row with its Download button
+    -- while no pack is installed, its version once one is, and a word where nothing can be heard.
+    assert(loadfile(ADDONS .. "Spoken_NPCs/UI/CopyLink.lua"))("Spoken_NPCs", NPCs)
+    local W = Spoken:Words()
+    local sections, voice = {}, nil
+    for _, item in ipairs(panel.layout.items) do
+        if item.kind == "section" then
+            table.insert(sections, item.text)
+            if item.text == W.PART_VOICE then voice = item end
+        end
+    end
+    Expect("the page has its voice packs, then the history", table.concat(sections, "|"), "Voice Packs|Reading History")
+    local function English()
+        for _, row in ipairs(voice.rows) do
+            local label = row.control.layoutLabel
+            if label and label.text == Spoken:LanguageName("enUS") then return row end
+        end
+    end
+    local language = SpokenEnv.Addon.db.profile.Language
+    _G.SpokenBossesAudioPacks = nil
+    panel.layout:Refresh()
+    local english = English()
+    Expect("English's pack is listed with no pack installed", english ~= nil and english.shown, true)
+    Expect("...with its Download button", english.control.layoutGet, true)
+    local button = english.control.layoutButton
+    local shown = #stub.popups
+    button.scripts.OnClick(button)
+    local popup = stub.popups[#stub.popups]
+    Expect("...which offers the pack's store address to copy", #stub.popups > shown and popup.key, "SPOKENNPCS_COPY_LINK")
+    Expect("...saying what it is for", popup.args[1], NPCs.L.OPT_DOWNLOAD_ADDRESS)
+    _G.SpokenBossesAudioPacks = { SpokenBossesAudio = { version = 1, language = "enUS", bosses = {} } }
+    panel.layout:Refresh()
+    Expect("an installed pack shows no button", english.control.layoutGet, false)
+    _G.SpokenBossesAudioPacks = nil
+
+    local function Silent()
+        for _, row in ipairs(voice.rows) do
+            local text = row.control.GetText and row.control:GetText()
+            if row.shown and type(text) == "string" and text ~= "" then return text end
+        end
+        return nil
+    end
+    language.Voice, language.Fallback = "deDE", "none"
+    panel.layout:Refresh()
+    Expect("a voice language with no boss pack and Stay Silent is said under the voice packs",
+        Silent(), SpokenEnv.L.MODULE_NO_VOICE_FMT:format(Spoken:LanguageName("deDE")))
+    Expect("...and English's is not offered, nothing falling back on it", English().shown, false)
+    language.Fallback = "enUS"
+    panel.layout:Refresh()
+    Expect("with English filling in, nothing is said, and English's pack is the one to get",
+        tostring(Silent()) .. " " .. tostring(English().shown), "nil true")
+    language.Voice, language.Fallback = nil, nil
+    panel.layout:Refresh()
+end
 SpokenNPCsSettings.unlockUnfound = true
 SpokenNPCsSettings.compendiumFoundOnly = false
 SpokenNPCsCharacter.found["36:edwin vancleef"] = true

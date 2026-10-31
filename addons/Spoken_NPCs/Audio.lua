@@ -7,13 +7,15 @@ local _, NPCs = ...
 -- The shape of pack.bosses this build reads. A pack of another format may name its clips otherwise.
 local PACK_FORMAT = 1
 
-local function VoiceLanguage()
+--- The language a story is heard in: Spoken's Voice Language, "Auto" being the client's.
+function NPCs:GetVoiceLanguage()
 	if Spoken and Spoken.VoiceLanguage then return Spoken:VoiceLanguage() end
 	return GetLocale and GetLocale() or "enUS"
 end
+local function VoiceLanguage() return NPCs:GetVoiceLanguage() end
 
--- Spoken's If a Voice Is Missing, English unless the player chose otherwise; nil for Stay Silent.
-local function FallbackLanguage()
+--- Spoken's If a Voice Is Missing, English unless the player chose otherwise; nil for Stay Silent.
+function NPCs:GetFallbackLanguage()
 	local fallback
 	if Spoken and Spoken.GetLanguageChoice then
 		local _
@@ -22,6 +24,7 @@ local function FallbackLanguage()
 	if fallback == "none" then return nil end
 	return fallback or "enUS"
 end
+local function FallbackLanguage() return NPCs:GetFallbackLanguage() end
 
 --- Every installed pack this build reads, best first: the voice language's, then the client's,
 --- then by bitrate, then by folder name, so two copies of one pack resolve the same way every time.

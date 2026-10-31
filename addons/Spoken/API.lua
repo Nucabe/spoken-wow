@@ -510,7 +510,7 @@ function Spoken:VoiceLanguage()
 end
 
 --- What a module's page says under its voice packs when nothing can be heard: no pack in the voice
---- language exists for `module` ("quests", "places" or "readables"), and If a Voice Is Missing is Stay
+--- language exists for `module` ("quests", "places", "readables" or "bosses"), and If a Voice Is Missing is Stay
 --- Silent. Nil otherwise.
 function Spoken:SilentNote(module)
     local voice = self:VoiceLanguage()
