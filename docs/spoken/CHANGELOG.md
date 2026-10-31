@@ -13,6 +13,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   Readables pages list theirs. Play on a boss's page in the Compendium plays its story, and the
   boss still tells it when it falls.
   *([rusty-key](https://github.com/rusty-key))*
+- **Places and Readables are reachable by other addons**, through the globals `SpokenPlaces` and
+  `SpokenReadables`, as Bosses already is through `SpokenBossesAddon`: an addon that lists a place
+  or a book can ask whether Spoken has its story and have it read or shown. Such an addon checks
+  first whether the player has found it.
+  *([fallenguards](https://github.com/fallenguards))*
 - **Raid and world bosses wear the elite skull in the Compendium, dungeon bosses the plain one.**
   On Season of Discovery, Blackfathom Deeps, Gnomeregan and Sunken Temple count as raids.
   *([anon1231823](https://github.com/anon1231823))*
