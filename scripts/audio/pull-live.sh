@@ -18,12 +18,14 @@
 # live stay on disk, and the archive only ever grows.
 #
 # A live take production has no file for fails the pull (rsync exits 23), because that
-# pack would ship silence for the line.
+# pack would ship silence for the line. With SPOKEN_ARCHIVE_URL set, a take with a hash
+# comes from the bucket instead.
 #
 # Environment, as the Makefiles pass it (make/droplet.mk's DB_ENV, plus RSYNC):
 #   DROPLET, SSH, REMOTE_ROOT   how to reach production
 #   LOCAL_DB                    the database whose live takes are listed
 #   RSYNC                       an rsync 3.x; macOS's openrsync lacks --info
+#   SPOKEN_ARCHIVE_URL          the archive bucket's public address, when it has the clips
 set -euo pipefail
 
 section=${1:?usage: pull-live.sh <quests|places|readables|bosses> [lang]}
@@ -31,8 +33,6 @@ section=${1:?usage: pull-live.sh <quests|places|readables|bosses> [lang]}
 # already carries that prefix, so the rsync below is the same for every language and lands
 # them beside English's rather than over them.
 lang=${2:-enUS}
-: "${DROPLET:?no droplet configured: export SPOKEN_DROPLET=deploy@<host>}"
-: "${RSYNC:?no rsync 3.x found. macOS ships openrsync, which lacks --info: brew install rsync}"
 REMOTE_ROOT=${REMOTE_ROOT:-/srv/spoken}
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -57,14 +57,33 @@ archive=$(node --input-type=module -e \
   "$root/scripts/lib/archives.mjs" "$section")
 
 list=$(mktemp)
-trap 'rm -f "$list"' EXIT
+files=$(mktemp)
+trap 'rm -f "$list" "$files"' EXIT
 node "$lister" --list --lang="$lang" "$section" >"$list"
 echo "==> $(wc -l <"$list" | tr -d ' ') live $section $lang $what"
 
 mkdir -p "$archive"
+# With SPOKEN_ARCHIVE_URL set the lister prints blobs/<prefix>/<sha256> for rows with a hash;
+# only the rest need the droplet.
+if [ -n "${SPOKEN_ARCHIVE_URL:-}" ]; then
+  node "$root/scripts/audio/fetch-blobs.mjs" "$archive" <"$list"
+  # Quests takes also bring the Ogg the site encoded at commit, into package-audio.sh's cache.
+  if [ "$section" = quests ] && [ "$what" = takes ]; then
+    node "$root/scripts/audio/fetch-encodings.mjs" --lang="$lang"
+  fi
+fi
+grep -v '^blobs/' "$list" >"$files" || true
+if [ ! -s "$files" ]; then
+  suffix=""
+  [ "$lang" = enUS ] || suffix=" LOCALE=$lang"
+  echo "==> every clip is in ${archive#"$root"/}. Next:  $next$suffix"
+  exit 0
+fi
+: "${DROPLET:?no droplet configured: export SPOKEN_DROPLET=deploy@<host>}"
+: "${RSYNC:?no rsync 3.x found. macOS ships openrsync, which lacks --info: brew install rsync}"
 # shellcheck disable=SC2086 -- SSH carries its own flags
 "$RSYNC" -a --partial --human-readable --info=stats1,progress2 -e "$SSH" \
-  --files-from="$list" "$DROPLET:$REMOTE_ROOT/shared/audio-history/$section/" "$archive/" || {
+  --files-from="$files" "$DROPLET:$REMOTE_ROOT/shared/audio-history/$section/" "$archive/" || {
   status=$?
   if [ "$status" = 23 ]; then
     echo "Some live takes are not in production's archive. If this database has not been" >&2
