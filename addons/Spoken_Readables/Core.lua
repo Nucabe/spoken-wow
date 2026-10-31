@@ -11,9 +11,11 @@
 
 local ADDON_NAME, SpokenReadables = ...
 
--- Reachable by other addons, as SpokenNPCs is: one that lists books and letters can ask what a
--- page is (PlaceOf, BookById), whether it is found (CompendiumHas) and voiced (HasAudio), and
--- have it read (PlayFrom, StopReading, IsNarrating) or shown (ShowReadables).
+-- Reachable by other addons, as SpokenBossesAddon is: one that lists books and letters can ask
+-- what a page is (PlaceOf, BookById), whether it is found (CompendiumHas) and voiced (HasAudio),
+-- and have it read (PlayFrom, StopReading, IsNarrating) or shown (ShowReadables). PlayFrom does
+-- not check CompendiumHas, so the caller does; and it calls PlayFrom(pageId, true, true), as the
+-- Compendium does, since without `browsing` the book counts as read in the world.
 _G.SpokenReadables = SpokenReadables
 
 local L = SpokenReadables.L

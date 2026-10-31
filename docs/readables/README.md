@@ -170,11 +170,13 @@ pnpm --filter @spoken/web test     # the site, including lib/readables
 the same API on Era, Anniversary and Forever, which is why there is one addon rather than
 three.
 
-The module is reachable by other addons through the global `SpokenReadables`, as `SpokenNPCs`
-is: what a page is (`PlaceOf`, `BookById`), whether it is found (`CompendiumHas`) and voiced
-(`HasAudio`), and reading it (`PlayFrom`, `StopReading`, `IsNarrating`) or showing it
-(`ShowReadables`). The Unlock switch stays the player's: `CompendiumHas` is the answer an addon
-acts on.
+The module is reachable by other addons through the global `SpokenReadables`, as
+`SpokenBossesAddon` is: what a page is (`PlaceOf`, `BookById`), whether it is found
+(`CompendiumHas`) and voiced (`HasAudio`), and reading it (`PlayFrom`, `StopReading`,
+`IsNarrating`) or showing it (`ShowReadables`). `PlayFrom` does not check `CompendiumHas`, which
+also covers the part being off, so an addon checks it first. It calls `PlayFrom(pageId, true,
+true)`, as the Compendium does: without `browsing` the book counts as read in the world, and
+Read Only Once then keeps it quiet when the player opens it there.
 
 **A page is identified by what is on screen**, because the client never says which page id
 it is showing. Title, page number and a checksum of the text; then the checksum alone,

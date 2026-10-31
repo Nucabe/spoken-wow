@@ -4,9 +4,11 @@
 
 local ADDON_NAME, SpokenPlaces = ...
 
--- Reachable by other addons, as SpokenNPCs is: one that lists places can ask whether a place
--- has a story (GetLore, GetSubzoneLore), whether it is found (IsLocked) and voiced (HasAudio),
--- and have it read (PlayLore, StopLore, IsPlayingLore) or shown (ShowLoreFor).
+-- Reachable by other addons, as SpokenBossesAddon is: one that lists places can ask whether a
+-- place has a story (GetLore, GetSubzoneLore), whether it is found (IsLocked) and voiced
+-- (HasAudio), and have it read (PlayLore, StopLore, IsPlayingLore) or shown (ShowLoreFor).
+-- PlayLore and ShowLoreFor check neither the lock nor the part, so the caller checks
+-- Spoken:IsPartOn("places") and IsLocked first.
 _G.SpokenPlaces = SpokenPlaces
 
 -- A value the game hands over as a secret, in an instance or in combat, reads as nil.
@@ -846,7 +848,7 @@ local function CmdStatus()
 	if pack then
 		SpokenPlaces:Print("voice pack: %s -- %s", pack.addon, SpokenPlaces:GetAudioPackLabel(pack))
 	else
-		SpokenPlaces:Print("|cffffcc00no voice pack installed|r -- install Spoken Audio: Places to hear the lore")
+		SpokenPlaces:Print("|cffffcc00no voice pack installed|r -- install Spoken Audio: Places and Bosses to hear the lore")
 	end
 
 	if SpokenPlaces:Get("debug") then
@@ -908,7 +910,7 @@ local function CmdAudioPack(arg)
 		-- Named by CurseForge project, not by folder: a player with the pre-rename pack has a
 		-- ZoneLoreAudio folder, and saying that name sends them looking for a project that no
 		-- longer exists.
-		SpokenPlaces:Print("  install Spoken Audio: Places alongside Spoken Places")
+		SpokenPlaces:Print("  install Spoken Audio: Places and Bosses alongside Spoken Places")
 		return
 	end
 
