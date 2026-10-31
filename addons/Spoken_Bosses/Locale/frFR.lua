@@ -1,10 +1,10 @@
-local _, NPCs = ...
+local _, Bosses = ...
 
--- French interface strings for Spoken NPCs.
+-- French interface strings for Spoken Bosses.
 --
 -- Keyed exactly as in Locale/enUS.lua; anything missing falls back to English.
 
-local L = NPCs.L
+local L = Bosses.L
 
 if GetLocale() ~= "frFR" then
 	return

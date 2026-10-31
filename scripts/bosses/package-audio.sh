@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Builds the bosses sound pack, SpokenBossesAudio, into dist/.
 #
-#   ./scripts/npcs/package-audio.sh               # English's pack
-#   LOCALE=deDE ./scripts/npcs/package-audio.sh   # another language's pack
+#   ./scripts/bosses/package-audio.sh               # English's pack
+#   LOCALE=deDE ./scripts/bosses/package-audio.sh   # another language's pack
 #
-# Run through `make npcs-package-audio`, which first checks the data against production and
-# assembles Sounds/ and the lookup (npcs-sounds, npcs-lookup) and validates them
-# (npcs-validate-audio). English's clips and lookup are in its folder; a language's are build
+# Run through `make bosses-package-audio`, which first checks the data against production and
+# assembles Sounds/ and the lookup (bosses-sounds, bosses-lookup) and validates them
+# (bosses-validate-audio). English's clips and lookup are in its folder; a language's are build
 # output under build/bosses/<lang>/, wrapped in English's folder and named by its page under
 # publishers/bosses/ (scripts/lib/packs.mjs).
 #
@@ -39,13 +39,13 @@ if english; then
   SOUNDS="$SRC/Sounds"
   LOOKUP="$SRC/Data/Sounds.lua"
   version="$(sed -n 's/^## Version:[[:space:]]*//p' "$TOC" | head -1 | tr -d '\r')"
-  next="make npcs-pull-live npcs-sounds npcs-lookup"
+  next="make bosses-pull-live bosses-sounds bosses-lookup"
 else
   WORK="$REPO/build/bosses/$LOCALE"
   SOUNDS="$WORK/Sounds"
   LOOKUP="$WORK/Data/Sounds.lua"
   version="$(pack_field version)"
-  next="make npcs-pull-live npcs-sounds npcs-lookup LOCALE=$LOCALE"
+  next="make bosses-pull-live bosses-sounds bosses-lookup LOCALE=$LOCALE"
 fi
 [[ -n "$version" ]] || { echo "error: no version for the $LOCALE bosses pack" >&2; exit 1; }
 

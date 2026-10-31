@@ -4,7 +4,7 @@
 -- boss_instance, boss and boss_line have no serial id, so the highest id and the sum of live
 -- ids that stamp reads do not exist. A digest of every row instead, which notices an edit, a
 -- new version, a retired boss and a renamed one alike; the tables are a few thousand rows.
--- Named columns rather than whole rows: ids make npcs-sync gives out fresh (entity_name's),
+-- Named columns rather than whole rows: ids make bosses-sync gives out fresh (entity_name's),
 -- authors it blanks where the account is not on this machine ("editedBy"), and timestamps,
 -- whose text follows each session's time zone, would differ with the data the same.
 --

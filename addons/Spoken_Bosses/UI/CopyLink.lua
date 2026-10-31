@@ -1,4 +1,4 @@
-local _, NPCs = ...
+local _, Bosses = ...
 
 -- A popup holding one selectable address: the client cannot open a browser, so the Bosses page's
 -- Download button offers the voice pack's address here, already highlighted, for Ctrl+C.
@@ -6,7 +6,7 @@ local _, NPCs = ...
 -- The same popup as Places' and Readables' UI/CopyLink.lua, under an id of its own: two addons
 -- sharing one StaticPopup id would overwrite each other's dialog.
 
-local POPUP = "SPOKENNPCS_COPY_LINK"
+local POPUP = "SPOKENBOSSES_COPY_LINK"
 
 -- The popup is a shared, reused frame, so the address cannot live on it. This is what OnShow
 -- reads and what OnTextChanged puts back.
@@ -54,7 +54,7 @@ StaticPopupDialogs[POPUP] = {
 }
 
 --- `caption` is the sentence above the box; it says what the address is for.
-function NPCs:ShowCopyLink(url, caption)
+function Bosses:ShowCopyLink(url, caption)
 	if not url then
 		return
 	end

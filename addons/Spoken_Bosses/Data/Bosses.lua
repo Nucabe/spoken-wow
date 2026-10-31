@@ -5,7 +5,7 @@
 -- (the ids ENCOUNTER_START gives), `key` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
 -- 1.60.1.70450, else retail 12.1.5.70448, wago.tools). Regenerate with:
---   make npcs-export
+--   make bosses-export
 --
 -- A global rather than a private namespace: a data file cannot reach into the addon's environment.
 

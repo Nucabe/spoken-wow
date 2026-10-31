@@ -29,7 +29,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             The boss tables have not been loaded into this database yet, so there is nothing to
             show. They are seeded from the committed Lua by the one-off intake,{" "}
             <code className="text-foreground">import-boss-lore.mts</code>, and{" "}
-            <code className="text-foreground">make npcs-check</code> passes once it has run.
+            <code className="text-foreground">make bosses-check</code> passes once it has run.
           </p>
         </Contained>
       </main>

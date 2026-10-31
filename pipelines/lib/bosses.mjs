@@ -8,9 +8,9 @@
 // Blackfathom Deeps and Gnomeregan, Sunken Temple's phases) is one boss here. A boss is matched
 // by its encounter id, so one the game renames keeps its key and its stories; one the client
 // drops, or one in UNCONFIRMED, is retired. Stories are not in the client: they are data of the
-// site. Data/Bosses.lua is written from the tables by make npcs-export.
+// site. Data/Bosses.lua is written from the tables by make bosses-export.
 //
-//   node pipelines/lib/bosses.mjs          (make bosses)
+//   node pipelines/lib/bosses.mjs          (make bosses-extract)
 //   node pipelines/lib/bosses.mjs --check  lists what the client would change, and fails if anything
 
 import { readFile } from "node:fs/promises";
@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { LOCALES, loadDungeons, quote } from "./dungeons.mjs";
 import { FOREVER_BUILD, RETAIL_BUILD, wagoTable } from "./wago.mjs";
 
-const EXPORT = fileURLToPath(new URL("../../addons/Spoken_NPCs/Data/Bosses.lua", import.meta.url));
+const EXPORT = fileURLToPath(new URL("../../addons/Spoken_Bosses/Data/Bosses.lua", import.meta.url));
 const RENAMED = fileURLToPath(new URL("./boss-names.json", import.meta.url));
 
 /** A name as the tools match one to another: lowercased, letters and digits only. */
@@ -38,7 +38,7 @@ export function guideFinder(encounters) {
 
 /**
  * [{ map, key, name, ids }] from Data/Bosses.lua, as render() writes it. The file is the export of
- * the boss tables (make npcs-export); the tools that call this only read bosses, so they read the
+ * the boss tables (make bosses-export); the tools that call this only read bosses, so they read the
  * export and run without a database.
  */
 export async function readBosses(path = EXPORT) {
@@ -182,7 +182,7 @@ export function render(maps, names) {
 -- (the ids ENCOUNTER_START gives), \`key\` the boss's English name lowercased without punctuation (how its
 -- story is filed), then its name, and in every other language where it differs (Forever
 -- ${FOREVER_BUILD}, else retail ${RETAIL_BUILD}, wago.tools). Regenerate with:
---   make npcs-export
+--   make bosses-export
 --
 -- A global rather than a private namespace: a data file cannot reach into the addon's environment.
 
@@ -206,7 +206,7 @@ async function main() {
   await loadEnvFile();
   try {
     // Before the client's tables are fetched, so a clone with no database learns it at once.
-    store.requireDatabase("make bosses");
+    store.requireDatabase("make bosses-extract");
     await sync(store, { bossChanges, nameChanges, reconcileBosses }, checkOnly);
   } catch (err) {
     console.error(`error: ${err.message}`);
@@ -320,7 +320,7 @@ async function sync(store, { bossChanges, nameChanges, reconcileBosses }, checkO
   if (checkOnly) {
     for (const line of lines) console.log(line);
     if (lines.length > 0) {
-      console.error(`${counts("the client differs from the boss tables")}: run make bosses`);
+      console.error(`${counts("the client differs from the boss tables")}: run make bosses-extract`);
       process.exitCode = 1;
     } else {
       console.log("the boss tables match the client's DungeonEncounter table");
@@ -336,7 +336,7 @@ async function sync(store, { bossChanges, nameChanges, reconcileBosses }, checkO
   }
   console.log(counts("wrote"));
   if (keptEdits > 0) console.log(`${keptEdits} names filed beneath an edited name, which stays current`);
-  if (lines.length > 0) console.log("then: make npcs-export");
+  if (lines.length > 0) console.log("then: make bosses-export");
 }
 
 // Not awaited: main imports reconcile.mjs, which imports this module, and a top-level await here

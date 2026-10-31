@@ -1,10 +1,10 @@
-local _, NPCs = ...
+local _, Bosses = ...
 
--- Brazilian Portuguese interface strings for Spoken NPCs.
+-- Brazilian Portuguese interface strings for Spoken Bosses.
 --
 -- Keyed exactly as in Locale/enUS.lua; anything missing falls back to English.
 
-local L = NPCs.L
+local L = Bosses.L
 
 if GetLocale() ~= "ptBR" then
 	return

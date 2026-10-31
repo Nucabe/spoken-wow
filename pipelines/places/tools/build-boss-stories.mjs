@@ -13,7 +13,7 @@
 //
 // The result is Blizzard's and the wiki's text, not the project's data. It goes to
 // build/boss-stories/Stories.lua (gitignored) and Stories.sources.txt beside it, or to --out; never under
-// addons/, whose Data/Stories.lua is exported from the boss_line table (make npcs-export). Credit for it
+// addons/, whose Data/Stories.lua is exported from the boss_line table (make bosses-export). Credit for it
 // is in THIRD_PARTY.md.
 //
 // With --packets <file> it writes, instead of that, the source material of every story: for each boss the

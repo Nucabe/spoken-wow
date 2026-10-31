@@ -1,6 +1,6 @@
 // The boss catalogue, built from boss_instance, boss, boss_line and entity_name.
 //
-// SERVER ONLY. The tables are the corpus; addons/Spoken_NPCs/Data is an export of them, so the
+// SERVER ONLY. The tables are the corpus; addons/Spoken_Bosses/Data is an export of them, so the
 // site never reads it.
 //
 // A language's catalogue is that language's rows and nothing else. Every live boss is listed in

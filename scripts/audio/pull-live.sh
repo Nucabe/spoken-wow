@@ -39,13 +39,10 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 # The recordings sit in the same archive, under recorded/<lang>/, and acted.mjs prints them
 # relative to its root the same way, so only the lister changes.
 what=${3:-takes}
-# The make targets' prefix: the bosses' pack ships beside Spoken_NPCs, whose targets are npcs-*.
-targets=$section
-[ "$section" = bosses ] && targets=npcs
 case "$what" in
-  takes) lister="$root/scripts/audio/sounds.mjs"; next="make $targets-sounds";;
-  # No npcs-package-acted exists, so a bosses pull of recordings names no next step.
-  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $targets-package-acted"
+  takes) lister="$root/scripts/audio/sounds.mjs"; next="make $section-sounds";;
+  # No bosses-package-acted exists, so a bosses pull of recordings names no next step.
+  recorded) lister="$root/scripts/audio/acted.mjs"; next="make $section-package-acted"
     [ "$section" = bosses ] && next="";;
   *) echo "usage: pull-live.sh <section> [lang] [recorded]" >&2; exit 2;;
 esac

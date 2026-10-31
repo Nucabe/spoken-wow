@@ -125,7 +125,7 @@ for target in "${targets[@]}"; do
   if [[ "$target" == audio ]] && english; then
     bosses_version="$(toc_version "$REPO/addons/SpokenBossesAudio/SpokenBossesAudio.toc")"
     zipped="$(unzip -p "$zip_path" SpokenBossesAudio/SpokenBossesAudio.toc 2>/dev/null | toc_version || true)"
-    remedy="run make npcs-sync npcs-pull-live npcs-package-audio places-package-audio"
+    remedy="run make bosses-sync bosses-pull-live bosses-package-audio places-package-audio"
     if [[ "$zipped" != "$bosses_version" ]]; then
       missing+=("$zip_path -- holds SpokenBossesAudio '${zipped:-none}', not $bosses_version; $remedy")
     elif ! unzip -p "$zip_path" SpokenBossesAudio/Data/Sounds.lua 2>/dev/null |

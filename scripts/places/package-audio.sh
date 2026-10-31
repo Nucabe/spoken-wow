@@ -212,13 +212,13 @@ tier_readme() {
 # there, so English gets a second zip, the plain one plus dist/SpokenBossesAudio, which is what that
 # project is sent. The plain zip stays Places only, because the manager refuses a zip holding a
 # folder its product does not own, and GitHub's places release is where it installs from. The
-# bosses folder is copied from what `make npcs-package-audio` built, never rebuilt here, and a
+# bosses folder is copied from what `make bosses-package-audio` built, never rebuilt here, and a
 # missing or stale build stops the run: a CurseForge zip quietly shipped without it takes the boss
 # narration away from every player who updates. Stale means a version other than its .toc's, or a
-# lookup other than the one the last `make npcs-lookup` wrote.
+# lookup other than the one the last `make bosses-lookup` wrote.
 BOSSES_SRC="$REPO/addons/SpokenBossesAudio"
 BOSSES_DIST="$DIST/SpokenBossesAudio"
-BOSSES_REMEDY="run make npcs-sync npcs-pull-live npcs-package-audio"
+BOSSES_REMEDY="run make bosses-sync bosses-pull-live bosses-package-audio"
 # A name of its own, not SpokenPlacesAudio-<v>-something: the manager would take that for a places
 # asset, and the channel publisher would read dist/SpokenPlacesAudio as older than its zip.
 BUNDLE_NAME="SpokenPlacesAndBossesAudio"

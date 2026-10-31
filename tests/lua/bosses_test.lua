@@ -1,4 +1,4 @@
--- The bosses tab of Azeroth's Compendium (Spoken NPCs): the data against the dungeon table, then
+-- The bosses tab of Azeroth's Compendium (Spoken Bosses): the data against the dungeon table, then
 -- the list built against the stub client: a banner for each continent, dungeons and raids directly
 -- beneath it, bosses under their dungeon, and a boss's page; bosses found by their fight, greyed
 -- until then, counted with a bar, left out by Found Only and opened by Unlock Unfound Bosses. Run
@@ -13,8 +13,8 @@ local Expect, Failures = H.Expecter(print)
 
 ---------------------------------------------------------------- the data
 dofile(ADDONS .. "Spoken/Data/Dungeons.lua")
-dofile(ADDONS .. "Spoken_NPCs/Data/Bosses.lua")
-dofile(ADDONS .. "Spoken_NPCs/Data/Stories.lua")
+dofile(ADDONS .. "Spoken_Bosses/Data/Bosses.lua")
+dofile(ADDONS .. "Spoken_Bosses/Data/Stories.lua")
 _G.SpokenBossStories = {} -- the tests write their own stories, not the generated ones
 local dungeons = SpokenDungeons.dungeons
 local worlds = SpokenDungeons.worldBosses
@@ -45,7 +45,7 @@ Expect("Wailing Caverns has the Lady Anacondra and Mutanus first and last",
 Expect("a boss's name in another language is there", SpokenBosses.maps[33][1][1] .. "|" .. tostring(SpokenBosses.maps[33][1].deDE),
     "Rethilgore|Rotkralle")
 
-dofile(ADDONS .. "Spoken_NPCs/Data/Creatures.lua")
+dofile(ADDONS .. "Spoken_Bosses/Data/Creatures.lua")
 local creatures = SpokenBossCreatures
 local isBoss, notBoss, shared, owner = {}, {}, {}, {}
 for map, bosses in pairs(SpokenBosses.maps) do
@@ -141,30 +141,30 @@ _G.C_Map = {
 }
 _G.GetInstanceInfo = function() return "Outland", "none", 0, "", 0, 0, false, 0 end
 
-local NPCs = {}
+local Bosses = {}
 for _, file in ipairs({ "Locale/enUS", "Core", "Audio", "UI/Bosses", "UI/Options", "Events" }) do
-    local chunk = assert(loadfile(ADDONS .. "Spoken_NPCs/" .. file .. ".lua"))
-    chunk("Spoken_NPCs", NPCs)
+    local chunk = assert(loadfile(ADDONS .. "Spoken_Bosses/" .. file .. ".lua"))
+    chunk("Spoken_Bosses", Bosses)
 end
 Expect("the tab is registered once the world is up", SpokenCompendium:Tab("bosses") ~= nil, false)
-NPCs:InitDB()
-NPCs:SetupBosses()
+Bosses:InitDB()
+Bosses:SetupBosses()
 local tab = SpokenCompendium:Tab("bosses")
 Expect("...after Setup", tab ~= nil and tab.label, "Bosses")
 Expect("...a tab of its own after the readables'", tab.order, 3)
 Expect("...with Unlock Unfound Bosses, off", tab.unlock ~= nil and tab.unlock.get(), false)
-Expect("Found Only is on in a fresh profile", SpokenNPCsSettings.compendiumFoundOnly, true)
-Expect("Unlock Unfound Bosses is off in a fresh profile", SpokenNPCsSettings.unlockUnfound, false)
-SpokenNPCsSettings.compendiumFoundOnly = false
-NPCs:InitDB()
-Expect("...and an explicit off stays off through the next start", SpokenNPCsSettings.compendiumFoundOnly, false)
+Expect("Found Only is on in a fresh profile", SpokenBossesSettings.compendiumFoundOnly, true)
+Expect("Unlock Unfound Bosses is off in a fresh profile", SpokenBossesSettings.unlockUnfound, false)
+SpokenBossesSettings.compendiumFoundOnly = false
+Bosses:InitDB()
+Expect("...and an explicit off stays off through the next start", SpokenBossesSettings.compendiumFoundOnly, false)
 -- A profile saved before the marker existed.
-SpokenNPCsSettings.foundOnlyDefaultOn = nil
-NPCs:InitDB()
-Expect("...an off stored before it was on by default is turned on once", SpokenNPCsSettings.compendiumFoundOnly, true)
-SpokenNPCsSettings.compendiumFoundOnly = false
-NPCs:InitDB()
-Expect("...and turned off again, it stays off", SpokenNPCsSettings.compendiumFoundOnly, false)
+SpokenBossesSettings.foundOnlyDefaultOn = nil
+Bosses:InitDB()
+Expect("...an off stored before it was on by default is turned on once", SpokenBossesSettings.compendiumFoundOnly, true)
+SpokenBossesSettings.compendiumFoundOnly = false
+Bosses:InitDB()
+Expect("...and turned off again, it stays off", SpokenBossesSettings.compendiumFoundOnly, false)
 -- The tests below are about the unfiltered list, so Found Only stays off.
 
 local window
@@ -193,9 +193,9 @@ end
 -- Standing in a dungeon, the tab opens on its line, opened.
 here_map = 1413
 _G.GetInstanceInfo = function() return "Deadmines", "party", 1, "", 5, 0, false, 36 end
-NPCs:ShowBosses()
+Bosses:ShowBosses()
 window = SpokenCompendium:Window()
-page = NPCs.bosses.page
+page = Bosses.bosses.page
 Shown()
 Expect("with the player in a dungeon, its line is opened and chosen, its bosses listed",
     RowFor("Deadmines") ~= nil and RowFor("Deadmines").selected and Has(Shown(), "Edwin VanCleef"), true)
@@ -219,7 +219,7 @@ Expect("...a boss not met greyed, with the padlock", RowFor("Edwin VanCleef").ro
 -- Back out in Westfall: the line chosen for the player gives way to the continent's.
 here_map = 1436
 _G.GetInstanceInfo = function() return "Outland", "none", 0, "", 0, 0, false, 0 end
-NPCs:ShowBosses()
+Bosses:ShowBosses()
 local shown = Shown()
 Expect("opened where the player stands: its continent's dungeon lines are shown", Has(shown, "Deadmines") and not Has(shown, "Westfall"), true)
 Expect("...a banner for each continent, Kalimdor first", shown:match("^Eastern Kingdoms|") ~= nil or shown:match("^Kalimdor|") ~= nil, true)
@@ -231,8 +231,8 @@ Expect("...its page is the continent and counts its bosses",
     page.title.text == "Eastern Kingdoms" and page.sub.text.text:match("^0 of %d+ found$") ~= nil, true)
 Expect("...the continent's banner counts them too", RowFor("Kalimdor").count.text:match("^0/%d+$") ~= nil, true)
 
-SpokenNPCsSettings.compendiumFoundOnly = true
-NPCs:ShowBosses()
+SpokenBossesSettings.compendiumFoundOnly = true
+Bosses:ShowBosses()
 Shown()
 Expect("with Found Only on and none met in the Eastern Kingdoms, the tab does not land on its banner, which the list leaves out too",
     RowFor("Eastern Kingdoms") == nil and page.title.text ~= "Eastern Kingdoms", true)
@@ -244,13 +244,13 @@ Expect("a dungeon boss uses the normal skull badge", Spoken:GetBullet("boss").te
 Expect("a raid boss uses the elite skull badge", Spoken:GetBullet("boss-raid").texture,
     [[Interface\Minimap\Minimap_skull_elite]])
 _G.SpokenBossStories[2856] = { balnazzar = "A raid story." }
-local raidClip = NPCs:StoryClip(2856, "balnazzar")
+local raidClip = Bosses:StoryClip(2856, "balnazzar")
 Expect("a raid story uses the raid badge", raidClip and raidClip.present.bullet, "boss-raid")
 Expect("a raid story without a portrait uses the elite skull", raidClip and raidClip.present.portrait.texture,
     [[Interface\Minimap\Minimap_skull_elite]])
 _G.SpokenBossStories[2856] = nil
 _G.SpokenBossStories[2789] = { ["lord kazzak"] = "A world-boss story." }
-local worldBossClip = NPCs:StoryClip(2789, "lord kazzak")
+local worldBossClip = Bosses:StoryClip(2789, "lord kazzak")
 Expect("a world-boss story uses the elite badge", worldBossClip and worldBossClip.present.bullet, "boss-raid")
 _G.SpokenBossStories[2789] = nil
 local function Raids(variant)
@@ -264,8 +264,8 @@ local function Raids(variant)
 end
 Expect("Blackfathom Deeps, Gnomeregan and Sunken Temple are raids only on Season of Discovery",
     Raids("era") .. "|" .. Raids("sod"), "409 2856|48 90 109 409 2856")
-SpokenNPCsSettings.compendiumFoundOnly = false
-NPCs:ShowBosses()
+SpokenBossesSettings.compendiumFoundOnly = false
+Bosses:ShowBosses()
 Shown()
 Expect("...and off, it lands on the Eastern Kingdoms again", RowFor("Eastern Kingdoms") ~= nil and RowFor("Eastern Kingdoms").selected, true)
 
@@ -287,17 +287,17 @@ Expect("a boss not met cannot be chosen: its row does nothing", RowFor("Edwin Va
 -- Meeting the boss: its fight starts, whichever difficulty's encounter.
 local edwin
 for _, boss in ipairs(SpokenBosses.maps[36]) do if boss.key == "edwin vancleef" then edwin = boss end end
-Expect("an encounter that is no boss of the table is not met", NPCs:FoundEncounter(1), false)
-Expect("a boss's encounter is met the first time", NPCs:FoundEncounter(edwin.ids[1]), true)
-Expect("...and not again", NPCs:FoundEncounter(edwin.ids[1]), false)
-Expect("...kept for the character", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
+Expect("an encounter that is no boss of the table is not met", Bosses:FoundEncounter(1), false)
+Expect("a boss's encounter is met the first time", Bosses:FoundEncounter(edwin.ids[1]), true)
+Expect("...and not again", Bosses:FoundEncounter(edwin.ids[1]), false)
+Expect("...kept for the character", SpokenBossesCharacter.found["36:edwin vancleef"], true)
 local sunken
 for map, bosses in pairs(SpokenBosses.maps) do
     for _, boss in ipairs(bosses) do if boss.key == "weaver" then sunken = map end end
 end
-NPCs:FoundEncounter(2955)
+Bosses:FoundEncounter(2955)
 Expect("an encounter of two bosses at once meets both",
-    tostring(NPCs:IsBossFound(sunken, "weaver")) .. "|" .. tostring(NPCs:IsBossFound(sunken, "dreamscythe")), "true|true")
+    tostring(Bosses:IsBossFound(sunken, "weaver")) .. "|" .. tostring(Bosses:IsBossFound(sunken, "dreamscythe")), "true|true")
 Shown()
 Expect("...its row open, ticked as found", tostring(RowFor("Edwin VanCleef").row.locked) .. "|" .. tostring(RowFor("Edwin VanCleef").row.done), "false|true")
 Expect("...counted on its continent's line", RowFor("Eastern Kingdoms").count.text:match("^%d+/%d+") ~= nil, true)
@@ -327,7 +327,7 @@ Expect("...in the client's language where it has one", page.body.text.text, "Er 
 _G.GetLocale = function() return "enUS" end
 -- A boss with a creature in Data/Creatures.lua: its story, under its portrait over its dungeon and name.
 _G.SpokenBossCreatures = { [36] = { ["edwin vancleef"] = { creature = 639, display = 1305 } } }
-NPCs:RefreshBosses()
+Bosses:RefreshBosses()
 Shown()
 Click("Edwin VanCleef")
 Expect("a boss with a creature has its story as one block", page.body.text.text, "He led the Brotherhood.")
@@ -346,7 +346,7 @@ Expect("...and the portrait is still there, as the question mark, with the boss 
     page.face ~= nil and page.shift > 0 and page.headFace.speaker.icon == [[Interface\Icons\INV_Misc_QuestionMark]]
         and page.headFace.speaker.bullet == "boss", true)
 _G.SpokenBossCreatures = {}
-NPCs:RefreshBosses()
+Bosses:RefreshBosses()
 Shown()
 Click("Deadmines")
 Expect("a dungeon's page has no words, a mark in their place, and no Play", page.title.text == "Deadmines" and page.body.text.text == ""
@@ -376,7 +376,7 @@ Expect("a continent with a world boss lists the boss directly, with no zone or m
         and RowFor("Lord Kazzak").row.nest, 0)
 Expect("...a boss not met greyed like any other", RowFor("Lord Kazzak").row.locked, true)
 local kazzak = SpokenBosses.maps[2789][1]
-NPCs:FoundEncounter(kazzak.ids[1])
+Bosses:FoundEncounter(kazzak.ids[1])
 Shown()
 Click("Lord Kazzak")
 Expect("...its page names the zone alone", page.title.text .. "|" .. page.sub.text.text, "Lord Kazzak|In Blasted Lands")
@@ -390,7 +390,7 @@ Expect("Nightmare Grove's dragons are listed without their zones",
 Expect("...and in the order of the names shown: Lethon (Feralas) before Taerar (Ashenvale)",
     dragons:find("Lethon", 1, true) < dragons:find("Taerar", 1, true), true)
 for _, boss in ipairs(SpokenBosses.maps[2832]) do
-    if boss.key == "lethon" then NPCs:FoundEncounter(boss.ids[1]) end
+    if boss.key == "lethon" then Bosses:FoundEncounter(boss.ids[1]) end
 end
 Shown()
 Click("Lethon")
@@ -408,16 +408,16 @@ end
 Expect("bosses no Forever source confirms are left out", table.concat(listed, ","), "")
 
 ---------------------------------------------------------------- Found Only and Unlock
-Expect("the list has a Found Only switch, off", NPCs.list.opts.only .. "|" .. tostring(NPCs.list.opts.onlyGet()), "Found Only|false")
-NPCs.list.opts.onlySet(true)
-NPCs.list.opts.onHidden()
+Expect("the list has a Found Only switch, off", Bosses.list.opts.only .. "|" .. tostring(Bosses.list.opts.onlyGet()), "Found Only|false")
+Bosses.list.opts.onlySet(true)
+Bosses.list.opts.onHidden()
 local only = Shown()
 Expect("Found Only leaves out dungeons with no boss met", Has(only, "Razorfen Downs") or Has(only, "Durotar"), false)
 Expect("...and keeps the dungeon and its continent", Has(only, "Deadmines") and not Has(only, "Westfall") and Has(only, "Eastern Kingdoms"), true)
-NPCs:FoundEncounter(SpokenBosses.maps[36][1].ids[1])
+Bosses:FoundEncounter(SpokenBosses.maps[36][1].ids[1])
 if not Has(Shown(), "Edwin VanCleef") then Click("Deadmines") end
 Expect("...a dungeon lists only the bosses met", Has(Shown(), "Edwin VanCleef") and not Has(Shown(), SpokenBosses.maps[36][2][1]), true)
-NPCs.list.opts.onlySet(false)
+Bosses.list.opts.onlySet(false)
 tab.unlock.set(true)
 Shown()
 local second = SpokenBosses.maps[36][2][1]
@@ -428,7 +428,7 @@ Expect("...and its page has the words, met or not", page.body.text.text, _G.Spok
 tab.unlock.set(false)
 
 ---------------------------------------------------------------- a search
-local list = NPCs.list
+local list = Bosses.list
 list.opts.onSearch("anacondra")
 local found = Shown()
 Expect("a search lists the dungeon and boss that have the word, each opened",
@@ -441,13 +441,13 @@ list.opts.onSearch("")
 Expect("clearing it brings the list back", Has(Shown(), "Deadmines") and not Has(Shown(), "Westfall"), true)
 
 ---------------------------------------------------------------- the Bosses page in the settings
-NPCs:SetupOptions()
-local panel = NPCs.optionsPanel
+Bosses:SetupOptions()
+local panel = Bosses.optionsPanel
 Expect("the Bosses page is built", panel ~= nil and panel.layout ~= nil, true)
 do
     -- The voice packs, as on the Places and Readables pages: English's row with its Download button
     -- while no pack is installed, its version once one is, and a word where nothing can be heard.
-    assert(loadfile(ADDONS .. "Spoken_NPCs/UI/CopyLink.lua"))("Spoken_NPCs", NPCs)
+    assert(loadfile(ADDONS .. "Spoken_Bosses/UI/CopyLink.lua"))("Spoken_Bosses", Bosses)
     local W = Spoken:Words()
     local sections, voice = {}, nil
     for _, item in ipairs(panel.layout.items) do
@@ -473,8 +473,8 @@ do
     local shown = #stub.popups
     button.scripts.OnClick(button)
     local popup = stub.popups[#stub.popups]
-    Expect("...which offers the pack's store address to copy", #stub.popups > shown and popup.key, "SPOKENNPCS_COPY_LINK")
-    Expect("...saying what it is for", popup.args[1], NPCs.L.OPT_DOWNLOAD_ADDRESS)
+    Expect("...which offers the pack's store address to copy", #stub.popups > shown and popup.key, "SPOKENBOSSES_COPY_LINK")
+    Expect("...saying what it is for", popup.args[1], Bosses.L.OPT_DOWNLOAD_ADDRESS)
     _G.SpokenBossesAudioPacks = { SpokenBossesAudio = { version = 1, language = "enUS", bosses = {} } }
     panel.layout:Refresh()
     Expect("an installed pack shows no button", english.control.layoutGet, false)
@@ -499,30 +499,30 @@ do
     language.Voice, language.Fallback = nil, nil
     panel.layout:Refresh()
 end
-SpokenNPCsSettings.unlockUnfound = true
-SpokenNPCsSettings.compendiumFoundOnly = false
-SpokenNPCsCharacter.found["36:edwin vancleef"] = true
+SpokenBossesSettings.unlockUnfound = true
+SpokenBossesSettings.compendiumFoundOnly = false
+SpokenBossesCharacter.found["36:edwin vancleef"] = true
 local reset = panel.layout.defaults
 reset.scripts.OnClick(reset)
 stub.popups[#stub.popups].dialog.OnAccept()
-Expect("its Defaults put Found Only back on", SpokenNPCsSettings.compendiumFoundOnly, true)
-Expect("...and leave Unlock Unfound Bosses, which Spoken's page resets", SpokenNPCsSettings.unlockUnfound, true)
-Expect("...and keep the bosses this character has met", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
+Expect("its Defaults put Found Only back on", SpokenBossesSettings.compendiumFoundOnly, true)
+Expect("...and leave Unlock Unfound Bosses, which Spoken's page resets", SpokenBossesSettings.unlockUnfound, true)
+Expect("...and keep the bosses this character has met", SpokenBossesCharacter.found["36:edwin vancleef"], true)
 
 ---------------------------------------------------------------- a boss's story in the narrator
-assert(loadfile(ADDONS .. "Spoken_NPCs/Story.lua"))("Spoken_NPCs", NPCs)
-NPCs:SetupStories()
+assert(loadfile(ADDONS .. "Spoken_Bosses/Story.lua"))("Spoken_Bosses", Bosses)
+Bosses:SetupStories()
 local storySource = Spoken:GetSource("bosses")
 Expect("the bosses' stories are a part of Spoken's, voiced where a pack has them", storySource ~= nil and storySource.textOnly, nil)
 _G.SpokenBossStories[36]["edwin vancleef"] = "He led the Brotherhood."
 _G.SpokenBossCreatures = creatures
-local clip = NPCs:StoryClip(36, "edwin vancleef")
+local clip = Bosses:StoryClip(36, "edwin vancleef")
 Expect("with no pack, a boss's story is a line with no recording", tostring(clip.path) .. "|" .. tostring(clip.textOnly), "nil|true")
 Expect("...headed by its dungeon, named for the boss", clip.present.header .. "|" .. clip.present.label, "Deadmines|Edwin VanCleef")
 Expect("...with its story and its face", clip.present.transcript .. "|" .. tostring(clip.present.portrait.creatureID),
     "He led the Brotherhood.|639")
 Expect("...shown for six seconds at least", clip.length, 6)
-Expect("a boss with no story has no line", NPCs:StoryClip(36, "no such boss"), nil)
+Expect("a boss with no story has no line", Bosses:StoryClip(36, "no such boss"), nil)
 
 local world = stub.world
 local Q = SpokenEnv.SoundQueue
@@ -530,76 +530,76 @@ local function Showing() local head = Q:GetCurrentSound(); return head and head.
 local function Clear() Q:RemoveAllSoundsFromQueue(); stub.Advance(2) end
 local EDWIN = "boss:36:edwin vancleef"
 world.npcGUID = "Creature-0-1-2-3-639-0000ABCDEF"
-SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
-NPCs:UnitSeen()
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
+Bosses:UnitSeen()
 Expect("targeting a boss shows no story", Showing(), "nothing")
-NPCs:EncounterEnded(edwin.id, 0)
+Bosses:EncounterEnded(edwin.id, 0)
 Expect("...nor does a fight the party lost", Showing(), "nothing")
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("killing the boss shows its story", Showing(), EDWIN)
-Expect("...and the boss is met, as its page is no longer locked", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
+Expect("...and the boss is met, as its page is no longer locked", SpokenBossesCharacter.found["36:edwin vancleef"], true)
 Expect("...as words alone, with no pack", Q:GetCurrentSound().textOnly, true)
-Expect("...noted for the character", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], true)
+Expect("...noted for the character", SpokenBossesCharacter.storiesRead["36:edwin vancleef"], true)
 Clear()
-SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
 Q:PauseQueue()
-NPCs:ForgetStories()
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:ForgetStories()
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("a story waiting behind a stop is queued", Showing(), EDWIN)
 Expect("...as low as gossip", Q:GetCurrentSound().priority, "low")
-Expect("...and not noted until it shows", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], nil)
-Expect("...but the boss is met at the kill, not when its story shows", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
+Expect("...and not noted until it shows", SpokenBossesCharacter.storiesRead["36:edwin vancleef"], nil)
+Expect("...but the boss is met at the kill, not when its story shows", SpokenBossesCharacter.found["36:edwin vancleef"], true)
 Clear()
 Q:ResumeQueue()
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("...so cleared, it shows the next time", Showing(), EDWIN)
 Clear()
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("...once", Showing(), "nothing")
-Expect("Forget Stories Shown counts what it forgot", NPCs:ForgetStories(), 1)
-NPCs:EncounterEnded(edwin.id, 1)
+Expect("Forget Stories Shown counts what it forgot", Bosses:ForgetStories(), 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("...and the story shows again", Showing(), EDWIN)
-Clear(); NPCs:ForgetStories()
-SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+Clear(); Bosses:ForgetStories()
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
 SpokenEnv.Addon.db.profile.Transcript.Enabled = false
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("no boss shows its story with Show Narrator off, and the kill still meets it",
-    Showing() .. "|" .. tostring(SpokenNPCsCharacter.storiesRead["36:edwin vancleef"]) .. "|"
-        .. tostring(SpokenNPCsCharacter.found["36:edwin vancleef"]),
+    Showing() .. "|" .. tostring(SpokenBossesCharacter.storiesRead["36:edwin vancleef"]) .. "|"
+        .. tostring(SpokenBossesCharacter.found["36:edwin vancleef"]),
     "nothing|nil|true")
-SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
 _G.SpokenBossesAudioPacks = { SpokenBossesAudio = { version = 1, addon = "SpokenBossesAudio", language = "enUS",
     bitrate = 128, bosses = { [36] = { ["edwin vancleef"] = { file = "36\\edwin-vancleef", len = 41.2 } } } } }
 local VOICED = "Interface\\AddOns\\SpokenBossesAudio\\Sounds\\36\\edwin-vancleef.mp3"
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("with a pack and Show Narrator off, the story is still heard, as every voiced line is",
     Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
-Clear(); NPCs:ForgetStories()
+Clear(); Bosses:ForgetStories()
 SpokenEnv.Addon.db.profile.Transcript.Enabled = true
 local style = SpokenEnv.Addon.db.profile.Frame.Style
 SpokenEnv.Addon.db.profile.Frame.Style = "none"
-SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
-NPCs:EncounterEnded(edwin.id, 1)
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("...and in Voice Only", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
 SpokenEnv.Addon.db.profile.Frame.Style = style
-Clear(); NPCs:ForgetStories()
+Clear(); Bosses:ForgetStories()
 Click("Edwin VanCleef")
 Expect("with a pack, a boss's page has Play lit", page.play:IsShown() and page.play:IsEnabled(), true)
 page.play.scripts.OnClick(page.play)
 Expect("...which plays the voiced story", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
-Expect("...not noted, so the boss still tells it when it falls", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], nil)
-Expect("...and finds it in the queue", NPCs:QueuedStory(36, "edwin vancleef") ~= nil, true)
+Expect("...not noted, so the boss still tells it when it falls", SpokenBossesCharacter.storiesRead["36:edwin vancleef"], nil)
+Expect("...and finds it in the queue", Bosses:QueuedStory(36, "edwin vancleef") ~= nil, true)
 Clear()
 _G.SpokenBossesAudioPacks = nil
 Click("Edwin VanCleef")
 Expect("with no pack, Play is greyed again", page.play:IsEnabled(), false)
-Clear(); NPCs:ForgetStories()
-SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+Clear(); Bosses:ForgetStories()
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
 world.cvars.Sound_EnableAllSound = "0"
-NPCs:EncounterEnded(edwin.id, 1)
+Bosses:EncounterEnded(edwin.id, 1)
 Expect("with sound off and no pack, the story still shows as words", Showing(), EDWIN)
 world.cvars.Sound_EnableAllSound = nil
-Clear(); NPCs:ForgetStories()
+Clear(); Bosses:ForgetStories()
 
 -- The events as the client sends them: Forever reports a won dungeon fight as ENCOUNTER_END with
 -- success 0 and fires BOSS_KILL.
@@ -607,16 +607,16 @@ stub.FireEvent("ENCOUNTER_END", edwin.id, "Edwin VanCleef", 1, 5, 0)
 Expect("ENCOUNTER_END with success 0 shows nothing", Showing(), "nothing")
 stub.FireEvent("BOSS_KILL", edwin.id, "Edwin VanCleef")
 Expect("...and BOSS_KILL shows the story", Showing(), EDWIN)
-Clear(); NPCs:ForgetStories()
+Clear(); Bosses:ForgetStories()
 stub.FireEvent("ENCOUNTER_END", edwin.id, "Edwin VanCleef", 1, 5, 1)
 Expect("ENCOUNTER_END with success 1 shows it too", Showing(), EDWIN)
-Clear(); NPCs:ForgetStories()
+Clear(); Bosses:ForgetStories()
 stub.FireEvent("BOSS_KILL", edwin.id, "Edwin VanCleef")
 stub.FireEvent("ENCOUNTER_END", edwin.id, "Edwin VanCleef", 1, 5, 1)
 local both = {}
 for _, queued in ipairs(Q.sounds) do both[#both + 1] = queued.key end
 Expect("...and both for one kill show it once", table.concat(both, "|"), EDWIN)
-Clear(); NPCs:ForgetStories()
+Clear(); Bosses:ForgetStories()
 
 local instanceInfo = _G.GetInstanceInfo
 local sunkenMap
@@ -626,7 +626,7 @@ for map, bosses in pairs(SpokenBosses.maps) do
     end
 end
 _G.SpokenBossStories[sunkenMap] = { weaver = "It weaves.", dreamscythe = "It reaps dreams." }
-NPCs:EncounterEnded(2955, 1)
+Bosses:EncounterEnded(2955, 1)
 local keys = {}
 for _, queued in ipairs(Q.sounds) do keys[#keys + 1] = queued.key end
 Expect("...and an encounter of two bosses shows both stories", table.concat(keys, "|"),
@@ -657,26 +657,26 @@ local KAZZAK = "Creature-0-1-2-3-12397-0000ABCDEF"
 local EDWIN_GUID = "Creature-0-1-2-3-639-0000ABCDEF"
 local function Health(unit) stub.FireEvent("UNIT_HEALTH", unit) end
 
-SpokenNPCsCharacter.found = {}
+SpokenBossesCharacter.found = {}
 _G.GetInstanceInfo = function() return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0 end
 _G.SpokenBossStories[2789] = { ["lord kazzak"] = "He burns." }
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
-Expect("a world boss targeted alive is not met and shows nothing", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+Bosses:UnitSeen()
+Expect("a world boss targeted alive is not met and shows nothing", tostring(Bosses:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
 Health("target")
-Expect("...nor does its health changing while it lives", tostring(NPCs:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
+Expect("...nor does its health changing while it lives", tostring(Bosses:IsBossFound(2789, "lord kazzak")) .. "|" .. Showing(),
     "false|nothing")
 units.target = nil
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.nameplate1 = KAZZAK
 dead = true
 Health("nameplate2")
 Expect("...nor does another unit dying", Showing(), "nothing")
 Health("nameplate1")
 Expect("...its death on a nameplate shows its story, though the target was cleared", Showing(), "boss:2789:lord kazzak")
-Expect("...and meets it", NPCs:IsBossFound(2789, "lord kazzak"), true)
+Expect("...and meets it", Bosses:IsBossFound(2789, "lord kazzak"), true)
 Clear()
 Health("nameplate1")
 Expect("...once", Showing(), "nothing")
@@ -684,9 +684,9 @@ Expect("...once", Showing(), "nothing")
 -- The poll finds it where the event does not come.
 dead = false
 units.nameplate1 = nil
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target = nil
 stub.Advance(2)
 Expect("a boss no unit shows is not a kill", Showing(), "nothing")
@@ -702,11 +702,11 @@ local AZUREGOS = "Creature-0-1-2-3-6109-0000ABCDEF"
 _G.SpokenBossStories[2791] = { ["azuregos"] = "He freezes." }
 stub.SetZone({ zone = "Azshara" })
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target = AZUREGOS
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
@@ -718,9 +718,9 @@ Expect("...and the second is found when it dies", Showing(), "boss:2791:azuregos
 Clear()
 units.nameplate1 = nil
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 stub.Advance(1801, 1)
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
@@ -729,9 +729,9 @@ Expect("a watch lasts while the boss is seen, however long", Showing(), "boss:27
 Clear()
 units.nameplate1 = nil
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target = nil
 stub.Advance(1801, 1)
 units.nameplate1 = KAZZAK
@@ -739,9 +739,9 @@ dead = true
 Health("nameplate1")
 Expect("a watch ends half an hour after the boss was last seen", Showing(), "nothing")
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 stub.SetZone({ zone = "" })
 stub.Advance(2, 1)
 stub.SetZone({ zone = "Azshara" })
@@ -751,9 +751,9 @@ Health("nameplate1")
 Expect("...a blank zone name, as in a loading screen, does not end it", Showing(), "boss:2789:lord kazzak")
 Clear()
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 stub.SetZone({ zone = "Orgrimmar" })
 stub.Advance(2, 1)
 units.target, units.nameplate1 = nil, KAZZAK
@@ -765,7 +765,7 @@ stub.SetZone({ zone = "" })
 
 -- A boss that comes into view is watched without being targeted, and a death on a boss or focus unit counts.
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.nameplate1 = KAZZAK
 stub.FireEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
 units.nameplate1, units.boss1 = nil, KAZZAK
@@ -778,9 +778,9 @@ units.boss1 = nil
 -- A dead flag the client hides is not a kill; a client with no UnitTokenFromGUID still has the event;
 -- a failure meeting the boss does not lose its story.
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 stub.Secrets(true)
@@ -794,9 +794,9 @@ units.nameplate1 = nil
 local tokenFromGUID = _G.UnitTokenFromGUID
 _G.UnitTokenFromGUID = nil
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target = nil
 stub.Advance(2, 1)
 units.nameplate1 = KAZZAK
@@ -806,46 +806,46 @@ Expect("a client with no UnitTokenFromGUID still finds the death by its event", 
 Clear()
 _G.UnitTokenFromGUID = tokenFromGUID
 units.nameplate1 = nil
-local foundBoss = NPCs.FoundBoss
-NPCs.FoundBoss = function() error("the list failed to draw") end
+local foundBoss = Bosses.FoundBoss
+Bosses.FoundBoss = function() error("the list failed to draw") end
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true
 Health("nameplate1")
-NPCs.FoundBoss = foundBoss
+Bosses.FoundBoss = foundBoss
 Expect("a failure meeting the boss still shows its story", Showing(), "boss:2789:lord kazzak")
 Clear()
 units.nameplate1 = nil
 
 -- A corpse targeted, another boss and a player are not watched.
 dead = true
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 Health("target")
 Expect("a corpse targeted is not a kill", Showing(), "nothing")
 dead = false
 units.target = EDWIN_GUID
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 dead = true
 Health("target")
 Expect("a boss whose fight starts an encounter is not watched", Showing(), "nothing")
 dead = false
 units.target = "Player-1-0000ABCD"
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 dead = true
 Health("target")
 Expect("a player is not watched", Showing(), "nothing")
 
 -- Inside an instance the client hides a unit's GUID.
 dead = false
-NPCs:ForgetStories()
+Bosses:ForgetStories()
 units.target = KAZZAK
 stub.Secrets(KAZZAK)
-NPCs:UnitSeen()
+Bosses:UnitSeen()
 stub.Secrets()
 units.target, units.nameplate1 = nil, KAZZAK
 dead = true

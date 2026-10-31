@@ -6,7 +6,7 @@ section: places
 lang: enUS
 slug: spoken-audio-places
 name: Spoken Audio: Places and Bosses
-summary: The narration for Spoken's Places and NPCs modules: every zone and subzone, and every dungeon and raid boss's story, read aloud.
+summary: The narration for Spoken's Places and Bosses modules: every zone and subzone, and every dungeon and raid boss's story, read aloud.
 categories:
   - Audio & Video
   - Miscellaneous
@@ -16,7 +16,7 @@ addonReadme: addons/SpokenPlacesAudio/README.md
 manager: true
 ---
 
-Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module<!-- only:curseforge -->, and narrated boss stories for its NPCs module<!-- /only -->. This addon is data only — it does nothing on its own.
+Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module<!-- only:curseforge -->, and narrated boss stories for its Bosses module<!-- /only -->. This addon is data only — it does nothing on its own.
 
 <!-- only:curseforge -->
 The CurseForge download holds two folders: `SpokenPlacesAudio`, the zone and subzone lore, and `SpokenBossesAudio`, the boss stories. Boss stories need Spoken 3.7.0 or later.

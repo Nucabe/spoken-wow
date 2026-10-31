@@ -37,14 +37,6 @@ corpus_table() {
   esac
 }
 
-# The make target that syncs a section: the bosses' data ships in Spoken_NPCs, whose targets are npcs-*.
-sync_target() {
-  case "$1" in
-    bosses) echo npcs-sync ;;
-    *) echo "$1-sync" ;;
-  esac
-}
-
 # pg_dump 16.10 and later wrap output in \restrict / \unrestrict, psql meta-commands an
 # older psql fails on. Both clusters are ours, so strip them.
 unrestrict() { sed -e '/^\\restrict/d' -e '/^\\unrestrict/d'; }

@@ -68,7 +68,7 @@ export function renderLookup(entries) {
     "local ADDON_NAME = ...",
     "",
     "local pack = {",
-    // Bumped only when the shape below changes in a way Spoken_NPCs cannot read.
+    // Bumped only when the shape below changes in a way Spoken_Bosses cannot read.
     "\tversion = 1,",
     "\tbosses = {",
   ];
@@ -112,7 +112,7 @@ export function lookupPath(lang) {
 }
 
 export async function buildLookup(lang = BASE_LANG) {
-  requireDatabase("npcs-lookup");
+  requireDatabase("bosses-lookup");
   const [takes, bosses] = await Promise.all([readLiveTakes(lang), readBosses({ includeRetired: true })]);
   const { entries, skipped } = buildEntries(takes, bosses);
   const path = lookupPath(lang);

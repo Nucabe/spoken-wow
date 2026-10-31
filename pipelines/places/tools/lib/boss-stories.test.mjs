@@ -6,8 +6,8 @@ import { outsideAddons, resolveStories, storyInput, storyRows } from "./boss-sto
 import { ROOT } from "./wiki.mjs";
 
 test("an output under addons/ is refused, anywhere else is taken", () => {
-  assert.throws(() => outsideAddons(join(ROOT, "addons/Spoken_NPCs/Data/Stories.lua")), /under addons\//);
-  assert.throws(() => outsideAddons("addons/Spoken_NPCs/Data/Stories.lua", ROOT), /under addons\//);
+  assert.throws(() => outsideAddons(join(ROOT, "addons/Spoken_Bosses/Data/Stories.lua")), /under addons\//);
+  assert.throws(() => outsideAddons("addons/Spoken_Bosses/Data/Stories.lua", ROOT), /under addons\//);
   assert.equal(outsideAddons(join(ROOT, "build/x.json")), join(ROOT, "build/x.json"));
   assert.equal(outsideAddons(join(ROOT, "addons-notes/x.json")), join(ROOT, "addons-notes/x.json"));
 });

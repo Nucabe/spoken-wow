@@ -1,4 +1,4 @@
--- A boss's story voiced from an installed SpokenBossesAudio pack (Spoken NPCs' Audio.lua): the
+-- A boss's story voiced from an installed SpokenBossesAudio pack (Spoken Bosses' Audio.lua): the
 -- pack in the voice language, else the fallback language's, else words alone as before; word
 -- timings only under the recording's own language; the higher bitrate between two packs of one
 -- language. Run with `make test-player`.
@@ -10,8 +10,8 @@ local ADDONS = here .. "/../../addons/"
 local Expect, Failures = H.Expecter(stub.print)
 
 dofile(ADDONS .. "Spoken/Data/Dungeons.lua")
-dofile(ADDONS .. "Spoken_NPCs/Data/Bosses.lua")
-dofile(ADDONS .. "Spoken_NPCs/Data/Creatures.lua")
+dofile(ADDONS .. "Spoken_Bosses/Data/Bosses.lua")
+dofile(ADDONS .. "Spoken_Bosses/Data/Creatures.lua")
 _G.SpokenBossStories = { [36] = {} } -- the tests write their own stories, not the generated ones
 
 stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers(); stub.ResetFrames()
@@ -20,12 +20,12 @@ _G.C_Map = { GetMapInfo = function(id) return { name = "map " .. id, mapID = id 
     GetBestMapForUnit = function() return 1436 end }
 _G.GetInstanceInfo = function() return "Outland", "none", 0, "", 0, 0, false, 0 end
 
-local NPCs = {}
+local Bosses = {}
 for _, file in ipairs({ "Locale/enUS", "Core", "Audio", "UI/Bosses", "Story" }) do
-    assert(loadfile(ADDONS .. "Spoken_NPCs/" .. file .. ".lua"))("Spoken_NPCs", NPCs)
+    assert(loadfile(ADDONS .. "Spoken_Bosses/" .. file .. ".lua"))("Spoken_Bosses", Bosses)
 end
-NPCs:InitDB()
-NPCs:SetupStories()
+Bosses:InitDB()
+Bosses:SetupStories()
 
 local EDWIN = { file = "36\\edwin-vancleef", len = 41.2, times = "0 1 2" }
 local function Pack(addon, language, bitrate, bosses)
@@ -38,21 +38,21 @@ local function Setup(locale, voice, fallback, packs, story)
     language.Voice, language.Fallback = voice, fallback
     _G.SpokenBossesAudioPacks = packs
     _G.SpokenBossStories[36]["edwin vancleef"] = story or "He led the Brotherhood."
-    return NPCs:StoryClip(36, "edwin vancleef")
+    return Bosses:StoryClip(36, "edwin vancleef")
 end
 local ENGLISH_PATH = "Interface\\AddOns\\SpokenBossesAudio\\Sounds\\36\\edwin-vancleef.mp3"
 
 local clip = Setup("enUS", "auto", "enUS", nil)
 Expect("no pack installed: the story is text only, as before", tostring(clip.path) .. "|" .. tostring(clip.textOnly) .. "|" .. clip.length,
     "nil|true|6")
-Expect("...and the part counts no pack", #NPCs:PackNames(), 0)
+Expect("...and the part counts no pack", #Bosses:PackNames(), 0)
 
 clip = Setup("enUS", "auto", "enUS", { SpokenBossesAudio = Pack("SpokenBossesAudio", "enUS", 128) })
 Expect("an English pack with the boss: the clip plays it", clip.path, ENGLISH_PATH)
 Expect("...for the recording's length", clip.length, 41.2)
 Expect("...not as words alone", clip.textOnly, nil)
 Expect("...with the recording's word timings", clip.present.timings, "0 1 2")
-Expect("...and the part counts the pack", table.concat(NPCs:PackNames(), ","), "SpokenBossesAudio")
+Expect("...and the part counts the pack", table.concat(Bosses:PackNames(), ","), "SpokenBossesAudio")
 
 clip = Setup("enUS", "auto", "enUS", { SpokenBossesAudio = Pack("SpokenBossesAudio", "enUS", 128, { [36] = {} }) })
 Expect("a pack without the boss: text only", tostring(clip.path) .. "|" .. tostring(clip.textOnly), "nil|true")
@@ -86,7 +86,7 @@ clip = Setup("enUS", "auto", "enUS", {
 })
 Expect("two packs for one language: the higher bitrate wins", clip.path,
     "Interface\\AddOns\\SpokenBossesAudioCopy\\Sounds\\36\\edwin-vancleef.mp3")
-Expect("...and both are counted", #NPCs:PackNames(), 2)
+Expect("...and both are counted", #Bosses:PackNames(), 2)
 
 clip = Setup("enUS", "auto", "enUS", { SpokenBossesAudio = Pack("SpokenBossesAudio", "enUS", 128), Broken = "not a pack",
     Future = { version = 2, addon = "Future", language = "enUS", bitrate = 320, bosses = { [36] = { ["edwin vancleef"] = EDWIN } } } })
