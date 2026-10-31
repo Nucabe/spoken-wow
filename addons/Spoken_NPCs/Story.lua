@@ -60,6 +60,24 @@ function NPCs:ReadStory(map, key)
 	return source:Enqueue(clip) and true or false
 end
 
+--- The voiced story of the boss `key` of `map` in the queue, or nil where it is not there.
+function NPCs:QueuedStory(map, key)
+	if not (source and Spoken.GetQueue) then return nil end
+	local id = "boss:" .. map .. ":" .. key
+	for _, clip in ipairs(Spoken:GetQueue()) do
+		if clip.source == source and clip.key == id then return clip end
+	end
+end
+
+--- Plays the voiced story of the boss `key` of `map` now, as the Compendium's Play asks. Heard here
+--- it is not marked read, so the boss still tells it when it falls. Returns whether it plays.
+function NPCs:PlayStory(map, key)
+	if not source then return false end
+	local clip = self:StoryClip(map, key)
+	if not clip or clip.textOnly then return false end
+	return source:PlayNow(clip) and true or false
+end
+
 -- The world bosses the player met alive: [guid] = { boss, since,
 -- zone }. The client clears the target as the boss dies, so the target is no help then; the boss is
 -- found by its GUID on any unit the client reports it on (a nameplate, the soft target, the mouse),

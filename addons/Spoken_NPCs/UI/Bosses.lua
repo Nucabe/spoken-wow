@@ -323,8 +323,13 @@ end
 -- The page
 --------------------------------------------------------------------------------
 
--- Nothing to play or to report from the page yet: a story is heard only when its boss falls.
-local PLAY = { has = function() return false end, find = function() end, start = function() end }
+-- A boss's page plays its story where an installed pack voices it. `target` = { map, key }.
+local PLAY = {
+	has = function(target) return NPCs.GetAudioClip ~= nil and NPCs:GetAudioClip(target[1], target[2]) ~= nil end,
+	find = function(target) return NPCs:QueuedStory(target[1], target[2]) end,
+	start = function(target) NPCs:PlayStory(target[1], target[2]) end,
+}
+-- Nothing to report from the page yet.
 local REPORT = { has = function() return false end, open = function() end, title = "" }
 
 local function Boss(map, key)
@@ -438,7 +443,7 @@ local function ShowEntry()
 		end
 		local story = Story(map, key)
 		page:Show({ title = Name(boss), subtitle = where, icon = Portrait(map, key),
-			text = story or C.NotWritten(), unwritten = story == nil })
+			text = story or C.NotWritten(), unwritten = story == nil, target = story and { map, key } or nil })
 		return
 	end
 	if selection.dungeon then

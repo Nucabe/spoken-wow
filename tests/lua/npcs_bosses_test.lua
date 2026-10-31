@@ -582,7 +582,17 @@ SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 NPCs:EncounterEnded(edwin.id, 1)
 Expect("...and in Voice Only", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
 SpokenEnv.Addon.db.profile.Frame.Style = style
+Clear(); NPCs:ForgetStories()
+Click("Edwin VanCleef")
+Expect("with a pack, a boss's page has Play lit", page.play:IsShown() and page.play:IsEnabled(), true)
+page.play.scripts.OnClick(page.play)
+Expect("...which plays the voiced story", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
+Expect("...not noted, so the boss still tells it when it falls", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], nil)
+Expect("...and finds it in the queue", NPCs:QueuedStory(36, "edwin vancleef") ~= nil, true)
+Clear()
 _G.SpokenBossesAudioPacks = nil
+Click("Edwin VanCleef")
+Expect("with no pack, Play is greyed again", page.play:IsEnabled(), false)
 Clear(); NPCs:ForgetStories()
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
 world.cvars.Sound_EnableAllSound = "0"
