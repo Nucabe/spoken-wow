@@ -39,7 +39,7 @@ export function isSupportedFlavor(flavor: Flavor): boolean {
   return SUPPORTED_FLAVORS.includes(flavor)
 }
 
-export type Section = 'quests' | 'places' | 'readables'
+export type Section = 'quests' | 'places' | 'readables' | 'bosses'
 export type QuestsPack = 'all' | 'alliance' | 'horde' | 'shared' | 'gossip'
 
 /** What can be installed: Spoken itself, or a voice pack. A static table (shared/products.ts). */
@@ -47,7 +47,7 @@ export interface Product {
   /** `spoken`, `quests-audio`, `quests-audio-alliance`, `places-audio-deDE`, ... (the release tag prefix). */
   id: string
   kind: 'addon' | 'voices' | 'community'
-  /** "Spoken","Quests voices", "Places voices", "Readables voices". */
+  /** "Spoken","Quests voices", "Places voices", "Readables voices", "Bosses voices". */
   title: string
   /** One line for the card. */
   description: string

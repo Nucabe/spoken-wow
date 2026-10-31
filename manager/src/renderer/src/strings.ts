@@ -137,7 +137,8 @@ export const S = {
     sections: {
       quests: { title: 'Quests', text: 'Every quest, spoken as you read it, and the gossip of the people who give them.' },
       places: { title: 'Places', text: 'The story of each zone, dungeon and place, told as you arrive.' },
-      readables: { title: 'Readables', text: 'Books, letters and notes read aloud when you open them.' }
+      readables: { title: 'Readables', text: 'Books, letters and notes read aloud when you open them.' },
+      bosses: { title: 'Bosses', text: 'The story of each dungeon and raid boss, told when it falls.' }
     } satisfies Record<Section, { title: string; text: string }>,
     packNames: { all: 'All Quests', alliance: 'Alliance', horde: 'Horde', shared: 'Shared', gossip: 'Gossip' },
     splitHint: 'Or Only Part of It',

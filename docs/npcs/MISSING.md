@@ -25,9 +25,10 @@ target there. What it lacks is its face.
   recorded the fight, or the repack's model once its database has the creature. Check that the client's
   CreatureDisplayInfo has it.
 - Then add the boss to `pipelines/places/tools/boss-creatures-manual.json` with the evidence, and run
-  `boss_creatures.py` and `write-boss-creatures.mjs` (README, "Data").
+  `boss_creatures.py` and `write-boss-creatures.mjs` (README, "Data"), which write the `boss` table,
+  then `make npcs-export`.
 - Story: written from the wiki's lore, as the others are (`build-boss-stories.mjs`,
-  `apply-boss-stories.mjs`), Classic-era events only.
+  `apply-boss-stories.mjs` into the `boss_line` table, then `make npcs-export`), Classic-era events only.
 
 ## No creature and no portrait (28)
 

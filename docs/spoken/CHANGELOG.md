@@ -4,6 +4,10 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Boss stories are read aloud.** Install Spoken Audio: Bosses and a boss's story is voiced when it falls; without it the story shows as text, as before.
+  The Bosses settings page lists the pack, with the address to download it, as the Places and
+  Readables pages list theirs.
+  *([rusty-key](https://github.com/rusty-key))*
 - **Raid and world bosses wear the elite skull in the Compendium, dungeon bosses the plain one.**
   On Season of Discovery, Blackfathom Deeps, Gnomeregan and Sunken Temple count as raids.
   *([anon1231823](https://github.com/anon1231823))*

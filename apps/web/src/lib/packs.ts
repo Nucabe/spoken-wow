@@ -12,7 +12,7 @@
  */
 import type { Lang } from "@/lib/lang";
 
-export type Section = "quests" | "places" | "readables";
+export type Section = "quests" | "places" | "readables" | "bosses";
 
 export type Pack = {
   section: Section;
@@ -271,6 +271,14 @@ export const PACKS: readonly Pack[] = [
     lang: "zhTW",
     curseforge: "spoken-chinese-traditional-audio-readables",
     release: "readables-audio-zhTW",
+  },
+
+  // On GitHub only until its CurseForge project exists.
+  {
+    section: "bosses",
+    lang: "enUS",
+    curseforge: null,
+    release: "bosses-audio",
   },
 ];
 

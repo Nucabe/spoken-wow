@@ -27,7 +27,7 @@ import { parseFrontmatter } from "./frontmatter.mjs";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 export const PUBLISHERS_DIR = join(ROOT, "publishers");
 
-export const SECTIONS = ["quests", "places", "readables"];
+export const SECTIONS = ["quests", "places", "readables", "bosses"];
 
 // tts_cli/factions.py PACK_SUFFIXES, for the four that ship to CurseForge.
 const QUESTS_PACKS = { alliance: "Alliance", horde: "Horde", shared: "Shared", gossip: "Gossip" };
@@ -46,9 +46,10 @@ const ENGLISH_QUESTS_BUNDLE = Object.values(QUESTS_PACKS).map((suffix) => "Spoke
 // it carries no suffix: SpokenQuestsAudio_frFR, released as quests-audio-frFR.
 const LANGUAGE_QUESTS_PACKS = { ...QUESTS_PACKS, all: "" };
 
-function englishFolder(section, pack) {
+export function englishFolder(section, pack) {
   if (section === "places") return "SpokenPlacesAudio";
   if (section === "readables") return "SpokenReadablesAudio";
+  if (section === "bosses") return "SpokenBossesAudio";
   return "SpokenQuestsAudio" + ENGLISH_QUESTS_PACKS[pack];
 }
 
@@ -193,7 +194,8 @@ export function findPack(section, lang, pack, packs = loadPacks()) {
 
 // The oldest Spoken whose lookups each section's packs are built for. Bumped by hand only when a
 // section's lookup format changes; scripts/manager/ refuses to publish past the latest release.
-export const MIN_SPOKEN = { quests: "3.0.0", places: "3.0.0", readables: "3.0.0" };
+// Bosses: 3.6.0 has no boss audio, so the pack waits on the release after it.
+export const MIN_SPOKEN = { quests: "3.0.0", places: "3.0.0", readables: "3.0.0", bosses: "3.7.0" };
 
 // The folders the manager channel carries, each once: a bundle's folders, else the pack's own.
 export function managerFolders(packs = loadPacks()) {
