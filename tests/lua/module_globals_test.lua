@@ -1,7 +1,5 @@
--- The modules another addon may reach: Places, Readables and Bosses each put their table in a
--- global of their name, and the functions such an addon asks (is there a story, is it found,
--- is it voiced, read it, show it) are on it. What stops a refactor from closing the door a
--- feature addon came in through. Run with `make test-player`.
+-- Other addons call Places, Readables and Bosses through their globals. This keeps a refactor
+-- from removing the functions they rely on. Run with `make test-player`.
 local here = arg[0]:match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local stub = require("wow_client_stub")
@@ -10,13 +8,18 @@ local print = stub.print
 local ADDONS = here .. "/../../addons/"
 local Expect, Failures = H.Expecter(print)
 
--- Whether the UI file `path` defines `module:name`. The UI files need frames this stub does not
--- build, so the functions they hold are found in their source instead.
-local function Defines(path, module, name)
-    local file = assert(io.open(ADDONS .. path))
+-- The functions `loaded` are on the global `name`, and the UI file `ui` defines the functions
+-- `drawn`. The UI files need frames this stub does not build, so those are found in the source.
+local function Exposes(name, loaded, ui, drawn)
+    for _, fn in ipairs(loaded) do
+        Expect(name .. ":" .. fn .. " exists", type(_G[name][fn]), "function")
+    end
+    local file = assert(io.open(ADDONS .. ui))
     local source = file:read("*a")
     file:close()
-    return source:find("\nfunction " .. module .. ":" .. name .. "%(") ~= nil
+    for _, fn in ipairs(drawn) do
+        Expect(name .. ":" .. fn .. " is defined", source:find("\nfunction " .. name .. ":" .. fn .. "%(") ~= nil, true)
+    end
 end
 
 stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers()
@@ -24,12 +27,8 @@ stub.SetClient("16001"); stub.ResetSound(); stub.ResetTimers()
 ---------------------------------------------------------------- places
 local Z = H.LoadPlaces(ADDONS .. "Spoken_Places/")
 Expect("SpokenPlaces is the Places module", _G.SpokenPlaces, Z)
-for _, name in ipairs({ "GetLore", "GetSubzoneLore", "HasAudio", "PlayLore", "StopLore", "IsPlayingLore" }) do
-    Expect("SpokenPlaces:" .. name .. " exists", type(_G.SpokenPlaces[name]), "function")
-end
-for _, name in ipairs({ "IsLocked", "ShowLoreFor" }) do
-    Expect("SpokenPlaces:" .. name .. " is defined", Defines("Spoken_Places/UI/LoreWindow.lua", "SpokenPlaces", name), true)
-end
+Exposes("SpokenPlaces", { "GetLore", "GetSubzoneLore", "HasAudio", "PlayLore", "StopLore", "IsPlayingLore" },
+    "Spoken_Places/UI/LoreWindow.lua", { "IsLocked", "ShowLoreFor" })
 
 ---------------------------------------------------------------- readables
 local env = stub.LoadSpoken(ADDONS .. "Spoken/")
@@ -40,12 +39,8 @@ for _, file in ipairs({ "Locale/enUS", "Checksum", "Core", "Language", "Reader",
     chunk("Spoken_Readables", R)
 end
 Expect("SpokenReadables is the Readables module", _G.SpokenReadables, R)
-for _, name in ipairs({ "PlaceOf", "BookById", "HasAudio", "PlayFrom", "StopReading", "IsNarrating" }) do
-    Expect("SpokenReadables:" .. name .. " exists", type(_G.SpokenReadables[name]), "function")
-end
-for _, name in ipairs({ "CompendiumHas", "ShowReadables" }) do
-    Expect("SpokenReadables:" .. name .. " is defined", Defines("Spoken_Readables/UI/Readables.lua", "SpokenReadables", name), true)
-end
+Exposes("SpokenReadables", { "PlaceOf", "BookById", "HasAudio", "PlayFrom", "StopReading", "IsNarrating" },
+    "Spoken_Readables/UI/Readables.lua", { "CompendiumHas", "ShowReadables" })
 
 ---------------------------------------------------------------- bosses
 local B = {}

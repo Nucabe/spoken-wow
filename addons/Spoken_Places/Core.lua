@@ -4,11 +4,9 @@
 
 local ADDON_NAME, SpokenPlaces = ...
 
--- Reachable by other addons, as SpokenBossesAddon is: one that lists places can ask whether a
--- place has a story (GetLore, GetSubzoneLore), whether it is found (IsLocked) and voiced
--- (HasAudio), and have it read (PlayLore, StopLore, IsPlayingLore) or shown (ShowLoreFor).
--- PlayLore and ShowLoreFor check neither the lock nor the part, so the caller checks
--- Spoken:IsPartOn("places") and IsLocked first.
+-- Other addons reach the module here; docs/places/ADDON.md lists the functions they call.
+-- PlayLore and ShowLoreFor check neither the lock nor the part, so callers check IsLocked and
+-- Spoken:IsPartOn("places") first.
 _G.SpokenPlaces = SpokenPlaces
 
 -- A value the game hands over as a secret, in an instance or in combat, reads as nil.
