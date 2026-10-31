@@ -250,13 +250,13 @@ export function createMockApi(): ManagerApi {
   const installs: Record<string, Record<string, Installed>> = {}
   if (forever) {
     installs[forever.id] = {
-      spoken: { version: '3.4.0', folders: SPOKEN_FOLDERS.filter((f) => f !== 'Spoken_NPCs') },
+      spoken: { version: '3.4.0', folders: SPOKEN_FOLDERS.filter((f) => f !== 'Spoken_Bosses' && f !== 'Spoken_NPCs') },
       'places-audio-deDE': { version: '2.1.0', folders: ['SpokenPlacesAudio_deDE'] },
       'community/elune-quests-deDE': { version: '1.2.0', folders: [communityFolder('elune-quests-deDE')] },
       'community/mirelle-places-frFR': { version: '0.8.0', folders: [communityFolder('mirelle-places-frFR')] }
     }
   }
-  if (era) installs[era.id] = { spoken: { version: '3.5.0', folders: SPOKEN_FOLDERS.filter((f) => f !== 'Spoken_NPCs') } }
+  if (era) installs[era.id] = { spoken: { version: '3.5.0', folders: SPOKEN_FOLDERS.filter((f) => f !== 'Spoken_Bosses' && f !== 'Spoken_NPCs') } }
   const anniversary = games.find((g) => g.flavor === 'anniversary')
   if (anniversary && q.has('linked')) installs[anniversary.id] = { spoken: { version: '3.5.0', folders: [...SPOKEN_FOLDERS], linked: true } }
 

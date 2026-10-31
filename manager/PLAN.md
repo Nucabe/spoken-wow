@@ -31,7 +31,7 @@ GitHub Releases of `rusty-key/spoken-wow` (public, no token). Product tags, from
 
 | Product | Tag | Asset | Folders |
 | --- | --- | --- | --- |
-| Spoken | `spoken/vX.Y.Z` | `Spoken-X.Y.Z.zip` | `Spoken`, `Spoken_Conversations`, `Spoken_Places`, `Spoken_Readables`, `Spoken_NPCs`, `SpokenContributions` |
+| Spoken | `spoken/vX.Y.Z` | `Spoken-X.Y.Z.zip` | `Spoken`, `Spoken_Conversations`, `Spoken_Places`, `Spoken_Readables`, `Spoken_Bosses`, `SpokenContributions` |
 | Quests voices, English, all | `quests-audio/vX` | `SpokenQuestsAudioAll-X.zip` (1.4 GB) | the four split folders |
 | Quests voices, English, split | `quests-audio-{alliance,horde,shared,gossip}/vX` | | `SpokenQuestsAudio<Side>` |
 | Quests voices, a language | `quests-audio-<lang>/vX` | | `SpokenQuestsAudio_<lang>` |
