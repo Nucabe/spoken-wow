@@ -18,7 +18,7 @@ import { join } from "node:path";
 
 import { close, readBosses, recordStory, requireDatabase } from "./bosses/store.mjs";
 import { loadEnvFile } from "./lib/env.mjs";
-import { storyInput } from "./lib/boss-stories.mjs";
+import { resolveStories, storyInput } from "./lib/boss-stories.mjs";
 import { ROOT, sourceUrl } from "./lib/wiki.mjs";
 
 const dir = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : null;
@@ -55,24 +55,21 @@ async function main() {
     }
   }
 
+  const { resolved, unresolved } = resolveStories(stories, idOf);
+  if (unresolved.length > 0) {
+    console.error(`${unresolved.length} stories name no live boss; nothing written:`);
+    for (const { map, key, lang, file } of unresolved) console.error(`  ${map} "${key}" ${lang} (${file})`);
+    process.exitCode = 1;
+    return;
+  }
+
   const counts = { inserted: 0, unchanged: 0, "kept-edit": 0 };
-  const unresolved = [];
-  for (const { map, key, lang, text, file } of stories) {
-    const at = `${map}\t${key}`;
-    const bossId = idOf.get(at);
-    if (bossId === undefined) {
-      unresolved.push(`${map} "${key}" ${lang} (${file})`);
-      continue;
-    }
-    const title = titleOf.get(at);
+  for (const { map, key, bossId, lang, text } of resolved) {
+    const title = titleOf.get(`${map}\t${key}`);
     const source = title ? sourceUrl(title) : null;
     counts[await recordStory({ bossId, lang, text, source, origin: "rewritten" })]++;
   }
 
   console.log(`${counts.inserted} inserted, ${counts.unchanged} unchanged, ${counts["kept-edit"]} kept-edit`);
-  if (unresolved.length > 0) {
-    console.log(`${unresolved.length} stories name no live boss:`);
-    for (const line of unresolved) console.log(`  ${line}`);
-  }
   if (counts.inserted > 0) console.log("then: make npcs-export");
 }

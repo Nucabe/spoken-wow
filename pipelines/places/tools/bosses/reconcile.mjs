@@ -13,24 +13,28 @@ import { keyOf } from "../../../lib/bosses.mjs";
  *   encounter's key (bosses.mjs renameAsCreatures). Else the key is minted from `name`.
  * @returns upserts (rows to write, existing keys kept) and retire (ids of live bosses the
  *   client no longer lists)
- * @throws when a new boss's (map, key) is already held by another boss, retired or not: the
- *   client has most likely renumbered that boss's encounter.
+ * @throws when two client bosses resolve to one stored boss, or a written boss's (map, key) is
+ *   already held by another boss, retired or not: the client has most likely renumbered or moved
+ *   that boss's encounter.
  */
 export function reconcileBosses(existing, fromClient) {
   const byEncounter = new Map();
-  const holder = new Map();
   for (const row of existing) {
     for (const id of new Set([row.id, ...row.encounterIds])) byEncounter.set(id, row);
-    holder.set(`${row.map}\t${row.key}`, row.id);
   }
 
   const upserts = [];
-  const seen = new Set();
+  const seen = new Map();
   for (const boss of fromClient) {
     const ids = [...new Set([boss.id, ...(boss.ids ?? [])])];
     const match = ids.map((id) => byEncounter.get(id)).find(Boolean);
     if (match) {
-      seen.add(match.id);
+      if (seen.has(match.id)) {
+        throw new Error(
+          `client bosses ${seen.get(match.id)} and ${boss.id} both resolve to stored boss ${match.id}; merge or split their encounter ids`,
+        );
+      }
+      seen.set(match.id, boss.id);
       upserts.push({
         ...match,
         map: boss.map,
@@ -39,18 +43,10 @@ export function reconcileBosses(existing, fromClient) {
         retired: false,
       });
     } else {
-      const key = boss.key ?? keyOf(boss.name);
-      const held = holder.get(`${boss.map}\t${key}`);
-      if (held !== undefined) {
-        throw new Error(
-          `key "${key}" on map ${boss.map} already belongs to boss ${held}; add encounter ${boss.id} to its encounterIds`,
-        );
-      }
-      holder.set(`${boss.map}\t${key}`, boss.id);
       upserts.push({
         id: boss.id,
         map: boss.map,
-        key,
+        key: boss.key ?? keyOf(boss.name),
         position: boss.position,
         encounterIds: ids,
         creatureId: null,
@@ -59,6 +55,20 @@ export function reconcileBosses(existing, fromClient) {
         retired: false,
       });
     }
+  }
+
+  // Every row that will exist, retired ones too: the unique (map, key) index covers them.
+  const holder = new Map();
+  const written = new Set(upserts.map((row) => row.id));
+  for (const row of [...existing.filter((r) => !written.has(r.id)), ...upserts]) {
+    const at = `${row.map}\t${row.key}`;
+    const held = holder.get(at);
+    if (held !== undefined && held !== row.id) {
+      throw new Error(
+        `key "${row.key}" on map ${row.map} already belongs to boss ${held}; add encounter ${row.id} to its encounterIds`,
+      );
+    }
+    holder.set(at, row.id);
   }
 
   const retire = existing.filter((row) => !row.retired && !seen.has(row.id)).map((row) => row.id);

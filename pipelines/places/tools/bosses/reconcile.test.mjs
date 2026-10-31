@@ -118,3 +118,30 @@ test("the same key on another map is no clash", () => {
   );
   assert.equal(upserts.find((u) => u.id === 9001).key, "targorr the dread");
 });
+
+test("a matched boss the client moved onto a map where its key is taken fails", () => {
+  assert.throws(
+    () => reconcileBosses(
+      [row({ id: 1, map: 70, key: "x" }), row({ id: 2, map: 34, key: "x", encounterIds: [2] })],
+      [client({ id: 1, map: 34, name: "X" }), client({ id: 2, map: 34, name: "X" })],
+    ),
+    { message: /key "x" on map 34 already belongs to boss/ },
+  );
+  assert.throws(
+    () => reconcileBosses(
+      [row({ id: 1, map: 70, key: "x" }), row({ id: 2, map: 34, key: "x", encounterIds: [2], retired: true })],
+      [client({ id: 1, map: 34, name: "X" })],
+    ),
+    { message: 'key "x" on map 34 already belongs to boss 2; add encounter 1 to its encounterIds' },
+  );
+});
+
+test("two client bosses resolving to one stored boss fail, naming both", () => {
+  assert.throws(
+    () => reconcileBosses(
+      [row({ id: 3, key: "x", encounterIds: [3, 4] })],
+      [client({ id: 3, name: "X" }), client({ id: 4, name: "X2", position: 2 })],
+    ),
+    { message: "client bosses 3 and 4 both resolve to stored boss 3; merge or split their encounter ids" },
+  );
+});

@@ -86,3 +86,15 @@ ${blocks.join("\n")}
 end
 `;
 }
+
+/** Splits `stories` ({ map, key, lang, file }) by whether idOf ("map\tkey" -> boss id) holds their boss. */
+export function resolveStories(stories, idOf) {
+  const resolved = [];
+  const unresolved = [];
+  for (const story of stories) {
+    const bossId = idOf.get(`${story.map}\t${story.key}`);
+    if (bossId === undefined) unresolved.push(story);
+    else resolved.push({ ...story, bossId });
+  }
+  return { resolved, unresolved };
+}
