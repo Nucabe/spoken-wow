@@ -1,12 +1,8 @@
 setfenv(1, VoiceOver)
 
--- The game's chat bubble is the narrator for NPC Chat: while a line is read, the word being read is
--- lit in the bubble's own text, as the captions light it, and the text is put back when the line
--- ends. Spoken works out which word that is (Spoken:GetCaption) and how to mark it in another
--- window's text (Spoken:WordMarks); this finds the bubble and draws.
---
--- The bubble comes from C_ChatBubbles as an outer frame whose only child holds the text in `String`.
--- Inside an instance the client forbids the frame and every read of it raises, so each is guarded.
+-- Lights the word being read in the game's chat bubble, NPC Chat's only narrator, and puts the
+-- bubble's text back when the line ends. The bubble is an outer frame whose only child holds the
+-- text in `String`; inside an instance the client forbids it and every read raises, so each is guarded.
 ChatBubble = {}
 
 local TICK = 0.05
@@ -57,7 +53,7 @@ local function FindBubble(wanted)
     end
 end
 
--- The colour that reads on the bubble's text: gold on pale text, as the captions do.
+-- Gold on pale bubble text.
 local function ColorOf(fs)
     local marks = Marks()
     local ok, r, g, b = pcall(fs.GetTextColor, fs)

@@ -420,9 +420,8 @@ export-giver-names: ## entity_name -> addons/Spoken_Quests/Locale/Names/<lang>.l
 export-gossip-text: ## quest_line, broadcast_text -> addons/Spoken_Quests/Gossip/<lang>.lua, Aliases.lua
 	@$(QUESTS_CLI) export-gossip-text --out-dir $(abspath addons/Spoken_Quests/Gossip)
 
-# What NPCs say out loud in the world, for NPC Chat to match (tts_cli/chatter_lines.py). Committed
-# into the addon for export-giver-names' reason, and read from the corpus, so rerun after
-# export-corpus once the lines are in the database.
+# What NPCs say out loud in the world, for NPC Chat to match. Committed into the addon so packaging
+# it needs no database; read from the corpus, so rerun after export-corpus.
 export-chatter-lines: ## corpus chatter lines -> addons/Spoken_Quests/ChatterLines.lua
 	@$(QUESTS_CLI) export-chatter-lines --out $(abspath addons/Spoken_Quests/ChatterLines.lua)
 

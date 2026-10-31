@@ -13,10 +13,8 @@ import { corpus } from "./quests/catalogue";
 export const SUBFOLDERS = ["quests", "gossip", "followup"] as const;
 
 /**
- * By the line id's kind, as Python decides it, not by source: a follow-up file is named after its
- * words and its voice (`4377-dwarf-male-standard`), and so is every line of another source that
- * shares that naming, NPC chat's included. The addon resolves it by its own event (Module.lua's
- * GetSoundPath), so the path has to be the one Python's naming gives it.
+ * By the line id's kind, not its source: NPC chat is named like a follow-up line, after its words
+ * and voice, and shares its folder. The addon resolves the path itself, so it must match Python's.
  */
 const KIND_FOLDER: Record<string, (typeof SUBFOLDERS)[number]> = { q: "quests", g: "gossip", f: "followup" };
 

@@ -1,8 +1,6 @@
 setfenv(1, VoiceOver)
 
--- NPC Chat's page in the game's settings, under Spoken's, beside Quests' and Gossip's: laid out by
--- Spoken's UI/Layout.lua so the pages read alike. What NPCs say out loud in the world is a part of
--- its own on Spoken's page, with its own switch; it has no settings besides.
+-- NPC Chat's settings page: its switch and a note, since it has no other settings.
 
 ChatterSettingsPanel = {}
 
@@ -17,7 +15,6 @@ function ChatterSettingsPanel:Setup()
     end
     panel = CreateFrame("Frame", "SpokenChatterOptionsPanel", UIParent)
     panel.name = "Spoken NPC Chat"
-    -- The words every module's page shares, kept in Spoken.
     local W = Spoken:Words()
 
     local scroller = SpokenLayout.Scroll(panel)

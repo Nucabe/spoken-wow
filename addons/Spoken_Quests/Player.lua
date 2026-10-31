@@ -476,7 +476,7 @@ function Player:Setup()
         end,
     })
 
-    -- What NPCs say out loud in the world is a part of its own too, and every pack carries its lines.
+    -- NPC chat is a part of its own. Every pack carries the lookup its recordings resolve through.
     self.chatterSource = Spoken:RegisterSource("chatter", {
         title = L.OPT_CHATTER_PAGE_TITLE,
         addon = AddonFolder,

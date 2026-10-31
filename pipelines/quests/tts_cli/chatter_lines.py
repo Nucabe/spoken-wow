@@ -6,8 +6,8 @@ and each line's broadcast id and text as the game says it. Chatter.lua matches a
 /yell and whisper chat against that text, and finds the recording in the packs' FollowupLookup
 by the id.
 
-Committed into the addon, not a pack, as Locale/Names is: packaging the addon must never need a
-database. Read from the corpus, which is Postgres's export, so rerun after export-corpus.
+Committed into the addon, not a pack: packaging the addon must never need a database. Read from
+the corpus, Postgres's export, so rerun after export-corpus.
 """
 import os
 

@@ -302,7 +302,7 @@ end
 
 Followup.OwnClip = OwnClip
 
---- `event`: the sound event the line is played as; Chatter.lua plays the world's chat the same way.
+--- `event`: the sound event to play the line as, QuestFollowup when omitted.
 function Followup:Play(entry, message, sender, guid, npcID, asked, event)
     local chatter = event == Enums.SoundEvent.NPCChatter
     -- Only the line's own recording plays. A borrowed clip - the speaker's gossip, the

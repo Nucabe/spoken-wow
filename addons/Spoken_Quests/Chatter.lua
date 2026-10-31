@@ -1,15 +1,8 @@
 setfenv(1, VoiceOver)
 
--- What NPCs say out loud in the world: a guard's warning, a farmer's complaint, a town crier. They
--- are the corpus's lines of source "chatter"; ChatterLines.lua is their export, by speaker. They arrive as chat, so the speaker's creature id (from
--- the event's GUID) and the exact text say which line it is. Followup.lua does the same for the
--- chat a quest sets off; this is the chat that needs no quest, so nothing is armed: a message from a
--- speaker with no lines is one table lookup. A line a quest's script makes the NPC say is left to
--- Followup.lua, which plays it for the player's own quest only.
---
--- The line plays as low priority, as gossip does: only when nothing else is being read, and a
--- quest line coming drops it. Three lines at most wait behind the one speaking. The same line from the
--- same NPC is not played again for two minutes.
+-- What NPCs say out loud in the world, told by speaker and exact text against ChatterLines.lua.
+-- Nothing is armed, so chat from a speaker with no lines costs one table lookup. A line a quest's
+-- script makes the NPC say is left to Followup.lua, which plays it only for the player's own quest.
 Chatter = {
     -- [speaker .. ":" .. line id] = when it last started.
     heard = {},
@@ -61,8 +54,8 @@ function Chatter:Match(npcID, message, sender)
 end
 
 --- The speaker and line of a message that came with no GUID: an NPC of that name with a line of that
---- text. Several entries can share both; the one a pack has a recording for is the one told. English
---- clients only, as Match is: elsewhere the name is translated too.
+--- text. Several entries can share both; the one a pack has a recording for is the one told. Match
+--- refuses other languages, where the name is translated too.
 function Chatter:MatchByName(message, sender)
     if not sender then
         return nil
@@ -151,8 +144,7 @@ function Chatter:Setup()
     end
     local frame = CreateFrame("Frame")
     self.frame = frame
-    -- The same four chat events Followup.lua hears: the NPC speaking to everybody near it, and the
-    -- whispers addressed to this player alone.
+    -- An NPC speaking to everybody near it, and whispering to this player alone.
     for _, event in ipairs({ "CHAT_MSG_MONSTER_SAY", "CHAT_MSG_MONSTER_YELL", "CHAT_MSG_MONSTER_WHISPER",
         "CHAT_MSG_RAID_BOSS_WHISPER" }) do
         frame:RegisterEvent(event)

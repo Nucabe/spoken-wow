@@ -600,7 +600,7 @@ function Addon:OnInitialize()
         Debug:Record("followup-error", tostring(followupError))
     end
 
-    -- The chat NPCs say in the world, guarded the same way.
+    -- What NPCs say in the world: a failed hook here must not take quest narration down either.
     local chatterReady, chatterError = pcall(function()
         if Chatter and Chatter.Setup then
             Chatter:Setup()
