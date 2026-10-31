@@ -22,7 +22,7 @@ shipped in the game data. Two things follow, and both were checked rather than a
 - **Client data has none of it.** `WoWDBDefs` defines no `Book` or `PageText` table in any
   build, in any lineage, vanilla through retail. The only related definition is
   `PageTextMaterial`, which describes the frame the client draws around the words. The
-  WoW: Forever beta client (codename Camelot) is mainline-lineage and no different.
+  WoW: Forever client (codename Camelot) is mainline-lineage and no different.
 - **Wowhead has none of it either.** Its listviews scrape cleanly — `/classic/objects/
   containers/book` returns ids and names as JSON — but the object pages carry no page text.
   Wowhead never stored it.
@@ -382,7 +382,7 @@ Unlock Unfound Readables on (`SpokenReadables:CompendiumHas`).
 ### Installing it in a client
 
 ```bash
-CLIENT=forever make readables-deploy   # symlink Spoken_Readables and SpokenReadablesAudio into the Forever beta (wow_classic_beta)
+CLIENT=forever make readables-deploy   # symlink Spoken_Readables and SpokenReadablesAudio into Forever (_forever_)
 make readables-status                  # what is installed where, and how many mp3s exist
 ```
 

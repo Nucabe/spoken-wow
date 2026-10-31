@@ -142,7 +142,7 @@ _G.C_Map = {
 _G.GetInstanceInfo = function() return "Outland", "none", 0, "", 0, 0, false, 0 end
 
 local NPCs = {}
-for _, file in ipairs({ "Locale/enUS", "Core", "UI/Bosses", "UI/Options", "Events" }) do
+for _, file in ipairs({ "Locale/enUS", "Core", "Audio", "UI/Bosses", "UI/Options", "Events" }) do
     local chunk = assert(loadfile(ADDONS .. "Spoken_NPCs/" .. file .. ".lua"))
     chunk("Spoken_NPCs", NPCs)
 end
@@ -236,9 +236,34 @@ NPCs:ShowBosses()
 Shown()
 Expect("with Found Only on and none met in the Eastern Kingdoms, the tab does not land on its banner, which the list leaves out too",
     RowFor("Eastern Kingdoms") == nil and page.title.text ~= "Eastern Kingdoms", true)
-Expect("...the empty Bosses section uses its dragon icon", page.headFace.speaker.icon, NPCs.ICON)
+Expect("...the empty Bosses section uses the Compendium icon", page.headFace.speaker.icon, SpokenCompendium.ICON)
 Expect("...and its small socket uses the in-game skull", page.headFace.speaker.bullet .. "|"
-    .. page.headFace.badge.texture, "boss|Interface\\Minimap\\Minimap_skull_elite")
+    .. page.headFace.badge.texture, "boss|Interface\\Minimap\\Minimap_skull_normal")
+Expect("a dungeon boss uses the normal skull badge", Spoken:GetBullet("boss").texture,
+    [[Interface\Minimap\Minimap_skull_normal]])
+Expect("a raid boss uses the elite skull badge", Spoken:GetBullet("boss-raid").texture,
+    [[Interface\Minimap\Minimap_skull_elite]])
+_G.SpokenBossStories[2856] = { balnazzar = "A raid story." }
+local raidClip = NPCs:StoryClip(2856, "balnazzar")
+Expect("a raid story uses the raid badge", raidClip and raidClip.present.bullet, "boss-raid")
+Expect("a raid story without a portrait uses the elite skull", raidClip and raidClip.present.portrait.texture,
+    [[Interface\Minimap\Minimap_skull_elite]])
+_G.SpokenBossStories[2856] = nil
+_G.SpokenBossStories[2789] = { ["lord kazzak"] = "A world-boss story." }
+local worldBossClip = NPCs:StoryClip(2789, "lord kazzak")
+Expect("a world-boss story uses the elite badge", worldBossClip and worldBossClip.present.bullet, "boss-raid")
+_G.SpokenBossStories[2789] = nil
+local function Raids(variant)
+    SpokenEnv.Version.Variant = variant
+    local maps = {}
+    for _, map in ipairs({ 36, 48, 90, 109, 409, 2856 }) do
+        if _G.Spoken:IsRaid(map) then table.insert(maps, map) end
+    end
+    SpokenEnv.Version.Variant = "era"
+    return table.concat(maps, " ")
+end
+Expect("Blackfathom Deeps, Gnomeregan and Sunken Temple are raids only on Season of Discovery",
+    Raids("era") .. "|" .. Raids("sod"), "409 2856|48 90 109 409 2856")
 SpokenNPCsSettings.compendiumFoundOnly = false
 NPCs:ShowBosses()
 Shown()
@@ -309,7 +334,7 @@ Expect("a boss with a creature has its story as one block", page.body.text.text,
 Expect("...and its portrait at the left of its name, the title moved right of it", page.face:IsShown() and page.shift > 0, true)
 Expect("...the boss badge on it", page.headFace.speaker.bullet, "boss")
 local badge = page.headFace and page.headFace.badge
-Expect("...the portrait's small socket holds the skull", badge and badge:IsShown() and badge.texture, [[Interface\Minimap\Minimap_skull_elite]])
+Expect("...the dungeon portrait's small socket holds the normal skull", badge and badge:IsShown() and badge.texture, [[Interface\Minimap\Minimap_skull_normal]])
 _G.SpokenBossCreatures = { [36] = { ["edwin vancleef"] = { creature = 639 } } }
 Click("Edwin VanCleef")
 Expect("a boss with a creature but no model has the question mark for its portrait", page.headFace.speaker.icon,
@@ -419,6 +444,61 @@ Expect("clearing it brings the list back", Has(Shown(), "Deadmines") and not Has
 NPCs:SetupOptions()
 local panel = NPCs.optionsPanel
 Expect("the Bosses page is built", panel ~= nil and panel.layout ~= nil, true)
+do
+    -- The voice packs, as on the Places and Readables pages: English's row with its Download button
+    -- while no pack is installed, its version once one is, and a word where nothing can be heard.
+    assert(loadfile(ADDONS .. "Spoken_NPCs/UI/CopyLink.lua"))("Spoken_NPCs", NPCs)
+    local W = Spoken:Words()
+    local sections, voice = {}, nil
+    for _, item in ipairs(panel.layout.items) do
+        if item.kind == "section" then
+            table.insert(sections, item.text)
+            if item.text == W.PART_VOICE then voice = item end
+        end
+    end
+    Expect("the page has its voice packs, then the history", table.concat(sections, "|"), "Voice Packs|Reading History")
+    local function English()
+        for _, row in ipairs(voice.rows) do
+            local label = row.control.layoutLabel
+            if label and label.text == Spoken:LanguageName("enUS") then return row end
+        end
+    end
+    local language = SpokenEnv.Addon.db.profile.Language
+    _G.SpokenBossesAudioPacks = nil
+    panel.layout:Refresh()
+    local english = English()
+    Expect("English's pack is listed with no pack installed", english ~= nil and english.shown, true)
+    Expect("...with its Download button", english.control.layoutGet, true)
+    local button = english.control.layoutButton
+    local shown = #stub.popups
+    button.scripts.OnClick(button)
+    local popup = stub.popups[#stub.popups]
+    Expect("...which offers the pack's store address to copy", #stub.popups > shown and popup.key, "SPOKENNPCS_COPY_LINK")
+    Expect("...saying what it is for", popup.args[1], NPCs.L.OPT_DOWNLOAD_ADDRESS)
+    _G.SpokenBossesAudioPacks = { SpokenBossesAudio = { version = 1, language = "enUS", bosses = {} } }
+    panel.layout:Refresh()
+    Expect("an installed pack shows no button", english.control.layoutGet, false)
+    _G.SpokenBossesAudioPacks = nil
+
+    local function Silent()
+        for _, row in ipairs(voice.rows) do
+            local text = row.control.GetText and row.control:GetText()
+            if row.shown and type(text) == "string" and text ~= "" then return text end
+        end
+        return nil
+    end
+    language.Voice, language.Fallback = "deDE", "none"
+    panel.layout:Refresh()
+    Expect("a voice language with no boss pack and Stay Silent is said under the voice packs",
+        Silent(), SpokenEnv.L.MODULE_NO_VOICE_FMT:format(Spoken:LanguageName("deDE")))
+    Expect("...and English's is not offered, nothing falling back on it", English().shown, false)
+    language.Fallback = "enUS"
+    panel.layout:Refresh()
+    Expect("with English filling in, nothing is said, and English's pack is the one to get",
+        tostring(Silent()) .. " " .. tostring(English().shown), "nil true")
+    language.Voice, language.Fallback = nil, nil
+    panel.layout:Refresh()
+end
 SpokenNPCsSettings.unlockUnfound = true
 SpokenNPCsSettings.compendiumFoundOnly = false
 SpokenNPCsCharacter.found["36:edwin vancleef"] = true
@@ -433,11 +513,11 @@ Expect("...and keep the bosses this character has met", SpokenNPCsCharacter.foun
 assert(loadfile(ADDONS .. "Spoken_NPCs/Story.lua"))("Spoken_NPCs", NPCs)
 NPCs:SetupStories()
 local storySource = Spoken:GetSource("bosses")
-Expect("the bosses' stories are a part of Spoken's, as words with no voice", storySource ~= nil and storySource.textOnly, true)
+Expect("the bosses' stories are a part of Spoken's, voiced where a pack has them", storySource ~= nil and storySource.textOnly, nil)
 _G.SpokenBossStories[36]["edwin vancleef"] = "He led the Brotherhood."
 _G.SpokenBossCreatures = creatures
 local clip = NPCs:StoryClip(36, "edwin vancleef")
-Expect("a boss's story is a line with no recording", clip.path, nil)
+Expect("with no pack, a boss's story is a line with no recording", tostring(clip.path) .. "|" .. tostring(clip.textOnly), "nil|true")
 Expect("...headed by its dungeon, named for the boss", clip.present.header .. "|" .. clip.present.label, "Deadmines|Edwin VanCleef")
 Expect("...with its story and its face", clip.present.transcript .. "|" .. tostring(clip.present.portrait.creatureID),
     "He led the Brotherhood.|639")
@@ -458,7 +538,7 @@ Expect("...nor does a fight the party lost", Showing(), "nothing")
 NPCs:EncounterEnded(edwin.id, 1)
 Expect("killing the boss shows its story", Showing(), EDWIN)
 Expect("...and the boss is met, as its page is no longer locked", SpokenNPCsCharacter.found["36:edwin vancleef"], true)
-Expect("...as words alone, as every line of its part", Q:GetCurrentSound().textOnly, true)
+Expect("...as words alone, with no pack", Q:GetCurrentSound().textOnly, true)
 Expect("...noted for the character", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], true)
 Clear()
 SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
@@ -487,7 +567,39 @@ Expect("no boss shows its story with Show Narrator off, and the kill still meets
     Showing() .. "|" .. tostring(SpokenNPCsCharacter.storiesRead["36:edwin vancleef"]) .. "|"
         .. tostring(SpokenNPCsCharacter.found["36:edwin vancleef"]),
     "nothing|nil|true")
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+_G.SpokenBossesAudioPacks = { SpokenBossesAudio = { version = 1, addon = "SpokenBossesAudio", language = "enUS",
+    bitrate = 128, bosses = { [36] = { ["edwin vancleef"] = { file = "36\\edwin-vancleef", len = 41.2 } } } } }
+local VOICED = "Interface\\AddOns\\SpokenBossesAudio\\Sounds\\36\\edwin-vancleef.mp3"
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("with a pack and Show Narrator off, the story is still heard, as every voiced line is",
+    Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
+Clear(); NPCs:ForgetStories()
 SpokenEnv.Addon.db.profile.Transcript.Enabled = true
+local style = SpokenEnv.Addon.db.profile.Frame.Style
+SpokenEnv.Addon.db.profile.Frame.Style = "none"
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("...and in Voice Only", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
+SpokenEnv.Addon.db.profile.Frame.Style = style
+Clear(); NPCs:ForgetStories()
+Click("Edwin VanCleef")
+Expect("with a pack, a boss's page has Play lit", page.play:IsShown() and page.play:IsEnabled(), true)
+page.play.scripts.OnClick(page.play)
+Expect("...which plays the voiced story", Showing() .. "|" .. tostring(world.played[#world.played]), EDWIN .. "|" .. VOICED)
+Expect("...not noted, so the boss still tells it when it falls", SpokenNPCsCharacter.storiesRead["36:edwin vancleef"], nil)
+Expect("...and finds it in the queue", NPCs:QueuedStory(36, "edwin vancleef") ~= nil, true)
+Clear()
+_G.SpokenBossesAudioPacks = nil
+Click("Edwin VanCleef")
+Expect("with no pack, Play is greyed again", page.play:IsEnabled(), false)
+Clear(); NPCs:ForgetStories()
+SpokenNPCsCharacter.found["36:edwin vancleef"] = nil
+world.cvars.Sound_EnableAllSound = "0"
+NPCs:EncounterEnded(edwin.id, 1)
+Expect("with sound off and no pack, the story still shows as words", Showing(), EDWIN)
+world.cvars.Sound_EnableAllSound = nil
+Clear(); NPCs:ForgetStories()
 
 -- The events as the client sends them: Forever reports a won dungeon fight as ENCOUNTER_END with
 -- success 0 and fires BOSS_KILL.

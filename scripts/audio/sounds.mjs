@@ -2,8 +2,8 @@
 // Assemble a section's Sounds folder from the database: every live take, copied out of the
 // archive under the path the addon plays it from.
 //
-//   node scripts/audio/sounds.mjs <quests|places|readables>        (LOCAL_DB names the database)
-//   node scripts/audio/sounds.mjs --list <quests|places|readables> the archive files it would copy
+//   node scripts/audio/sounds.mjs <quests|places|readables|bosses>        (LOCAL_DB names the database)
+//   node scripts/audio/sounds.mjs --list <quests|places|readables|bosses> the archive files it would copy
 //   node scripts/audio/sounds.mjs --lang=esMX places            another language's pack
 //
 // A language other than English is assembled into `build/<section>/<lang>/`, never into
@@ -46,6 +46,7 @@ const SECTIONS = {
   quests: { archive: archiveOf("quests"), out: join(ROOT, "pipelines/quests/audio") },
   places: { archive: archiveOf("places"), out: join(ROOT, "addons/SpokenPlacesAudio/Sounds") },
   readables: { archive: archiveOf("readables"), out: join(ROOT, "addons/SpokenReadablesAudio/Sounds") },
+  bosses: { archive: archiveOf("bosses"), out: join(ROOT, "addons/SpokenBossesAudio/Sounds") },
 };
 
 // --list prints, relative to the archive, every file this would copy, and copies nothing.
@@ -57,7 +58,7 @@ const section = args.find((arg) => !arg.startsWith("--"));
 const lang = args.find((arg) => arg.startsWith("--lang="))?.slice("--lang=".length) || BASE_LANG;
 const english = SECTIONS[section];
 if (!english || !/^[a-z]{2}[A-Z]{2}$/.test(lang)) {
-  console.error("usage: sounds.mjs [--list] [--lang=<code>] <quests|places|readables>");
+  console.error("usage: sounds.mjs [--list] [--lang=<code>] <quests|places|readables|bosses>");
   process.exit(1);
 }
 // Another language never writes where English's pack is assembled: its folder is a work area
@@ -112,8 +113,20 @@ async function placesShipped() {
   const files = new Set([...assignFiles(entries)].filter(([id]) => lore.has(id)).map(([, file]) => file));
   return (stem) => files.has(stem);
 }
+// Bosses carry the live bosses' takes only, the ones bosses/build-lookup.mjs lists: a retired
+// boss keeps its take, and shipping it would be a clip no entry points at.
+function bossesShipped() {
+  const files = new Set(psql(`select t."file" from "take" t
+                                join "boss" b on t."lineId" = 'boss:' || b."map" || ':' || b."key"
+                               where t."source" = :'source' and t."lang" = :'lang' and t."isCurrent"
+                                 and not b."retired"`));
+  return (stem) => files.has(stem);
+}
 const relevant =
-  section === "quests" ? namedBy(psql(NAMED_QUESTS_SQL)) : section === "places" ? await placesShipped() : () => true;
+  section === "quests" ? namedBy(psql(NAMED_QUESTS_SQL))
+    : section === "places" ? await placesShipped()
+    : section === "bosses" ? bossesShipped()
+    : () => true;
 const live = takes.filter((take) => relevant(take.stem));
 const unnamed = takes.length - live.length;
 
@@ -169,7 +182,7 @@ if (section === "quests") {
 }
 
 console.log(`${section}: ${copied} clips in ${paths.out.slice(ROOT.length + 1)}`);
-if (unnamed) console.log(`  ${unnamed} live takes left out: no current line names their file, or no lore their place`);
+if (unnamed) console.log(`  ${unnamed} live takes left out: no current line names their file, no lore their place, or their boss is retired`);
 if (gone.length) {
   // Known, and not this machine's fault: the take's clip was not kept before the archive
   // was the record. The line ships without audio, the same as one never generated.
@@ -178,6 +191,7 @@ if (gone.length) {
 if (missing.length) {
   console.error(`  ${missing.length} live takes are not in this machine's archive, e.g.:`);
   for (const path of missing.slice(0, 5)) console.error(`    ${path}`);
-  console.error(`  Fetch them with:  make ${section}-pull-live${lang === BASE_LANG ? "" : ` LOCALE=${lang}`}`);
+  const targets = section === "bosses" ? "npcs" : section;
+  console.error(`  Fetch them with:  make ${targets}-pull-live${lang === BASE_LANG ? "" : ` LOCALE=${lang}`}`);
   process.exit(1);
 }

@@ -9,6 +9,11 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
+// Bosses have no pipeline of their own: their takes sit beside places', in a directory of their
+// own (apps/web/src/lib/takes/adapters.ts says the same).
+const DEFAULTS = { bosses: join(ROOT, "pipelines", "places", "bosses-audio-history") };
+
 export function archiveOf(section) {
-  return process.env[`SPOKEN_${section.toUpperCase()}_AUDIO_HISTORY`] ?? join(ROOT, "pipelines", section, "audio-history");
+  return process.env[`SPOKEN_${section.toUpperCase()}_AUDIO_HISTORY`]
+    ?? DEFAULTS[section] ?? join(ROOT, "pipelines", section, "audio-history");
 }

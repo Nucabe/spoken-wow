@@ -49,7 +49,7 @@ opens with the last catalog and says so.
 
 ## Which games
 
-From `publishers/spoken/spoken.md`: Spoken is made and tested on Forever (`_classic_beta_`) and
+From `publishers/spoken/spoken.md`: Spoken is made and tested on Forever (`_forever_`) and
 installs on Classic Era (`_classic_era_`) and Anniversary (`_anniversary_`). Those three are
 `SUPPORTED_FLAVORS` in `src/shared/types.ts`, and the only ones the scan looks for. Any other
 flavor folder (Retail, Classic, PTRs, betas) is not listed; adding one by hand is refused with

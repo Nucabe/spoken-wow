@@ -155,13 +155,19 @@ local function Tally(zones)
 	return found, total
 end
 
--- A boss's story (key = its key): a string, or the client's language beside the English that is
--- its first.
+-- A boss's story (key = its key) and the language it is in: a string, or the client's language
+-- beside the English that is its first.
 local function Story(map, key)
 	local stories = _G.SpokenBossStories
 	local text = stories and stories[map] and stories[map][key]
-	if type(text) == "table" then text = Name(text) end
-	return type(text) == "string" and text ~= "" and text or nil
+	local language = "enUS"
+	if type(text) == "table" then
+		local locale = GetLocale and GetLocale()
+		if locale and text[locale] then language = locale end
+		text = Name(text)
+	end
+	if type(text) ~= "string" or text == "" then return nil end
+	return text, language
 end
 
 -- What Data/Creatures.lua knows of a boss (its creature and appearance), or nil.
@@ -317,8 +323,13 @@ end
 -- The page
 --------------------------------------------------------------------------------
 
--- Nothing to play or to report yet: a boss's story is words alone until it is voiced.
-local PLAY = { has = function() return false end, find = function() end, start = function() end }
+-- A boss's page plays its story where an installed pack voices it. `target` = { map, key }.
+local PLAY = {
+	has = function(target) return NPCs.GetAudioClip ~= nil and NPCs:GetAudioClip(target[1], target[2]) ~= nil end,
+	find = function(target) return NPCs:QueuedStory(target[1], target[2]) end,
+	start = function(target) NPCs:PlayStory(target[1], target[2]) end,
+}
+-- Nothing to report from the page yet.
 local REPORT = { has = function() return false end, open = function() end, title = "" }
 
 local function Boss(map, key)
@@ -333,33 +344,49 @@ end
 -- How fast a story is read, in words a second, and the least time one stays in the narrator.
 local READING_SPEED, LEAST_SECONDS = 2.5, 6
 
-local SKULL = [[Interface\Minimap\Minimap_skull_elite]]
+-- A raid's or a world boss's: the elite skull, where a dungeon's has the normal one.
+local SKULLS = {
+	boss = [[Interface\Minimap\Minimap_skull_normal]],
+	["boss-raid"] = [[Interface\Minimap\Minimap_skull_elite]],
+}
 
--- The section page has no boss selected yet, so it cannot show a creature portrait. Keep its
--- header tied to the Bosses settings page instead of falling back to the Compendium's book.
-local SECTION_ICON = { objectOrItem = true, icon = NPCs.ICON, bullet = "boss" }
+local function BossBullet(map)
+	return (Spoken:IsRaid(map) or Index().world[map]) and "boss-raid" or "boss"
+end
 
---- The story of the boss `key` of `map` as a line for Spoken's narrator, words with no voice; nil
---- where it has none.
+-- No boss is selected yet, so there is no creature portrait to show.
+local SECTION_ICON = { objectOrItem = true, icon = C.ICON, bullet = "boss" }
+
+--- The story of the boss `key` of `map` as a line for Spoken's narrator: voiced where an installed
+--- pack has it (Audio.lua), else words alone; nil where it has none.
 function NPCs:StoryClip(map, key)
-	local story = Story(map, key)
+	local story, language = Story(map, key)
 	if not story then return nil end
 	local boss = Boss(map, key)
 	if not boss then return nil end
 	local _, words = story:gsub("%S+", "")
 	local entry = Creature(map, key)
-	return {
+	local clip = {
 		key = "boss:" .. map .. ":" .. key,
 		length = math.max(LEAST_SECONDS, words / READING_SPEED),
 		present = {
 			header = Index().world[map] and MapName(BossZone(map, key)) or DungeonName(map),
 			label = Name(boss),
 			transcript = story,
-			bullet = "boss",
+			bullet = BossBullet(map),
 			portrait = entry and entry.display and { kind = "model", creatureID = entry.creature, displayID = entry.display }
-				or { kind = "texture", texture = SKULL },
+				or { kind = "texture", texture = SKULLS[BossBullet(map)] },
 		},
 	}
+	local recording = self.GetAudioClip and self:GetAudioClip(map, key)
+	if recording then
+		clip.path, clip.length = recording.path, recording.len or clip.length
+		-- Timed to the recording's own words, so not under a story in another language.
+		if language == recording.language then clip.present.timings = recording.times end
+	else
+		clip.textOnly = true
+	end
+	return clip
 end
 
 local function Count(found, total)
@@ -370,23 +397,29 @@ local function CountLine(where, found, total)
 	return L.BOSS_IN_FMT:format(where) .. " · " .. Count(found, total)
 end
 
--- The skull in the ring's small socket, where a quest's portrait has its badge.
-if Spoken and Spoken.RegisterBullet then Spoken:RegisterBullet("boss", SKULL, 16) end
-
 -- One table for each picture, so the page draws a portrait again only for another one.
-local UNKNOWN = C.UnknownIcon("boss")
 local portraits = {}
+local unknown = {}
+-- The skull in the ring's small socket, where a quest's portrait has its badge.
+for bullet, skull in pairs(SKULLS) do
+	if Spoken and Spoken.RegisterBullet then Spoken:RegisterBullet(bullet, skull, 16) end
+	unknown[bullet] = C.UnknownIcon(bullet)
+end
+
+local function Unknown(map)
+	return unknown[BossBullet(map)]
+end
 
 -- A boss's portrait, at the left of its name on the page's header.
 local function Portrait(map, key)
 	local entry = Creature(map, key)
 	-- A portrait only from a known appearance: asked of the client, a creature it has not met answers
 	-- with the player's own face.
-	if not (entry and entry.display) then return UNKNOWN end
+	if not (entry and entry.display) then return Unknown(map) end
 	local id = map .. ":" .. key
 	local portrait = portraits[id]
 	if not (portrait and portrait.creatureID == entry.creature and portrait.displayID == entry.display) then
-		portrait = { creatureID = entry.creature, displayID = entry.display, bullet = "boss" }
+		portrait = { creatureID = entry.creature, displayID = entry.display, bullet = BossBullet(map) }
 		portraits[id] = portrait
 	end
 	return portrait
@@ -405,12 +438,12 @@ local function ShowEntry()
 		local where = Index().world[map] and L.BOSS_IN_FMT:format(MapName(BossZone(map, key)))
 			or (L.BOSS_IN_FMT:format(DungeonName(map)) .. " · " .. MapName(Index().zoneOf[map]))
 		if not Found(map, key) and not Unlocked() then
-			page:Show({ title = Name(boss), subtitle = where, text = L.BOSS_NOT_FOUND, icon = UNKNOWN })
+			page:Show({ title = Name(boss), subtitle = where, text = L.BOSS_NOT_FOUND, icon = Unknown(map) })
 			return
 		end
 		local story = Story(map, key)
 		page:Show({ title = Name(boss), subtitle = where, icon = Portrait(map, key),
-			text = story or C.NotWritten(), unwritten = story == nil })
+			text = story or C.NotWritten(), unwritten = story == nil, target = story and { map, key } or nil })
 		return
 	end
 	if selection.dungeon then

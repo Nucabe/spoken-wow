@@ -1395,14 +1395,14 @@ Progress text is kept but never voiced.
 ## Addon Install
 
 ```bash
-python cli-main.py install --force --addons "<WoW folder>/_classic_beta_/Interface/AddOns"
+python cli-main.py install --force --addons "<WoW folder>/_forever_/Interface/AddOns"
 ```
 
 `install` copies a built pack from `dist/` into the AddOns folder. Its default is a macOS
-`_classic_era_` folder, so pass `--addons` for Forever (`_classic_beta_`). It moves any existing
+`_classic_era_` folder, so pass `--addons` for Forever (`_forever_`). It moves any existing
 install aside to `<module>.replaced` rather than deleting it. The addons are `addons/Spoken` and
 the modules beside it, and Quests needs Spoken. To run a checkout's code, the repo's
-`/link-addon` skill links every addon folder into a client (`beta`, the default, is Forever)
+`/link-addon` skill links every addon folder into a client (`forever` is the default)
 and `/reload` loads it. It skips the audio packs, whose mp3s are not in git, so install a pack
 with the command above.
 

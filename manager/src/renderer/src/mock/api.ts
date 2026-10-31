@@ -4,7 +4,7 @@
 import type { AddGameResult, InstallOptions, ManagerApi, UpdaterState } from '@shared/api'
 import { PRODUCTS, SPOKEN_FOLDERS, productById } from '@shared/products'
 import type { Catalog, CommunityCatalog, CommunityPack, GameInstall, JobProgress, Product, ProductStatus, ReleaseInfo, Settings, SharingStatus, Snapshot } from '@shared/types'
-import { DEFAULT_SETTINGS, communityFolder } from '@shared/types'
+import { DEFAULT_SETTINGS, FLAVOR_FOLDER_LIST, communityFolder } from '@shared/types'
 import { compareVersions } from '@shared/version'
 
 const MB = 1024 * 1024
@@ -236,16 +236,16 @@ export function createMockApi(): ManagerApi {
   const platform = platformParam === 'darwin' || platformParam === 'linux' ? platformParam : 'win32'
 
   // ?missing=forever,era,anniversary: those games were not found by the scan.
-  const missing = (q.get('missing') ?? '').split(',').map((m) => ({ forever: 'classic_beta', era: 'classic_era', anniversary: 'anniversary' })[m.trim()] ?? m.trim())
+  const missing = (q.get('missing') ?? '').split(',').map((m) => ({ forever: 'forever', era: 'classic_era', anniversary: 'anniversary' })[m.trim()] ?? m.trim())
   let games: GameInstall[] = empty
     ? []
     : [
-        game(`${WOW}\\_classic_beta_`, '_classic_beta_', 'classic_beta', 'wow_classic_beta', 'WoW: Forever', '1.60.1.70450'),
+        game(`${WOW}\\_forever_`, '_forever_', 'forever', 'wow_forever', 'WoW: Forever', '1.60.1.70450'),
         game(`${WOW}\\_classic_era_`, '_classic_era_', 'classic_era', 'wow_classic_era', 'WoW: Classic Era', '1.15.8.65301'),
         { ...game(`${WOW}\\_anniversary_`, '_anniversary_', 'anniversary', 'wow_anniversary', 'WoW: Anniversary', '2.5.5.65340'), writable: !q.has('readonly') }
       ]
   games = games.filter((g) => !missing.includes(g.flavor))
-  const forever = games.find((g) => g.flavor === 'classic_beta')
+  const forever = games.find((g) => g.flavor === 'forever')
   const era = games.find((g) => g.flavor === 'classic_era')
   const installs: Record<string, Record<string, Installed>> = {}
   if (forever) {
@@ -415,8 +415,8 @@ export function createMockApi(): ManagerApi {
     },
     async addGame(path): Promise<AddGameResult> {
       await sleep(400)
-      if (!/_(classic_era|anniversary|classic_beta)_|AddOns|World of Warcraft|WoW/i.test(path)) {
-        return { error: `${path} does not look like a game Spoken runs on. Pick the game folder, a _classic_era_, _anniversary_ or _classic_beta_ folder, or an AddOns folder.` }
+      if (!/_(classic_era|anniversary|forever)_|AddOns|World of Warcraft|WoW/i.test(path)) {
+        return { error: `${path} does not look like a game Spoken runs on. Pick the game folder, a ${FLAVOR_FOLDER_LIST} folder, or an AddOns folder.` }
       }
       const added = { ...game(path, '_classic_era_', 'classic_era', 'wow_classic_era', 'WoW: Classic Era', '1.15.8.65301'), source: 'manual' as const }
       if (!games.some((g) => g.id === added.id)) games = [...games, added]

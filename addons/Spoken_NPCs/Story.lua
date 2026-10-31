@@ -1,8 +1,8 @@
 local _, NPCs = ...
 
--- A boss's story in Spoken's narrator, as words with no voice, once per character, when the boss
--- is killed. The game sends no kill for a world boss, so its death is watched once the player targets
--- it or sees its nameplate.
+-- A boss's story in Spoken's narrator, voiced where a pack has it and as words alone where none
+-- does, once per character, when the boss is killed. The game sends no kill for a world boss, so
+-- its death is watched once the player targets it or sees its nameplate.
 
 local L = NPCs.L
 
@@ -35,7 +35,7 @@ function NPCs:SetupStories()
 		icon = NPCs.ICON,
 		about = L.PART_ABOUT,
 		order = 5,
-		textOnly = true,
+		packs = function() return NPCs:PackNames() end,
 	})
 end
 
@@ -44,19 +44,38 @@ function NPCs:IsStoryRead(map, key)
 	return SpokenNPCsCharacter ~= nil and SpokenNPCsCharacter.storiesRead[NPCs.Key(map, key)] == true
 end
 
---- Shows the story of the boss `key` of `map` in the narrator. Nothing when this character has
---- been shown it, the narrator would not show it, or the boss has none. Returns whether it queued.
+--- Tells the story of the boss `key` of `map`. Nothing when this character has been told it, the
+--- boss has none, or the story is words alone and the narrator would not show it: a voiced one is
+--- heard with the narrator hidden, as every voiced line is. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
 --- once it starts, so one dropped or cleared shows the next time.
 function NPCs:ReadStory(map, key)
 	if not (source and SpokenNPCsCharacter) then return false end
 	local id = NPCs.Key(map, key)
-	if SpokenNPCsCharacter.storiesRead[id] or not Spoken:ShowsNarratorFor("bosses") then return false end
+	if SpokenNPCsCharacter.storiesRead[id] then return false end
 	local clip = self:StoryClip(map, key)
-	if not clip then return false end
+	if not clip or (clip.textOnly and not Spoken:ShowsNarratorFor("bosses")) then return false end
 	clip.priority = "low"
 	clip.startCallback = function() SpokenNPCsCharacter.storiesRead[id] = true end
 	return source:Enqueue(clip) and true or false
+end
+
+--- The voiced story of the boss `key` of `map` in the queue, or nil where it is not there.
+function NPCs:QueuedStory(map, key)
+	if not (source and Spoken.GetQueue) then return nil end
+	local id = "boss:" .. map .. ":" .. key
+	for _, clip in ipairs(Spoken:GetQueue()) do
+		if clip.source == source and clip.key == id then return clip end
+	end
+end
+
+--- Plays the voiced story of the boss `key` of `map` now, as the Compendium's Play asks. Heard here
+--- it is not marked read, so the boss still tells it when it falls. Returns whether it plays.
+function NPCs:PlayStory(map, key)
+	if not source then return false end
+	local clip = self:StoryClip(map, key)
+	if not clip or clip.textOnly then return false end
+	return source:PlayNow(clip) and true or false
 end
 
 -- The world bosses the player met alive: [guid] = { boss, since,
