@@ -1,7 +1,7 @@
 # Changelog
 
-Notable changes to Spoken Audio: Bosses, the sound pack for the boss stories Spoken_NPCs shows.
-Spoken_NPCs ships in Spoken, so its own notes are in `docs/spoken/CHANGELOG.md`.
+Notable changes to Spoken Audio: Bosses, the sound pack for the boss stories Spoken_Bosses shows.
+Spoken_Bosses ships in Spoken, so its own notes are in `docs/spoken/CHANGELOG.md`.
 
 The pack numbers itself. A section for the English pack is headed `## <version> — bosses-audio`,
 and a language's by its release tag, `## <version> — bosses-audio-deDE`: the release scripts

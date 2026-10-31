@@ -1,6 +1,6 @@
 # Boss data
 
-The dungeon and raid bosses of Spoken_NPCs: which instances and bosses exist, their names in
+The dungeon and raid bosses of Spoken_Bosses: which instances and bosses exist, their names in
 every language, their creature and model, and their stories. This file is where that data lives,
 how the tools write it and how it is checked.
 
@@ -9,17 +9,17 @@ how the tools write it and how it is checked.
 Three tables in the site's database are the source: `boss_instance` (one row per instance map),
 `boss` (one row per boss) and `boss_line` (one row per boss, language and version, holding the
 story). Boss and instance names are rows of `entity_name`, kind `boss` (the boss id as text) and
-`instance` (the map as text). The three Lua files under `addons/Spoken_NPCs/Data/` are an export of
+`instance` (the map as text). The three Lua files under `addons/Spoken_Bosses/Data/` are an export of
 them, committed so that the addon builds on a clone with no Postgres.
 
 ```
-client tables --make bosses--> boss_instance, boss, entity_name
-write-boss-creatures.mjs -----> boss (creatureId, displayId)
-apply-boss-stories.mjs -------> boss_line
+client tables --make bosses-extract--> boss_instance, boss, entity_name
+write-boss-creatures.mjs -------------> boss (creatureId, displayId)
+apply-boss-stories.mjs ---------------> boss_line
    ^ [{ map, key, lang?, text }] JSON: rewritten stories, or assemble-boss-stories.mjs' output
-the site (/bosses) -----------> boss_line, entity_name (boss names), take
-                                   |
-              make npcs-export --> Data/Bosses.lua, Creatures.lua, Stories.lua  (commit the diff)
+the site (/bosses) -------------------> boss_line, entity_name (boss names), take
+                                           |
+                    make bosses-export --> Data/Bosses.lua, Creatures.lua, Stories.lua  (commit the diff)
 ```
 
 `pipelines/places/tools/bosses/store.mjs` is the one place that reads and writes these tables.
@@ -49,7 +49,7 @@ English is `{ deDE = "..." }`.
 | `rewritten` | Text a tool wrote (`apply-boss-stories.mjs`). | A rewrite or an edit. |
 | `edited` | Written or corrected by a person. | Only another edit. A tool write lands underneath as a version that is not live. |
 
-Names have their own two origins: `extracted`, written from the client's tables by `make bosses`,
+Names have their own two origins: `extracted`, written from the client's tables by `make bosses-extract`,
 and `edited`, changed on the site. They follow the `entity_name` rules: an unchanged name records
 nothing, a changed game name replaces an extracted one, and an edited current name stays current.
 A boss newly added to `pipelines/lib/boss-names.json` takes its creature's names where the
@@ -79,14 +79,14 @@ it with the variable set inline, never exported:
 
 ```sh
 DATABASE_URL=$PROD_DATABASE_URL node pipelines/places/tools/apply-boss-stories.mjs <dir>
-make npcs-sync       # replaces the local boss tables, boss names and boss takes with the droplet's
-make npcs-export
-make npcs-check
+make bosses-sync     # replaces the local boss tables, boss names and boss takes with the droplet's
+make bosses-export
+make bosses-check
 ```
 
-`make npcs-sync` is destructive; confirm before running it. It goes through
+`make bosses-sync` is destructive; confirm before running it. It goes through
 `scripts/db/sync-section.sh bosses`, which also brings the `take`, `recording` and `take_ack` rows
-with source `bosses`, and `make npcs-check-synced` compares the local data with the
+with source `bosses`, and `make bosses-check-synced` compares the local data with the
 droplet's through `scripts/db/check-synced.sh bosses`, using the digest in
 `deploy/web/sql/bosses_stamp.sql` because the boss tables have no serial id to stamp.
 
@@ -124,12 +124,12 @@ others (`languageFolder` in `scripts/lib/packs.mjs`). The takes are cut on `/bos
 `source = 'bosses'`, and live in `SPOKEN_BOSSES_AUDIO_HISTORY` (droplet `shared/audio-history/bosses`).
 
 ```sh
-make npcs-pull-live         # fetch the live takes the local database names
-make npcs-sounds            # assemble Sounds/ from them (LOCALE=xx for a language)
-make npcs-lookup            # build Data/Sounds.lua (pipelines/places/tools/bosses/build-lookup.mjs)
-make npcs-validate-audio    # lookup, files and stories agree (validate-audio.mjs); a stale take is reported
-make npcs-package-audio     # check-synced, sounds, lookup, validate, then zip into dist/
-make npcs-full-release      # sync, pull, build, then the GitHub release, with one question first
+make bosses-pull-live       # fetch the live takes the local database names
+make bosses-sounds          # assemble Sounds/ from them (LOCALE=xx for a language)
+make bosses-lookup          # build Data/Sounds.lua (pipelines/places/tools/bosses/build-lookup.mjs)
+make bosses-validate-audio  # lookup, files and stories agree (validate-audio.mjs); a stale take is reported
+make bosses-package-audio   # check-synced, sounds, lookup, validate, then zip into dist/
+make bosses-full-release    # sync, pull, build, then the GitHub release, with one question first
 ```
 
 - The lookup key is `boss:{map}:{key}` and the file `{map}\{slug}`, from the same `assignFiles` the
@@ -146,44 +146,44 @@ make npcs-full-release      # sync, pull, build, then the GitHub release, with o
     and the upload refuses a bundle whose bosses `.toc` version or `Data/Sounds.lua` is not the
     repo's.
   - **GitHub**: `places-audio` holds the plain `SpokenPlacesAudio-<v>.zip`, Places only, and
-    `bosses-audio` holds the bosses pack (`make npcs-full-release` or
+    `bosses-audio` holds the bosses pack (`make bosses-full-release` or
     `make audio-release SECTION=bosses`). Wago players get both from there.
   - **The manager** keeps the two as separate products. It refuses a zip holding a folder its
     product does not own, which is why GitHub's places zip never carries the bosses.
 - **Ship a bosses change in the same run as a Places release.** A bosses change reaches CurseForge
-  only inside a Places release, so cut the bosses release (`make npcs-full-release`) together with
+  only inside a Places release, so cut the bosses release (`make bosses-full-release`) together with
   an English `make places-full-release`, which syncs, pulls and builds the bosses pack first. That
   keeps the bosses on CurseForge at the version the manager and GitHub offer. Only English's
   Places pack carries it.
-- `Spoken_NPCs` ranks the installed packs (`Audio.lua`, [../npcs/README.md](../npcs/README.md)). A
+- `Spoken_Bosses` ranks the installed packs (`Audio.lua`, [../bosses/README.md](../bosses/README.md)). A
   story with no clip shows as words only; a voiced one plays like any other voiced line.
 
 ## Commands
 
 ```sh
-make bosses          # bring boss_instance, boss and the names into step with the client
+make bosses-extract  # bring boss_instance, boss and the names into step with the client
 node pipelines/lib/bosses.mjs --check   # list what the client would change; fails if anything
 node pipelines/places/tools/write-boss-creatures.mjs <boss_creatures.json>
 node pipelines/places/tools/apply-boss-stories.mjs <dir of *.json>   # { map, key, lang?, text }, lang enUS if left out
-make npcs-export     # write Bosses.lua, Creatures.lua and Stories.lua from the database
-make npcs-check      # do the committed files match the database?
-make npcs-sync       # replace the local boss tables and boss takes/recordings/acks with the droplet's (DESTRUCTIVE)
-make npcs-check-synced
+make bosses-export   # write Bosses.lua, Creatures.lua and Stories.lua from the database
+make bosses-check    # do the committed files match the database?
+make bosses-sync     # replace the local boss tables and boss takes/recordings/acks with the droplet's (DESTRUCTIVE)
+make bosses-check-synced
 ```
 
 The tools that write boss data need `DATABASE_URL`, and so do `node pipelines/lib/bosses.mjs
---check` and `make npcs-check`, which read the tables. `make bosses` writes the tables and not
-`Bosses.lua`; run `make npcs-export` after it. `write-boss-creatures.mjs` sets every live boss, to
+--check` and `make bosses-check`, which read the tables. `make bosses-extract` writes the tables and not
+`Bosses.lua`; run `make bosses-export` after it. `write-boss-creatures.mjs` sets every live boss, to
 null where nothing gives it a creature. `Creatures.lua` keeps its `\r\n` line endings.
 
 ## Checks
 
 | Command | Fails when |
 | --- | --- |
-| `make npcs-check` | A committed file differs from the database. It ignores each file's leading comment lines and line endings. Needs `DATABASE_URL`. |
+| `make bosses-check` | A committed file differs from the database. It ignores each file's leading comment lines and line endings. Needs `DATABASE_URL`. |
 | `node pipelines/lib/bosses.mjs --check` | The client's encounter table would change the boss tables. Needs `DATABASE_URL`. |
 | `pnpm --filter @spoken/places-pipeline test` | Reconciling, shaping or exporting changes behaviour. |
-| `make test-player` | `tests/lua/npcs_bosses_test.lua` and the rest of the addon's Lua tests fail. |
+| `make test-player` | `tests/lua/bosses_test.lua` and the rest of the addon's Lua tests fail. |
 
-`make npcs-check` is not part of `make check` or `make lint`, which have to pass on a clone with no
+`make bosses-check` is not part of `make check` or `make lint`, which have to pass on a clone with no
 Postgres.

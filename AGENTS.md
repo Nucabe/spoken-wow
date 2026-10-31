@@ -8,9 +8,11 @@ covers how they are made. Spoken has no guide; `docs/spoken/` holds its changelo
 ## Layout
 
 - `addons/`: the shipped Lua.
-  - `Spoken` plays every line. `Spoken_Quests`, `Spoken_Places` and `Spoken_Readables` are its
-    modules, and `SpokenContributions` holds what players upload at /contribute. All five
-    ship in one zip, `Spoken-<v>.zip` (`scripts/spoken/package.sh`).
+  - `Spoken` plays every line. `Spoken_Quests`, `Spoken_Places`, `Spoken_Readables` and
+    `Spoken_Bosses` are its modules, and `SpokenContributions` holds what players upload at
+    /contribute. All six ship in one zip, `Spoken-<v>.zip` (`scripts/spoken/package.sh`).
+    The bosses' data is covered by the Places guide (`docs/places/BOSSES.md`), the module by
+    `docs/bosses/README.md`.
   - `Spoken_Developer` is for developers only: the debug log and the Developer page. It is
     not in Spoken's zip and has no store page or release; a developer links it from a checkout
     or builds it with `scripts/developer/package.sh` (`addons/Spoken_Developer/README.md`).
