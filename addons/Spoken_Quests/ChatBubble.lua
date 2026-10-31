@@ -1,6 +1,6 @@
 setfenv(1, VoiceOver)
 
--- Lights the word being read in the game's chat bubble, NPC Chat's only narrator, and puts the
+-- Lights the word being read in the game's chat bubble, World Chatter's only narrator, and puts the
 -- bubble's text back when the line ends. The bubble is an outer frame whose only child holds the
 -- text in `String`; inside an instance the client forbids it and every read raises, so each is guarded.
 ChatBubble = {}

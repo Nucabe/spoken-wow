@@ -1,6 +1,6 @@
 setfenv(1, VoiceOver)
 
--- NPC Chat's settings page: its switch and a note, since it has no other settings.
+-- World Chatter's settings page: its switch and a note, since it has no other settings.
 
 ChatterSettingsPanel = {}
 
@@ -14,7 +14,7 @@ function ChatterSettingsPanel:Setup()
         return
     end
     panel = CreateFrame("Frame", "SpokenChatterOptionsPanel", UIParent)
-    panel.name = "Spoken NPC Chat"
+    panel.name = "Spoken World Chatter"
     local W = Spoken:Words()
 
     local scroller = SpokenLayout.Scroll(panel)

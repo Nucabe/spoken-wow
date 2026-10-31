@@ -1,5 +1,5 @@
 """What NPCs say out loud in the world: the corpus's chatter rows, named, packed and exported for
-the addon's NPC Chat (tts_cli/chatter_lines.py)."""
+the addon's World Chatter (tts_cli/chatter_lines.py)."""
 from tts_cli.chatter_lines import chatter_lines, render
 from tts_cli.factions import pack_of_line
 from tts_cli.naming import filename_for_row, line_id_for_row, subfolder_from_line_id

@@ -41,13 +41,13 @@ local BULLETS = {
 -- Reading the queue back
 --------------------------------------------------------------------------------
 
---- Whether a clip is this addon's: quests', gossip's or NPC chat's.
+--- Whether a clip is this addon's: quests', gossip's or World Chatter's.
 function Player:Owns(clip)
     return clip.source ~= nil
         and (clip.source == self.source or clip.source == self.gossipSource or clip.source == self.chatterSource)
 end
 
---- The source that plays a line: gossip's for what NPCs say in their windows, NPC chat's for what they
+--- The source that plays a line: gossip's for what NPCs say in their windows, World Chatter's for what they
 --- say in the world, quests' for the rest.
 function Player:SourceOf(soundData)
     if self.chatterSource and soundData.event == Enums.SoundEvent.NPCChatter then
@@ -476,7 +476,7 @@ function Player:Setup()
         end,
     })
 
-    -- NPC chat is a part of its own. Every pack carries the lookup its recordings resolve through.
+    -- World Chatter is a part of its own. Every pack carries the lookup its recordings resolve through.
     self.chatterSource = Spoken:RegisterSource("chatter", {
         title = L.OPT_CHATTER_PAGE_TITLE,
         addon = AddonFolder,

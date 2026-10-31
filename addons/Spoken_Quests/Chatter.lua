@@ -75,7 +75,7 @@ end
 
 --- A chat message from an NPC: `asked` when /spq chatter replays it.
 function Chatter:OnChat(event, message, sender, guid, asked)
-    -- Not gated on Read Automatically: that is the quest window's, and NPC Chat has its own switch.
+    -- Not gated on Read Automatically: that is the quest window's, and World Chatter has its own switch.
     if not self:IsEnabled() then
         return
     end
@@ -108,7 +108,7 @@ end
 --- and play path as the real chat; the NPC of your target when none is given. A line with no
 --- recording is marked, so a missing voice shows without walking to the NPC.
 function Chatter:Simulate(input)
-    local print = function(message) DEFAULT_CHAT_FRAME:AddMessage("|cFF00CCFFSpoken NPC chat:|r " .. message) end
+    local print = function(message) DEFAULT_CHAT_FRAME:AddMessage("|cFF00CCFFSpoken world chatter:|r " .. message) end
     local npcID = tonumber(string.match(input or "", "%d+"))
     if not npcID and UnitExists and UnitExists("target") then
         npcID = Utils:GetCreatureIDFromGUID(NotSecret(UnitGUID("target")))
@@ -118,7 +118,7 @@ function Chatter:Simulate(input)
         return
     end
     if not self:IsEnabled() then
-        print("off - NPC Chat is switched off on Spoken's page.")
+        print("off - World Chatter is switched off on Spoken's page.")
         return
     end
     local lines = ChatterLines and ChatterLines[npcID]

@@ -11,7 +11,7 @@ the corpus, and building a pack from audio/ once `make quests-sounds` has assemb
     export-locale-text  Postgres -> one language's gossip text   before its Gossip pack
     export-giver-names  Postgres -> the addon's translated quest-giver names   after import-locale
     export-gossip-text  Postgres -> the addon's gossip text per client locale, and aliases
-    export-chatter-lines  corpus -> the addon's NPC Chat lines             after export-corpus
+    export-chatter-lines  corpus -> the addon's World Chatter lines             after export-corpus
     build         corpus + audio/ -> dist/<module>          per release
     install       dist/<module> -> WoW AddOns               per release
 """

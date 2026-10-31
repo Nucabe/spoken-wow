@@ -1,4 +1,4 @@
-"""What NPCs say out loud in the world, for the addon's NPC Chat part (Chatter.lua).
+"""What NPCs say out loud in the world, for the addon's World Chatter part (Chatter.lua).
 
 The corpus rows of source "chatter" (tts_cli/naming.py names them as follow-up lines are, by
 broadcast_text id and voice) become addons/Spoken_Quests/ChatterLines.lua: by speaker, its name

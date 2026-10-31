@@ -14,7 +14,7 @@ behaviour changes.
   `/spokenquests`, `/spq` (`read`, `test`, `followup`, `chatter`, `diagnostics`, `options`) and `/spqread`.
   It is three parts of Spoken, each with its own source, switch and settings page: Quests, which
   reads a quest's text, Gossip, which reads the greeting a quest giver opens with
-  (`QUEST_GREETING`) and the gossip page (`GOSSIP_SHOW`), and NPC Chat, which voices what NPCs say
+  (`QUEST_GREETING`) and the gossip page (`GOSSIP_SHOW`), and World Chatter, which voices what NPCs say
   out loud in the world (`Chatter.lua`, README "What NPCs say in the world"). `docs/gossip/AGENTS.md`
   is Gossip's guide.
 - Sound packs `SpokenQuestsAudio{Alliance,Horde,Shared,Gossip}`, plus the `All` meta addon,

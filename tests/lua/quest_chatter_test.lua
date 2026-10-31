@@ -1,5 +1,5 @@
 -- What NPCs say out loud in the world: matched by speaker and exact text, played as low priority by
--- the NPC Chat part, not repeated for two minutes. Run with `make test-player`.
+-- the World Chatter part, not repeated for two minutes. Run with `make test-player`.
 --
 -- The failure this guards against is the busy world: guards and townsfolk talk all the time, so a
 -- matcher that was loose, or played over what is being read, or repeated a line, would be the
@@ -120,7 +120,7 @@ Say("I sense evil brewing. . . .", SPEAKER_GUID)
 Expect("the speaker's line plays", Keys(), "chat-101")
 local clip = queued[1]
 Expect("...as NPC chat, not a quest or gossip line", clip and clip.event, VO.Enums.SoundEvent.NPCChatter)
-Expect("...in the NPC Chat part", clip and clip.source, chatter)
+Expect("...in the World Chatter part", clip and clip.source, chatter)
 Expect("...at low priority, so it waits for what is being read", clip and clip.priority, "low")
 Expect("...headed by the NPC who said it", clip and clip.present.header, "Madame Test")
 Expect("...on the line's own recording", clip and clip.path, [[Interface\AddOns\TestPack\]] .. FOLLOWUP_DIR .. "chat-101.ogg")
@@ -153,7 +153,7 @@ Expect("of two NPCs of one name saying the same words, the one with a recording 
 -- own quest: said after somebody else's turn-in, it is not this player's to hear.
 Reset()
 Say("Here goes nothing...", SCRIPTED_GUID)
-Expect("a line a quest script makes an NPC say is not played by NPC Chat", Keys(), "")
+Expect("a line a quest script makes an NPC say is not played by World Chatter", Keys(), "")
 Say("Here goes nothing...", nil, "Scripted Test")
 Expect("...whether or not the event names the speaker", Keys(), "")
 Reset()
@@ -225,7 +225,7 @@ Expect("Read Automatically is the quest window's: chat plays with it off", Keys(
 Reset()
 Spoken:SetPartOn("chatter", false)
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
-Expect("with NPC Chat off, nothing plays", Keys(), "")
+Expect("with World Chatter off, nothing plays", Keys(), "")
 Spoken:SetPartOn("chatter", true)
 stub.Secrets("I sense evil brewing. . . .")
 Say("I sense evil brewing. . . .", SPEAKER_GUID)

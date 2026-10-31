@@ -1514,7 +1514,7 @@ voices, emotes, quest scripts), so not even an NPC with a single line can be tol
 with NPC chat: there the speaker is found by the name in the event (each speaker's `name` in the export) and
 the text, English clients only, since a translated name matches nothing. A message the client hides (a
 dungeon's chat can come as secrets) is not matched. Read Automatically, the quest window's, does not apply:
-NPC Chat's own switch is the only one.
+World Chatter's own switch is the only one.
 
 A line that a quest's script makes the NPC say (`FollowupLines.lua` lists the same speaker and id) is not
 played here: heard with nothing armed it is another player's quest, and the follow-up part plays it for the
@@ -1539,7 +1539,7 @@ The light waits up to two seconds for the captions to reach a line that a fading
 the Stop button holds is not lit. A bubble the client
 forbids (an instance's) or whose text is a secret is left alone.
 
-NPC Chat is a part of Spoken of its own (`chatter`, after Bosses on Spoken's page, with a page and a switch beside
+World Chatter is a part of Spoken of its own (`chatter`, after Bosses on Spoken's page, with a page and a switch beside
 Quests' and Gossip's). `/spq chatter [NPC id]` replays an NPC's lines three seconds apart through the same match
 and play path, the target's when no id is given, and marks a line with no recording as silent.
 

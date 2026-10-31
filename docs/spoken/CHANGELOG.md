@@ -4,7 +4,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **NPC Chat can voice what NPCs say out loud in the world.** Guards, farmers and other NPCs that talk
+- **World Chatter voices what people say out loud in the world.** Guards, farmers and others who talk
   without a quest are matched by who says what, and the line plays when a voice pack has it, only when
   nothing else is being read. The game's chat bubble stays the only thing on screen, and lights the word
   being read. It is a part of its own on Spoken's page, with a switch and a page, and `/spq chatter`

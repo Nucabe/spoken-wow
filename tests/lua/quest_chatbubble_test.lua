@@ -1,4 +1,4 @@
--- The game's chat bubble is the narrator for NPC Chat: the word being read is lit in the bubble's own
+-- The game's chat bubble is the narrator for World Chatter: the word being read is lit in the bubble's own
 -- text and the text is put back when the line ends. Run with `make test-player`.
 --
 -- The failure this guards against is the bubble left coloured, or a bubble that is not this line's
