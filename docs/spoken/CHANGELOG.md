@@ -4,10 +4,19 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Spoken NPCs is now Spoken Bosses.** The module has a new name and folder, `Spoken_Bosses`, so
+  the bosses you found and the stories already told start over. An old `Spoken_NPCs` folder left
+  beside it is switched off, and Spoken offers the reload that finishes it.
+  *([rusty-key](https://github.com/rusty-key))*
+- **Boss stories are read aloud.** Install Spoken Audio: Places and Bosses and a boss's story is voiced when it falls; without it the story shows as text, as before.
+  The Bosses settings page lists the pack, with the address to download it, as the Places and
+  Readables pages list theirs. Play on a boss's page in the Compendium plays its story, and the
+  boss still tells it when it falls.
+  *([rusty-key](https://github.com/rusty-key))*
 - **Places and Readables are reachable by other addons**, through the globals `SpokenPlaces` and
-  `SpokenReadables`, as Bosses already was through `SpokenNPCs`: an addon that lists a place or a
-  book can ask whether Spoken has its story and have it read or shown. What is not found yet
-  stays locked for it too.
+  `SpokenReadables`, as Bosses already is through `SpokenBossesAddon`: an addon that lists a place
+  or a book can ask whether Spoken has its story and have it read or shown. Such an addon checks
+  first whether the player has found it.
   *([fallenguards](https://github.com/fallenguards))*
 - **Raid and world bosses wear the elite skull in the Compendium, dungeon bosses the plain one.**
   On Season of Discovery, Blackfathom Deeps, Gnomeregan and Sunken Temple count as raids.

@@ -310,7 +310,8 @@ end
 -- are each module's own to list. tests/lua/packs_test.lua keeps this in step with the pages.
 local CURSEFORGE = "https://www.curseforge.com/wow/addons/"
 local RELEASES = "https://github.com/rusty-key/spoken-wow/releases?q="
-local PACK_FOLDERS = { quests = "SpokenQuestsAudio", places = "SpokenPlacesAudio", readables = "SpokenReadablesAudio" }
+local PACK_FOLDERS = { quests = "SpokenQuestsAudio", places = "SpokenPlacesAudio", readables = "SpokenReadablesAudio",
+    bosses = "SpokenBossesAudio" }
 local PACK_PAGES = {
     -- Quests in one folder per language is a GitHub download: on CurseForge a language's quests
     -- are split into packs under other folders.
@@ -325,9 +326,11 @@ local PACK_PAGES = {
     readables = { deDE = "spoken-german-audio-readables", esES = "spoken-spanish-eu-audio-readables", esMX = "spoken-spanish-al-audio-readables",
         frFR = "spoken-french-audio-readables", koKR = "spoken-korean-audio-readables", ptBR = "spoken-portuguese-audio-readables",
         ruRU = "spoken-russian-audio-readables", zhCN = "spoken-chinese-simplified-audio-readables", zhTW = "spoken-chinese-traditional-audio-readables" },
+    -- A language's page is added once it has takes.
+    bosses = {},
 }
 
---- The voice pack `module` ("quests", "places" or "readables") has in `lang`, English's aside: the folder
+--- The voice pack `module` ("quests", "places", "readables" or "bosses") has in `lang`, English's aside: the folder
 --- it installs as and the address to get it, or nil where that language has none.
 function Spoken:VoicePack(module, lang)
     local page = PACK_PAGES[module] and PACK_PAGES[module][lang]
@@ -507,7 +510,7 @@ function Spoken:VoiceLanguage()
 end
 
 --- What a module's page says under its voice packs when nothing can be heard: no pack in the voice
---- language exists for `module` ("quests", "places" or "readables"), and If a Voice Is Missing is Stay
+--- language exists for `module` ("quests", "places", "readables" or "bosses"), and If a Voice Is Missing is Stay
 --- Silent. Nil otherwise.
 function Spoken:SilentNote(module)
     local voice = self:VoiceLanguage()

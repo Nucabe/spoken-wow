@@ -667,7 +667,7 @@ local function Build()
         { tab = "quests", part = "quests", label = L.OPT_UNLOCK_QUESTS, module = L.OPT_PART_QUESTS },
         { tab = "places", part = "places", label = L.OPT_UNLOCK_PLACES, module = L.OPT_PART_PLACES },
         { tab = "readables", part = "readables", label = L.OPT_UNLOCK_READABLES, module = L.OPT_PART_READABLES },
-        -- Spoken NPCs has no part to turn off: its tab is there while the addon is.
+        -- Spoken Bosses has no part to turn off: its tab is there while the addon is.
         { tab = "bosses", label = L.OPT_UNLOCK_BOSSES },
     }) do
         local row = layout:Checkbox(unlock.label, nil,

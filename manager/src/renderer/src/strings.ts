@@ -128,7 +128,7 @@ export const S = {
     { folder: 'Spoken_Quests', alt: 'Spoken_Conversations', title: 'Quests and Gossip', text: 'Reads quest text and what NPCs say when you talk to them.' },
     { folder: 'Spoken_Places', title: 'Places', text: 'Tells the story of a zone, dungeon or area as you enter it.' },
     { folder: 'Spoken_Readables', title: 'Readables', text: 'Reads books, letters and notes when you open them.' },
-    { folder: 'Spoken_NPCs', title: 'NPCs and Bosses', text: 'Voices for NPCs and boss encounters.' },
+    { folder: 'Spoken_Bosses', alt: 'Spoken_NPCs', title: 'Bosses', text: 'Tells the story of each dungeon and raid boss when it falls.' },
     { folder: 'SpokenContributions', title: 'Contributions', text: 'Lets you send in missing lines and recordings.' }
   ],
   voices: {
@@ -137,7 +137,8 @@ export const S = {
     sections: {
       quests: { title: 'Quests', text: 'Every quest, spoken as you read it, and the gossip of the people who give them.' },
       places: { title: 'Places', text: 'The story of each zone, dungeon and place, told as you arrive.' },
-      readables: { title: 'Readables', text: 'Books, letters and notes read aloud when you open them.' }
+      readables: { title: 'Readables', text: 'Books, letters and notes read aloud when you open them.' },
+      bosses: { title: 'Bosses', text: 'The story of each dungeon and raid boss, told when it falls.' }
     } satisfies Record<Section, { title: string; text: string }>,
     packNames: { all: 'All Quests', alliance: 'Alliance', horde: 'Horde', shared: 'Shared', gossip: 'Gossip' },
     splitHint: 'Or Only Part of It',
