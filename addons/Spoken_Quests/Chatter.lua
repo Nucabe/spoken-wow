@@ -1,8 +1,7 @@
 setfenv(1, VoiceOver)
 
--- What NPCs say out loud in the world: a guard's warning, a farmer's complaint, a town crier. The
--- world DB's creature_text holds those lines; ChatterLines.lua is the export of the ones the game
--- gives no sound of its own, by speaker. They arrive as chat, so the speaker's creature id (from
+-- What NPCs say out loud in the world: a guard's warning, a farmer's complaint, a town crier. They
+-- are the corpus's lines of source "chatter"; ChatterLines.lua is their export, by speaker. They arrive as chat, so the speaker's creature id (from
 -- the event's GUID) and the exact text say which line it is. Followup.lua does the same for the
 -- chat a quest sets off; this is the chat that needs no quest, so nothing is armed: a message from a
 -- speaker with no lines is one table lookup. A line a quest's script makes the NPC say is left to
@@ -43,17 +42,14 @@ function Chatter:IsEnabled()
     return Addon and Addon.db and Addon:IsPartOn("chatter") or false
 end
 
---- The line of `npcID` that `message` is, or nil. On an English client the text must equal the
---- line once the tokens are filled in for the local player; on any other the text is translated and
---- cannot be compared, so only an NPC with a single line is told.
+--- The line of `npcID` that `message` is, or nil: the text must equal the line once the tokens are
+--- filled in for the local player. English clients only: elsewhere the text is translated, and an NPC
+--- says more than its exported lines (lines the game voices, emotes, quest scripts), so not even an
+--- NPC with a single line can be told by who said it.
 function Chatter:Match(npcID, message, sender)
     local lines = ChatterLines and ChatterLines[npcID]
-    if not lines then
+    if not (lines and Followup.ClientSpeaksExportLanguage()) then
         return nil
-    end
-    if not Followup.ClientSpeaksExportLanguage() then
-        local only = not lines[2] and lines[1] or nil
-        return only and not Followup.IsScripted(npcID, only.id) and only or nil
     end
     local said = string.lower(Followup.Normalize(message))
     for _, line in ipairs(lines) do
@@ -87,8 +83,8 @@ end
 
 --- A chat message from an NPC: `asked` when /spq chatter replays it.
 function Chatter:OnChat(event, message, sender, guid, asked)
-    -- These lines read themselves, so Read Automatically silences them, as it does the follow-up lines.
-    if not self:IsEnabled() or not (asked or Addon:IsAutoplayOn()) then
+    -- Not gated on Read Automatically: that is the quest window's, and NPC Chat has its own switch.
+    if not self:IsEnabled() then
         return
     end
     -- In a dungeon the server's NPC chat can come as secrets, which cannot be matched.

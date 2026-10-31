@@ -26,6 +26,12 @@ describe("audio paths", () => {
     expect(subfolder({ source: "followup" })).toBe("followup");
   });
 
+  it("puts an NPC's chat in the world under followup/ too: it is named the same way", () => {
+    expect(audioRelPath({ source: "chatter", fileName: "1309-human-female-standard" })).toBe(
+      "followup/1309-human-female-standard.mp3",
+    );
+  });
+
   it("keeps the gender prefix Python put in the filename", () => {
     // The prefix is part of fileName, never added here.
     expect(subfolder({ source: "gossip" })).toBe("gossip");

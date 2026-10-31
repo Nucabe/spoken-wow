@@ -19,7 +19,8 @@ export const SUBFOLDERS = ["quests", "gossip", "followup"] as const;
  */
 export function subfolder(line: Pick<CorpusLine, "source">): (typeof SUBFOLDERS)[number] {
   if (line.source === "gossip") return "gossip";
-  if (line.source === "followup") return "followup";
+  // A chat line is named as a follow-up line is, after its words and voice, so it shares the folder.
+  if (line.source === "followup" || line.source === "chatter") return "followup";
   return "quests";
 }
 

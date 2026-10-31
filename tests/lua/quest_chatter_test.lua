@@ -221,7 +221,7 @@ Reset()
 VO.Addon.db.profile.Audio.Autoplay = false
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
 VO.Addon.db.profile.Audio.Autoplay = true
-Expect("with Read Automatically off, chat is not read: it reads itself", Keys(), "")
+Expect("Read Automatically is the quest window's: chat plays with it off", Keys(), "chat-101")
 Reset()
 Spoken:SetPartOn("chatter", false)
 Say("I sense evil brewing. . . .", SPEAKER_GUID)
@@ -257,11 +257,11 @@ Expect("...even for an NPC with a single line, whose name might be the same in b
 Reset()
 stub.SetLocale("deDE")
 Say("Eine ganz andere Zeile.", LONE_GUID)
-Expect("on a client in another language an NPC with a single line is told by who said it", Keys(), "chat-110")
+Expect("on a client in another language not even an NPC with a single line is told: it says more than it", Keys(), "")
 Reset()
 stub.SetLocale("deDE")
 Say("Ich spüre, dass etwas Böses braut.", SPEAKER_GUID)
-Expect("...and one with several lines is not, since the text cannot be compared", Keys(), "")
+Expect("...nor one with several lines, since the text cannot be compared", Keys(), "")
 
 ---------------------------------------------------------------- /spq chatter
 Reset()

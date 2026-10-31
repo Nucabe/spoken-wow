@@ -29,6 +29,6 @@ export function targetForLine(
     // would resolve to nothing while looking like a real report, so it is worth refusing.
     return line.questId === null ? null : `quest/${line.questId}/${line.source}`;
   }
-  if (line.source !== "gossip" && line.source !== "followup") return null;
+  if (line.source !== "gossip" && line.source !== "followup" && line.source !== "chatter") return null;
   return line.npcType === "gameobject" ? `object/${line.npcId}` : `npc/${line.npcId}`;
 }

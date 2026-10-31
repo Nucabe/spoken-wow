@@ -22,7 +22,7 @@ from tts_cli.npc_bodies import body_name, sex_bodies
 #: The lines an NPC speaks in its own voice: all of them but progress text, which is never
 #: voiced. A quest moment's giver is found through QuestFileLookupBy*; a greeting's speaker and
 #: a follow-up's are looked up per NPC already, so their tables simply name its own file.
-OWN_VOICE_SOURCES = frozenset({"accept", "complete", "gossip", "followup"})
+OWN_VOICE_SOURCES = frozenset({"accept", "complete", "gossip", "followup", "chatter"})
 
 
 def npc_voices(corpus: dict) -> dict:

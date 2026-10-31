@@ -1504,24 +1504,29 @@ the quest.
 ### What NPCs say in the world
 
 The same chat events carry what NPCs say with no quest behind it: a guard's warning, a farmer's complaint, a
-town crier. `ChatterLines.lua` is the export of those lines (`pipelines/quests/tools/export_chatter_lines.py`),
-keyed by the speaker's creature entry, and `Chatter.lua` reads it. Nothing is armed: a message is looked up by
-the creature id in the event's GUID, so chat from a speaker with no lines costs one table lookup. On an English
-client the text must equal a line once `$n`, `$r`, `$c` and `$g...;` are filled in for the local player; on any
-other the text is translated, so only an NPC with a single line is told by who said it. Forever sends no GUID
+town crier. They are corpus lines of source `chatter`, and `ChatterLines.lua` is their export
+(`make quests-export-chatter-lines`, `tts_cli/chatter_lines.py`, read from the corpus, so run after
+export-corpus), keyed by the speaker's creature entry. `Chatter.lua` reads it. Nothing is armed: a message is looked up by
+the creature id in the event's GUID, so chat from a speaker with no lines costs one table lookup. The text must
+equal a line once `$n`, `$r`, `$c` and `$g...;` are filled in for the local player, so only English clients
+match: on any other the text is translated, and an NPC says more than its exported lines (lines the game
+voices, emotes, quest scripts), so not even an NPC with a single line can be told by who said it. Forever sends no GUID
 with NPC chat: there the speaker is found by the name in the event (each speaker's `name` in the export) and
 the text, English clients only, since a translated name matches nothing. A message the client hides (a
-dungeon's chat can come as secrets) is not matched. These lines read themselves, so Read Automatically off
-silences them, as it does the follow-up lines.
+dungeon's chat can come as secrets) is not matched. Read Automatically, the quest window's, does not apply:
+NPC Chat's own switch is the only one.
 
 A line that a quest's script makes the NPC say (`FollowupLines.lua` lists the same speaker and id) is not
 played here: heard with nothing armed it is another player's quest, and the follow-up part plays it for the
 player's own.
 
-The lines are the world DB's `creature_text` rows of type say, yell, whisper and boss whisper with `Sound = 0`
-(the game already voices the rest), a broadcast text id, and a speaker with a spawn on the open-world maps; in an
-instance the client hides the GUID. Each line is kept once per speaker. The broadcast text id names the
-recording the way a follow-up line's does: `FollowupLookup[speaker][id]`, resolved by
+The first lines were seeded once from the Forever repack's `creature_text` (a one-off import, kept outside
+the repo): say, yell, whisper and boss whisper that the game does not voice, with a broadcast text id and a
+speaker with a spawn on the open-world maps, since in an instance the client hides the GUID. From there they are
+edited on the site like any other line. A chat line is named as a follow-up line is, `f:{broadcastTextId}:{voice}`
+(`tts_cli/naming.py`), and shares its file and folder, so the same words in the same voice are one recording;
+its audio ships in the Gossip pack, having no quest to side with. The broadcast text id names the recording:
+`FollowupLookup[speaker][id]`, resolved by
 `DataModules:ResolveSoundFile` like any other file, so a pack that has the file plays it and one that has not is
 silent (`chatter-no-recording` in the debug log). A line is played as low priority, as gossip is: only when
 nothing else is being read, and a quest line arriving drops it. At most three lines wait behind the one
@@ -1534,7 +1539,7 @@ The light waits up to two seconds for the captions to reach a line that a fading
 the Stop button holds is not lit. A bubble the client
 forbids (an instance's) or whose text is a secret is left alone.
 
-NPC Chat is a part of Spoken of its own (`chatter`, third on Spoken's page, with a page and a switch beside
+NPC Chat is a part of Spoken of its own (`chatter`, after Bosses on Spoken's page, with a page and a switch beside
 Quests' and Gossip's). `/spq chatter [NPC id]` replays an NPC's lines three seconds apart through the same match
 and play path, the target's when no id is given, and marks a line with no recording as silent.
 
