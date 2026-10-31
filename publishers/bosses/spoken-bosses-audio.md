@@ -3,6 +3,7 @@ release: bosses-audio
 section: bosses
 lang: enUS
 slug: spoken-audio-bosses
+bundledIn: spoken-audio-places
 name: Spoken Audio: Bosses
 summary: The narration for Spoken's boss stories: every dungeon and raid boss's story read aloud.
 categories:
@@ -13,7 +14,9 @@ license: MIT
 addonReadme: addons/SpokenBossesAudio/README.md
 ---
 
-Narrated boss stories for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s NPCs module. This addon is data only: it does nothing on its own.
+Narrated boss stories for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Bosses module. This addon is data only: it does nothing on its own.
+
+On CurseForge it has no project of its own: it ships inside **[Spoken Audio: Places and Bosses](https://www.curseforge.com/wow/addons/spoken-audio-places)**, beside the Places narration.
 
 ## Installing
 

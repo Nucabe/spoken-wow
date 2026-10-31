@@ -1,5 +1,5 @@
 ## Interface: 11509, 20506, 16001
-## Title: |cffb48cffSpoken|r |cff6cb8ffNPCs|r
+## Title: |cffb48cffSpoken|r |cff6cb8ffBosses|r
 ## Notes: The bosses of every dungeon and raid, and their stories, in Azeroth's Compendium.
 ## Notes-deDE: Die Bosse aller Dungeons und Schlachtzüge und ihre Geschichten, im Kompendium von Azeroth.
 ## Notes-esES: Los jefes de todas las mazmorras y bandas, y sus historias, en el Compendio de Azeroth.
@@ -14,8 +14,8 @@
 ## Author: Nucabe
 ## Dependencies: Spoken
 ## OptionalDeps: SpokenBossesAudio
-## SavedVariables: SpokenNPCsSettings
-## SavedVariablesPerCharacter: SpokenNPCsCharacter
+## SavedVariables: SpokenBossesSettings
+## SavedVariablesPerCharacter: SpokenBossesCharacter
 # Spoken is what this module runs on, and ships in the same zip.
 ## IconTexture: Interface\AddOns\Spoken\icon.tga
 ## Group: Spoken

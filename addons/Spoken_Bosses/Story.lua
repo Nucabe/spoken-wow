@@ -1,10 +1,10 @@
-local _, NPCs = ...
+local _, Bosses = ...
 
 -- A boss's story in Spoken's narrator, voiced where a pack has it and as words alone where none
 -- does, once per character, when the boss is killed. The game sends no kill for a world boss, so
 -- its death is watched once the player targets it or sees its nameplate.
 
-local L = NPCs.L
+local L = Bosses.L
 
 local source
 
@@ -27,21 +27,21 @@ local function WorldBosses()
 end
 
 --- Registers the bosses' stories with Spoken as a part of its own, after the settings are read.
-function NPCs:SetupStories()
+function Bosses:SetupStories()
 	if source or not (Spoken and Spoken.RegisterSource and Spoken.ShowsNarratorFor) then return end
 	source = Spoken:RegisterSource("bosses", {
 		title = L.OPT_PAGE_TITLE,
-		addon = "Spoken_NPCs",
-		icon = NPCs.ICON,
+		addon = "Spoken_Bosses",
+		icon = Bosses.ICON,
 		about = L.PART_ABOUT,
 		order = 5,
-		packs = function() return NPCs:PackNames() end,
+		packs = function() return Bosses:PackNames() end,
 	})
 end
 
 --- Whether this character has been shown the story of the boss `key` of `map`.
-function NPCs:IsStoryRead(map, key)
-	return SpokenNPCsCharacter ~= nil and SpokenNPCsCharacter.storiesRead[NPCs.Key(map, key)] == true
+function Bosses:IsStoryRead(map, key)
+	return SpokenBossesCharacter ~= nil and SpokenBossesCharacter.storiesRead[Bosses.Key(map, key)] == true
 end
 
 --- Tells the story of the boss `key` of `map`. Nothing when this character has been told it, the
@@ -49,19 +49,19 @@ end
 --- heard with the narrator hidden, as every voiced line is. Returns whether it queued.
 --- A story is low, as gossip is: a voiced line coming drops it while it waits. It counts as shown
 --- once it starts, so one dropped or cleared shows the next time.
-function NPCs:ReadStory(map, key)
-	if not (source and SpokenNPCsCharacter) then return false end
-	local id = NPCs.Key(map, key)
-	if SpokenNPCsCharacter.storiesRead[id] then return false end
+function Bosses:ReadStory(map, key)
+	if not (source and SpokenBossesCharacter) then return false end
+	local id = Bosses.Key(map, key)
+	if SpokenBossesCharacter.storiesRead[id] then return false end
 	local clip = self:StoryClip(map, key)
 	if not clip or (clip.textOnly and not Spoken:ShowsNarratorFor("bosses")) then return false end
 	clip.priority = "low"
-	clip.startCallback = function() SpokenNPCsCharacter.storiesRead[id] = true end
+	clip.startCallback = function() SpokenBossesCharacter.storiesRead[id] = true end
 	return source:Enqueue(clip) and true or false
 end
 
 --- The voiced story of the boss `key` of `map` in the queue, or nil where it is not there.
-function NPCs:QueuedStory(map, key)
+function Bosses:QueuedStory(map, key)
 	if not (source and Spoken.GetQueue) then return nil end
 	local id = "boss:" .. map .. ":" .. key
 	for _, clip in ipairs(Spoken:GetQueue()) do
@@ -71,7 +71,7 @@ end
 
 --- Plays the voiced story of the boss `key` of `map` now, as the Compendium's Play asks. Heard here
 --- it is not marked read, so the boss still tells it when it falls. Returns whether it plays.
-function NPCs:PlayStory(map, key)
+function Bosses:PlayStory(map, key)
 	if not source then return false end
 	local clip = self:StoryClip(map, key)
 	if not clip or clip.textOnly then return false end
@@ -116,7 +116,7 @@ local function Unwatch(guid)
 end
 
 --- `unit` may be a boss watched: if it is, and dead, the boss is met and its story shown.
-function NPCs:CheckUnit(unit)
+function Bosses:CheckUnit(unit)
 	local guid = unit and Spoken.NotSecret(UnitGUID(unit))
 	local entry = guid and watched[guid]
 	if not entry or Dead(unit) ~= true then return end
@@ -138,7 +138,7 @@ local function Poll()
 			local unit = UnitTokenFromGUID and UnitTokenFromGUID(guid)
 			if unit then
 				entry.since = now
-				Safely(NPCs.CheckUnit, NPCs, unit)
+				Safely(Bosses.CheckUnit, Bosses, unit)
 			end
 		end
 	end
@@ -155,7 +155,7 @@ local function Watch(boss, guid)
 	watched[guid] = { boss = boss, since = GetTime(), zone = Zone() }
 	if not watcher then
 		watcher = CreateFrame("Frame")
-		watcher:SetScript("OnEvent", function(_, _, unit) if Reported(unit) then NPCs:CheckUnit(unit) end end)
+		watcher:SetScript("OnEvent", function(_, _, unit) if Reported(unit) then Bosses:CheckUnit(unit) end end)
 	end
 	watcher:RegisterEvent("UNIT_HEALTH")
 	if not polling then polling = true; C_Timer.After(POLL_SECONDS, Poll) end
@@ -163,7 +163,7 @@ end
 
 --- The player targeted a unit, or one came into view (`unit`): a world boss, alive and not yet told,
 --- is watched until it dies. A target cleared, as it is when the boss dies, leaves the watch as it was.
-function NPCs:UnitSeen(unit)
+function Bosses:UnitSeen(unit)
 	unit = unit or "target"
 	local guid = Spoken.NotSecret(UnitGUID and UnitGUID(unit))
 	if not guid or watched[guid] then return end
@@ -175,16 +175,16 @@ function NPCs:UnitSeen(unit)
 end
 
 --- An encounter was won: its bosses are met, and their stories shown.
-function NPCs:EncounterEnded(encounterID, success)
+function Bosses:EncounterEnded(encounterID, success)
 	if success ~= 1 then return end
 	self:FoundEncounter(encounterID)
 	for _, boss in ipairs(self:BossesOfEncounter(encounterID)) do self:ReadStory(boss.map, boss.key) end
 end
 
 --- Every story this character was shown can be shown again. Returns how many.
-function NPCs:ForgetStories()
+function Bosses:ForgetStories()
 	local count = 0
-	for _ in pairs(SpokenNPCsCharacter and SpokenNPCsCharacter.storiesRead or {}) do count = count + 1 end
-	if SpokenNPCsCharacter then SpokenNPCsCharacter.storiesRead = {} end
+	for _ in pairs(SpokenBossesCharacter and SpokenBossesCharacter.storiesRead or {}) do count = count + 1 end
+	if SpokenBossesCharacter then SpokenBossesCharacter.storiesRead = {} end
 	return count
 end

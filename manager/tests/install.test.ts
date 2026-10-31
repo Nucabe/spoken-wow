@@ -536,6 +536,14 @@ describe('installProduct: folders no longer in the zip', () => {
     expect(result.message).toMatch(/^Removed the old Spoken_Quests and Spoken_Readables folders\. /)
   })
 
+  it('removes Spoken_NPCs once Spoken_Bosses replaces it', async () => {
+    const env = await setup()
+    await installFolders(env, '3.6.0', ['Spoken', 'Spoken_NPCs'])
+    const result = await installFolders(env, '3.7.0', ['Spoken', 'Spoken_Bosses'])
+    expect(result.removed).toEqual(['Spoken_NPCs'])
+    expect(listDir(env.addOns)).toEqual([WORK_DIR, 'Spoken', 'Spoken_Bosses'].sort())
+  })
+
   it('leaves a linked old folder alone', async () => {
     const env = await setup()
     await installFolders(env, '3.5.0', ['Spoken', 'Spoken_Quests'])

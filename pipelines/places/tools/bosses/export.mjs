@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Writes addons/Spoken_NPCs/Data/{Bosses,Creatures,Stories}.lua from the boss tables.
+// Writes addons/Spoken_Bosses/Data/{Bosses,Creatures,Stories}.lua from the boss tables.
 //
 //   node pipelines/places/tools/bosses/export.mjs           # write the three files
 //   node pipelines/places/tools/bosses/export.mjs --check   # fail if they are out of date, write nothing
@@ -23,13 +23,13 @@ import { close, readBosses, readNames, readStories, requireDatabase } from "./st
 await loadEnvFile();
 
 const checkOnly = process.argv.includes("--check");
-const DATA = join(ROOT, "addons/Spoken_NPCs/Data");
+const DATA = join(ROOT, "addons/Spoken_Bosses/Data");
 
 /** The text without its leading `--` comment block, and with "\n" line endings. */
 const body = (text) => text.replace(/\r\n/g, "\n").replace(/^(--.*\n)+/, "");
 
 async function main() {
-  requireDatabase("npcs-export");
+  requireDatabase("bosses-export");
   const bosses = await readBosses({ includeRetired: true });
   const nameRows = await readNames("boss");
   const storyRows = await readStories();
@@ -48,7 +48,7 @@ async function main() {
     if (checkOnly) {
       const committed = await readFile(path, "utf8").catch(() => "");
       if (body(committed) !== body(text)) {
-        console.error(`${name} differs from the database: run make npcs-export`);
+        console.error(`${name} differs from the database: run make bosses-export`);
         stale++;
       }
     } else {

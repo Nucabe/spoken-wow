@@ -1,12 +1,12 @@
 ## Interface: 11509, 20506, 16001
 ## Title: |cffb48cffSpoken|r Audio: Bosses
-## Notes: Narrated boss stories for Spoken NPCs.|n|nKeep it enabled: it loads with the game, and Spoken NPCs plays from it.
+## Notes: Narrated boss stories for Spoken Bosses.|n|nKeep it enabled: it loads with the game, and Spoken Bosses plays from it.
 ## Version: 1.0.0
 ## Author: rusty
 ## IconTexture: Interface\AddOns\SpokenBossesAudio\Textures\AddonIcon.tga
 ## Group: Spoken
 ## X-Part-Of: Spoken
-## X-Child-Of: Spoken_NPCs
+## X-Child-Of: Spoken_Bosses
 ## X-License: Audio generated with ElevenLabs from boss lore text.
 ## X-Credits: Boss lore sourced from warcraft.wiki.gg contributors (CC BY-SA 4.0).
 
@@ -18,6 +18,6 @@
 # The language this pack narrates, read back the same way.
 ## X-SpokenBosses-Language: enUS
 
-# Defines the SpokenBossesAudioPacks registry entry that Spoken NPCs reads. No dependency is
-# declared in either direction: Spoken NPCs shows text only when no pack is present.
+# Defines the SpokenBossesAudioPacks registry entry that Spoken Bosses reads. No dependency is
+# declared in either direction: Spoken Bosses shows text only when no pack is present.
 Data/Sounds.lua

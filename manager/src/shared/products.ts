@@ -163,6 +163,7 @@ export const SPOKEN_FOLDERS = [
   'Spoken_Conversations',
   'Spoken_Places',
   'Spoken_Readables',
+  'Spoken_Bosses',
   'Spoken_NPCs',
   'SpokenContributions'
 ]

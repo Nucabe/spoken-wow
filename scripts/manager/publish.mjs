@@ -76,8 +76,7 @@ export async function publish({ store, packs, distDir, signingKey, minSpoken, la
 
   // Every folder and every requirement is checked before anything is read from or sent to R2.
   for (const { folder, section } of packs) {
-    // Bosses packs are built by the npcs targets.
-    const build = `${section === "bosses" ? "npcs" : section}-package-audio`;
+    const build = `${section}-package-audio`;
     if (!PACK_ID.test(folder)) throw new Error(`${folder} is not a pack id the manager accepts`);
     if (!existsSync(join(distDir, folder))) throw new Error(`dist/${folder} is missing: build it first (make ${build})`);
     // The packagers leave dist/<folder>/ beside the zip; a folder older than a zip is a stale build.

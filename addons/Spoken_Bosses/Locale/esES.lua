@@ -1,10 +1,10 @@
-local _, NPCs = ...
+local _, Bosses = ...
 
--- Spanish interface strings for Spoken NPCs.
+-- Spanish interface strings for Spoken Bosses.
 --
 -- Keyed exactly as in Locale/enUS.lua; anything missing falls back to English.
 
-local L = NPCs.L
+local L = Bosses.L
 
 -- esMX shares this file: nothing in these strings varies by region.
 local locale = GetLocale()

@@ -191,7 +191,6 @@ if (gone.length) {
 if (missing.length) {
   console.error(`  ${missing.length} live takes are not in this machine's archive, e.g.:`);
   for (const path of missing.slice(0, 5)) console.error(`    ${path}`);
-  const targets = section === "bosses" ? "npcs" : section;
-  console.error(`  Fetch them with:  make ${targets}-pull-live${lang === BASE_LANG ? "" : ` LOCALE=${lang}`}`);
+  console.error(`  Fetch them with:  make ${section}-pull-live${lang === BASE_LANG ? "" : ` LOCALE=${lang}`}`);
   process.exit(1);
 }

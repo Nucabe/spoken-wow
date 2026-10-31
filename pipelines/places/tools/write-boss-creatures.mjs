@@ -5,7 +5,7 @@
 //
 // Every live boss is set, to null where nothing gives it one, so a boss the input no longer covers
 // loses its creature rather than keeping a stale one.
-// Data/Creatures.lua is written from the table by make npcs-export.
+// Data/Creatures.lua is written from the table by make bosses-export.
 //
 // Where the database gives a boss no model, the Adventure Guide's (retail JournalEncounter tables) fills in:
 // its creature's model where Forever's client has that model.
@@ -98,5 +98,5 @@ async function main() {
   console.log(`${counts.updated} bosses updated, ${counts.unchanged} unchanged (guide: ${filledModels} models; by hand: ${fixed.length} creatures)`);
   const unknown = rows.filter((r) => (r.creature || r.display) && !known.has(`${r.map}\t${r.key}`));
   for (const r of unknown) console.log(`not a live boss, skipped: ${r.map} "${r.key}"`);
-  if (counts.updated > 0) console.log("then: make npcs-export");
+  if (counts.updated > 0) console.log("then: make bosses-export");
 }

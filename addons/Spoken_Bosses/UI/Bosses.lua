@@ -1,4 +1,4 @@
--- SpokenNPCs -- the bosses in Azeroth's Compendium (Spoken's UI/Compendium.lua): every boss of every
+-- Spoken Bosses -- the bosses in Azeroth's Compendium (Spoken's UI/Compendium.lua): every boss of every
 -- dungeon and raid, with the instance it is in and its story.
 --
 -- The list is laid out as the places' (Spoken Places' tab): a banner for each continent, a line for
@@ -10,9 +10,9 @@
 -- leaves out what holds none met. A search lists the bosses and dungeons whose name has the words,
 -- each opened.
 
-local _, NPCs = ...
+local _, Bosses = ...
 
-local L = NPCs.L
+local L = Bosses.L
 
 local C = SpokenCompendium
 local CONTINENTS, CITY_IN = C.CONTINENTS, C.CITY_IN
@@ -46,7 +46,7 @@ local index
 -- "lands"], the banner's maps, are kept once worked out.
 
 local function ClientHasMap(map)
-	-- Spoken NPCs shares its boss data between clients. The shared API knows which instances this
+	-- Spoken Bosses shares its boss data between clients. The shared API knows which instances this
 	-- client can actually have, including Season of Discovery's instances on Era.
 	return not Spoken or not Spoken.IsDungeonOnClient or Spoken:IsDungeonOnClient(map)
 end
@@ -89,15 +89,15 @@ local function Index()
 end
 
 local function Found(map, key)
-	return NPCs:IsBossFound(map, key)
+	return Bosses:IsBossFound(map, key)
 end
 
 local function Unlocked()
-	return SpokenNPCsSettings ~= nil and SpokenNPCsSettings.unlockUnfound == true
+	return SpokenBossesSettings ~= nil and SpokenBossesSettings.unlockUnfound == true
 end
 
 local function OnlyFound()
-	return SpokenNPCsSettings ~= nil and SpokenNPCsSettings.compendiumFoundOnly == true
+	return SpokenBossesSettings ~= nil and SpokenBossesSettings.compendiumFoundOnly == true
 end
 
 -- Whether Found Only keeps what holds `found` bosses met.
@@ -325,9 +325,9 @@ end
 
 -- A boss's page plays its story where an installed pack voices it. `target` = { map, key }.
 local PLAY = {
-	has = function(target) return NPCs.GetAudioClip ~= nil and NPCs:GetAudioClip(target[1], target[2]) ~= nil end,
-	find = function(target) return NPCs:QueuedStory(target[1], target[2]) end,
-	start = function(target) NPCs:PlayStory(target[1], target[2]) end,
+	has = function(target) return Bosses.GetAudioClip ~= nil and Bosses:GetAudioClip(target[1], target[2]) ~= nil end,
+	find = function(target) return Bosses:QueuedStory(target[1], target[2]) end,
+	start = function(target) Bosses:PlayStory(target[1], target[2]) end,
 }
 -- Nothing to report from the page yet.
 local REPORT = { has = function() return false end, open = function() end, title = "" }
@@ -359,7 +359,7 @@ local SECTION_ICON = { objectOrItem = true, icon = C.ICON, bullet = "boss" }
 
 --- The story of the boss `key` of `map` as a line for Spoken's narrator: voiced where an installed
 --- pack has it (Audio.lua), else words alone; nil where it has none.
-function NPCs:StoryClip(map, key)
+function Bosses:StoryClip(map, key)
 	local story, language = Story(map, key)
 	if not story then return nil end
 	local boss = Boss(map, key)
@@ -472,7 +472,7 @@ end
 
 -- The dungeon or raid the player is in, and the zone it is filed under.
 local function PlayerDungeon()
-	local map = NPCs:InstanceMap()
+	local map = Bosses:InstanceMap()
 	local zone = map and Index().zoneOf[map]
 	if zone then return map, zone end
 end
@@ -509,10 +509,10 @@ local function OnClick(row)
 		if not searching then dungeonOpen[row.dungeon] = not dungeonOpen[row.dungeon] or nil end
 		selection = { dungeon = row.dungeon }
 	end
-	NPCs:RefreshBosses()
+	Bosses:RefreshBosses()
 end
 
-function NPCs:RefreshBosses(scrollToSelection)
+function Bosses:RefreshBosses(scrollToSelection)
 	if not list then return end
 	if not selection then
 		LandOnPlayer()
@@ -529,34 +529,34 @@ local function Build(panel)
 		none = L.BOSSES_NONE,
 		only = L.BOSSES_FOUND_ONLY,
 		onlyGet = OnlyFound,
-		onlySet = function(on) if SpokenNPCsSettings then SpokenNPCsSettings.compendiumFoundOnly = on end end,
+		onlySet = function(on) if SpokenBossesSettings then SpokenBossesSettings.compendiumFoundOnly = on end end,
 		locked = function() return SpokenCompendium.LockedReason("OPT_UNLOCK_BOSSES") end,
 		-- Found Only left the chosen row out: back to where the player stands.
 		onHidden = function()
 			selection = nil
-			NPCs:RefreshBosses(true)
+			Bosses:RefreshBosses(true)
 		end,
 		build = BuildRows,
 		isSelected = IsSelected,
 		onClick = OnClick,
 		onSearch = function(text)
 			filter = text
-			NPCs:RefreshBosses()
+			Bosses:RefreshBosses()
 		end,
 		addScrollBar = function(scroll, child, inset) return SpokenTextView.AddScrollBar(scroll, child, inset) end,
 	})
-	panel.Refresh = function() NPCs:RefreshBosses() end
+	panel.Refresh = function() Bosses:RefreshBosses() end
 	panel.inset, panel.filterButton, panel.filterMenu, panel.noMatch = list.inset, list.filterButton, list.filterMenu, list.noMatch
 
-	page = C.NewPage(C.PageHolder(panel, list), NPCs, PLAY, REPORT)
+	page = C.NewPage(C.PageHolder(panel, list), Bosses, PLAY, REPORT)
 	-- Text Size, on Spoken's page, fires no game event: the page is drawn again at the new size.
 	if Spoken and Spoken.RegisterCallback then Spoken:RegisterCallback("COMPENDIUM_FONT_CHANGED", ShowEntry) end
 	panel.page = page
-	NPCs.bosses, NPCs.list = panel, list
+	Bosses.bosses, Bosses.list = panel, list
 end
 
 --- Open the bosses, on where the player stands now, unless they chose something here.
-function NPCs:ShowBosses()
+function Bosses:ShowBosses()
 	if not SpokenCompendium then return end
 	if selection == landed then selection = nil end
 	if list then
@@ -565,16 +565,16 @@ function NPCs:ShowBosses()
 	end
 	SpokenCompendium:Open("bosses")
 	SpokenCompendium:Expand()
-	NPCs:RefreshBosses(true)
+	Bosses:RefreshBosses(true)
 end
 
-function NPCs:SetupBosses()
+function Bosses:SetupBosses()
 	if not SpokenCompendium or SpokenCompendium:Tab("bosses") then return end
 	SpokenCompendium:Register("bosses", {
 		label = L.COMPENDIUM_BOSSES,
 		order = 3,
 		build = Build,
-		open = function() NPCs:ShowBosses() end,
+		open = function() Bosses:ShowBosses() end,
 		-- Come back to from another tab: where the player stands now, unless they chose here.
 		onShow = function() if selection == landed then selection = nil end end,
 		enabled = function() return Index().count > 0 end,
@@ -582,8 +582,8 @@ function NPCs:SetupBosses()
 		unlock = {
 			get = function() return Unlocked() end,
 			set = function(value)
-				if SpokenNPCsSettings then SpokenNPCsSettings.unlockUnfound = value end
-				NPCs:RefreshBosses()
+				if SpokenBossesSettings then SpokenBossesSettings.unlockUnfound = value end
+				Bosses:RefreshBosses()
 			end,
 		},
 	})

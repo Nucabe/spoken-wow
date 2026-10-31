@@ -1,7 +1,7 @@
-# Spoken NPCs
+# Spoken Bosses
 
-The people of Azeroth and what is told of them, in Azeroth's Compendium. The module starts with the
-bosses of the dungeons and raids: a Bosses tab after the Readables', laid out as the Places tab is.
+The bosses of the dungeons and raids and their stories, in Azeroth's Compendium: a Bosses tab after
+the Readables', laid out as the Places tab is.
 
 ## The tab
 
@@ -14,11 +14,11 @@ its own (`DUNGEON_ICONS` in `addons/Spoken/API.lua`, every name in Forever's fil
 
 A boss is found when its fight starts (`ENCOUNTER_START`) or is won (`ENCOUNTER_END` with success,
 `BOSS_KILL`), by any difficulty's encounter id from the `ids` of `Data/Bosses.lua`, kept per character in
-`SpokenNPCsCharacter`. A world boss (`worldBosses` in `addons/Spoken/Data/Dungeons.lua`), whose fight
+`SpokenBossesCharacter`. A world boss (`worldBosses` in `addons/Spoken/Data/Dungeons.lua`), whose fight
 starts no encounter in Forever, is found when it dies after the player targeted it alive or saw its
 nameplate: `Story.lua` keeps its GUID, as the client clears the target as the boss dies but still
 reports it, dead, on a nameplate or the soft target (`UNIT_HEALTH`, and once a second `UnitTokenFromGUID`).
-One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenNPCsSettings`).
+One not found is greyed with a padlock and its page says so, until Unlock Unfound Bosses is on (Spoken's page; `SpokenBossesSettings`).
 Dungeons and banners count bosses found out of all, with the share and the bar, as the other tabs
 do; Found Only, on by default, leaves out what holds none found. A found boss's page names its dungeon and zone and
 tells its story, or says it is not written yet; a boss with a creature in `Data/Creatures.lua` has its portrait at the left of its name.
@@ -31,7 +31,7 @@ client hides a unit's GUID, name and model from addons there, so no boss is know
 world boss is told by its death instead, as Forever sends no kill for it (seen with Lord Kazzak).
 An instance boss the game announces no fight for (Baron Aquanis, Ribbly, Plugger) is not found or told:
 the client hides its GUID there.
-Each story shows once per character (`SpokenNPCsCharacter.storiesRead`, noted when it starts), until
+Each story shows once per character (`SpokenBossesCharacter.storiesRead`, noted when it starts), until
 Forget Stories Shown. A story
 is low priority, as gossip is: a voiced line arriving drops it while it waits, and it shows the next time. The stories are a part of
 Spoken's, "bosses": What Spoken Reads turns them off, and a story shown as words only is not queued
@@ -53,11 +53,11 @@ The Dungeons and Raids come from `addons/Spoken/Data/Dungeons.lua`, which every 
 
 `Data/Bosses.lua`, `Data/Creatures.lua` and `Data/Stories.lua` are exports of the boss tables in the
 site's database (`boss_instance`, `boss`, `boss_line` and the boss names in `entity_name`), written by
-`make npcs-export` and compared with the tables by `make npcs-check`. They are committed so the addon
+`make bosses-export` and compared with the tables by `make bosses-check`. They are committed so the addon
 builds without Postgres; edit the tables, not the files. Where the data lives, how the tools write it,
 and how bosses are matched and retired: [BOSSES.md](../places/BOSSES.md).
 
-The bosses come from `pipelines/lib/bosses.mjs` (`make bosses`), which writes the tables from the client's
+The bosses come from `pipelines/lib/bosses.mjs` (`make bosses-extract`), which writes the tables from the client's
 `DungeonEncounter` table (Forever's build, wago.tools), for each instance map in
 `pipelines/lib/dungeons.json`: the bosses in Forever's order (the client's difficulty 0 and 1 rows, a
 boss only other difficulties list after them; Forever splits a dungeon's bosses over both on one scale),
@@ -110,9 +110,9 @@ table (`apply-boss-stories.mjs` records them). A boss with no entry says its sto
 ## Checks
 
 ```sh
-make npcs-check                          # the three Data files match the boss tables (needs DATABASE_URL)
+make bosses-check                        # the three Data files match the boss tables (needs DATABASE_URL)
 node pipelines/lib/bosses.mjs --check    # the boss tables are what the client's table gives (needs DATABASE_URL)
 pnpm --filter @spoken/places-pipeline test
 node --test pipelines/lib/bosses.test.mjs
-luajit tests/lua/npcs_bosses_test.lua
+luajit tests/lua/bosses_test.lua
 ```

@@ -1,10 +1,10 @@
-local _, NPCs = ...
+local _, Bosses = ...
 
--- Korean interface strings for Spoken NPCs.
+-- Korean interface strings for Spoken Bosses.
 --
 -- Keyed exactly as in Locale/enUS.lua; anything missing falls back to English.
 
-local L = NPCs.L
+local L = Bosses.L
 
 if GetLocale() ~= "koKR" then
 	return

@@ -175,7 +175,7 @@ target_dependencies() { case "$1" in
               echo "spoken spoken-quests-audio-all \
                     spoken-audio-quests-alliance spoken-audio-quests-horde \
                     spoken-audio-quests-shared spoken-audio-gossip \
-                    spoken-audio-places spoken-audio-readables spoken-audio-bosses";;
+                    spoken-audio-places spoken-audio-readables";;
   audio-*)   echo "spoken";;
 esac; }
 
@@ -184,7 +184,7 @@ esac; }
 # being approved, above all - is truest after they have just been uploaded. It costs nothing to
 # order it this way and it removes a class of first-release surprise.
 ALL_TARGETS="spoken audio-alliance audio-horde audio-shared audio-gossip audio-all"
-# Accepted by name, never in a bare run: it depends on the places, readables and bosses projects
+# Accepted by name, never in a bare run: it depends on the places and readables projects
 # too, which this script does not release, and its version moves on its own schedule.
 EXTRA_TARGETS="spoken-all"
 

@@ -1,6 +1,8 @@
 <!-- GENERATED from publishers/bosses/spoken-bosses-audio.md by scripts/descriptions.mjs. Do not edit by hand. -->
 
-Narrated boss stories for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s NPCs module. This addon is data only: it does nothing on its own.
+Narrated boss stories for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Bosses module. This addon is data only: it does nothing on its own.
+
+On CurseForge it has no project of its own: it ships inside **[Spoken Audio: Places and Bosses](https://www.curseforge.com/wow/addons/spoken-audio-places)**, beside the Places narration.
 
 ## Installing
 

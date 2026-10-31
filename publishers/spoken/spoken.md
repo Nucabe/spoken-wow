@@ -31,9 +31,9 @@ Four modules, each can be switched off in the settings. **The voices are not inc
 | Module | Voices | Voice pack |
 | --- | --- | --- |
 | **Spoken Quests** | quest dialogue, and what NPCs say when you talk to them | [All](https://www.curseforge.com/wow/addons/spoken-quests-audio-all), or [Alliance](https://www.curseforge.com/wow/addons/spoken-audio-quests-alliance) · [Horde](https://www.curseforge.com/wow/addons/spoken-audio-quests-horde) · [Shared](https://www.curseforge.com/wow/addons/spoken-audio-quests-shared) |
-| **Spoken Places** | zone and area lore, on the world map | [Spoken Audio: Places](https://www.curseforge.com/wow/addons/spoken-audio-places) |
+| **Spoken Places** | zone and area lore, on the world map | [Spoken Audio: Places and Bosses](https://www.curseforge.com/wow/addons/spoken-audio-places) |
 | **Spoken Readables** | books, letters, notes and the plaques out in the world | [Spoken Audio: Readables](https://www.curseforge.com/wow/addons/spoken-audio-readables) |
-| **Spoken NPCs** | the story of each dungeon and raid boss, when it falls | [Spoken Audio: Bosses](https://www.curseforge.com/wow/addons/spoken-audio-bosses) |
+| **Spoken Bosses** | the story of each dungeon and raid boss, when it falls | [Spoken Audio: Places and Bosses](https://www.curseforge.com/wow/addons/spoken-audio-places) |
 
 <!-- only:curseforge -->
 Want everything in English at once? Install [Spoken: English](https://www.curseforge.com/wow/addons/spoken-english) instead: it brings this addon and every English pack.
