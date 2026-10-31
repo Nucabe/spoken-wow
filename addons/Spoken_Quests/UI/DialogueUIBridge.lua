@@ -189,8 +189,9 @@ local function Tick()
     end
     local caption = Spoken:GetCaption()
     local clip = caption and caption.clip
-    -- This addon's lines only: a zone's or a book's never match DialogueUI's text anyway.
-    if clip and Player:Owns(clip) then
+    -- This addon's lines only: a zone's or a book's never match DialogueUI's text anyway, and an NPC's
+    -- chat in the world is not on the page.
+    if clip and Player:Owns(clip) and clip.event ~= Enums.SoundEvent.NPCChatter then
         if clip ~= state.clip then
             -- Put back and drawn again in this one call: nothing shows in between.
             Restore()

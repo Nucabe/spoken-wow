@@ -330,6 +330,13 @@ stub.ShowGossip(DIRECTIONS)
 DUI:HandleGossip()
 Tick(0.2)
 Expect("a page drawn while an NPC chats in the world shows its words at once", Paragraph(1), DIRECTIONS)
+Spoken:StopAll()
+VO.Player.chatterSource:Enqueue({ key = "chat-z", path = "chat-z.ogg", length = 12, priority = "low",
+    event = VO.Enums.SoundEvent.NPCChatter,
+    present = { header = "Guard", transcript = DIRECTIONS, bullet = "gossip" } })
+Tick(2)
+Expect("...and a chat line with the page's very words is not lit in it: it is not on the page",
+    Paragraph(1), DIRECTIONS)
 stub.HidePanels()
 stub.FireEvent("GOSSIP_CLOSED")
 Spoken:StopAll()

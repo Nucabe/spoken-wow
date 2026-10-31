@@ -215,4 +215,18 @@ Say()
 Expect("a forbidden bubble raises nothing", pcall(VO.ChatBubble.Tick), true)
 Expect("...and the next one is still marked", fs.text ~= TEXT, true)
 
+---------------------------------------------------------------- a bubble whose text turns secret
+Reset()
+fs = Bubble(TEXT)
+Say()
+VO.ChatBubble.Tick()
+local marked = fs.text
+stub.Secrets(marked)
+stub.Advance(1)
+Expect("a bubble whose text turned secret mid-line raises nothing", pcall(VO.ChatBubble.Tick), true)
+Expect("...and is left alone", fs.text, marked)
+VO.ChatBubble:Restore()
+Expect("...even when the line ends", fs.text, marked)
+stub.Secrets()
+
 if Failures() > 0 then os.exit(1) end

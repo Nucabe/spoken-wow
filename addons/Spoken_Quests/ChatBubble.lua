@@ -70,7 +70,7 @@ function ChatBubble:Restore()
     local fs = state.fs
     if fs and state.shown ~= state.text then
         local ok, now = pcall(fs.GetText, fs)
-        if ok and now == state.shown then
+        if ok and NotSecret(now) == state.shown then
             pcall(fs.SetText, fs, state.text)
         end
     end
@@ -116,7 +116,7 @@ local function Tick()
         local spans = marks.Spans(state.map, { state.para }, lit, neighbor)
         local want = marks.Want(state.para, 1, state.span, nil, nil, spans, state.color)
         local ok, now = pcall(state.fs.GetText, state.fs)
-        if not ok or now ~= state.shown then
+        if not ok or NotSecret(now) ~= state.shown then
             -- The game reused the bubble for something else: leave it alone.
             state = {}
             return true
