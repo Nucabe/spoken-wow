@@ -129,15 +129,21 @@ make npcs-sounds            # assemble Sounds/ from them (LOCALE=xx for a langua
 make npcs-lookup            # build Data/Sounds.lua (pipelines/places/tools/bosses/build-lookup.mjs)
 make npcs-validate-audio    # lookup, files and stories agree (validate-audio.mjs); a stale take is reported
 make npcs-package-audio     # check-synced, sounds, lookup, validate, then zip into dist/
-make npcs-release-audio-dry # show what an upload would send
-make npcs-release-audio     # upload to CurseForge; npcs-full-release also syncs, builds and does the GitHub release
+make npcs-full-release      # sync, pull, build, then the GitHub release, with one question first
 ```
 
 - The lookup key is `boss:{map}:{key}` and the file `{map}\{slug}`, from the same `assignFiles` the
   site uses, so the pack and the site cannot disagree on a file.
 - The pack's page is `publishers/bosses/spoken-bosses-audio.md` and its changelog
-  `docs/bosses/CHANGELOG.md`. `release.sh` refuses until the page has its CurseForge id; Wago players
-  get the pack from the GitHub release. `MIN_SPOKEN.bosses` is 3.7.0. The page gets `manager: true`
+  `docs/bosses/CHANGELOG.md`. It has no CurseForge project: the page says
+  `bundledIn: spoken-audio-places`, and the English Places zip carries the built
+  `dist/SpokenBossesAudio` beside `SpokenPlacesAudio`, published as Spoken Audio: Places and Bosses.
+  `make places-package-audio` refuses a missing or stale bosses build, `scripts/places/release.sh`
+  a zip without it at its `.toc`'s version, and an English `make places-full-release` builds it
+  first. So a bosses change reaches CurseForge with the next Places release. Only English's Places
+  pack carries it. The pack keeps its own version, its own GitHub release (`bosses-audio`, through
+  `make npcs-full-release` or `make audio-release SECTION=bosses`), where Wago players get it, and
+  its own product in the manager. `MIN_SPOKEN.bosses` is 3.7.0. The page gets `manager: true`
   in the pack's first release: `make manager-publish` checks every manager pack is built and its
   Spoken released, so an unreleased one would block the other sections.
 - `Spoken_NPCs` ranks the installed packs (`Audio.lua`, [../npcs/README.md](../npcs/README.md)). A

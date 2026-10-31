@@ -116,6 +116,11 @@ make places-full-release             # all of the above, with one question befor
 - The pack's version is the `.toc`'s, and the release notes come from `docs/places/CHANGELOG.md`.
   Bump the version and add its section first. A section headed `## <version> — audio` is the
   English pack's and `## <version> — places-audio-<locale>` is a language's.
+- English's zip is Spoken Audio: Places and Bosses on CurseForge: it carries `SpokenBossesAudio`,
+  copied from `dist/` where `make npcs-package-audio` built it. `places-package-audio` and the
+  upload refuse a missing or stale bosses build, and an English `places-full-release` syncs,
+  pulls and builds the bosses pack first. The bosses pack's GitHub release is its own
+  (`make npcs-full-release`, [BOSSES.md](BOSSES.md)).
 - `places-release-audio` uploads to CurseForge only. `places-full-release` also runs
   `scripts/audio-github-release.sh`, which publishes the pack on GitHub. Wago refuses a file that
   size, so a Wago player gets the pack from GitHub.

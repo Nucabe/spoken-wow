@@ -25,7 +25,7 @@ LUA ?= $(shell command -v luajit || command -v lua5.1)
         descriptions descriptions-check descriptions-published \
         character-models dungeons bosses npcs-export npcs-check npcs-sync npcs-check-synced \
         npcs-pull-live npcs-sounds npcs-lookup npcs-validate-audio npcs-package-audio \
-        npcs-release-audio npcs-release-audio-dry npcs-full-release \
+        npcs-full-release \
         audio-release audio-release-dry \
         manager-publish manager-publish-dry manager-gc manager-gc-dry
 
@@ -270,26 +270,18 @@ npcs-validate-audio: ## Check SpokenBossesAudio's lookup, mp3s and live takes ag
 npcs-package-audio: npcs-check-synced npcs-sounds npcs-lookup npcs-validate-audio ## Build the bosses sound-pack zip into dist/ (LOCALE=xx)
 	@LOCALE="$(NPCS_LOCALE)" ./scripts/npcs/package-audio.sh
 
-# CurseForge only, and refused until the pack's page names its project. The GitHub release is
-# `make audio-release SECTION=bosses`.
-npcs-release-audio-dry: ## Show what uploading the bosses sound pack would send (LOCALE=xx)
-	@./scripts/npcs/release.sh --dry-run --lang=$(NPCS_LOCALE) audio
-
-npcs-release-audio: ## Upload the bosses sound pack to CurseForge (LOCALE=xx)
-	@./scripts/npcs/release.sh --lang=$(NPCS_LOCALE) audio
-
-# The whole pack release, as places-full-release: the version is SpokenBossesAudio.toc's (a
-# language's, its page's), and its `## <version> — bosses-audio` section in
-# docs/bosses/CHANGELOG.md is the notes for both uploads.
-npcs-full-release: require-droplet ## Sync, pull live takes, build and upload the bosses sound pack (LOCALE=xx)
+# No CurseForge upload of its own: English's pack ships inside the places pack's zip, Spoken Audio:
+# Places and Bosses (scripts/places/package-audio.sh), so make places-full-release uploads it there.
+# This is the pack's own GitHub release, as places-full-release's is for places: the version is
+# SpokenBossesAudio.toc's (a language's, its page's), and its `## <version> — bosses-audio` section
+# in docs/bosses/CHANGELOG.md is the notes.
+npcs-full-release: require-droplet ## Sync, pull live takes, build and GitHub-release the bosses sound pack (LOCALE=xx)
 	@$(MAKE) --no-print-directory npcs-sync
 	@$(MAKE) --no-print-directory npcs-pull-live LOCALE=$(LOCALE)
 	@$(MAKE) --no-print-directory npcs-package-audio LOCALE=$(LOCALE)
-	@./scripts/npcs/release.sh --dry-run --lang=$(NPCS_LOCALE) audio
 	@./scripts/audio-github-release.sh --dry-run bosses $(NPCS_LOCALE)
-	@printf 'Upload the bosses pack to CurseForge and GitHub? [y/N] '; \
+	@printf 'Release the bosses pack on GitHub? [y/N] '; \
 	  read -r answer; [ "$$answer" = y ] || { echo aborted; exit 1; }
-	@./scripts/npcs/release.sh --lang=$(NPCS_LOCALE) audio
 	@./scripts/audio-github-release.sh bosses $(NPCS_LOCALE)
 
 character-models: ## Print how to regenerate apps/web/src/lib/npc/character-models.json

@@ -3,7 +3,7 @@
 # (scripts/lib/wago.sh), so a Wago player gets the pack from the GitHub release.
 #
 #   ./scripts/places/release.sh --dry-run        # say what would be sent, send nothing
-#   ./scripts/places/release.sh                  # the English sound pack
+#   ./scripts/places/release.sh                  # the English sound pack, with the bosses' inside
 #   ./scripts/places/release.sh --lang=esMX audio # that language's sound pack instead
 #
 # Needs CURSEFORGE_TOKEN in the environment or in the repo-root .env. Generate one at
@@ -93,6 +93,44 @@ fi
 
 if (( ${#targets[@]} == 0 )); then
   targets=("audio")
+fi
+
+#-- preflight -------------------------------------------------------------------
+# EVERY TARGET'S ZIP IS RESOLVED BEFORE ANY UPLOAD STARTS, and before the token and the network:
+# it needs neither. English's default run covers both
+# places and audio, and uploading the addon before discovering the pack was never built is a
+# half release. Checked in --dry-run too, since a dry run's job is to say what a real run
+# would hit.
+missing=()
+for target in "${targets[@]}"; do
+  addon="$(target_addon "$target")"
+  if [[ "$target" == audio ]] && ! english; then
+    version="$(pack_field version)"
+  else
+    toc="$REPO/addons/$addon/$addon.toc"
+    version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
+  fi
+  if [[ -z "$version" ]]; then
+    missing+=("$target -- not built (no version); run make places-package-audio")
+    continue
+  fi
+  zip_path="$DIST/$(target_zip "$target")-$version.zip"
+  [[ -f "$zip_path" ]] || { missing+=("$zip_path"); continue; }
+  # English's project is "Spoken Audio: Places and Bosses", the only CurseForge home of the bosses
+  # pack, so a zip without SpokenBossesAudio at its .toc's version would take the boss narration
+  # off every player who updates (scripts/places/package-audio.sh adds it).
+  if [[ "$target" == audio ]] && english; then
+    bosses_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$REPO/addons/SpokenBossesAudio/SpokenBossesAudio.toc" | head -1 | tr -d '\r')"
+    zipped="$(unzip -p "$zip_path" SpokenBossesAudio/SpokenBossesAudio.toc 2>/dev/null \
+      | sed -n 's/^## Version:[[:space:]]*//p' | head -1 | tr -d '\r' || true)"
+    [[ "$zipped" == "$bosses_version" ]] ||
+      missing+=("$zip_path -- holds SpokenBossesAudio '${zipped:-none}', not $bosses_version; run make npcs-package-audio places-package-audio")
+  fi
+done
+if (( ${#missing[@]} > 0 )); then
+  echo "error: missing or incomplete zips -- nothing was released:" >&2
+  for m in "${missing[@]}"; do echo "  $m" >&2; done
+  exit 1
 fi
 
 command -v curl >/dev/null || { echo "error: curl is required" >&2; exit 1; }
@@ -186,33 +224,6 @@ changelog_for() {
     process.stdout.write(lines.slice(start, end).join("\n").trim());
   ' "$REPO/docs/places/CHANGELOG.md" "$1" "$2"
 }
-
-#-- preflight -------------------------------------------------------------------
-# EVERY TARGET'S ZIP IS RESOLVED BEFORE ANY UPLOAD STARTS. English's default run covers both
-# places and audio, and uploading the addon before discovering the pack was never built is a
-# half release. Checked in --dry-run too, since a dry run's job is to say what a real run
-# would hit.
-missing=()
-for target in "${targets[@]}"; do
-  addon="$(target_addon "$target")"
-  if [[ "$target" == audio ]] && ! english; then
-    version="$(pack_field version)"
-  else
-    toc="$REPO/addons/$addon/$addon.toc"
-    version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
-  fi
-  if [[ -z "$version" ]]; then
-    missing+=("$target -- not built (no version); run make places-package-audio")
-    continue
-  fi
-  zip_path="$DIST/$(target_zip "$target")-$version.zip"
-  [[ -f "$zip_path" ]] || missing+=("$zip_path")
-done
-if (( ${#missing[@]} > 0 )); then
-  echo "error: missing zips -- nothing was released:" >&2
-  for m in "${missing[@]}"; do echo "  $m" >&2; done
-  exit 1
-fi
 
 #-- upload --------------------------------------------------------------------
 for target in "${targets[@]}"; do

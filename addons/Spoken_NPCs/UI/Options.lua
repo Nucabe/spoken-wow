@@ -8,9 +8,10 @@ local L = NPCs.L
 -- The game's settings list sets its rows 25 in from the canvas's left.
 local INDENT = 25
 
--- The voice pack this addon is made for, and where to get it.
+-- The voice pack this addon is made for, and where to get it: on CurseForge it has no project of
+-- its own and ships in the Places pack's.
 local AUDIO_ADDON = "SpokenBossesAudio"
-local AUDIO_URL = "https://www.curseforge.com/wow/addons/spoken-audio-bosses"
+local AUDIO_URL = "https://www.curseforge.com/wow/addons/spoken-audio-places"
 -- The languages a pack beside English's may be in: Spoken:VoicePack says which have one.
 local LANGUAGES = { "deDE", "esES", "esMX", "frFR", "itIT", "ptBR", "ruRU", "koKR", "zhCN", "zhTW" }
 

@@ -202,8 +202,42 @@ node "$REPO/scripts/descriptions.mjs" --write >/dev/null
 # ships that; until one exists it falls back the same way.
 tier_readme() {
   if ! english; then echo "$REPO/dist/descriptions/$PACK_SLUG.md"; return; fi
-  echo "$REPO/dist/descriptions/spoken-places-audio.md"
+  echo "$REPO/dist/descriptions/$(node "$REPO/scripts/lib/packs.mjs" get places enUS - slug).md"
 }
+
+# English's zip is "Spoken Audio: Places and Bosses" on CurseForge: the bosses pack has no project
+# there, so its folder rides in this zip beside SpokenPlacesAudio. It is copied from what
+# `make npcs-package-audio` built into dist/, never rebuilt here, and a missing or stale build stops
+# the run: a zip quietly shipped without it takes the boss narration away from every CurseForge
+# player who updates. Stale means a version other than its .toc's, or a lookup other than the one
+# the last `make npcs-lookup` wrote. The manager and GitHub keep the two packs apart.
+BOSSES_SRC="$REPO/addons/SpokenBossesAudio"
+BOSSES_DIST="$DIST/SpokenBossesAudio"
+bundles_bosses() { english && [[ "$1" == high ]]; }
+check_bosses_build() {
+  local want built
+  want="$(sed -n 's/^## Version:[[:space:]]*//p' "$BOSSES_SRC/SpokenBossesAudio.toc" | head -1 | tr -d '\r')"
+  if [[ ! -f "$BOSSES_DIST/SpokenBossesAudio.toc" ]]; then
+    echo "error: $BOSSES_DIST is not built, and English's places zip carries it -- run make npcs-package-audio" >&2
+    exit 1
+  fi
+  built="$(sed -n 's/^## Version:[[:space:]]*//p' "$BOSSES_DIST/SpokenBossesAudio.toc" | head -1 | tr -d '\r')"
+  if [[ "$built" != "$want" ]]; then
+    echo "error: $BOSSES_DIST is version '$built', its .toc says '$want' -- run make npcs-package-audio" >&2
+    exit 1
+  fi
+  if ! cmp -s "$BOSSES_SRC/Data/Sounds.lua" "$BOSSES_DIST/Data/Sounds.lua"; then
+    echo "error: $BOSSES_DIST was built from another lookup than $BOSSES_SRC/Data/Sounds.lua -- run make npcs-package-audio" >&2
+    exit 1
+  fi
+  if [[ -z "$(find "$BOSSES_DIST/Sounds" -name '*.mp3' -print -quit 2>/dev/null)" ]]; then
+    echo "error: $BOSSES_DIST has no clips -- run make npcs-package-audio" >&2
+    exit 1
+  fi
+}
+for tier in "${tiers[@]}"; do
+  if bundles_bosses "$tier"; then check_bosses_build; break; fi
+done
 
 # Transcoding needs ffmpeg, but only for the tiers that are not a straight copy.
 for tier in "${tiers[@]}"; do
@@ -368,6 +402,11 @@ for tier in "${tiers[@]}"; do
 
   (cd "$staging" && zip -r -q -X "$zip_path" "$folder" \
     -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig' '*.part')
+  if bundles_bosses "$tier"; then
+    echo "adding SpokenBossesAudio $(sed -n 's/^## Version:[[:space:]]*//p' "$BOSSES_DIST/SpokenBossesAudio.toc" | head -1 | tr -d '\r')..."
+    (cd "$DIST" && zip -r -q -X "$zip_path" SpokenBossesAudio \
+      -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig' '*.part')
+  fi
 
   # The manager channel publishes dist/<folder>/, so it must hold the tree the zip holds.
   rm -rf "$DIST/$folder"

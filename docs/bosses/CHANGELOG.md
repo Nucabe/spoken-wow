@@ -10,4 +10,5 @@ match the heading whole.
 ## Unreleased
 
 - **Boss stories are read aloud.** The first pack holds the voiced stories of dungeon and raid
-  bosses, played by Spoken when the boss falls. *([rusty-key](https://github.com/rusty-key))*
+  bosses, played by Spoken when the boss falls. On CurseForge it comes inside Spoken Audio: Places
+  and Bosses; on GitHub it has its own release. *([rusty-key](https://github.com/rusty-key))*

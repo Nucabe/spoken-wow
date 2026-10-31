@@ -5,8 +5,8 @@ release: places-audio
 section: places
 lang: enUS
 slug: spoken-audio-places
-name: Spoken Audio: Places
-summary: The narration for Spoken's Places module: every zone and subzone read aloud.
+name: Spoken Audio: Places and Bosses
+summary: The narration for Spoken's Places and NPCs modules: every zone and subzone, and every dungeon and raid boss's story, read aloud.
 categories:
   - Audio & Video
   - Miscellaneous
@@ -16,7 +16,9 @@ addonReadme: addons/SpokenPlacesAudio/README.md
 manager: true
 ---
 
-Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module. This addon is data only — it does nothing on its own.
+Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module, and narrated boss stories for its NPCs module. This addon is data only — it does nothing on its own.
+
+The download holds two folders: `SpokenPlacesAudio`, the zone and subzone lore, and `SpokenBossesAudio`, the boss stories. Boss stories need Spoken 3.7.0 or later.
 
 ## The voice, as of 0.3.0
 
@@ -32,7 +34,7 @@ The **lore text** was rewritten in the same release to describe the world as a v
 **This pack is not installable from Wago.** At 448 MB it is over the upload limit here, so the file lives in its [GitHub release](https://github.com/rusty-key/spoken-wow/releases?q=places-audio), and on CurseForge.
 
 <!-- /only -->
-Install **Spoken** first; this pack is inert without it. Extract into `Interface/AddOns` and leave the folder name as shipped — Spoken finds packs by folder name.
+Install **Spoken** first; this pack is inert without it. Extract both folders into `Interface/AddOns` and leave the folder names as shipped — Spoken finds packs by folder name.
 
 ## Compatibility
 
@@ -44,4 +46,4 @@ Every one of these lines — and there are a lot of them — costs money to synt
 
 ## Credits
 
-The narration is generated from lore text derived from [warcraft.wiki.gg](https://warcraft.wiki.gg) and licensed CC BY-SA 4.0. Attribution: warcraft.wiki.gg contributors.
+The narration is generated from lore text and boss lore derived from [warcraft.wiki.gg](https://warcraft.wiki.gg) and licensed CC BY-SA 4.0. Attribution: warcraft.wiki.gg contributors.

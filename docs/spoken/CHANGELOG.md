@@ -4,7 +4,7 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
-- **Boss stories are read aloud.** Install Spoken Audio: Bosses and a boss's story is voiced when it falls; without it the story shows as text, as before.
+- **Boss stories are read aloud.** Install Spoken Audio: Places and Bosses and a boss's story is voiced when it falls; without it the story shows as text, as before.
   The Bosses settings page lists the pack, with the address to download it, as the Places and
   Readables pages list theirs. Play on a boss's page in the Compendium plays its story, and the
   boss still tells it when it falls.
