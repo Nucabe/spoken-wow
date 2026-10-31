@@ -30,7 +30,8 @@ tables=("$@")
 : "${LOCAL_DB:?LOCAL_DB is not set}"
 
 # Keyed on `source` and synced per section, unlike the corpus tables, which are copied whole.
-shared=(take recording)
+# take_encoding is each take's clip as its pack ships it.
+shared=(take recording take_encoding)
 # The shared tables with an id, which is one sequence across every section.
 serial=(take recording)
 

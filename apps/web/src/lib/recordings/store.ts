@@ -17,13 +17,14 @@ import os from "node:os";
 import path from "node:path";
 
 import { recordActivity } from "@/lib/activity/store";
+import { blobOrFile, keep } from "@/lib/blobs/store";
 import { fileIndex } from "@/lib/audio";
 import { catalogue as readablesCatalogue } from "@/lib/readables/catalogue";
 import { db, query } from "@/lib/db";
 import type { Lang } from "@/lib/lang";
 import type { Source } from "@/lib/sections";
 import { recordedDirOf } from "@/lib/takes/adapters";
-import { archiveName, writeAtomic } from "@/lib/takes/bytes";
+import { archiveName } from "@/lib/takes/bytes";
 import type { TakeBytes } from "@/lib/takes/store";
 import { catalogue as placesCatalogue } from "@/lib/places/catalogue";
 import { catalogue as bossesCatalogue } from "@/lib/bosses/catalogue";
@@ -122,12 +123,13 @@ export async function recordingsFor(source: Source, lang: Lang): Promise<Map<str
  * recording is never "gone", only there or never made.
  */
 export async function recordingPath(source: Source, lang: Lang, file: string, version: number): Promise<TakeBytes> {
-  const [row] = await query<{ archiveFile: string }>(
-    `select "archiveFile" from "recording"
+  const [row] = await query<{ archiveFile: string; sha256: string | null }>(
+    `select "archiveFile", "sha256" from "recording"
       where "source" = $1 and "lang" = $2 and "file" = $3 and "version" = $4`,
     [source, lang, file, version],
   );
-  return row ? { kind: "file", path: path.join(recordedDirOf(source, file, lang), row.archiveFile) } : { kind: "none" };
+  if (!row) return { kind: "none" };
+  return blobOrFile("recordings", row.sha256, path.join(recordedDirOf(source, file, lang), row.archiveFile));
 }
 
 export type Upload = {
@@ -176,15 +178,20 @@ export async function commitRecording(
         where "source" = $1 and "lang" = $2 and "file" = $3`,
       [source, lang, file],
     );
-    const archiveFile = archiveName(next, upload.data, probed.format);
-    await writeAtomic(path.join(recordedDirOf(source, file, lang), archiveFile), upload.data);
+    const name = archiveName(next, upload.data, probed.format);
+    const sha256 = await keep(
+      "recordings",
+      upload.data,
+      probed.format === "ogg" ? "audio/ogg" : "audio/mpeg",
+      path.join(recordedDirOf(source, file, lang), name),
+    );
     const {
       rows: [recording],
     } = await client.query<Recording>(
       `insert into "recording"
          ("source", "lang", "file", "lineId", "version", "format", "archiveFile", "bytes",
-          "durationSec", "originalName", "credit", "createdBy")
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          "durationSec", "originalName", "credit", "createdBy", "sha256")
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        returning ${COLUMNS}`,
       [
         source,
@@ -193,12 +200,15 @@ export async function commitRecording(
         lineId,
         next,
         probed.format,
-        archiveFile,
+        // Named in r2 too, where nothing is on the volume: the column stays not null for code
+        // rolled back to before the bucket, and readers prefer the object while there is a hash.
+        name,
         upload.data.byteLength,
         probed.durationSec,
         upload.originalName,
         upload.credit,
         upload.createdBy,
+        sha256,
       ],
     );
     await recordActivity(
