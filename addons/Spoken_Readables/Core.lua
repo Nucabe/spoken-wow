@@ -11,6 +11,11 @@
 
 local ADDON_NAME, SpokenReadables = ...
 
+-- Reachable by other addons, as SpokenNPCs is: one that lists books and letters can ask what a
+-- page is (PlaceOf, BookById), whether it is found (CompendiumHas) and voiced (HasAudio), and
+-- have it read (PlayFrom, StopReading, IsNarrating) or shown (ShowReadables).
+_G.SpokenReadables = SpokenReadables
+
 local L = SpokenReadables.L
 
 -- C_AddOns is the modern home of GetAddOnMetadata; the global is the older one. Reading

@@ -4,6 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Places and Readables are reachable by other addons**, through the globals `SpokenPlaces` and
+  `SpokenReadables`, as Bosses already was through `SpokenNPCs`: an addon that lists a place or a
+  book can ask whether Spoken has its story and have it read or shown. What is not found yet
+  stays locked for it too.
+  *([fallenguards](https://github.com/fallenguards))*
 - **Raid and world bosses wear the elite skull in the Compendium, dungeon bosses the plain one.**
   On Season of Discovery, Blackfathom Deeps, Gnomeregan and Sunken Temple count as raids.
   *([anon1231823](https://github.com/anon1231823))*

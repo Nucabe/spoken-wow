@@ -14,6 +14,10 @@ What Places adds to Spoken:
 - A page in Spoken's settings (`UI/Options.lua`), under Spoken in the game's settings list.
 - The Places tab of Azeroth's Compendium and a panel beside the world map ([COMPENDIUM.md](COMPENDIUM.md)).
 - A Report button on each line being read. There is no Read button of its own.
+- A global, `SpokenPlaces`, for other addons, as `SpokenNPCs` is: whether a place has a story
+  (`GetLore`, `GetSubzoneLore`), whether it is found (`IsLocked`) and voiced (`HasAudio`), and
+  reading it (`PlayLore`, `StopLore`, `IsPlayingLore`) or showing it (`ShowLoreFor`). The
+  Unlock switch stays the player's: `IsLocked` is the answer an addon acts on.
 
 The Enable switch on the Places page is Spoken's switch for the part (`Spoken:IsPartOn("places")`).
 With it off the map panel, its side tab and the Compendium tab go away.

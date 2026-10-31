@@ -4,6 +4,11 @@
 
 local ADDON_NAME, SpokenPlaces = ...
 
+-- Reachable by other addons, as SpokenNPCs is: one that lists places can ask whether a place
+-- has a story (GetLore, GetSubzoneLore), whether it is found (IsLocked) and voiced (HasAudio),
+-- and have it read (PlayLore, StopLore, IsPlayingLore) or shown (ShowLoreFor).
+_G.SpokenPlaces = SpokenPlaces
+
 -- A value the game hands over as a secret, in an instance or in combat, reads as nil.
 local NotSecret = Spoken and Spoken.NotSecret or function(value) return value end
 
