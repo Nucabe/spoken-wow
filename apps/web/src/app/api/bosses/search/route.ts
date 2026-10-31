@@ -20,7 +20,7 @@ function corpusEmpty(): Response {
   return Response.json(
     {
       error:
-        "the boss tables hold no bosses -- seed them with: make bosses " +
+        "the boss tables hold no bosses -- seed them with: make bosses-extract " +
         "(and check DATABASE_URL points at the database you mean)",
       code: "corpus_empty",
     },

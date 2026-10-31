@@ -120,6 +120,14 @@ function toPack(page, meta) {
   // No `curseforge` until the project exists: a pack can go out on GitHub before it has one.
   for (const key of ["slug", "name"]) if (!meta[key]) fail(`missing '${key}'`);
 
+  // `bundledIn: <slug>` is a pack with no CurseForge project of its own, whose folder ships in the
+  // zip of the pack with that slug (the bosses inside Spoken Audio: Places and Bosses), so a
+  // player sent to CurseForge for it is sent there. loadPacks checks the slug names a pack on
+  // CurseForge.
+  if (meta.bundledIn !== undefined && meta.curseforge !== undefined) {
+    fail(`a pack is on CurseForge either as its own project or bundledIn another's, not both`);
+  }
+
   // `github: false` keeps a pack off GitHub: English's four split packs, since the single `all`
   // pack is what GitHub offers. Everything else goes there, where the ceiling is 2 GB a file.
   if (meta.github !== undefined && meta.github !== "false") fail(`github may only be false`);
@@ -145,7 +153,7 @@ function toPack(page, meta) {
   return {
     page, section, lang, pack, version, github,
     build: meta.holds ?? pack, dormant: meta.dormant === "true", manager: meta.manager === "true",
-    curseforge: meta.curseforge ?? null, wago: meta.wago ?? null, release,
+    curseforge: meta.curseforge ?? null, bundledIn: meta.bundledIn ?? null, wago: meta.wago ?? null, release,
     bundles: english && section === "quests" && pack === "all" ? ENGLISH_QUESTS_BUNDLE : null,
     slug: meta.slug, name: meta.name, folder,
     zip: english ? null : `${folder}-${version}.zip`,
@@ -165,6 +173,12 @@ export function loadPacks(dir = PUBLISHERS_DIR) {
     const key = `${p.section}/${p.lang}/${p.pack ?? "-"}`;
     if (seen.has(key)) throw new Error(`two pages for one pack (${key}): publishers/${seen.get(key)} and publishers/${p.page}`);
     seen.set(key, p.page);
+  }
+  for (const p of packs.filter((p) => p.bundledIn !== null)) {
+    const home = packs.find((h) => h.slug === p.bundledIn);
+    if (!home || home.curseforge === null || home.lang !== p.lang) {
+      throw new Error(`publishers/${p.page}: bundledIn ${p.bundledIn} is not an ${p.lang} pack on CurseForge`);
+    }
   }
   // Shared holding every quest and a side's own pack would ship that side's lines twice; Shared
   // holding only shared quests with a side dormant would ship them nowhere.

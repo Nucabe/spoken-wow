@@ -17,7 +17,10 @@ export type Section = "quests" | "places" | "readables" | "bosses";
 export type Pack = {
   section: Section;
   lang: Lang;
-  /** The CurseForge (and, where it exists, Wago) slug, or null for a pack only on GitHub. */
+  /**
+   * The CurseForge (and, where it exists, Wago) slug, or null for a pack only on GitHub. A pack
+   * bundled in another's CurseForge project names that project's slug.
+   */
   curseforge: string | null;
   /** The GitHub release tag prefix, `<release>/vX.Y.Z`. */
   release: string;
@@ -273,11 +276,11 @@ export const PACKS: readonly Pack[] = [
     release: "readables-audio-zhTW",
   },
 
-  // On GitHub only until its CurseForge project exists.
+  // On CurseForge inside Spoken Audio: Places and Bosses, which carries its folder.
   {
     section: "bosses",
     lang: "enUS",
-    curseforge: null,
+    curseforge: "spoken-audio-places",
     release: "bosses-audio",
   },
 ];

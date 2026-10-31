@@ -10,13 +10,13 @@ export const SCRATCH = join(ROOT, "build/boss-stories");
 
 /**
  * `file`, resolved against `from`, unless it lies under addons/: the addon's Lua is an export of the
- * boss tables (make npcs-export), and a tool writing it would drop what the tables hold.
+ * boss tables (make bosses-export), and a tool writing it would drop what the tables hold.
  */
 export function outsideAddons(file, from = process.cwd()) {
   const path = resolve(from, file);
   const rel = relative(join(ROOT, "addons"), path);
   if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel))) {
-    throw new Error(`refusing to write ${path}: the story tools never write under addons/, whose boss data is exported from the boss tables (make npcs-export)`);
+    throw new Error(`refusing to write ${path}: the story tools never write under addons/, whose boss data is exported from the boss tables (make bosses-export)`);
   }
   return path;
 }
@@ -76,7 +76,7 @@ export function renderStories(stories) {
 --   SpokenBossStories[map][key] = "The words of its story."
 -- Written from the Adventure Guide's text and from warcraft.wiki.gg (CC BY-SA 4.0), rewritten in one
 -- voice and kept to Classic (THIRD_PARTY.md). A boss with no entry shows that its story is not written yet.
--- Exported from the boss tables by pipelines/places/tools/bosses/export.mjs (make npcs-export).
+-- Exported from the boss tables by pipelines/places/tools/bosses/export.mjs (make bosses-export).
 
 SpokenBossStories = SpokenBossStories or {}
 for map, stories in pairs({

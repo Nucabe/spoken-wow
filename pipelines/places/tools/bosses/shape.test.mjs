@@ -71,7 +71,7 @@ test("a boss with no English name fails loudly", () => {
 
 // ---- the committed files, parsed back into the database's shapes and rendered again ----
 
-const dataDir = fileURLToPath(new URL("../../../../addons/Spoken_NPCs/Data/", import.meta.url));
+const dataDir = fileURLToPath(new URL("../../../../addons/Spoken_Bosses/Data/", import.meta.url));
 const read = async (name) => (await readFile(dataDir + name, "utf8")).replace(/\r\n/g, "\n");
 /** The file without its leading `--` comment block. */
 const body = (text) => text.replace(/^(--.*\n)+/, "");

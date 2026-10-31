@@ -44,7 +44,7 @@ fi
 echo "the local $section data and production's disagree:"
 echo "  local:      ${here:-(unreadable)}"
 echo "  production: $there"
-echo "Run 'make $(sync_target "$section")' first, or continue and ship what is here."
+echo "Run 'make $section-sync' first, or continue and ship what is here."
 printf 'Continue anyway? [y/N] '
 read -r answer || answer=
 [ "$answer" = y ] || { echo aborted; exit 1; }

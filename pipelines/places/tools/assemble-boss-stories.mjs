@@ -5,7 +5,7 @@
 //   3. the story already in Stories.lua that was written from the game's Classic quest text.
 // It writes apply-boss-stories.mjs' input, [{ map, key, lang, text }] one row per language (the guide's
 // English as enUS), to build/boss-stories/assembled/stories.json unless --out says otherwise; the
-// stories reach boss_line, and from there Stories.lua (make npcs-export), only through that tool.
+// stories reach boss_line, and from there Stories.lua (make bosses-export), only through that tool.
 // It never writes under addons/.
 // A sentence that names something after Classic (the era filter of lib/wiki.mjs) is dropped; a guide text
 // that loses one is kept in English only, since the other languages cannot be filtered the same way.

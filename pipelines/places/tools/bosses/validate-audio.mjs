@@ -110,10 +110,10 @@ async function mp3sOnDisk(dir, prefix = "") {
 async function main() {
   const at = process.argv.indexOf("--lang");
   const lang = at > 0 ? process.argv[at + 1] : BASE_LANG;
-  requireDatabase("npcs-validate-audio");
+  requireDatabase("bosses-validate-audio");
 
   const path = lookupPath(lang);
-  if (!existsSync(path)) throw new Error(`no ${path}: make npcs-lookup${lang === BASE_LANG ? "" : ` LOCALE=${lang}`}`);
+  if (!existsSync(path)) throw new Error(`no ${path}: make bosses-lookup${lang === BASE_LANG ? "" : ` LOCALE=${lang}`}`);
   const [lua, onDisk, takes, bosses, stories, rules] = await Promise.all([
     readFile(path, "utf8"),
     mp3sOnDisk(soundsDir(lang)),

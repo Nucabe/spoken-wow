@@ -128,7 +128,7 @@ export const S = {
     { folder: 'Spoken_Quests', alt: 'Spoken_Conversations', title: 'Quests and Gossip', text: 'Reads quest text and what NPCs say when you talk to them.' },
     { folder: 'Spoken_Places', title: 'Places', text: 'Tells the story of a zone, dungeon or area as you enter it.' },
     { folder: 'Spoken_Readables', title: 'Readables', text: 'Reads books, letters and notes when you open them.' },
-    { folder: 'Spoken_NPCs', title: 'NPCs and Bosses', text: 'Voices for NPCs and boss encounters.' },
+    { folder: 'Spoken_Bosses', alt: 'Spoken_NPCs', title: 'Bosses', text: 'Tells the story of each dungeon and raid boss when it falls.' },
     { folder: 'SpokenContributions', title: 'Contributions', text: 'Lets you send in missing lines and recordings.' }
   ],
   voices: {

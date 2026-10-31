@@ -11,7 +11,7 @@
 // names one. Every file is read and checked before anything is written.
 //
 // A story an editor has changed on the site stays current: the rewrite lands beneath it. Data/Stories.lua
-// is written from the table by make npcs-export. Credit is in THIRD_PARTY.md.
+// is written from the table by make bosses-export. Credit is in THIRD_PARTY.md.
 
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -71,5 +71,5 @@ async function main() {
   }
 
   console.log(`${counts.inserted} inserted, ${counts.unchanged} unchanged, ${counts["kept-edit"]} kept-edit`);
-  if (counts.inserted > 0) console.log("then: make npcs-export");
+  if (counts.inserted > 0) console.log("then: make bosses-export");
 }

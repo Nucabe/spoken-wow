@@ -112,6 +112,20 @@ pm2 environment. They are secrets, and that file is the only place they exist:
 sealed under it, and AES-GCM offers no way to re-seal a credential nothing can open. Change
 it and every collaborator pastes their key again — recoverable, but they have to be told.
 
+**The audio archive's bucket** comes from `app.env` too, once it is set up
+(`one-off/2026-10-archive-to-r2/`): `R2_ACCOUNT_ID`, `SPOKEN_ARCHIVE_ACCESS_KEY_ID` and
+`SPOKEN_ARCHIVE_SECRET_ACCESS_KEY` (a token scoped to the archive bucket alone, never the packs
+channel's), `SPOKEN_ARCHIVE_BUCKET`, `SPOKEN_ARCHIVE_URL` (its public address) and
+`SPOKEN_ARCHIVE_STORE`. That last one is `disk` until the bucket exists, `dual` while the
+backfill runs, and `r2` after: then takes redirect to the bucket, recordings, clone clips and
+references stream through the site, and the volume is no longer read or written.
+
+Before `SPOKEN_ARCHIVE_STORE` becomes `dual`, install **`oggenc`** beside ffmpeg
+(`apt install vorbis-tools`): with the bucket in use every quests take is encoded to its
+pack's Ogg when it is committed (`apps/web/src/lib/takes/encode.ts`). Without it the take
+still commits, but the release workflow (`.github/workflows/release-packs.yaml`) must encode
+every take instead.
+
 `app.env` may also set **`QUEUE_MAX_ACTIVE`**, which is not a secret: how many people's
 regeneration queues drain at once. Default 3. Each queue runs at its own key's plan width,
 and all of them together at most 12 jobs (the database pool's limit), so raising it spreads

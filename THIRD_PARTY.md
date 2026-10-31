@@ -55,7 +55,7 @@ None of this is the project's to license, and the MIT grant does not reach it.
   **CC BY-SA 4.0**. Re-use of that text carries the same terms, including attribution
   and share-alike. `pipelines/places/tools/scrape.mjs` is what fetches it and records
   which article each line came from.
-- **Boss and dungeon stories** (`addons/Spoken_NPCs/Data/Stories.lua`) are written from
+- **Boss and dungeon stories** (`addons/Spoken_Bosses/Data/Stories.lua`) are written from
   Blizzard's Adventure Guide text and from Warcraft Wiki (**CC BY-SA 4.0**), rewritten
   into one voice. The stories live in the `boss_line` table, and the file is exported from it
   and committed. `pipelines/places/tools/build-boss-stories.mjs`, `boss-history.mjs` and
