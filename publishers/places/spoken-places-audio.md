@@ -16,10 +16,12 @@ addonReadme: addons/SpokenPlacesAudio/README.md
 manager: true
 ---
 
-Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module, and narrated boss stories for its NPCs module. This addon is data only — it does nothing on its own.
+Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module<!-- only:curseforge -->, and narrated boss stories for its NPCs module<!-- /only -->. This addon is data only — it does nothing on its own.
 
-The download holds two folders: `SpokenPlacesAudio`, the zone and subzone lore, and `SpokenBossesAudio`, the boss stories. Boss stories need Spoken 3.7.0 or later.
+<!-- only:curseforge -->
+The CurseForge download holds two folders: `SpokenPlacesAudio`, the zone and subzone lore, and `SpokenBossesAudio`, the boss stories. Boss stories need Spoken 3.7.0 or later.
 
+<!-- /only -->
 ## The voice, as of 0.3.0
 
 Every line was re-recorded with a new narrator — picked for the tone the lore deserves rather than for getting a first pass made cheaply — and the names of NPCs and places now go through a pronunciation dictionary, so Lordaeron sounds the same in every line it appears in.
@@ -31,10 +33,10 @@ The **lore text** was rewritten in the same release to describe the world as a v
 ## Installing
 
 <!-- only:wago -->
-**This pack is not installable from Wago.** At 448 MB it is over the upload limit here, so the file lives in its [GitHub release](https://github.com/rusty-key/spoken-wow/releases?q=places-audio), and on CurseForge.
+**This pack is not installable from Wago.** At 448 MB it is over the upload limit here, so the file lives in its [GitHub release](https://github.com/rusty-key/spoken-wow/releases?q=places-audio), and on CurseForge. The boss stories have a [GitHub release](https://github.com/rusty-key/spoken-wow/releases?q=bosses-audio) of their own.
 
 <!-- /only -->
-Install **Spoken** first; this pack is inert without it. Extract both folders into `Interface/AddOns` and leave the folder names as shipped — Spoken finds packs by folder name.
+Install **Spoken** first; this pack is inert without it. Extract every folder in the download into `Interface/AddOns` and leave the folder names as shipped — Spoken finds packs by folder name.
 
 ## Compatibility
 

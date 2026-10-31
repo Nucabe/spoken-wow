@@ -78,11 +78,12 @@ keeping a table of its own. Adding a language's pack is its page -- one per pack
 -- plus the CurseForge project it names.
 
 **A pack can live inside another's CurseForge project.** The English bosses pack has no project
-of its own: its page says `bundledIn: spoken-audio-places`, and the English Places zip carries its
-`SpokenBossesAudio` folder beside `SpokenPlacesAudio`, published as Spoken Audio: Places and
-Bosses (`scripts/places/package-audio.sh`). Players sent to CurseForge for it go there. Its
-page keeps its slug so its README is still written, but nothing uploads it to CurseForge. It has
-its own GitHub release, `bosses-audio`, and is its own product in the manager.
+of its own: its page says `bundledIn: spoken-audio-places`, and CurseForge's Spoken Audio: Places
+and Bosses is sent a zip carrying its `SpokenBossesAudio` folder beside `SpokenPlacesAudio`.
+Players sent to CurseForge for it go there. Its page keeps its slug so its README is still
+written, but nothing uploads it to CurseForge on its own. On GitHub the two stay apart:
+`places-audio` holds Places only and `bosses-audio` the bosses pack, and the manager installs them
+as separate products.
 
 **A language with few players yet ships two quests packs, not four.** Its Shared page says
 `holds: quests` and carries every quest line, both sides' included, under the name

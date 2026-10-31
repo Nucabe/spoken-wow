@@ -135,17 +135,26 @@ make npcs-full-release      # sync, pull, build, then the GitHub release, with o
 - The lookup key is `boss:{map}:{key}` and the file `{map}\{slug}`, from the same `assignFiles` the
   site uses, so the pack and the site cannot disagree on a file.
 - The pack's page is `publishers/bosses/spoken-bosses-audio.md` and its changelog
-  `docs/bosses/CHANGELOG.md`. It has no CurseForge project: the page says
-  `bundledIn: spoken-audio-places`, and the English Places zip carries the built
-  `dist/SpokenBossesAudio` beside `SpokenPlacesAudio`, published as Spoken Audio: Places and Bosses.
-  `make places-package-audio` refuses a missing or stale bosses build, `scripts/places/release.sh`
-  a zip without it at its `.toc`'s version, and an English `make places-full-release` builds it
-  first. So a bosses change reaches CurseForge with the next Places release. Only English's Places
-  pack carries it. The pack keeps its own version, its own GitHub release (`bosses-audio`, through
-  `make npcs-full-release` or `make audio-release SECTION=bosses`), where Wago players get it, and
-  its own product in the manager. `MIN_SPOKEN.bosses` is 3.7.0. The page gets `manager: true`
-  in the pack's first release: `make manager-publish` checks every manager pack is built and its
-  Spoken released, so an unreleased one would block the other sections.
+  `docs/bosses/CHANGELOG.md`. `MIN_SPOKEN.bosses` is 3.7.0. The page gets `manager: true` in the
+  pack's first release: `make manager-publish` checks every manager pack is built and its Spoken
+  released, so an unreleased one would block the other sections.
+- Where the English pack is published:
+  - **CurseForge** has no bosses project. The page says `bundledIn: spoken-audio-places`, and
+    `make places-package-audio` builds a second English zip, `SpokenPlacesAndBossesAudio-<v>.zip`,
+    holding the built `dist/SpokenBossesAudio` beside `SpokenPlacesAudio`. That bundle is what
+    Spoken Audio: Places and Bosses is sent. Packaging refuses a missing or stale bosses build,
+    and the upload refuses a bundle whose bosses `.toc` version or `Data/Sounds.lua` is not the
+    repo's.
+  - **GitHub**: `places-audio` holds the plain `SpokenPlacesAudio-<v>.zip`, Places only, and
+    `bosses-audio` holds the bosses pack (`make npcs-full-release` or
+    `make audio-release SECTION=bosses`). Wago players get both from there.
+  - **The manager** keeps the two as separate products. It refuses a zip holding a folder its
+    product does not own, which is why GitHub's places zip never carries the bosses.
+- **Ship a bosses change in the same run as a Places release.** A bosses change reaches CurseForge
+  only inside a Places release, so cut the bosses release (`make npcs-full-release`) together with
+  an English `make places-full-release`, which syncs, pulls and builds the bosses pack first. That
+  keeps the bosses on CurseForge at the version the manager and GitHub offer. Only English's
+  Places pack carries it.
 - `Spoken_NPCs` ranks the installed packs (`Audio.lua`, [../npcs/README.md](../npcs/README.md)). A
   story with no clip shows as words only; a voiced one plays like any other voiced line.
 

@@ -270,9 +270,8 @@ npcs-validate-audio: ## Check SpokenBossesAudio's lookup, mp3s and live takes ag
 npcs-package-audio: npcs-check-synced npcs-sounds npcs-lookup npcs-validate-audio ## Build the bosses sound-pack zip into dist/ (LOCALE=xx)
 	@LOCALE="$(NPCS_LOCALE)" ./scripts/npcs/package-audio.sh
 
-# No CurseForge upload of its own: English's pack ships inside the places pack's zip, Spoken Audio:
-# Places and Bosses (scripts/places/package-audio.sh), so make places-full-release uploads it there.
-# This is the pack's own GitHub release, as places-full-release's is for places: the version is
+# GitHub only: CurseForge has no bosses project, and English's pack reaches it inside the Places
+# project's zip, Spoken Audio: Places and Bosses, with the next places-full-release. The version is
 # SpokenBossesAudio.toc's (a language's, its page's), and its `## <version> — bosses-audio` section
 # in docs/bosses/CHANGELOG.md is the notes.
 npcs-full-release: require-droplet ## Sync, pull live takes, build and GitHub-release the bosses sound pack (LOCALE=xx)

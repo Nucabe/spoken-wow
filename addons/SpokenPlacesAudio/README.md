@@ -2,7 +2,7 @@
 
 Narrated zone lore for **[Spoken](https://www.curseforge.com/wow/addons/spoken)**'s Places module, and narrated boss stories for its NPCs module. This addon is data only — it does nothing on its own.
 
-The download holds two folders: `SpokenPlacesAudio`, the zone and subzone lore, and `SpokenBossesAudio`, the boss stories. Boss stories need Spoken 3.7.0 or later.
+The CurseForge download holds two folders: `SpokenPlacesAudio`, the zone and subzone lore, and `SpokenBossesAudio`, the boss stories. Boss stories need Spoken 3.7.0 or later.
 
 ## The voice, as of 0.3.0
 
@@ -14,7 +14,7 @@ The **lore text** was rewritten in the same release to describe the world as a v
 
 ## Installing
 
-Install **Spoken** first; this pack is inert without it. Extract both folders into `Interface/AddOns` and leave the folder names as shipped — Spoken finds packs by folder name.
+Install **Spoken** first; this pack is inert without it. Extract every folder in the download into `Interface/AddOns` and leave the folder names as shipped — Spoken finds packs by folder name.
 
 ## Compatibility
 

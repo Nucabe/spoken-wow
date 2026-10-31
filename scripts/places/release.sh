@@ -24,6 +24,8 @@ DIST="$REPO/dist"
 LANG_CODE=enUS
 pack_field() { node "$REPO/scripts/lib/packs.mjs" get places "$LANG_CODE" - "$1"; }
 english() { [[ "$LANG_CODE" == enUS ]]; }
+# A missing .toc reads as no version, which the preflight reports as not built.
+toc_version() { { sed -n 's/^## Version:[[:space:]]*//p' "$@" 2>/dev/null || true; } | head -1 | tr -d '\r'; }
 
 # Site-relative API, per game. WoW projects are not reachable through another
 # game's subdomain even with a valid token.
@@ -55,7 +57,9 @@ RELEASE_TYPE="${RELEASE_TYPE:-release}"
 # below rather than uploading over the English project.
 target_curseforge() { case "$1" in audio) pack_field curseforge;; esac; }
 target_addon()      { case "$1" in audio) pack_field folder;; esac; }
-target_zip()        { target_addon "$1"; }
+# English's project is "Spoken Audio: Places and Bosses", the only CurseForge home of the bosses
+# pack, so it is sent the zip that carries both folders. GitHub and the manager get the plain one.
+target_zip()        { if [[ "$1" == audio ]] && english; then echo SpokenPlacesAndBossesAudio; else target_addon "$1"; fi; }
 # The project's slug, which is neither the folder nor the zip name: the folders keep the names
 # they were published under and the slugs were changed with the rename. Used for the link
 # printed after an upload, so a wrong one here is a dead link and nothing worse.
@@ -95,12 +99,12 @@ if (( ${#targets[@]} == 0 )); then
   targets=("audio")
 fi
 
+command -v node >/dev/null || { echo "error: node is required (for JSON handling)" >&2; exit 1; }
+
 #-- preflight -------------------------------------------------------------------
-# EVERY TARGET'S ZIP IS RESOLVED BEFORE ANY UPLOAD STARTS, and before the token and the network:
-# it needs neither. English's default run covers both
-# places and audio, and uploading the addon before discovering the pack was never built is a
-# half release. Checked in --dry-run too, since a dry run's job is to say what a real run
-# would hit.
+# THE ZIP IS RESOLVED BEFORE THE TOKEN AND THE NETWORK: it needs neither, so a missing or stale
+# zip is reported on a machine with no token too. Checked in --dry-run as well, since a dry run's
+# job is to say what a real run would hit.
 missing=()
 for target in "${targets[@]}"; do
   addon="$(target_addon "$target")"
@@ -108,7 +112,7 @@ for target in "${targets[@]}"; do
     version="$(pack_field version)"
   else
     toc="$REPO/addons/$addon/$addon.toc"
-    version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" 2>/dev/null | head -1 | tr -d '\r')"
+    version="$(toc_version "$toc")"
   fi
   if [[ -z "$version" ]]; then
     missing+=("$target -- not built (no version); run make places-package-audio")
@@ -116,15 +120,18 @@ for target in "${targets[@]}"; do
   fi
   zip_path="$DIST/$(target_zip "$target")-$version.zip"
   [[ -f "$zip_path" ]] || { missing+=("$zip_path"); continue; }
-  # English's project is "Spoken Audio: Places and Bosses", the only CurseForge home of the bosses
-  # pack, so a zip without SpokenBossesAudio at its .toc's version would take the boss narration
-  # off every player who updates (scripts/places/package-audio.sh adds it).
+  # A bundle without SpokenBossesAudio, or with an older build of it than the repo's, takes the boss
+  # narration off every CurseForge player who updates, or ships them stale lines.
   if [[ "$target" == audio ]] && english; then
-    bosses_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$REPO/addons/SpokenBossesAudio/SpokenBossesAudio.toc" | head -1 | tr -d '\r')"
-    zipped="$(unzip -p "$zip_path" SpokenBossesAudio/SpokenBossesAudio.toc 2>/dev/null \
-      | sed -n 's/^## Version:[[:space:]]*//p' | head -1 | tr -d '\r' || true)"
-    [[ "$zipped" == "$bosses_version" ]] ||
-      missing+=("$zip_path -- holds SpokenBossesAudio '${zipped:-none}', not $bosses_version; run make npcs-package-audio places-package-audio")
+    bosses_version="$(toc_version "$REPO/addons/SpokenBossesAudio/SpokenBossesAudio.toc")"
+    zipped="$(unzip -p "$zip_path" SpokenBossesAudio/SpokenBossesAudio.toc 2>/dev/null | toc_version || true)"
+    remedy="run make npcs-sync npcs-pull-live npcs-package-audio places-package-audio"
+    if [[ "$zipped" != "$bosses_version" ]]; then
+      missing+=("$zip_path -- holds SpokenBossesAudio '${zipped:-none}', not $bosses_version; $remedy")
+    elif ! unzip -p "$zip_path" SpokenBossesAudio/Data/Sounds.lua 2>/dev/null |
+        cmp -s - "$REPO/addons/SpokenBossesAudio/Data/Sounds.lua"; then
+      missing+=("$zip_path -- its SpokenBossesAudio/Data/Sounds.lua is not the repo's; $remedy")
+    fi
   fi
 done
 if (( ${#missing[@]} > 0 )); then
@@ -134,7 +141,6 @@ if (( ${#missing[@]} > 0 )); then
 fi
 
 command -v curl >/dev/null || { echo "error: curl is required" >&2; exit 1; }
-command -v node >/dev/null || { echo "error: node is required (for JSON handling)" >&2; exit 1; }
 
 # The token is account-wide -- it uploads all six projects -- so it lives once, in the
 # repo-root .env alongside the other shared credentials, rather than in a shell history or
@@ -243,7 +249,7 @@ for target in "${targets[@]}"; do
     version="$(pack_field version)"
   else
     toc="$REPO/addons/$addon/$addon.toc"
-    version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc" | head -1 | tr -d '\r')"
+    version="$(toc_version "$toc")"
   fi
   zip_path="$DIST/$zip_name-$version.zip"
 

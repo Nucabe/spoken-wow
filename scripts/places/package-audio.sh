@@ -43,6 +43,9 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # supplies the empty default when there is none.
 export DATABASE_URL="${DATABASE_URL-}"
 
+# A missing .toc reads as no version, which every caller refuses with its own remedy.
+toc_version() { { sed -n 's/^## Version:[[:space:]]*//p' "$@" 2>/dev/null || true; } | head -1 | tr -d '\r'; }
+
 # The language being packaged. Everything below that names a folder, a title or a cache follows
 # from it, so an esMX run cannot write into English's folder or its zip.
 LOCALE="${LOCALE:-enUS}"
@@ -153,7 +156,7 @@ if [[ ! -f "$TOC" ]]; then
 fi
 
 if english; then
-  version="$(sed -n 's/^## Version:[[:space:]]*//p' "$TOC" | head -1 | tr -d '\r')"
+  version="$(toc_version "$TOC")"
 else
   version="$PACK_VERSION"
 fi
@@ -205,33 +208,39 @@ tier_readme() {
   echo "$REPO/dist/descriptions/$(node "$REPO/scripts/lib/packs.mjs" get places enUS - slug).md"
 }
 
-# English's zip is "Spoken Audio: Places and Bosses" on CurseForge: the bosses pack has no project
-# there, so its folder rides in this zip beside SpokenPlacesAudio. It is copied from what
-# `make npcs-package-audio` built into dist/, never rebuilt here, and a missing or stale build stops
-# the run: a zip quietly shipped without it takes the boss narration away from every CurseForge
-# player who updates. Stale means a version other than its .toc's, or a lookup other than the one
-# the last `make npcs-lookup` wrote. The manager and GitHub keep the two packs apart.
+# English's CurseForge project is "Spoken Audio: Places and Bosses": the bosses pack has no project
+# there, so English gets a second zip, the plain one plus dist/SpokenBossesAudio, which is what that
+# project is sent. The plain zip stays Places only, because the manager refuses a zip holding a
+# folder its product does not own, and GitHub's places release is where it installs from. The
+# bosses folder is copied from what `make npcs-package-audio` built, never rebuilt here, and a
+# missing or stale build stops the run: a CurseForge zip quietly shipped without it takes the boss
+# narration away from every player who updates. Stale means a version other than its .toc's, or a
+# lookup other than the one the last `make npcs-lookup` wrote.
 BOSSES_SRC="$REPO/addons/SpokenBossesAudio"
 BOSSES_DIST="$DIST/SpokenBossesAudio"
+BOSSES_REMEDY="run make npcs-sync npcs-pull-live npcs-package-audio"
+# A name of its own, not SpokenPlacesAudio-<v>-something: the manager would take that for a places
+# asset, and the channel publisher would read dist/SpokenPlacesAudio as older than its zip.
+BUNDLE_NAME="SpokenPlacesAndBossesAudio"
 bundles_bosses() { english && [[ "$1" == high ]]; }
 check_bosses_build() {
   local want built
-  want="$(sed -n 's/^## Version:[[:space:]]*//p' "$BOSSES_SRC/SpokenBossesAudio.toc" | head -1 | tr -d '\r')"
+  want="$(toc_version "$BOSSES_SRC/SpokenBossesAudio.toc")"
   if [[ ! -f "$BOSSES_DIST/SpokenBossesAudio.toc" ]]; then
-    echo "error: $BOSSES_DIST is not built, and English's places zip carries it -- run make npcs-package-audio" >&2
+    echo "error: $BOSSES_DIST is not built, and English's CurseForge zip carries it -- $BOSSES_REMEDY" >&2
     exit 1
   fi
-  built="$(sed -n 's/^## Version:[[:space:]]*//p' "$BOSSES_DIST/SpokenBossesAudio.toc" | head -1 | tr -d '\r')"
+  built="$(toc_version "$BOSSES_DIST/SpokenBossesAudio.toc")"
   if [[ "$built" != "$want" ]]; then
-    echo "error: $BOSSES_DIST is version '$built', its .toc says '$want' -- run make npcs-package-audio" >&2
+    echo "error: $BOSSES_DIST is version '$built', its .toc says '$want' -- $BOSSES_REMEDY" >&2
     exit 1
   fi
   if ! cmp -s "$BOSSES_SRC/Data/Sounds.lua" "$BOSSES_DIST/Data/Sounds.lua"; then
-    echo "error: $BOSSES_DIST was built from another lookup than $BOSSES_SRC/Data/Sounds.lua -- run make npcs-package-audio" >&2
+    echo "error: $BOSSES_DIST was built from another lookup than $BOSSES_SRC/Data/Sounds.lua -- $BOSSES_REMEDY" >&2
     exit 1
   fi
   if [[ -z "$(find "$BOSSES_DIST/Sounds" -name '*.mp3' -print -quit 2>/dev/null)" ]]; then
-    echo "error: $BOSSES_DIST has no clips -- run make npcs-package-audio" >&2
+    echo "error: $BOSSES_DIST has no clips -- $BOSSES_REMEDY" >&2
     exit 1
   fi
 }
@@ -255,10 +264,12 @@ for tier in "${tiers[@]}"; do
   encoding="$(tier_encoding "$tier")"
   title="$(tier_title "$tier")"
   zip_path="$DIST/$folder-$version.zip"
+  bundle_path="$DIST/$BUNDLE_NAME-$version.zip"
 
   echo
   echo "=== $tier tier -> $folder ($encoding, nominal ${bitrate}kbps) ==="
   rm -f "$zip_path"
+  bundles_bosses "$tier" && rm -f "$bundle_path"
 
   staging="$(mktemp -d)"
   trap 'rm -rf "$staging"' EXIT
@@ -402,9 +413,11 @@ for tier in "${tiers[@]}"; do
 
   (cd "$staging" && zip -r -q -X "$zip_path" "$folder" \
     -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig' '*.part')
+  # Stored, not deflated: the clips are mp3s already, and deflating them buys nothing for the time.
   if bundles_bosses "$tier"; then
-    echo "adding SpokenBossesAudio $(sed -n 's/^## Version:[[:space:]]*//p' "$BOSSES_DIST/SpokenBossesAudio.toc" | head -1 | tr -d '\r')..."
-    (cd "$DIST" && zip -r -q -X "$zip_path" SpokenBossesAudio \
+    echo "zipping $BUNDLE_NAME, with SpokenBossesAudio $(toc_version "$BOSSES_DIST/SpokenBossesAudio.toc")..."
+    cp "$zip_path" "$bundle_path"
+    (cd "$DIST" && zip -r -0 -q -X "$bundle_path" SpokenBossesAudio \
       -x '*.DS_Store' '*/.git/*' '*.bak' '*.orig' '*.part')
   fi
 
@@ -422,4 +435,8 @@ for tier in "${tiers[@]}"; do
   size="$(du -h "$zip_path" | cut -f1)"
   echo "built $zip_path"
   echo "  version: $version   files: $files   size: $size   encoding: $encoding"
+  if bundles_bosses "$tier"; then
+    echo "built $bundle_path, for CurseForge"
+    echo "  files: $(unzip -Z1 "$bundle_path" | grep -cv '/$')   size: $(du -h "$bundle_path" | cut -f1)"
+  fi
 done
