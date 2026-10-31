@@ -1,9 +1,7 @@
 # Spoken Bosses
 
 The bosses of the dungeons and raids and their stories, in Azeroth's Compendium: a Bosses tab after
-the Readables', laid out as the Places tab is. The module was Spoken NPCs, in `Spoken_NPCs`, until
-3.7.0; Spoken switches an old copy of that folder off (`OLD_FOLDERS` in `addons/Spoken/Core.lua`), and
-nothing reads its saved variables.
+the Readables', laid out as the Places tab is.
 
 ## The tab
 
