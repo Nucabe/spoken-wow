@@ -13,19 +13,22 @@ import { corpus } from "./quests/catalogue";
 export const SUBFOLDERS = ["quests", "gossip", "followup"] as const;
 
 /**
- * Followup has a folder of its own, not quests/: a follow-up file is named after its words and
- * its voice (`4377-dwarf-male-standard`), and the addon resolves it by its own event
- * (Module.lua's GetSoundPath), so the path has to be the one Python's naming gives it.
+ * By the line id's kind, as Python decides it, not by source: a follow-up file is named after its
+ * words and its voice (`4377-dwarf-male-standard`), and so is every line of another source that
+ * shares that naming, NPC chat's included. The addon resolves it by its own event (Module.lua's
+ * GetSoundPath), so the path has to be the one Python's naming gives it.
  */
-export function subfolder(line: Pick<CorpusLine, "source">): (typeof SUBFOLDERS)[number] {
-  if (line.source === "gossip") return "gossip";
-  // A chat line is named as a follow-up line is, after its words and voice, so it shares the folder.
-  if (line.source === "followup" || line.source === "chatter") return "followup";
-  return "quests";
+const KIND_FOLDER: Record<string, (typeof SUBFOLDERS)[number]> = { q: "quests", g: "gossip", f: "followup" };
+
+export function subfolder(line: Pick<CorpusLine, "lineId">): (typeof SUBFOLDERS)[number] {
+  const kind = line.lineId.split(":", 1)[0];
+  const folder = KIND_FOLDER[kind];
+  if (!folder) throw new Error(`unknown lineId kind ${JSON.stringify(kind)} in ${JSON.stringify(line.lineId)}`);
+  return folder;
 }
 
 /** The addon's path, e.g. "quests/5-accept.mp3". Also the take's `file` and the /api/quests/audio/ route path. */
-export function audioRelPath(line: Pick<CorpusLine, "source" | "fileName">): string {
+export function audioRelPath(line: Pick<CorpusLine, "lineId" | "fileName">): string {
   return `${subfolder(line)}/${line.fileName}.mp3`;
 }
 

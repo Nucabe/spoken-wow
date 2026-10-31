@@ -11,7 +11,8 @@ database. Read from the corpus, which is Postgres's export, so rerun after expor
 """
 import os
 
-from tts_cli.naming import CHATTER, split_voice
+from tts_cli.naming import CHATTER
+from tts_cli.quest_text import lua_string
 
 DEFAULT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "..", "..", "..", "addons", "Spoken_Quests", "ChatterLines.lua")
@@ -26,23 +27,6 @@ setfenv(1, VoiceOver)
 ChatterLines = {
 """
 
-
-def lua_string(text):
-    out = []
-    for ch in text:
-        if ch == "\\":
-            out.append("\\\\")
-        elif ch == '"':
-            out.append('\\"')
-        elif ch == "\n":
-            out.append("\\n")
-        elif ch == "\r":
-            out.append("\\r")
-        elif ord(ch) < 32 or ord(ch) == 127:
-            out.append(f"\\{ord(ch):03d}")
-        else:
-            out.append(ch)
-    return '"' + "".join(out) + '"'
 
 
 def _squash(text):
@@ -59,8 +43,7 @@ def chatter_lines(corpus):
     for line in corpus["lines"]:
         if line["source"] != CHATTER or line["npcType"] != "creature":
             continue
-        base_id, _voice = split_voice(line["lineId"])
-        broadcast = int(base_id.split(":")[1])
+        broadcast = int(line["lineId"].split(":")[1])
         speaker = found.setdefault(line["npcId"], {"name": _squash(line["npcName"]), "lines": {}})
         speaker["lines"].setdefault(broadcast, _squash(line["originalText"]))
     return {npc: {"name": s["name"], "lines": sorted(s["lines"].items())} for npc, s in found.items()}

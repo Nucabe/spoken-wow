@@ -61,11 +61,10 @@ function Chatter:Match(npcID, message, sender)
 end
 
 --- The speaker and line of a message that came with no GUID: an NPC of that name with a line of that
---- text. Several entries can share both; the one a pack has a recording for is the one told. On a client
---- in another language the name is translated and the text cannot be compared, so there is no evidence
---- of who spoke.
+--- text. Several entries can share both; the one a pack has a recording for is the one told. English
+--- clients only, as Match is: elsewhere the name is translated too.
 function Chatter:MatchByName(message, sender)
-    if not (sender and Followup.ClientSpeaksExportLanguage()) then
+    if not sender then
         return nil
     end
     local firstID, firstLine

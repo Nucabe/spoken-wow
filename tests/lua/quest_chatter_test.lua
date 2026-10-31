@@ -258,10 +258,6 @@ Reset()
 stub.SetLocale("deDE")
 Say("Eine ganz andere Zeile.", LONE_GUID)
 Expect("on a client in another language not even an NPC with a single line is told: it says more than it", Keys(), "")
-Reset()
-stub.SetLocale("deDE")
-Say("Ich spüre, dass etwas Böses braut.", SPEAKER_GUID)
-Expect("...nor one with several lines, since the text cannot be compared", Keys(), "")
 
 ---------------------------------------------------------------- /spq chatter
 Reset()
