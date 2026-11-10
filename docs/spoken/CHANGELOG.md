@@ -2,6 +2,11 @@
 
 Spoken Player until 3.0.0, when it became Spoken and took its modules into one download.
 
+## Unreleased
+
+- **A boss you have not met shows no 3D model on the Leatrix Maps boss panel**, as its page in the Compendium
+  shows none. With Unlock Unfound Bosses on, the model is drawn. *([Nucabe](https://github.com/Nucabe))*
+
 ## 3.8.6 — 2026-11-10
 
 - **Place stories play through combat again, unless you turn on Stop When Combat Starts.** The new

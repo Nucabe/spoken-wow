@@ -280,8 +280,9 @@ function Bosses:ShowLeatrixBoss(mapID, creatureID, bossName)
 	local story = self:StoryClip(found.map, found.key)
 	local target = story and { found.map, found.key } or nil
 	local text = story and story.present.transcript or SpokenCompendium.NotWritten()
-	if not self:IsBossFound(found.map, found.key)
-		and not (SpokenBossesSettings and SpokenBossesSettings.unlockUnfound) then
+	local revealed = self:IsBossFound(found.map, found.key)
+		or (SpokenBossesSettings and SpokenBossesSettings.unlockUnfound) and true or false
+	if not revealed then
 		text = self.L.BOSS_NOT_FOUND
 		target = nil
 	end
@@ -291,7 +292,8 @@ function Bosses:ShowLeatrixBoss(mapID, creatureID, bossName)
 		title = BossName(found.boss),
 		subtitle = SpokenCompendium.DungeonName(found.map) or "",
 		panelTitle = SpokenPlaces.L and SpokenPlaces.L.BOSS_LORE_TITLE or "Boss lore",
-		model = BossModel(found.map, found.key),
+		-- A boss not met shows no model, as its page in the Compendium shows none.
+		model = revealed and BossModel(found.map, found.key) or nil,
 		text = text,
 		target = target,
 		play = PLAY,
