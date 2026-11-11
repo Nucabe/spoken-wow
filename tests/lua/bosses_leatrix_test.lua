@@ -78,6 +78,9 @@ function Bosses:StoryClip(map, key)
     return { present = { transcript = map .. ":" .. key .. " lore" } }
 end
 function Bosses:IsBossFound() return true end
+function Bosses:IsBossRevealed(map, key)
+    return self:IsBossFound(map, key) or (_G.SpokenBossesSettings ~= nil and _G.SpokenBossesSettings.unlockUnfound == true)
+end
 function Bosses:GetAudioClip() return nil end
 function Bosses:QueuedStory() return nil end
 function Bosses:PlayStory() end

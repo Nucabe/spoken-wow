@@ -85,6 +85,11 @@ function Bosses:IsBossFound(map, key)
 	return SpokenBossesCharacter ~= nil and SpokenBossesCharacter.found[Key(map, key)] == true
 end
 
+--- Whether the boss `key` of the dungeon `map` shows its model and words: met, or Unlock Unfound Bosses on.
+function Bosses:IsBossRevealed(map, key)
+	return self:IsBossFound(map, key) or (SpokenBossesSettings ~= nil and SpokenBossesSettings.unlockUnfound == true)
+end
+
 -- The bosses { map, key } are met: noted, and the tab told. Returns whether one was not met before.
 local function Meet(self, bosses)
 	local new = false

@@ -297,6 +297,12 @@ Expect("an encounter that is no boss of the table is not met", Bosses:FoundEncou
 Expect("a boss's encounter is met the first time", Bosses:FoundEncounter(edwin.ids[1]), true)
 Expect("...and not again", Bosses:FoundEncounter(edwin.ids[1]), false)
 Expect("...kept for the character", SpokenBossesCharacter.found["36:edwin vancleef"], true)
+SpokenBossesSettings.unlockUnfound = false
+Expect("a boss met is revealed, one not met is not", tostring(Bosses:IsBossRevealed(36, "edwin vancleef")) .. "|"
+    .. tostring(Bosses:IsBossRevealed(36, "not met")), "true|false")
+SpokenBossesSettings.unlockUnfound = true
+Expect("...unless Unlock Unfound Bosses is on", Bosses:IsBossRevealed(36, "not met"), true)
+SpokenBossesSettings.unlockUnfound = false
 local sunken
 for map, bosses in pairs(SpokenBosses.maps) do
     for _, boss in ipairs(bosses) do if boss.key == "weaver" then sunken = map end end

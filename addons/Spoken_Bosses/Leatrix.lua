@@ -280,8 +280,7 @@ function Bosses:ShowLeatrixBoss(mapID, creatureID, bossName)
 	local story = self:StoryClip(found.map, found.key)
 	local target = story and { found.map, found.key } or nil
 	local text = story and story.present.transcript or SpokenCompendium.NotWritten()
-	local revealed = self:IsBossFound(found.map, found.key)
-		or (SpokenBossesSettings and SpokenBossesSettings.unlockUnfound) and true or false
+	local revealed = self:IsBossRevealed(found.map, found.key)
 	if not revealed then
 		text = self.L.BOSS_NOT_FOUND
 		target = nil
