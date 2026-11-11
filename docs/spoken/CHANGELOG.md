@@ -12,7 +12,8 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
   full view. With the panel folded away, OpenMap's map is left to OpenMap's own clicks.
   *([carcachi](https://github.com/carcachi))*
 - **A boss you have not met shows no 3D model on the Leatrix Maps boss panel**, as its page in the Compendium
-  shows none. With Unlock Unfound Bosses on, the model is drawn. *([Nucabe](https://github.com/Nucabe))*
+  shows none. With Unlock Unfound Bosses on, the model is drawn. The boss's page in the Compendium has the
+  boss's own round portrait, not a question mark, before you meet it. *([Nucabe](https://github.com/Nucabe))*
 
 ## 3.8.6 — 2026-11-10
 

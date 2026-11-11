@@ -354,6 +354,17 @@ Expect("...and its portrait at the left of its name, the title moved right of it
 Expect("...the boss badge on it", page.headFace.speaker.bullet, "boss")
 local badge = page.headFace and page.headFace.badge
 Expect("...the dungeon portrait's small socket holds the normal skull", badge and badge:IsShown() and badge.texture, [[Interface\Minimap\Minimap_skull_normal]])
+-- A boss not met: its words say so, its portrait is the boss's own, and no model stands over them.
+SpokenBossesCharacter.found["36:edwin vancleef"] = nil
+Bosses:RefreshBosses()
+Shown()
+Click("Edwin VanCleef")
+Expect("a boss not met has its own portrait, not the question mark, and no model over its words",
+    page.body.text.text .. "|" .. tostring(page.headFace.speaker.displayID) .. "|" .. tostring(page.body.modelDisplayID),
+    Bosses.L.BOSS_NOT_FOUND .. "|1305|nil")
+SpokenBossesCharacter.found["36:edwin vancleef"] = true
+Bosses:RefreshBosses()
+Shown()
 _G.SpokenBossCreatures = { [36] = { ["edwin vancleef"] = { creature = 639 } } }
 Click("Edwin VanCleef")
 Expect("a boss with a creature but no model has the question mark for its portrait", page.headFace.speaker.icon,

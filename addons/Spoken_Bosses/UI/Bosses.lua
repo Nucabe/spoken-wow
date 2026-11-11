@@ -466,7 +466,7 @@ local function ShowEntry()
 		local where = Index().world[map] and L.BOSS_IN_FMT:format(MapName(BossZone(map, key)))
 			or (L.BOSS_IN_FMT:format(DungeonName(map)) .. " · " .. MapName(Index().zoneOf[map]))
 		if not Bosses:IsBossRevealed(map, key) then
-			page:Show({ title = Name(boss), subtitle = where, text = L.BOSS_NOT_FOUND, icon = Unknown(map) })
+			page:Show({ title = Name(boss), subtitle = where, text = L.BOSS_NOT_FOUND, icon = Portrait(map, key) })
 			return
 		end
 		local story = Story(map, key)
