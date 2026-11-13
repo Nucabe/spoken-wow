@@ -4,6 +4,11 @@ Spoken Player until 3.0.0, when it became Spoken and took its modules into one d
 
 ## Unreleased
 
+- **Highlight Words lights one word, and Highlighted Words lets you light two.** The captions, the book
+  view, DialogueUI's text and NPC chat bubbles lit the word being read together with the next one, to
+  cover an estimated timing. Newer recordings carry the real timing, so the word alone is lit by
+  default. Highlighted Words, under Highlight Words, brings the pair back, which suits older
+  recordings, whose timing is still estimated. *([Nucabe](https://github.com/Nucabe))*
 - **Subtitles and Compendium text now follow your sound packs.** A pack carries the words of the
   lines it voices, so new audio no longer plays under old text. This applies when the pack is in
   the language you read; a German player with English voices keeps German text. In English, quest

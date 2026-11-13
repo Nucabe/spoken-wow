@@ -772,7 +772,7 @@ local caption = {}
 --- true when they come from the clip's present.timings, and totalWeight is then its length.
 --- progress is nil for a clip with no length; activeWord is set only while speaking.
 --- highlight and typewriter are the player's Highlight Words and Type Words Out (false with
---- Show Words off); typewriterBy is "letter" or "word". Read-only, and the same table on
+--- Show Words off); litWords is the Highlighted Words setting, 1 or 2; typewriterBy is "letter" or "word". Read-only, and the same table on
 --- every call. nil without a clip.
 function Spoken:GetCaption()
     if not Transcript.clip or not Transcript.words then return nil end
@@ -785,6 +785,7 @@ function Spoken:GetCaption()
     caption.activeWord = caption.speaking and Transcript:WordAt(progress) or nil
     caption.timed = Transcript.timed
     caption.highlight, caption.typewriter, caption.typewriterBy = self:GetCaptionOptions()
+    caption.litWords = Addon:Profile("Transcript").HighlightWords == 2 and 2 or 1
     return caption
 end
 
